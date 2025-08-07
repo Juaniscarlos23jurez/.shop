@@ -1,0 +1,144 @@
+/// Centralized file for all Firebase Realtime Database paths used in the application.
+/// This ensures consistency and makes it easier to maintain database references.
+/// 
+/// Path structure follows this pattern:
+///   - All paths are relative to the database root
+///   - Use forward slashes (/) for path separation
+///   - Keep paths organized by feature/domain
+///   - Document each path with its purpose and structure
+
+class FirebasePaths {
+  // Private constructor to prevent instantiation
+  FirebasePaths._();
+
+  /// Base paths
+  static const String users = 'users';
+  static const String catalogs = 'catalogs';
+  static const String products = 'products';
+  
+  /// User-related paths
+  /// 
+  /// Structure:
+  ///   users/
+  ///     {userId}/
+  ///       - displayName: string
+  ///       - email: string
+  ///       - photoUrl: string (optional)
+  ///       - createdAt: timestamp
+  ///       - updatedAt: timestamp
+  static String userProfile(String userId) => '$users/$userId';
+  
+  /// Catalog-related paths
+  /// 
+  /// Structure:
+  ///   catalog/ (Note: singular, as per your database structure)
+  ///     {userId}/
+  ///       - name: string (required) - Business name
+  ///       - description: string (required) - Business description
+  ///       - category: string (required) - Business category
+  ///       - phone: string - Contact phone number
+  ///       - address: string - Business address
+  ///       - whatsapp: string - WhatsApp number
+  ///       - primaryColor: string (hex color) - Primary brand color
+  ///       - textColor: string (hex color) - Text color for UI
+  ///       - buttonColor: string (hex color) - Button color
+  ///       - imageUrl: string - URL to business logo/image
+  ///       - createdAt: timestamp - When the catalog was created
+  ///       - updatedAt: timestamp - Last update timestamp
+  ///   
+  /// Note: The path is 'catalog' (singular) to match your existing database structure
+  static String userCatalog(String userId) => 'catalog/$userId';
+  
+  /// Returns the path to a specific catalog field
+  /// Example: catalogField(userId, 'name') -> 'catalog/{userId}/name'
+  static String catalogField(String userId, String field) => 'catalog/$userId/$field';
+  
+  /// Catalog-related paths
+  /// 
+  /// Structure:
+  /// /catalogs/{userId}
+  ///   - name: String
+  ///   - description: String
+  ///   - category: String
+  ///   - phone: String? (optional)
+  ///   - address: String? (optional)
+  ///   - whatsapp: String? (optional)
+  ///   - primaryColor: String? (optional, hex color)
+  ///   - textColor: String? (optional, hex color)
+  ///   - buttonColor: String? (optional, hex color)
+  ///   - imageUrl: String? (optional, URL to logo)
+  ///   - createdAt: int (timestamp)
+  ///   - updatedAt: int (timestamp)
+  static String catalogPath(String userId) => '$catalogs/$userId';
+
+  /// Business hours-related paths
+  /// 
+  /// Structure:
+  /// business_hours/{userId}
+  ///   - monday: String ("9:00 AM - 6:00 PM")
+  ///   - tuesday: String ("9:00 AM - 6:00 PM")
+  ///   - wednesday: String ("9:00 AM - 6:00 PM")
+  ///   - thursday: String ("9:00 AM - 6:00 PM")
+  ///   - friday: String ("9:00 AM - 6:00 PM")
+  ///   - saturday: String ("9:00 AM - 6:00 PM")
+  ///   - sunday: String ("9:00 AM - 6:00 PM")
+  /// 
+  /// Notes:
+  /// - Each day's value is a string in the format "HH:MM AM/PM - HH:MM AM/PM"
+  /// - Days are stored in English (monday, tuesday, etc.)
+  /// - The dash (-) is required to separate opening and closing times
+  /// - Empty string or null indicates no hours set for that day
+  static String businessHoursPath(String userId) => 'business_hours/$userId';
+  
+  /// Product-related paths
+  /// 
+  /// Structure:
+  ///   products/
+  ///     {userId}/
+  ///       {productId}/
+  ///         - name: string
+  ///         - description: string
+  ///         - price: number
+  ///         - imageUrl: string (optional)
+  ///         - category: string (optional)
+  ///         - isAvailable: boolean
+  ///         - createdAt: timestamp
+  ///         - updatedAt: timestamp
+  static String userProducts(String userId) => '$products/$userId';
+  static String userProduct(String userId, String productId) => '$products/$userId/$productId';
+  
+  /// Indexed queries
+  /// 
+  /// These paths are optimized for common queries
+  static String productsByCategory(String userId, String category) => 
+      '$products/$userId?orderByChild=category&equalTo=$category';
+      
+  static String availableProducts(String userId) => 
+      '$products/$userId?orderByChild=isAvailable&equalTo=true';
+      
+  /// Helper methods for timestamps and ordering
+  static const String createdAtKey = 'createdAt';
+  static const String updatedAtKey = 'updatedAt';
+  
+  /// Maximum number of items to fetch in a single query
+  static const int defaultPageSize = 20;
+  
+  /// Security rules helper paths (used in Firebase Security Rules)
+  static const String userCatalogs = 'userCatalogs';
+  static const String userProductsList = 'userProducts';
+  
+  /// Storage paths
+  /// 
+  /// Structure:
+  /// users/
+  ///   {userId}/
+  ///     logos/
+  ///       logo_1234567890.jpg
+  ///       logo_1234567891.png
+  ///       
+  /// Notes:
+  /// - Used for storing user-uploaded logos
+  /// - Files are named with timestamp to ensure uniqueness
+  /// - File extensions are preserved from the original upload
+  static String userLogoPath(String userId) => 'users/$userId/logos';
+}
