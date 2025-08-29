@@ -1,4 +1,4 @@
-import { Building2, Users, MapPin, Phone, Mail, Globe, Clock, Plus } from 'lucide-react';
+import { Building2, Users, MapPin, Phone, Mail, Globe, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 
@@ -86,7 +86,7 @@ export default function CompaniaPage() {
           </CardContent>
           <CardFooter className="border-t border-slate-100">
             <Button variant="outline" className="text-emerald-600 border-emerald-200 hover:bg-emerald-50">
-              Editar Información  2
+              Editar Información
             </Button>
           </CardFooter>
         </Card>
@@ -104,6 +104,7 @@ export default function CompaniaPage() {
                   <CardDescription className="text-slate-600">Administra las sucursales de tu empresa</CardDescription>
                 </div>
               </div>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
