@@ -1,3 +1,5 @@
+"use client";
+
 import { Home, BarChart3, Package, MessageSquare, Users, PieChart, Settings, Activity, Building2, GitBranch } from 'lucide-react';
 import { LogOut as LogOutIcon } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -6,20 +8,21 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from 'next/navigation';
 
 const sidebarItems = [
-  { icon: Home, label: "Dashboard", active: true },
-  { icon: BarChart3, label: "Analytics", active: false },
-  { icon: Package, label: "Productos", active: false },
-  { icon: MessageSquare, label: "Comentarios", active: false },
-  { icon: Users, label: "Clientes", active: false },
-  { icon: Building2, label: "Compañía", active: false },
-  { icon: GitBranch, label: "Sucursal", active: false },
-  { icon: PieChart, label: "Reportes", active: false },
-  { icon: Settings, label: "Configuración", active: false },
+  { icon: Home, label: "Dashboard", href: "/dashboard" },
+  { icon: BarChart3, label: "Analytics", href: "/analytics" },
+  { icon: Package, label: "Productos", href: "/productos" },
+  { icon: MessageSquare, label: "Comentarios", href: "/comentarios" },
+  { icon: Users, label: "Clientes", href: "/clientes" },
+  { icon: Building2, label: "Compañía", href: "/dashboard/compania" },
+  { icon: GitBranch, label: "Sucursal", href: "/sucursales" },
+  { icon: PieChart, label: "Reportes", href: "/reportes" },
+  { icon: Settings, label: "Configuración", href: "/configuracion" },
 ];
 
 export function Sidebar() {
   const { user, logout } = useAuth();
   const router = useRouter();
+  const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
   
   // Get user initials for avatar fallback
   const getUserInitials = (name?: string, email?: string) => {
@@ -53,20 +56,25 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-2">
-        {sidebarItems.map((item, index) => (
-          <Button
-            key={index}
-            variant={item.active ? "default" : "ghost"}
-            className={`w-full justify-start h-11 ${
-              item.active 
-                ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/25 hover:bg-emerald-600" 
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
-            }`}
-          >
-            <item.icon className="h-5 w-5 mr-3" />
-            {item.label}
-          </Button>
-        ))}
+        {sidebarItems.map((item, index) => {
+          const isActive = pathname === item.href || 
+                         (pathname.startsWith(item.href) && item.href !== '/dashboard');
+          return (
+            <Button
+              key={index}
+              variant={isActive ? "default" : "ghost"}
+              className={`w-full justify-start h-11 ${
+                isActive 
+                  ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/25 hover:bg-emerald-600" 
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+              }`}
+              onClick={() => router.push(item.href)}
+            >
+              <item.icon className="h-5 w-5 mr-3" />
+              {item.label}
+            </Button>
+          );
+        })}
       </nav>
 
       {/* User Profile */}
