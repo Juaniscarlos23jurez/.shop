@@ -21,7 +21,8 @@ export default function CompaniaPage() {
         <div>
           <h1 className="text-3xl font-bold text-slate-900">Compañía</h1>
           <p className="text-slate-600 mt-1">Administra la información de tu empresa</p>
-        
+        </div>
+      </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {/* Información Principal */}
