@@ -20,10 +20,10 @@ export const loginUser = async (email: string, password: string) => {
     const response = await api.auth.login(email, password);
     console.log('Login API response:', response);
     
-    if (response.success && response.user && response.id_token) {
+    if (response.success && response.data?.user && response.data?.access_token) {
       return { 
-        user: response.user, 
-        token: response.id_token,
+        user: response.data.user, 
+        token: response.data.access_token,
         error: null 
       };
     }

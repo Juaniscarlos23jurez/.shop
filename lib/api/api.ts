@@ -1,18 +1,13 @@
-const BASE_URL = 'https://laravel-pkpass-backend-development-pfaawl.laravel.cloud';
+import { ApiResponse, UserProfile, ProfileApiUser } from '@/types/api';
 
-interface ApiResponse<T = any> {
-  success: boolean;
-  data?: T;
-  message?: string;
-  error?: string;
-}
+const BASE_URL = 'https://laravel-pkpass-backend-development-pfaawl.laravel.cloud';
 
 export const api = {
   // Authentication methods
   auth: {
     async login(email: string, password: string): Promise<ApiResponse<{ 
       user: any; 
-      access_token: string;
+      id_token: string;
       token_type: string;
     }>> {
       return fetch(`${BASE_URL}/api/auth/firebase/login`, {
@@ -41,7 +36,7 @@ export const api = {
       }).then(handleResponse);
     },
 
-    async getProfile(token: string): Promise<ApiResponse> {
+    async getProfile(token: string): Promise<ApiResponse<{ user: ProfileApiUser; company_id?: string }>> {
       return fetch(`${BASE_URL}/api/auth/profile`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -61,30 +56,56 @@ export const api = {
     },
   },
 
-  // Add other API endpoints here
-  // Example:
-  // user: {
-  //   async getProfile(userId: string, token: string) {
-  //     return fetch(`${BASE_URL}/api/users/${userId}`, {
-  //       headers: {
-  //         'Authorization': `Bearer ${token}`,
-  //         'Accept': 'application/json',
-  //       },
-  //     }).then(handleResponse);
-  //   },
-  // }
+    // Companies API
+  companies: {
+    async createCompany(data: any, token: string) {
+      return fetch(`${BASE_URL}/api/companies`, {
+        method: 'POST',
+        headers: getAuthHeader(token),
+        body: JSON.stringify(data),
+      }).then(handleResponse);
+    },
+
+    async updateCompany(companyId: string, data: any, token: string) {
+      return fetch(`${BASE_URL}/api/companies/${companyId}`, {
+        method: 'PUT',
+        headers: getAuthHeader(token),
+        body: JSON.stringify(data),
+      }).then(handleResponse);
+    },
+
+    async getCompany(companyId: string) {
+      return fetch(`${BASE_URL}/api/companies/${companyId}`).then(handleResponse);
+    },
+
+    async updateBusinessHours(companyId: string, hoursData: any, token: string) {
+      return fetch(`${BASE_URL}/api/companies/${companyId}/business-hours`, {
+        method: 'PUT',
+        headers: getAuthHeader(token),
+        body: JSON.stringify(hoursData),
+      }).then(handleResponse);
+    },
+
+    async createLocation(companyId: string, locationData: any, token: string) {
+      return fetch(`${BASE_URL}/api/companies/${companyId}/locations`, {
+        method: 'POST',
+        headers: getAuthHeader(token),
+        body: JSON.stringify(locationData),
+      }).then(handleResponse);
+    },
+  },
 };
 
 // Helper function to handle API responses
-async function handleResponse(response: Response): Promise<any> {
+async function handleResponse(response: Response): Promise<ApiResponse> {
   const data = await response.json().catch(() => ({}));
   
   if (!response.ok) {
     const error = data?.message || 'Something went wrong';
-    return Promise.reject(error);
+    return { success: false, message: error, error: error };
   }
   
-  return data;
+  return { success: true, data: data };
 }
 
 // Helper function to get auth header

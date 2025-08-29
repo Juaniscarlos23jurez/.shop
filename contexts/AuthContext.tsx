@@ -27,12 +27,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const loadUser = async () => {
-      // Only proceed if we have a token and no user data yet
-      if (token && !user) {
+      // Always attempt to fetch user if a token exists
+      if (token) {
         try {
           const response = await api.auth.getProfile(token);
-          if (response.success && response.data) {
-            setUser(response.data as UserProfile);
+          console.log('getProfile response on load:', response); // Debug log
+          if (response.success && response.data?.user) {
+            const { user: profileUser, company_id: profileCompanyId } = response.data;
+            setUser({
+              firebase_uid: profileUser.firebase_uid || profileUser.id.toString(),
+              firebase_email: profileUser.email,
+              firebase_name: profileUser.name,
+              company_id: profileCompanyId || undefined,
+            });
           } else {
             // If we can't get user data with the token, clear it
             localStorage.removeItem('token');
@@ -52,16 +59,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     loadUser();
-  }, [token, user]); // Add user to dependencies
+  }, [token]); // Removed user from dependency array
 
   const login = async (email: string, password: string) => {
     try {
       const response = await api.auth.login(email, password);
       console.log('Login response:', response); // Debug log
       
-      if (response.success) {
-        // The API returns id_token instead of access_token
-        const { id_token, user } = response as any;
+      if (response.success && response.data) {
+        const { id_token, user } = response.data;
         
         if (!id_token) {
           throw new Error('No access token received');
@@ -74,13 +80,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser({
             firebase_uid: user.uid,
             firebase_email: user.email,
-            firebase_name: user.displayName || user.email.split('@')[0]
+            firebase_name: user.displayName || user.email.split('@')[0],
+            company_id: user.company_id || undefined, // Assuming company_id might be directly in user object from login
           });
         } else {
           // If user data is not in the response, fetch it
           const profileResponse = await api.auth.getProfile(id_token);
-          if (profileResponse.success && profileResponse.data) {
-            setUser(profileResponse.data as UserProfile);
+          if (profileResponse.success && profileResponse.data?.user) {
+            const { user: profileUser, company_id: profileCompanyId } = profileResponse.data;
+            setUser({
+              id: profileUser.id,
+              name: profileUser.name,
+              email: profileUser.email,
+              phone: profileUser.phone,
+              is_active: profileUser.is_active,
+              created_at: profileUser.created_at,
+              updated_at: profileUser.updated_at,
+              firebase_uid: profileUser.firebase_uid || profileUser.id.toString(),
+              company_id: profileCompanyId || undefined,
+            });
           }
         }
       } else {
