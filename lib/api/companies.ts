@@ -1,5 +1,5 @@
 import { getAuthHeader } from './api';
-import { ApiResponse } from '@/types/api';
+import { ApiResponse, BusinessHour } from '@/types/api';
 import { Company, CreateCompanyData, UpdateCompanyData } from '@/types/company';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://laravel-pkpass-backend-development-pfaawl.laravel.cloud';
@@ -101,4 +101,23 @@ export const companiesApi = {
 
     return response.json();
   },
+
+  /**
+   * Get business hours for a company
+   */
+  async getBusinessHours(
+    companyId: string,
+    token: string
+  ): Promise<ApiResponse<{ hours: BusinessHour[] }>> {
+    const response = await fetch(`${BASE_URL}/api/companies/${companyId}/business-hours`, {
+      headers: getAuthHeader(token),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || 'Failed to fetch business hours');
+    }
+
+    return response.json();
+  }
 };

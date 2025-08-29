@@ -4,6 +4,22 @@ export interface ApiResponse<T = any> {
   message?: string;
   error?: string | any;
   raw?: any; // Raw response from the API
+  [key: string]: any;
+}
+
+export interface BusinessHour {
+  id: string;
+  company_id: string;
+  day_of_week: string;
+  is_open: boolean;
+  open_time: string | null;
+  close_time: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BusinessHoursResponse {
+  hours: BusinessHour[];
 }
 
 export interface LoginResponse {

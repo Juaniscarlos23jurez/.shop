@@ -61,17 +61,40 @@ export default function CompaniaPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [currentStep, setCurrentStep] = useState(1);
   
-  // Check for edit mode in URL
+  // Check for edit mode and step in URL
   const isEditing = searchParams.get('edit') === 'true';
+  const urlStep = searchParams.get('step');
+  
+  // Set initial step from URL
+  useEffect(() => {
+    if (isLoading) return; // Don't update step while loading
+    
+    if (isEditing) {
+      setCurrentStep(urlStep ? parseInt(urlStep) : 1);
+    } else {
+      setCurrentStep(0);
+    }
+  }, [urlStep, isEditing, isLoading]);
+  // Map Spanish day names to English for API
+  const dayNameMap: {[key: string]: string} = {
+    'Lunes': 'monday',
+    'Martes': 'tuesday',
+    'Miércoles': 'wednesday',
+    'Jueves': 'thursday',
+    'Viernes': 'friday',
+    'Sábado': 'saturday',
+    'Domingo': 'sunday'
+  };
+
   const [formData, setFormData] = useState<Partial<CompanyData>>({
     business_hours: [
-      { day_of_week: 'Lunes', is_open: true, open_time: '09:00', close_time: '18:00' },
-      { day_of_week: 'Martes', is_open: true, open_time: '09:00', close_time: '18:00' },
-      { day_of_week: 'Miércoles', is_open: true, open_time: '09:00', close_time: '18:00' },
-      { day_of_week: 'Jueves', is_open: true, open_time: '09:00', close_time: '18:00' },
-      { day_of_week: 'Viernes', is_open: true, open_time: '09:00', close_time: '18:00' },
-      { day_of_week: 'Sábado', is_open: false, open_time: '', close_time: '' },
-      { day_of_week: 'Domingo', is_open: false, open_time: '', close_time: '' },
+      { day_of_week: 'monday', is_open: true, open_time: '09:00:00', close_time: '18:00:00' },
+      { day_of_week: 'tuesday', is_open: true, open_time: '09:00:00', close_time: '18:00:00' },
+      { day_of_week: 'wednesday', is_open: true, open_time: '09:00:00', close_time: '18:00:00' },
+      { day_of_week: 'thursday', is_open: true, open_time: '09:00:00', close_time: '18:00:00' },
+      { day_of_week: 'friday', is_open: true, open_time: '09:00:00', close_time: '18:00:00' },
+      { day_of_week: 'saturday', is_open: false, open_time: '', close_time: '' },
+      { day_of_week: 'sunday', is_open: false, open_time: '', close_time: '' },
     ],
     timezone: 'America/Mexico_City',
     currency: 'MXN',
@@ -84,15 +107,18 @@ export default function CompaniaPage() {
   });
 
   // Toggle edit mode
-  const toggleEditMode = useCallback((edit: boolean) => {
-    const params = new URLSearchParams(searchParams.toString());
+  const toggleEditMode = useCallback((edit: boolean, step: number = 1) => {
+    if (isLoading) return; // Prevent toggling while loading
+    
     if (edit) {
+      const params = new URLSearchParams();
       params.set('edit', 'true');
+      params.set('step', step.toString());
+      router.push(`?${params.toString()}`, { scroll: false });
     } else {
-      params.delete('edit');
+      router.push('', { scroll: false });
     }
-    router.push(`?${params.toString()}`, { scroll: false });
-  }, [router, searchParams]);
+  }, [router, isLoading]);
 
   // Close edit mode when clicking back button
   useEffect(() => {
@@ -107,73 +133,97 @@ export default function CompaniaPage() {
   }, [isEditing, toggleEditMode]);
 
   // Fetch company data
-  useEffect(() => {
-    const fetchCompanyData = async () => {
-      if (!token) {
-        console.log('No token available');
-        setIsLoading(false);
-        return;
-      }
+  const fetchCompanyData = useCallback(async () => {
+    console.log('Starting to fetch company data...');
+    
+    if (!token) {
+      console.error('No token available');
+      setIsLoading(false);
+      return;
+    }
+    
+    try {
+      console.log('Fetching companies...');
+      const companyResponse = await api.companies.getAllCompanies(token);
+      console.log('Company response:', companyResponse);
       
-      try {
-        console.log('Fetching companies data with token:', token.substring(0, 10) + '...');
+      if (companyResponse.success) {
+        // Extract the companies array from the nested response
+        const companies = companyResponse.data?.data?.data || companyResponse.data?.data || [];
+        console.log('Companies array:', companies);
         
-        // Fetch all companies for the user
-        const response = await api.companies.getAllCompanies(token);
-        console.log('Companies API response:', response);
-        
-        if (response.success) {
-          // The API returns data in a paginated format with data array
-          const responseData = response.data;
-          const companies = responseData?.data || [];
+        if (Array.isArray(companies) && companies.length > 0) {
+          const company = companies[0];
+          console.log('Found company:', company);
           
-          if (Array.isArray(companies) && companies.length > 0) {
-            // Take the first company from the paginated response
-            const company = companies[0];
-            console.log('Setting company data:', company);
+          try {
+            console.log('Fetching business hours for company:', company.id);
+            const hoursResponse = await api.companies.getBusinessHours(company.id, token);
+            console.log('Business hours response:', hoursResponse);
             
-            setCompanyData(company);
+            // Extract business hours from the response
+            let businessHours: any[] = [];
+            if (hoursResponse?.success) {
+              const responseData = hoursResponse.data as any; // Type assertion to handle API response
+              if (Array.isArray(responseData)) {
+                businessHours = responseData;
+              } else if (responseData?.hours) {
+                businessHours = Array.isArray(responseData.hours) ? responseData.hours : [];
+              } else if (responseData?.data?.hours) {
+                businessHours = Array.isArray(responseData.data.hours) ? responseData.data.hours : [];
+              }
+            }
+            console.log('Business hours to set:', businessHours);
+            
+            const updatedCompany = {
+              ...company,
+              business_hours: businessHours || []
+            };
+            
+            console.log('Setting company data:', updatedCompany);
+            setCompanyData(updatedCompany);
+            
             setFormData(prev => ({
               ...prev,
               ...company,
-              name: company.name || '',
-              description: company.description || '',
-              address: company.address || '',
-              city: company.city || '',
-              phone: company.phone || '',
-              email: company.email || '',
-              website: company.website || '',
-              state: company.state || '',
-              country: company.country || '',
-              postal_code: company.postal_code || '',
-              business_type: company.business_type || '',
-              timezone: company.timezone || 'America/Mexico_City',
-              currency: company.currency || 'MXN',
-              language: company.language || 'es',
-              logo_url: company.logo_url || '',
-              business_hours: company.business_hours || prev.business_hours,
+              business_hours: businessHours?.length ? businessHours : (prev.business_hours || []),
               location: company.location || prev.location
             }));
-          } else {
-            console.log('No company data found in the response');
+            
+          } catch (hoursError) {
+            console.error('Error fetching business hours:', hoursError);
+            // Set company data even if hours fail
+            setCompanyData(company);
           }
         } else {
-          console.log('No company data found, user needs to complete setup');
+          console.log('No companies found in response');
+          // Set default company data if no companies found
+          setCompanyData({
+            id: 'default',
+            name: 'Nueva Empresa',
+            business_hours: []
+          });
         }
-      } catch (error) {
-        console.error('Error fetching company data:', error);
-        toast({
-          title: 'Error',
-          description: 'Error al conectar con el servidor',
-          variant: 'destructive',
-        });
-      } finally {
-        setIsLoading(false);
+      } else {
+        console.error('Failed to fetch companies:', companyResponse);
       }
-    };
+    } catch (error) {
+      console.error('Error in fetchCompanyData:', error);
+      toast({ 
+        title: 'Error', 
+        description: 'Error al cargar los datos de la empresa', 
+        variant: 'destructive' 
+      });
+      setCompanyData(null); // Ensure we don't get stuck in loading state
+    } finally {
+      console.log('Finished loading company data');
+      setIsLoading(false);
+    }
+  }, [token]);
 
+  useEffect(() => {
     fetchCompanyData();
-  }, [token]); // Depend on token instead of user?.token
+  }, [fetchCompanyData]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -196,12 +246,57 @@ export default function CompaniaPage() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!token) {
+  // Save business hours
+  const saveBusinessHours = async () => {
+    if (!token || !companyData?.id || !formData.business_hours) return;
+    
+    try {
+      // Format the business hours for the API
+      const formattedHours = formData.business_hours.map(hour => {
+        const formatTime = (time: string) => {
+          if (!time) return null;
+          // If time already has seconds, return as is, otherwise add seconds
+          return time.split(':').length === 3 ? time : `${time}:00`;
+        };
+        
+        return {
+          ...hour,
+          open_time: hour.is_open ? formatTime(hour.open_time || '') : null,
+          close_time: hour.is_open ? formatTime(hour.close_time || '') : null
+        };
+      });
+      
+      const response = await api.companies.updateBusinessHours(
+        companyData.id,
+        { hours: formattedHours },
+        token
+      );
+      
+      if (response.success) {
+        toast({
+          title: '¡Éxito!',
+          description: 'Horario comercial actualizado correctamente',
+        });
+        toggleEditMode(false);
+      } else {
+        throw new Error(response.message || 'Error al guardar los horarios');
+      }
+    } catch (error) {
+      console.error('Error saving business hours:', error);
       toast({
         title: 'Error',
-        description: 'No se encontró el token de autenticación',
+        description: error instanceof Error ? error.message : 'Error al guardar los horarios',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token || !companyData?.id) {
+      toast({
+        title: 'Error',
+        description: 'No se encontró el token de autenticación o el ID de la compañía',
         variant: 'destructive',
       });
       return;
@@ -322,8 +417,17 @@ export default function CompaniaPage() {
   // Debug log to check the current state
   console.log('Current state:', { companyData, isEditing, currentStep });
   
-  // Show the form if we're in edit mode or if we have no company data
-  const shouldShowForm = isEditing || !companyData?.id;
+  // Only show the form if we're in edit mode
+  const shouldShowForm = isEditing;
+  
+  // If we don't have company data yet, show loading
+  if (!companyData) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <span className="text-lg animate-pulse">Cargando datos de la empresa...</span>
+      </div>
+    );
+  }
   
   if (shouldShowForm) {
     return (
@@ -397,10 +501,10 @@ export default function CompaniaPage() {
                       <Button 
                         type="button"
                         className="bg-emerald-600 hover:bg-emerald-700"
-                        onClick={() => setCurrentStep(currentStep + 1)}
+                        onClick={currentStep === 2 ? saveBusinessHours : () => setCurrentStep(currentStep + 1)}
                         disabled={isLoading}
                       >
-                        Siguente: {currentStep === 2 ? 'Sucursal' : 'Siguiente'}
+                        {currentStep === 2 ? 'Guardar Horas' : 'Siguiente'}
                       </Button>
                     )}
                   </div>
@@ -420,6 +524,15 @@ export default function CompaniaPage() {
           <h1 className="text-3xl font-bold text-slate-900">Compañía</h1>
           <p className="text-slate-600 mt-1">Administra la información de tu empresa</p>
         </div>
+        {!isEditing && companyData?.business_hours?.some(bh => bh.is_open) && (
+          <Button 
+            variant="outline"
+            className="text-emerald-600 border-emerald-200 hover:bg-emerald-50"
+            onClick={() => toggleEditMode(true, 2)}
+          >
+            {companyData.business_hours.some(bh => bh.is_open) ? 'Editar Horas' : 'No completado'}
+          </Button>
+        )}
         <Button 
           className="bg-emerald-500 hover:bg-emerald-600"
           onClick={() => router.push('/dashboard/sucursales/nueva')}
@@ -600,6 +713,49 @@ export default function CompaniaPage() {
                           </a>
                         ) : 'No especificado'}
                       </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start space-x-3">
+                    <span className="text-slate-400 mt-0.5 flex-shrink-0">🕒</span>
+                    <div className="flex-1">
+                      <div className="flex justify-between items-start">
+                        <h4 className="font-medium text-slate-900">Horario Comercial</h4>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="text-emerald-600 hover:bg-emerald-50 h-8 px-2"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleEditMode(true, 2);
+                          }}
+                        >
+                          Editar Horas
+                        </Button>
+                      </div>
+                      <div className="space-y-1">
+                        {companyData?.business_hours?.some(bh => bh.is_open) ? (
+                          companyData.business_hours
+                            .filter(bh => bh.is_open)
+                            .map((day, index) => {
+                              // Convert API day name to Spanish for display
+                              const dayInSpanish = Object.entries(dayNameMap).find(
+                                ([spanish, english]) => english === day.day_of_week?.toLowerCase()
+                              )?.[0] || day.day_of_week;
+                              
+                              // Format time to remove seconds if present
+                              const formatTime = (time: string) => time ? time.split(':').slice(0, 2).join(':') : '';
+                              
+                              return (
+                                <p key={index} className="text-slate-600 text-sm">
+                                  {dayInSpanish}: {formatTime(day.open_time || '')} - {formatTime(day.close_time || '')}
+                                </p>
+                              );
+                            })
+                        ) : (
+                          <p className="text-slate-600 text-sm">No hay horarios configurados</p>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
