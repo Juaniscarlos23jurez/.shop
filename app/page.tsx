@@ -1,470 +1,530 @@
 "use client"
 
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
-import { Input } from "@/components/ui/input"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { TrendingUp, DollarSign, Users, ShoppingCart, MessageSquare, Home, Package, Settings, Star, ArrowUpRight, ArrowDownRight, Search, Bell, Menu, BarChart3, PieChart, Activity } from 'lucide-react'
-import { Area, AreaChart, Bar, BarChart, ResponsiveContainer, XAxis, YAxis, LineChart, Line } from "recharts"
+import { Card } from "@/components/ui/card"
+import Link from "next/link"
+import { Inter } from 'next/font/google'
 
-const salesData = [
-  { month: "Ene", sales: 4000, revenue: 2400 },
-  { month: "Feb", sales: 3000, revenue: 1398 },
-  { month: "Mar", sales: 2000, revenue: 9800 },
-  { month: "Abr", sales: 2780, revenue: 3908 },
-  { month: "May", sales: 1890, revenue: 4800 },
-  { month: "Jun", sales: 2390, revenue: 3800 },
-  { month: "Jul", sales: 3490, revenue: 4300 },
-  { month: "Ago", sales: 4000, revenue: 2400 },
-  { month: "Sep", sales: 3200, revenue: 3600 },
-  { month: "Oct", sales: 4100, revenue: 4800 },
-  { month: "Nov", sales: 3800, revenue: 4200 },
-  { month: "Dic", sales: 4500, revenue: 5000 },
-]
+const inter = Inter({ subsets: ['latin'] })
 
-const conversionData = [
-  { day: "Lun", conversions: 65 },
-  { day: "Mar", conversions: 78 },
-  { day: "Mié", conversions: 82 },
-  { day: "Jue", conversions: 74 },
-  { day: "Vie", conversions: 89 },
-  { day: "Sáb", conversions: 95 },
-  { day: "Dom", conversions: 71 },
-]
+export default function HomePage() {
+  const features = [
+    {
+      icon: (
+        <svg className="h-10 w-10 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+        </svg>
+      ),
+      title: "Programa de Lealtad",
+      description: "Crea un sistema de puntos personalizado para fidelizar a tus clientes."
+    },
+    {
+      icon: (
+        <svg className="h-10 w-10 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5v2m0 4v2m0 4v2m5-10a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V7a2 2 0 012-2h3.17l1.41-1.41A2 2 0 019.83 3h4.34a2 2 0 011.42.59L17.17 5H20z" />
+        </svg>
+      ),
+      title: "Cupones Digitales",
+      description: "Genera y envía cupones personalizados para impulsar las ventas recurrentes."
+    },
+    {
+      icon: (
+        <svg className="h-10 w-10 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+        </svg>
+      ),
+      title: "Notificaciones",
+      description: "Mantén a tus clientes informados con notificaciones personalizadas."
+    },
+    {
+      icon: (
+        <svg className="h-10 w-10 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+        </svg>
+      ),
+      title: "Analíticas",
+      description: "Mide el rendimiento de tu programa de fidelización con estadísticas en tiempo real."
+    }
+  ]
 
-const activityData = [
-  {
-    id: 1,
-    type: "sale",
-    title: "Nueva venta realizada",
-    description: "Producto vendido por $299",
-    time: "Hace 2 min",
-    bgColor: "bg-green-50",
-    iconColor: "text-green-600",
-    user: "Carlos M."
-  },
-  {
-    id: 2,
-    type: "comment",
-    title: "Nuevo comentario recibido",
-    description: "5 estrellas en producto #123",
-    time: "Hace 15 min",
-    bgColor: "bg-purple-50",
-    iconColor: "text-purple-600",
-    user: "Ana L."
-  },
-  {
-    id: 3,
-    type: "user",
-    title: "Usuario registrado",
-    description: "Nuevo cliente desde Instagram",
-    time: "Hace 1 hora",
-    bgColor: "bg-blue-50",
-    iconColor: "text-blue-600",
-    user: "Miguel R."
-  },
-  {
-    id: 4,
-    type: "order",
-    title: "Pedido procesado",
-    description: "Orden #1234 enviada",
-    time: "Hace 2 horas",
-    bgColor: "bg-orange-50",
-    iconColor: "text-orange-600",
-    user: "Sofia P."
-  },
-  {
-    id: 5,
-    type: "sale",
-    title: "Venta completada",
-    description: "Producto premium vendido",
-    time: "Hace 3 horas",
-    bgColor: "bg-green-50",
-    iconColor: "text-green-600",
-    user: "David K."
-  }
-]
-
-const metrics = [
-  {
-    title: "Ventas Totales",
-    value: "$45,231",
-    change: "+20.1%",
-    trend: "up",
-    icon: DollarSign,
-    bgColor: "bg-green-50",
-    iconColor: "text-green-600",
-    description: "vs mes anterior"
-  },
-  {
-    title: "Nuevos Usuarios",
-    value: "2,350",
-    change: "+15.3%",
-    trend: "up",
-    icon: Users,
-    bgColor: "bg-blue-50",
-    iconColor: "text-blue-600",
-    description: "este mes"
-  },
-  {
-    title: "Pedidos",
-    value: "1,234",
-    change: "-2.4%",
-    trend: "down",
-    icon: ShoppingCart,
-    bgColor: "bg-purple-50",
-    iconColor: "text-purple-600",
-    description: "últimos 30 días"
-  },
-  {
-    title: "Comentarios",
-    value: "573",
-    change: "+8.2%",
-    trend: "up",
-    icon: MessageSquare,
-    bgColor: "bg-orange-50",
-    iconColor: "text-orange-600",
-    description: "promedio 4.8★"
-  }
-]
-
-const sidebarItems = [
-  { icon: Home, label: "Dashboard", active: true },
-  { icon: BarChart3, label: "Analytics", active: false },
-  { icon: Package, label: "Productos", active: false },
-  { icon: MessageSquare, label: "Comentarios", active: false },
-  { icon: Users, label: "Clientes", active: false },
-  { icon: PieChart, label: "Reportes", active: false },
-  { icon: Settings, label: "Configuración", active: false },
-]
-
-export default function Dashboard() {
   return (
-    <div className="flex h-screen bg-slate-50">
-      {/* Sidebar */}
-      <div className="w-64 bg-white border-r border-slate-200 flex flex-col">
-        {/* Logo */}
-        <div className="p-6 border-b border-slate-200">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-lg flex items-center justify-center">
-              <Activity className="h-5 w-5 text-white" />
+    <div className={`min-h-screen bg-[#f8fafc] ${inter.className} antialiased`}>
+      {/* Header */}
+      <header className="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50 border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex-shrink-0 flex items-center">
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 rounded-lg bg-[#22c55e] flex items-center justify-center">
+                  <svg className="h-5 w-5 text-white" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+                  </svg>
+                </div>
+                <span className="text-xl font-bold text-gray-900">Fideliza+</span>
+              </div>
+            </div>
+            <div className="hidden md:block">
+              <div className="ml-10 flex items-center space-x-1">
+                <a href="#features" className="text-gray-600 hover:text-gray-900 px-4 py-2 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">Características</a>
+                <a href="#how-it-works" className="text-gray-600 hover:text-gray-900 px-4 py-2 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">¿Cómo funciona?</a>
+                <a href="#pricing" className="text-gray-600 hover:text-gray-900 px-4 py-2 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">Precios</a>
+                <a href="#testimonials" className="text-gray-600 hover:text-gray-900 px-4 py-2 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">Testimonios</a>
+              </div>
+            </div>
+            <div className="flex items-center space-x-3">
+              <Link href="/auth/login">
+                <Button variant="ghost" className="text-gray-600 hover:bg-gray-100">Iniciar sesión</Button>
+              </Link>
+              <Link href="/auth/register">
+                <Button className="bg-[#22c55e] hover:bg-green-600 text-white shadow-md hover:shadow-lg transition-all">Comenzar gratis</Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main>
+        {/* Hero Section */}
+        <section className="relative bg-gradient-to-br from-green-50 via-white to-green-50 overflow-hidden">
+          <div className="absolute inset-0 bg-grid-gray-100 [mask-image:linear-gradient(0deg,white,transparent)]"></div>
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28">
+            <div className="text-center max-w-4xl mx-auto">
+              <div className="inline-flex items-center space-x-2 bg-green-50 text-green-700 text-xs font-medium px-3 py-1 rounded-full mb-4">
+                <span>✨</span>
+                <span>Plataforma de fidelización #1 en Latinoamérica</span>
+              </div>
+              <h1 className="text-4xl tracking-tight font-extrabold text-gray-900 sm:text-5xl md:text-6xl">
+                <span className="block">Fideliza a tus clientes</span>
+                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-emerald-500">y haz crecer tu negocio</span>
+              </h1>
+              <p className="mt-5 max-w-2xl mx-auto text-lg text-gray-600 leading-relaxed">
+                La plataforma todo en uno para crear programas de fidelización que tus clientes amarán. Aumenta las ventas recurrentes, mejora la retención y construye relaciones duraderas con tus clientes.
+              </p>
+              <div className="mt-8 flex flex-col sm:flex-row justify-center gap-4">
+                <Link href="/auth/register" className="w-full sm:w-auto">
+                  <Button size="lg" className="w-full sm:w-auto bg-[#22c55e] hover:bg-green-600 text-white shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 transform">
+                    Comenzar gratis - Sin tarjeta
+                  </Button>
+                </Link>
+                <Link href="#video-demo" className="w-full sm:w-auto">
+                  <Button size="lg" variant="outline" className="w-full sm:w-auto border-gray-300 text-gray-700 hover:bg-gray-50 flex items-center justify-center space-x-2">
+                    <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+                    </svg>
+                    <span>Ver video demo</span>
+                  </Button>
+                </Link>
+              </div>
+              <div className="mt-8 flex items-center justify-center space-x-6 text-sm text-gray-500">
+                <div className="flex items-center">
+                  <div className="flex -space-x-2">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="h-8 w-8 rounded-full border-2 border-white bg-gray-200 overflow-hidden">
+                        <div className="w-full h-full bg-gray-300"></div>
+                      </div>
+                    ))}
+                  </div>
+                  <span className="ml-3">+2,500 negocios confían en nosotros</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+            <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
+              <div className="aspect-w-16 aspect-h-9 bg-gray-100">
+                <div className="w-full h-96 bg-gradient-to-br from-green-100 to-blue-50 flex items-center justify-center">
+                  <div className="text-center p-8">
+                    <div className="w-16 h-16 bg-white rounded-full shadow-lg flex items-center justify-center mx-auto mb-4">
+                      <svg className="h-8 w-8 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">Dashboard de Fidelización</h3>
+                    <p className="text-gray-500 text-sm">Panel de control intuitivo para gestionar tu programa de lealtad</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Video Demo Section */}
+        <section id="video-demo" className="py-16 bg-white">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <div className="mb-12">
+              <h2 className="text-3xl font-black text-[#0f172a] mb-4">
+                Descubre cómo funciona Fideliza+
+              </h2>
+              <p className="text-[#64748b] text-lg max-w-2xl mx-auto">
+                Mira nuestro video de 2 minutos y descubre cómo puedes aumentar las ventas recurrentes de tu negocio
+              </p>
+            </div>
+            <div className="aspect-w-16 aspect-h-9 bg-gray-100 rounded-2xl overflow-hidden shadow-xl">
+              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50">
+                <button className="w-20 h-20 md:w-24 md:h-24 bg-white rounded-full flex items-center justify-center shadow-lg transform transition-transform hover:scale-105">
+                  <svg className="w-10 h-10 text-[#22c55e]" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4">
+              {[
+                { number: '2,500+', label: 'Negocios' },
+                { number: '1M+', label: 'Clientes' },
+                { number: '4.9/5', label: 'Calificación' },
+                { number: '24/7', label: 'Soporte' }
+              ].map((stat, index) => (
+                <div key={index} className="bg-gray-50 p-4 rounded-xl">
+                  <div className="text-2xl font-bold text-[#0f172a]">{stat.number}</div>
+                  <div className="text-sm text-[#64748b]">{stat.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Testimonials Section */}
+        <section id="testimonials" className="py-16 bg-gray-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-black text-[#0f172a] mb-4">
+                Lo que dicen nuestros clientes
+              </h2>
+              <p className="text-[#64748b] text-lg max-w-2xl mx-auto">
+                Empresas de todos los tamaños confían en Fideliza+ para fidelizar a sus clientes
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {[
+                {
+                  quote: "Incrementamos nuestras ventas recurrentes en un 30% desde que implementamos Fideliza+. ¡Nuestros clientes aman el programa de puntos!",
+                  author: "María González",
+                  role: "Dueña de Café Aromas",
+                  avatar: "/placeholder-user.jpg"
+                },
+                {
+                  quote: "La facilidad de uso de la plataforma nos permitió lanzar nuestro programa de fidelización en cuestión de horas. ¡Excelente soporte!" ,
+                  author: "Carlos Mendoza",
+                  role: "Gerente de Tienda de Ropa",
+                  avatar: "/placeholder-user.jpg"
+                },
+                {
+                  quote: "Las analíticas integradas nos han dado información valiosa sobre el comportamiento de nuestros clientes. Una herramienta imprescindible.",
+                  author: "Ana Lucía Ramírez",
+                  role: "Directora de Marketing",
+                  avatar: "/placeholder-user.jpg"
+                }
+              ].map((testimonial, index) => (
+                <div key={index} className="bg-white p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
+                  <div className="mb-4 text-yellow-400">
+                    {[...Array(5)].map((_, i) => (
+                      <svg key={i} className="w-5 h-5 inline-block" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                      </svg>
+                    ))}
+                  </div>
+                  <p className="text-gray-600 mb-6">"{testimonial.quote}"</p>
+                  <div className="flex items-center">
+                    <img 
+                      src={testimonial.avatar} 
+                      alt={testimonial.author}
+                      className="w-12 h-12 rounded-full object-cover mr-4"
+                    />
+                    <div>
+                      <div className="font-medium text-gray-900">{testimonial.author}</div>
+                      <div className="text-sm text-gray-500">{testimonial.role}</div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Features Section */}
+        <section id="features" className="py-16 bg-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-16">
+              <h2 className="text-3xl font-black text-[#0f172a] mb-4">
+                Todo lo que necesitas para fidelizar clientes
+              </h2>
+              <p className="text-[#64748b] text-lg max-w-3xl mx-auto">
+                Herramientas poderosas diseñadas para negocios que quieren crecer
+              </p>
+            </div>
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {features.map((feature, index) => (
+                <Card key={index} className="p-6 hover:shadow-md transition-shadow duration-300 border border-gray-100 rounded-2xl">
+                  <div className="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center mb-4">
+                    {feature.icon}
+                  </div>
+                  <h3 className="text-lg font-bold text-[#0f172a] mb-2">{feature.title}</h3>
+                  <p className="text-[#64748b] text-sm leading-relaxed">{feature.description}</p>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* How It Works */}
+        <section className="py-16 bg-[#f8fafc]">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-16">
+              <h2 className="text-3xl font-black text-[#0f172a] mb-4">
+                ¿Cómo funciona?
+              </h2>
+              <p className="text-[#64748b] text-lg">
+                Comienza a fidelizar clientes en solo 3 pasos
+              </p>
+            </div>
+            <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
+              <div className="bg-white p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
+                <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-600 text-lg font-bold flex items-center justify-center mb-4 mx-auto">1</div>
+                <h3 className="text-lg font-bold text-[#0f172a] mb-2 text-center">Crea tu cuenta</h3>
+                <p className="text-[#64748b] text-sm text-center">Regístrate en minutos y configura tu negocio en nuestra plataforma.</p>
+              </div>
+              <div className="bg-white p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
+                <div className="w-12 h-12 rounded-full bg-green-50 text-green-600 text-lg font-bold flex items-center justify-center mb-4 mx-auto">2</div>
+                <h3 className="text-lg font-bold text-[#0f172a] mb-2 text-center">Personaliza tu programa</h3>
+                <p className="text-[#64748b] text-sm text-center">Configura tu sistema de puntos, beneficios y recompensas.</p>
+              </div>
+              <div className="bg-white p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
+                <div className="w-12 h-12 rounded-full bg-purple-50 text-purple-600 text-lg font-bold flex items-center justify-center mb-4 mx-auto">3</div>
+                <h3 className="text-lg font-bold text-[#0f172a] mb-2 text-center">Involucra a tus clientes</h3>
+                <p className="text-[#64748b] text-sm text-center">Comienza a enviar ofertas y ver crecer la lealtad de tus clientes.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* CTA Section */}
+        <section className="bg-[#22c55e] py-16">
+          <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
+            <h2 className="text-3xl font-black text-white mb-6">
+              ¿Listo para transformar la lealtad de tus clientes?
+            </h2>
+            <p className="text-green-100 text-lg mb-8 max-w-2xl mx-auto">
+              Únete a cientos de negocios que ya están fidelizando clientes con nuestra plataforma.
+            </p>
+            <div className="flex flex-col sm:flex-row justify-center gap-4 max-w-md mx-auto">
+              <Link href="/auth/register" className="w-full sm:w-auto">
+                <Button size="lg" className="w-full bg-white text-[#0f172a] hover:bg-gray-100 font-medium">
+                  Comenzar gratis
+                </Button>
+              </Link>
+              <Link href="#contact" className="w-full sm:w-auto">
+                <Button size="lg" variant="outline" className="w-full text-white border-white hover:bg-green-600 hover:border-green-600">
+                  Hablar con ventas
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        {/* Pricing Section */}
+        <section id="pricing" className="py-16 bg-gray-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-16">
+              <h2 className="text-3xl font-black text-[#0f172a] mb-4">
+                Precios simples y predecibles
+              </h2>
+              <p className="text-[#64748b] text-lg max-w-2xl mx-auto">
+                Elige el plan que mejor se adapte a las necesidades de tu negocio
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+              {[
+                {
+                  name: 'Básico',
+                  price: '29',
+                  period: 'mes',
+                  description: 'Perfecto para pequeños negocios que están comenzando',
+                  features: [
+                    'Hasta 500 clientes',
+                    'Programa de puntos básico',
+                    'Plantillas de correo electrónico',
+                    'Soporte por correo electrónico',
+                    'Análisis básicos'
+                  ],
+                  cta: 'Comenzar prueba gratuita',
+                  popular: false
+                },
+                {
+                  name: 'Profesional',
+                  price: '79',
+                  period: 'mes',
+                  description: 'Ideal para negocios en crecimiento',
+                  features: [
+                    'Hasta 2,000 clientes',
+                    'Programa de puntos avanzado',
+                    'Cupones y descuentos',
+                    'Soporte prioritario',
+                    'Análisis avanzados',
+                    'Integración con redes sociales'
+                  ],
+                  cta: 'Comenzar prueba gratuita',
+                  popular: true
+                },
+                {
+                  name: 'Empresarial',
+                  price: 'Personalizado',
+                  period: '',
+                  description: 'Solución personalizada para grandes empresas',
+                  features: [
+                    'Clientes ilimitados',
+                    'Programas personalizados',
+                    'API completa',
+                    'Soporte 24/7',
+                    'Análisis personalizados',
+                    'Entrenamiento dedicado',
+                    'Contrato anual'
+                  ],
+                  cta: 'Contactar ventas',
+                  popular: false
+                }
+              ].map((plan, index) => (
+                <div 
+                  key={index} 
+                  className={`relative bg-white rounded-2xl shadow-sm overflow-hidden border ${
+                    plan.popular ? 'border-2 border-[#22c55e] transform scale-105 z-10' : 'border-gray-200'
+                  }`}
+                >
+                  {plan.popular && (
+                    <div className="absolute top-0 right-0 bg-[#22c55e] text-white text-xs font-bold px-3 py-1 rounded-bl-lg">
+                      MÁS POPULAR
+                    </div>
+                  )}
+                  <div className="p-6">
+                    <h3 className="text-lg font-bold text-gray-900 mb-1">{plan.name}</h3>
+                    <div className="flex items-baseline mb-4">
+                      {plan.price === 'Personalizado' ? (
+                        <span className="text-4xl font-bold text-gray-900">Personalizado</span>
+                      ) : (
+                        <>
+                          <span className="text-4xl font-bold text-gray-900">${plan.price}</span>
+                          <span className="ml-1 text-gray-500">/{plan.period}</span>
+                        </>
+                      )}
+                    </div>
+                    <p className="text-gray-600 text-sm mb-6">{plan.description}</p>
+                    <ul className="space-y-3 mb-8">
+                      {plan.features.map((feature, i) => (
+                        <li key={i} className="flex items-center">
+                          <svg className="h-5 w-5 text-green-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                          <span className="text-gray-700">{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <button 
+                      className={`w-full py-3 px-4 rounded-lg font-medium ${
+                        plan.popular 
+                          ? 'bg-[#22c55e] text-white hover:bg-green-600' 
+                          : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
+                      } transition-colors`}
+                    >
+                      {plan.cta}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-12 text-center">
+              <p className="text-gray-600 mb-6">¿Necesitas una solución personalizada para tu negocio?</p>
+              <a 
+                href="#contact" 
+                className="inline-flex items-center text-[#22c55e] font-medium hover:text-green-600"
+              >
+                Contáctanos para una demostración personalizada
+                <svg className="ml-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
+              </a>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      {/* CTA Section */}
+      <section className="bg-[#22c55e] py-12">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
+            ¿Listo para transformar la lealtad de tus clientes?
+          </h2>
+          <p className="text-green-100 text-lg mb-8 max-w-2xl mx-auto">
+            Únete a miles de negocios que ya están aumentando sus ventas con Fideliza+
+          </p>
+          <div className="flex flex-col sm:flex-row justify-center gap-4 max-w-md mx-auto">
+            <Link href="/auth/register" className="w-full sm:w-auto">
+              <Button size="lg" className="w-full bg-white text-[#0f172a] hover:bg-gray-100 font-medium">
+                Comenzar gratis por 14 días
+              </Button>
+            </Link>
+            <Link href="#contact" className="w-full sm:w-auto">
+              <Button size="lg" variant="outline" className="w-full text-white border-white hover:bg-green-600 hover:border-green-600">
+                Hablar con ventas
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-[#0f172a] text-white">
+        <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            <div>
+              <h3 className="text-sm font-semibold text-[#94a3b8] uppercase tracking-wider mb-4">Producto</h3>
+              <ul className="space-y-3">
+                <li><a href="#features" className="text-[#e2e8f0] hover:text-white text-sm">Características</a></li>
+                <li><a href="#pricing" className="text-[#e2e8f0] hover:text-white text-sm">Precios</a></li>
+                <li><a href="#" className="text-[#e2e8f0] hover:text-white text-sm">API</a></li>
+              </ul>
             </div>
             <div>
-              <h1 className="text-lg font-bold text-slate-900">Dashboard</h1>
-              <p className="text-xs text-slate-500">Panel de control</p>
+              <h3 className="text-sm font-semibold text-[#94a3b8] uppercase tracking-wider mb-4">Empresa</h3>
+              <ul className="space-y-3">
+                <li><a href="#" className="text-[#e2e8f0] hover:text-white text-sm">Acerca de</a></li>
+                <li><a href="#" className="text-[#e2e8f0] hover:text-white text-sm">Blog</a></li>
+                <li><a href="#" className="text-[#e2e8f0] hover:text-white text-sm">Trabajos</a></li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-[#94a3b8] uppercase tracking-wider mb-4">Recursos</h3>
+              <ul className="space-y-3">
+                <li><a href="#" className="text-[#e2e8f0] hover:text-white text-sm">Documentación</a></li>
+                <li><a href="#" className="text-[#e2e8f0] hover:text-white text-sm">Guías</a></li>
+                <li><a href="#" className="text-[#e2e8f0] hover:text-white text-sm">Soporte</a></li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-[#94a3b8] uppercase tracking-wider mb-4">Legal</h3>
+              <ul className="space-y-3">
+                <li><a href="#" className="text-[#e2e8f0] hover:text-white text-sm">Privacidad</a></li>
+                <li><a href="#" className="text-[#e2e8f0] hover:text-white text-sm">Términos</a></li>
+                <li><a href="#" className="text-[#e2e8f0] hover:text-white text-sm">Seguridad</a></li>
+              </ul>
+            </div>
+          </div>
+          <div className="mt-12 pt-8 border-t border-[#1e293b]">
+            <div className="flex flex-col md:flex-row justify-between items-center">
+              <div className="flex items-center space-x-2 mb-4 md:mb-0">
+                <svg className="h-6 w-6 text-white" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+                </svg>
+                <span className="text-white font-bold">Fideliza+</span>
+              </div>
+              <p className="text-[#94a3b8] text-sm">
+                &copy; {new Date().getFullYear()} Fideliza+. Todos los derechos reservados.
+              </p>
             </div>
           </div>
         </div>
-
-        {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-2">
-          {sidebarItems.map((item, index) => (
-            <Button
-              key={index}
-              variant={item.active ? "default" : "ghost"}
-              className={`w-full justify-start h-11 ${
-                item.active 
-                  ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/25 hover:bg-emerald-600" 
-                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
-              }`}
-            >
-              <item.icon className="h-5 w-5 mr-3" />
-              {item.label}
-            </Button>
-          ))}
-        </nav>
-
-        {/* User Profile */}
-        <div className="p-4 border-t border-slate-200">
-          <div className="flex items-center space-x-3">
-            <Avatar className="h-10 w-10">
-              <AvatarImage src="/placeholder.svg?height=40&width=40" />
-              <AvatarFallback className="bg-emerald-100 text-emerald-600">JD</AvatarFallback>
-            </Avatar>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-slate-900 truncate">John Doe</p>
-              <p className="text-xs text-slate-500 truncate">john@empresa.com</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
-        <header className="bg-white border-b border-slate-200 px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Button variant="ghost" size="sm" className="lg:hidden">
-                <Menu className="h-5 w-5" />
-              </Button>
-              <div>
-                <h1 className="text-2xl font-bold text-slate-900">Dashboard Principal</h1>
-                <p className="text-sm text-slate-600">Bienvenido de vuelta, aquí tienes un resumen de tu negocio</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
-                <Input 
-                  placeholder="Buscar..." 
-                  className="pl-10 w-64 bg-slate-50 border-slate-200 focus:bg-white"
-                />
-              </div>
-              <Button variant="ghost" size="sm" className="relative">
-                <Bell className="h-5 w-5" />
-                <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 bg-emerald-500 text-white text-xs">
-                  3
-                </Badge>
-              </Button>
-            </div>
-          </div>
-        </header>
-
-        {/* Dashboard Content */}
-        <main className="flex-1 overflow-auto p-6 space-y-6">
-          {/* Metrics Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {metrics.map((metric, index) => (
-              <Card key={index} className="bg-white border-slate-100 shadow-sm rounded-2xl">
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className={`p-3 rounded-xl ${metric.bgColor}`}>
-                      <metric.icon className={`h-6 w-6 ${metric.iconColor}`} />
-                    </div>
-                    <Badge 
-                      variant="secondary" 
-                      className={`text-xs font-medium px-2 py-1 ${
-                        metric.trend === 'up' 
-                          ? 'bg-green-50 text-green-700 border-green-200' 
-                          : 'bg-red-50 text-red-700 border-red-200'
-                      }`}
-                    >
-                      {metric.trend === 'up' ? (
-                        <ArrowUpRight className="h-3 w-3 mr-1" />
-                      ) : (
-                        <ArrowDownRight className="h-3 w-3 mr-1" />
-                      )}
-                      {metric.change}
-                    </Badge>
-                  </div>
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium text-slate-500">
-                      {metric.title}
-                    </p>
-                    <p className="text-3xl font-bold text-slate-900">
-                      {metric.value}
-                    </p>
-                    <p className="text-xs text-slate-400">
-                      {metric.description}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          {/* Charts Row */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Sales Chart */}
-            <Card className="bg-white border-slate-100 shadow-sm rounded-2xl">
-              <CardHeader className="pb-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-xl font-bold text-slate-900">
-                      Ventas Mensuales
-                    </CardTitle>
-                    <CardDescription className="text-sm text-slate-600">
-                      Evolución de ventas en los últimos 12 meses
-                    </CardDescription>
-                  </div>
-                  <Badge className="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white border-0">
-                    +12.5%
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <ChartContainer
-                  config={{
-                    sales: {
-                      label: "Ventas",
-                      color: "hsl(var(--chart-1))",
-                    },
-                  }}
-                  className="h-[300px]"
-                >
-                  <AreaChart data={salesData}>
-                    <defs>
-                      <linearGradient id="salesGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="#22c55e" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <XAxis 
-                      dataKey="month" 
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fontSize: 12, fill: '#64748b' }}
-                    />
-                    <YAxis hide />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Area
-                      type="monotone"
-                      dataKey="sales"
-                      stroke="#22c55e"
-                      strokeWidth={2}
-                      fill="url(#salesGradient)"
-                    />
-                  </AreaChart>
-                </ChartContainer>
-              </CardContent>
-            </Card>
-
-            {/* Conversion Chart */}
-            <Card className="bg-white border-slate-100 shadow-sm rounded-2xl">
-              <CardHeader className="pb-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-xl font-bold text-slate-900">
-                      Conversiones Semanales
-                    </CardTitle>
-                    <CardDescription className="text-sm text-slate-600">
-                      Tasa de conversión por día de la semana
-                    </CardDescription>
-                  </div>
-                  <Badge className="bg-blue-50 text-blue-700 border-blue-200">
-                    82% avg
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <ChartContainer
-                  config={{
-                    conversions: {
-                      label: "Conversiones",
-                      color: "hsl(var(--chart-2))",
-                    },
-                  }}
-                  className="h-[300px]"
-                >
-                  <LineChart data={conversionData}>
-                    <XAxis 
-                      dataKey="day" 
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fontSize: 12, fill: '#64748b' }}
-                    />
-                    <YAxis hide />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Line
-                      type="monotone"
-                      dataKey="conversions"
-                      stroke="#3b82f6"
-                      strokeWidth={3}
-                      dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
-                      activeDot={{ r: 6, stroke: '#3b82f6', strokeWidth: 2 }}
-                    />
-                  </LineChart>
-                </ChartContainer>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Bottom Row */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Recent Activity - Takes 2 columns */}
-            <Card className="lg:col-span-2 bg-white border-slate-100 shadow-sm rounded-2xl">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-xl font-bold text-slate-900">
-                  Actividad Reciente
-                </CardTitle>
-                <CardDescription className="text-sm text-slate-600">
-                  Últimas acciones en tu negocio
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {activityData.map((activity) => (
-                  <div key={activity.id} className="flex items-start space-x-4 p-3 rounded-xl hover:bg-slate-50 transition-colors">
-                    <div className={`p-2 rounded-xl ${activity.bgColor} flex-shrink-0`}>
-                      {activity.type === 'sale' && <DollarSign className={`h-4 w-4 ${activity.iconColor}`} />}
-                      {activity.type === 'comment' && <Star className={`h-4 w-4 ${activity.iconColor}`} />}
-                      {activity.type === 'user' && <Users className={`h-4 w-4 ${activity.iconColor}`} />}
-                      {activity.type === 'order' && <ShoppingCart className={`h-4 w-4 ${activity.iconColor}`} />}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium text-slate-900">
-                          {activity.title}
-                        </p>
-                        <p className="text-xs text-slate-400">
-                          {activity.time}
-                        </p>
-                      </div>
-                      <p className="text-sm text-slate-600 mt-1">
-                        {activity.description}
-                      </p>
-                      <p className="text-xs text-slate-500 mt-1">
-                        Por {activity.user}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-
-            {/* Quick Stats */}
-            <Card className="bg-white border-slate-100 shadow-sm rounded-2xl">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-xl font-bold text-slate-900">
-                  Resumen Rápido
-                </CardTitle>
-                <CardDescription className="text-sm text-slate-600">
-                  Métricas clave de hoy
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-slate-600">Visitantes hoy</span>
-                    <span className="text-sm font-bold text-slate-900">1,234</span>
-                  </div>
-                  <div className="w-full bg-slate-100 rounded-full h-2">
-                    <div className="bg-emerald-500 h-2 rounded-full" style={{ width: '75%' }}></div>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-slate-600">Ventas hoy</span>
-                    <span className="text-sm font-bold text-slate-900">$2,847</span>
-                  </div>
-                  <div className="w-full bg-slate-100 rounded-full h-2">
-                    <div className="bg-blue-500 h-2 rounded-full" style={{ width: '60%' }}></div>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-slate-600">Conversión</span>
-                    <span className="text-sm font-bold text-slate-900">3.2%</span>
-                  </div>
-                  <div className="w-full bg-slate-100 rounded-full h-2">
-                    <div className="bg-purple-500 h-2 rounded-full" style={{ width: '45%' }}></div>
-                  </div>
-                </div>
-
-                <div className="pt-4 border-t border-slate-100">
-                  <Button className="w-full bg-emerald-500 hover:bg-emerald-600 text-white">
-                    Ver Reporte Completo
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </main>
-      </div>
+      </footer>
     </div>
   )
 }

@@ -1,0 +1,105 @@
+import { Home, BarChart3, Package, MessageSquare, Users, PieChart, Settings, Activity, Building2, GitBranch } from 'lucide-react';
+import { LogOut as LogOutIcon } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useAuth } from "@/contexts/AuthContext";
+import { useRouter } from 'next/navigation';
+
+const sidebarItems = [
+  { icon: Home, label: "Dashboard", active: true },
+  { icon: BarChart3, label: "Analytics", active: false },
+  { icon: Package, label: "Productos", active: false },
+  { icon: MessageSquare, label: "Comentarios", active: false },
+  { icon: Users, label: "Clientes", active: false },
+  { icon: Building2, label: "Compañía", active: false },
+  { icon: GitBranch, label: "Sucursal", active: false },
+  { icon: PieChart, label: "Reportes", active: false },
+  { icon: Settings, label: "Configuración", active: false },
+];
+
+export function Sidebar() {
+  const { user, logout } = useAuth();
+  const router = useRouter();
+  
+  // Get user initials for avatar fallback
+  const getUserInitials = (name?: string, email?: string) => {
+    if (name) {
+      return name
+        .split(' ')
+        .map((n) => n[0])
+        .join('')
+        .toUpperCase()
+        .substring(0, 2);
+    }
+    if (email) {
+      return email.substring(0, 2).toUpperCase();
+    }
+    return 'US';
+  };
+  return (
+    <div className="w-64 bg-white border-r border-slate-200 flex flex-col">
+      {/* Logo */}
+      <div className="p-6 border-b border-slate-200">
+        <div className="flex items-center space-x-3">
+          <div className="w-8 h-8 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-lg flex items-center justify-center">
+            <Activity className="h-5 w-5 text-white" />
+          </div>
+          <div>
+            <h1 className="text-lg font-bold text-slate-900">Dashboard</h1>
+            <p className="text-xs text-slate-500">Panel de control</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Navigation */}
+      <nav className="flex-1 p-4 space-y-2">
+        {sidebarItems.map((item, index) => (
+          <Button
+            key={index}
+            variant={item.active ? "default" : "ghost"}
+            className={`w-full justify-start h-11 ${
+              item.active 
+                ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/25 hover:bg-emerald-600" 
+                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+            }`}
+          >
+            <item.icon className="h-5 w-5 mr-3" />
+            {item.label}
+          </Button>
+        ))}
+      </nav>
+
+      {/* User Profile */}
+      <div className="p-4 border-t border-slate-200">
+        <div className="flex items-center space-x-3">
+          <Avatar className="h-10 w-10">
+            <AvatarImage src="/placeholder-user.jpg" alt={user?.firebase_name || 'User'} />
+            <AvatarFallback className="bg-emerald-100 text-emerald-600">
+              {getUserInitials(user?.firebase_name, user?.firebase_email)}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-slate-900 truncate">
+              {user?.firebase_name || 'Usuario'}
+            </p>
+            <p className="text-xs text-slate-500 truncate">
+              {user?.firebase_email || 'usuario@ejemplo.com'}
+            </p>
+          </div>
+        </div>
+        
+        <Button 
+          variant="ghost" 
+          className="w-full mt-4 justify-start text-red-600 hover:bg-red-50 hover:text-red-700"
+          onClick={async () => {
+            await logout();
+            router.push('/auth/login');
+          }}
+        >
+          <LogOutIcon className="h-4 w-4 mr-2" />
+          Cerrar sesión
+        </Button>
+      </div>
+    </div>
+  );
+}
