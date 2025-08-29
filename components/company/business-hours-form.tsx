@@ -23,7 +23,7 @@ export const BusinessHoursForm: React.FC<BusinessHoursFormProps> = ({ businessHo
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-medium text-slate-900">Horario Comercial</h3>
+      <h3 className="text-lg font-medium text-slate-900">Horario Comercia1l</h3>
       <p className="text-sm text-slate-500 mb-4">Configura los horarios de atención de tu negocio</p>
       
       {businessHours?.map((day, index) => (

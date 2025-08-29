@@ -21,12 +21,7 @@ export default function CompaniaPage() {
         <div>
           <h1 className="text-3xl font-bold text-slate-900">Compañía</h1>
           <p className="text-slate-600 mt-1">Administra la información de tu empresa</p>
-        </div>
-        <Button className="bg-emerald-500 hover:bg-emerald-600">
-          <Plus className="h-4 w-4 mr-2" />
-          Agregar Sucursal
-        </Button>
-      </div>
+        
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {/* Información Principal */}
@@ -107,11 +102,7 @@ export default function CompaniaPage() {
                   <CardTitle className="text-xl text-slate-900">Sucursales</CardTitle>
                   <CardDescription className="text-slate-600">Administra las sucursales de tu empresa</CardDescription>
                 </div>
-              </div>
-              <Button variant="outline" size="sm" className="text-emerald-600 border-emerald-200 hover:bg-emerald-50">
-                Ver Todas
-              </Button>
-            </div>
+               
           </CardHeader>
           <CardContent>
             <div className="space-y-4">

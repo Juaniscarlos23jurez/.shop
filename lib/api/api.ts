@@ -190,14 +190,56 @@ export const api = {
       }
     },
 
-    async createLocation(companyId: string, locationData: any, token: string): Promise<ApiResponse> {
+    async getCompanyLocations(companyId: string, token: string): Promise<ApiResponse<{ locations: any[] }>> {
       try {
         const response = await fetch(`${BASE_URL}/api/companies/${companyId}/locations`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          const error = await response.json().catch(() => ({}));
+          throw new Error(error.message || 'Failed to fetch company locations');
+        }
+
+        return response.json();
+      } catch (error) {
+        console.error('Error in getCompanyLocations:', error);
+        throw error;
+      }
+    },
+
+    async createLocation(companyId: string, locationData: any, token: string): Promise<ApiResponse> {
+      try {
+        console.log('Creating location with data:', {
+          companyId,
+          locationData,
+          token: token ? 'Token exists' : 'No token provided'
+        });
+        
+        const url = `${BASE_URL}/api/test/companies/${companyId}/locations`;
+        const headers = {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${token}`
+        };
+        
+        console.log('Sending request to:', url);
+        console.log('Headers:', JSON.stringify(headers, null, 2));
+        console.log('Payload:', JSON.stringify(locationData, null, 2));
+        
+        const response = await fetch(url, {
           method: 'POST',
-          headers: getAuthHeader(token),
+          headers,
           body: JSON.stringify(locationData),
         });
-        return handleResponse(response);
+        
+        const result = await handleResponse(response);
+        console.log('Location creation response:', result);
+        return result;
+        
       } catch (error) {
         console.error('Error in createLocation:', error);
         return { 
@@ -212,14 +254,71 @@ export const api = {
 
 // Helper function to handle API responses
 async function handleResponse(response: Response): Promise<ApiResponse> {
-  const data = await response.json().catch(() => ({}));
+  // Clone the response so we can read it multiple times
+  const responseClone = response.clone();
   
-  if (!response.ok) {
-    const error = data?.message || 'Something went wrong';
-    return { success: false, message: error, error: error };
+  // First, try to get the response as text to help with debugging
+  const responseText = await responseClone.text();
+  
+  let data: any;
+  try {
+    // Try to parse the response as JSON
+    data = responseText ? JSON.parse(responseText) : {};
+    
+    console.log('API Response:', {
+      status: response.status,
+      statusText: response.statusText,
+      url: response.url,
+      data: data
+    });
+  } catch (error) {
+    console.error('Failed to parse JSON response. Response text:', responseText);
+    return { 
+      success: false, 
+      message: 'Invalid server response',
+      error: `Failed to parse response as JSON. Status: ${response.status} ${response.statusText}`,
+      status: response.status,
+      statusText: response.statusText,
+      responseText: responseText
+    };
   }
   
-  return { success: true, data: data };
+  if (!response.ok) {
+    // Log detailed error information
+    console.error('API Error Response:', {
+      status: response.status,
+      statusText: response.statusText,
+      url: response.url,
+      headers: Object.fromEntries(response.headers.entries()),
+      data: data,
+      responseText: responseText
+    });
+    
+    // Try to extract error message from different response formats
+    const errorMessage = data?.message || 
+                        data?.error?.message || 
+                        data?.error || 
+                        (typeof data === 'string' ? data : null) ||
+                        response.statusText || 
+                        'An unknown error occurred';
+    
+    return { 
+      success: false, 
+      message: errorMessage,
+      error: errorMessage,
+      status: response.status,
+      statusText: response.statusText,
+      data: data,
+      responseText: responseText
+    };
+  }
+  
+  return { 
+    success: true, 
+    data: data,
+    status: response.status,
+    statusText: response.statusText
+  };
 }
 
 // Helper function to get auth header
