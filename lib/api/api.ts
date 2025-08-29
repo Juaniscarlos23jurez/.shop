@@ -56,43 +56,136 @@ export const api = {
     },
   },
 
-    // Companies API
+  // Companies API
   companies: {
-    async createCompany(data: any, token: string) {
-      return fetch(`${BASE_URL}/api/companies`, {
-        method: 'POST',
-        headers: getAuthHeader(token),
-        body: JSON.stringify(data),
-      }).then(handleResponse);
+    async getAllCompanies(token: string): Promise<ApiResponse<any>> {
+      try {
+        console.log('Making request to:', `${BASE_URL}/api/companies`);
+        const response = await fetch(`${BASE_URL}/api/companies`, {
+          headers: getAuthHeader(token),
+        });
+        
+        console.log('Response status:', response.status);
+        const data = await response.json().catch(() => ({}));
+        console.log('Raw companies response:', JSON.stringify(data, null, 2));
+        
+        if (!response.ok) {
+          const error = data?.message || 'Failed to fetch companies';
+          console.error('API Error:', { status: response.status, error });
+          return { success: false, message: error, error: error };
+        }
+        
+        // Check if the response has a data property with an array
+        if (data && typeof data === 'object' && 'data' in data) {
+          return { 
+            success: true, 
+            data: data.data,
+            raw: data
+          };
+        }
+        
+        return { 
+          success: true, 
+          data: data,
+          raw: data
+        };
+      } catch (error) {
+        console.error('Error in getAllCompanies:', error);
+        return { 
+          success: false, 
+          message: 'Network or server error',
+          error: error instanceof Error ? error.message : String(error)
+        };
+      }
     },
 
-    async updateCompany(companyId: string, data: any, token: string) {
-      return fetch(`${BASE_URL}/api/companies/${companyId}`, {
-        method: 'PUT',
-        headers: getAuthHeader(token),
-        body: JSON.stringify(data),
-      }).then(handleResponse);
+    async getCompany(companyId: string, token: string): Promise<ApiResponse> {
+      try {
+        const response = await fetch(`${BASE_URL}/api/companies/${companyId}`, {
+          headers: getAuthHeader(token),
+        });
+        return handleResponse(response);
+      } catch (error) {
+        console.error('Error in getCompany:', error);
+        return { 
+          success: false, 
+          message: 'Network or server error',
+          error: error instanceof Error ? error.message : String(error)
+        };
+      }
     },
 
-    async getCompany(companyId: string) {
-      return fetch(`${BASE_URL}/api/companies/${companyId}`).then(handleResponse);
+    async createCompany(data: any, token: string): Promise<ApiResponse> {
+      try {
+        const response = await fetch(`${BASE_URL}/api/companies`, {
+          method: 'POST',
+          headers: getAuthHeader(token),
+          body: JSON.stringify(data),
+        });
+        return handleResponse(response);
+      } catch (error) {
+        console.error('Error in createCompany:', error);
+        return { 
+          success: false, 
+          message: 'Network or server error',
+          error: error instanceof Error ? error.message : String(error)
+        };
+      }
     },
 
-    async updateBusinessHours(companyId: string, hoursData: any, token: string) {
-      return fetch(`${BASE_URL}/api/companies/${companyId}/business-hours`, {
-        method: 'PUT',
-        headers: getAuthHeader(token),
-        body: JSON.stringify(hoursData),
-      }).then(handleResponse);
+    async updateCompany(companyId: string, data: any, token: string): Promise<ApiResponse> {
+      try {
+        const response = await fetch(`${BASE_URL}/api/companies/${companyId}`, {
+          method: 'PUT',
+          headers: getAuthHeader(token),
+          body: JSON.stringify(data),
+        });
+        return handleResponse(response);
+      } catch (error) {
+        console.error('Error in updateCompany:', error);
+        return { 
+          success: false, 
+          message: 'Network or server error',
+          error: error instanceof Error ? error.message : String(error)
+        };
+      }
     },
 
-    async createLocation(companyId: string, locationData: any, token: string) {
-      return fetch(`${BASE_URL}/api/companies/${companyId}/locations`, {
-        method: 'POST',
-        headers: getAuthHeader(token),
-        body: JSON.stringify(locationData),
-      }).then(handleResponse);
+    async updateBusinessHours(companyId: string, hoursData: any, token: string): Promise<ApiResponse> {
+      try {
+        const response = await fetch(`${BASE_URL}/api/companies/${companyId}/business-hours`, {
+          method: 'PUT',
+          headers: getAuthHeader(token),
+          body: JSON.stringify(hoursData),
+        });
+        return handleResponse(response);
+      } catch (error) {
+        console.error('Error in updateBusinessHours:', error);
+        return { 
+          success: false, 
+          message: 'Network or server error',
+          error: error instanceof Error ? error.message : String(error)
+        };
+      }
     },
+
+    async createLocation(companyId: string, locationData: any, token: string): Promise<ApiResponse> {
+      try {
+        const response = await fetch(`${BASE_URL}/api/companies/${companyId}/locations`, {
+          method: 'POST',
+          headers: getAuthHeader(token),
+          body: JSON.stringify(locationData),
+        });
+        return handleResponse(response);
+      } catch (error) {
+        console.error('Error in createLocation:', error);
+        return { 
+          success: false, 
+          message: 'Network or server error',
+          error: error instanceof Error ? error.message : String(error)
+        };
+      }
+    }
   },
 };
 

@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState, useCallback } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 // Icons removed due to import issues
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -56,10 +56,13 @@ interface CompanyData {
 export default function CompaniaPage() {
   const { user, token } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [companyData, setCompanyData] = useState<CompanyData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isEditing, setIsEditing] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
+  
+  // Check for edit mode in URL
+  const isEditing = searchParams.get('edit') === 'true';
   const [formData, setFormData] = useState<Partial<CompanyData>>({
     business_hours: [
       { day_of_week: 'Lunes', is_open: true, open_time: '09:00', close_time: '18:00' },
@@ -80,6 +83,29 @@ export default function CompaniaPage() {
     }
   });
 
+  // Toggle edit mode
+  const toggleEditMode = useCallback((edit: boolean) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (edit) {
+      params.set('edit', 'true');
+    } else {
+      params.delete('edit');
+    }
+    router.push(`?${params.toString()}`, { scroll: false });
+  }, [router, searchParams]);
+
+  // Close edit mode when clicking back button
+  useEffect(() => {
+    const handleBackButton = () => {
+      if (isEditing) {
+        toggleEditMode(false);
+      }
+    };
+
+    window.addEventListener('popstate', handleBackButton);
+    return () => window.removeEventListener('popstate', handleBackButton);
+  }, [isEditing, toggleEditMode]);
+
   // Fetch company data
   useEffect(() => {
     const fetchCompanyData = async () => {
@@ -90,49 +116,49 @@ export default function CompaniaPage() {
       }
       
       try {
-        console.log('Fetching company data with token:', token.substring(0, 10) + '...');
+        console.log('Fetching companies data with token:', token.substring(0, 10) + '...');
         
-        // First, get the user's profile to get their company ID
-        const profileResponse = await api.auth.getProfile(token);
-        console.log('Profile response:', profileResponse);
+        // Fetch all companies for the user
+        const response = await api.companies.getAllCompanies(token);
+        console.log('Companies API response:', response);
         
-        if (!profileResponse.success || !profileResponse.data) {
-          throw new Error(profileResponse.message || 'Failed to fetch user profile');
-        }
-        
-        const companyId = profileResponse.data.company_id;
-        console.log('Company ID from profile:', companyId);
-        
-        if (!companyId) {
-          throw new Error('No company associated with this user');
-        }
-        
-        // Then fetch the company data
-        const response = await api.companies.getCompany(companyId);
-        console.log('Company API response:', response);
-        
-        if (response.success && response.data) {
-          // The company data might be nested under a 'company' property
-          const company = response.data.company || response.data;
-          console.log('Company data to set:', company);
+        if (response.success) {
+          // The API returns data in a paginated format with data array
+          const responseData = response.data;
+          const companies = responseData?.data || [];
           
-          setCompanyData(company);
-          setFormData({
-            name: company.name || '',
-            description: company.description || '',
-            address: company.address || '',
-            city: company.city || '',
-            phone: company.phone || '',
-            email: company.email || '',
-            website: company.website || '',
-          });
+          if (Array.isArray(companies) && companies.length > 0) {
+            // Take the first company from the paginated response
+            const company = companies[0];
+            console.log('Setting company data:', company);
+            
+            setCompanyData(company);
+            setFormData(prev => ({
+              ...prev,
+              ...company,
+              name: company.name || '',
+              description: company.description || '',
+              address: company.address || '',
+              city: company.city || '',
+              phone: company.phone || '',
+              email: company.email || '',
+              website: company.website || '',
+              state: company.state || '',
+              country: company.country || '',
+              postal_code: company.postal_code || '',
+              business_type: company.business_type || '',
+              timezone: company.timezone || 'America/Mexico_City',
+              currency: company.currency || 'MXN',
+              language: company.language || 'es',
+              logo_url: company.logo_url || '',
+              business_hours: company.business_hours || prev.business_hours,
+              location: company.location || prev.location
+            }));
+          } else {
+            console.log('No company data found in the response');
+          }
         } else {
-          console.error('Failed to fetch company data:', response.message);
-          toast({
-            title: 'Error',
-            description: response.message || 'No se pudo cargar la información de la compañía',
-            variant: 'destructive',
-          });
+          console.log('No company data found, user needs to complete setup');
         }
       } catch (error) {
         console.error('Error fetching company data:', error);
@@ -188,10 +214,29 @@ export default function CompaniaPage() {
       let currentCompanyId = companyData?.id;
       let companyResponseData = null;
 
+      // Prepare the payload for company creation/update (only send relevant fields for step 1)
+      const companyPayload: Partial<CompanyData> = {
+        name: formData.name,
+        description: formData.description,
+        address: formData.address,
+        city: formData.city,
+        phone: formData.phone,
+        email: formData.email,
+        website: formData.website,
+        state: formData.state,
+        country: formData.country,
+        postal_code: formData.postal_code,
+        business_type: formData.business_type,
+        timezone: formData.timezone,
+        currency: formData.currency,
+        language: formData.language,
+        logo_url: formData.logo_url,
+      };
+
       // 1. Create or Update Company
       if (companyData) {
         // Update existing company
-        const response = await api.companies.updateCompany(companyData.id, formData, token);
+        const response = await api.companies.updateCompany(companyData.id, companyPayload, token);
         if (response.success && response.data) {
           companyResponseData = response.data.company || response.data;
         } else {
@@ -199,7 +244,7 @@ export default function CompaniaPage() {
         }
       } else {
         // Create new company
-        const response = await api.companies.createCompany(formData, token);
+        const response = await api.companies.createCompany(companyPayload, token);
         if (response.success && response.data) {
           companyResponseData = response.data.company || response.data;
           currentCompanyId = companyResponseData.id; // Get the new company ID
@@ -215,7 +260,7 @@ export default function CompaniaPage() {
       // If we are in the first step, just save the company info and move to the next step
       if (currentStep === 1) {
         setCompanyData(companyResponseData);
-        setIsEditing(false);
+        toggleEditMode(false);
         setCurrentStep(2); // Move to the next step
         toast({
           title: '¡Éxito!',
@@ -247,7 +292,7 @@ export default function CompaniaPage() {
       
       // After all API calls are successful
       setCompanyData(companyResponseData);
-      setIsEditing(false);
+      toggleEditMode(false);
       
       toast({
         title: '¡Éxito!',
@@ -274,8 +319,13 @@ export default function CompaniaPage() {
     );
   }
 
-  // Show company creation form if no company exists
-  if (!companyData) {
+  // Debug log to check the current state
+  console.log('Current state:', { companyData, isEditing, currentStep });
+  
+  // Show the form if we're in edit mode or if we have no company data
+  const shouldShowForm = isEditing || !companyData?.id;
+  
+  if (shouldShowForm) {
     return (
       <div className="max-w-3xl mx-auto">
         <StepNavigation currentStep={currentStep} />
@@ -481,7 +531,7 @@ export default function CompaniaPage() {
                   <Button 
                     type="button" 
                     variant="outline" 
-                    onClick={() => setIsEditing(false)}
+                    onClick={() => toggleEditMode(true)}
                     disabled={isLoading}
                   >
                     Cancelar
@@ -561,7 +611,7 @@ export default function CompaniaPage() {
               <Button 
                 variant="outline" 
                 className="text-emerald-600 border-emerald-200 hover:bg-emerald-50"
-                onClick={() => setIsEditing(true)}
+                onClick={() => toggleEditMode(true)}
               >
                 Editar Información
               </Button>

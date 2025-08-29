@@ -2,7 +2,8 @@ export interface ApiResponse<T = any> {
   success: boolean;
   data?: T;
   message?: string;
-  error?: string;
+  error?: string | any;
+  raw?: any; // Raw response from the API
 }
 
 export interface LoginResponse {
