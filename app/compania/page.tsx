@@ -90,7 +90,7 @@ export default function CompaniaPage() {
           </CardContent>
           <CardFooter className="border-t border-slate-100">
             <Button variant="outline" className="text-emerald-600 border-emerald-200 hover:bg-emerald-50">
-              Editar Información
+              Editar Información  2
             </Button>
           </CardFooter>
         </Card>

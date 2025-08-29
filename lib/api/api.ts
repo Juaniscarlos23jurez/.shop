@@ -1,4 +1,4 @@
-import { ApiResponse, UserProfile, ProfileApiUser } from '@/types/api';
+import { ApiResponse, UserProfile, ProfileApiUser, BusinessHour } from '@/types/api';
 
 const BASE_URL = 'https://laravel-pkpass-backend-development-pfaawl.laravel.cloud';
 
@@ -58,6 +58,27 @@ export const api = {
 
   // Companies API
   companies: {
+    /**
+     * Get business hours for a company
+     */
+    async getBusinessHours(
+      companyId: string,
+      token: string
+    ): Promise<ApiResponse<{ hours: BusinessHour[] }>> {
+      try {
+        const response = await fetch(`${BASE_URL}/api/companies/${companyId}/business-hours`, {
+          headers: getAuthHeader(token),
+        });
+        return handleResponse(response);
+      } catch (error) {
+        console.error('Error in getBusinessHours:', error);
+        return { 
+          success: false, 
+          message: 'Network or server error',
+          error: error instanceof Error ? error.message : String(error)
+        };
+      }
+    },
     async getAllCompanies(token: string): Promise<ApiResponse<any>> {
       try {
         console.log('Making request to:', `${BASE_URL}/api/companies`);
