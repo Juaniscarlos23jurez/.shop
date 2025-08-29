@@ -1,6 +1,21 @@
 "use client";
 
-import { Home, BarChart3, Package, MessageSquare, Users, PieChart, Settings, Activity, Building2, GitBranch } from 'lucide-react';
+import { 
+  Home, 
+  BarChart3, 
+  Package, 
+  MessageSquare, 
+  Users, 
+  PieChart, 
+  Settings, 
+  Activity, 
+  Building2, 
+  GitBranch,
+  Ticket as TicketIcon,
+  Gift as GiftIcon,
+  Bell as BellIcon,
+  Crown as CrownIcon
+} from 'lucide-react';
 import { LogOut as LogOutIcon } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -8,15 +23,27 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from 'next/navigation';
 
 const sidebarItems = [
+  // Main sections
   { icon: Home, label: "Dashboard", href: "/dashboard" },
-  { icon: BarChart3, label: "Analytics", href: "/analytics" },
-  { icon: Package, label: "Productos", href: "/productos" },
-  { icon: MessageSquare, label: "Comentarios", href: "/comentarios" },
-  { icon: Users, label: "Clientes", href: "/clientes" },
+ 
+  // Core business
+  { icon: Package, label: "Productos", href: "/dashboard/productos" },
+  { icon: Users, label: "Clientes", href: "/dashboard/clientes" },
+  { icon: CrownIcon, label: "Membresías", href: "/dashboard/membresias" },
+  { icon: GiftIcon, label: "Puntos", href: "/dashboard/puntos" },
+  { icon: TicketIcon, label: "Cupones", href: "/dashboard/cupones" },
+ 
+  // Communication & Feedback
+  { icon: MessageSquare, label: "Comentarios", href: "/dashboard/comentarios" },
+  { icon: BellIcon, label: "Notificaciones", href: "/dashboard/notificaciones" },
+  
+  // Reports & Settings
+  { icon: BarChart3, label: "Analytics", href: "/dashboard/analytics" },
+  { icon: PieChart, label: "Reportes", href: "/dashboard/reportes" },
   { icon: Building2, label: "Compañía", href: "/dashboard/compania" },
-  { icon: GitBranch, label: "Sucursal", href: "/sucursales" },
-  { icon: PieChart, label: "Reportes", href: "/reportes" },
-  { icon: Settings, label: "Configuración", href: "/configuracion" },
+  { icon: GitBranch, label: "Sucursales", href: "/dashboard/sucursales" },
+
+  { icon: Settings, label: "Configuración", href: "/dashboard/configuracion" },
 ];
 
 export function Sidebar() {
@@ -40,7 +67,7 @@ export function Sidebar() {
     return 'US';
   };
   return (
-    <div className="w-64 bg-white border-r border-slate-200 flex flex-col">
+    <div className="w-64 h-screen bg-white border-r border-slate-200 flex flex-col">
       {/* Logo */}
       <div className="p-6 border-b border-slate-200">
         <div className="flex items-center space-x-3">
@@ -55,7 +82,7 @@ export function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-2">
+      <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
         {sidebarItems.map((item, index) => {
           const isActive = pathname === item.href || 
                          (pathname.startsWith(item.href) && item.href !== '/dashboard');
@@ -78,7 +105,7 @@ export function Sidebar() {
       </nav>
 
       {/* User Profile */}
-      <div className="p-4 border-t border-slate-200">
+      <div className="p-4 border-t border-slate-200 mt-auto">
         <div className="flex items-center space-x-3">
           <Avatar className="h-10 w-10">
             <AvatarImage src="/placeholder-user.jpg" alt={user?.firebase_name || 'User'} />

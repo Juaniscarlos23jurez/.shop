@@ -164,27 +164,6 @@ export default function Dashboard() {
 
   return (
     <div className="flex h-screen bg-gray-50">
-      {/* Sidebar */}
-      <div className="hidden lg:flex">
-        <Sidebar />
-      </div>
-
-      {/* Mobile sidebar backdrop */}
-      {isSidebarOpen && (
-        <div 
-          className={`fixed inset-0 z-40 lg:hidden ${isSidebarOpen ? 'block' : 'hidden'}`}
-          onClick={() => setIsSidebarOpen(false)}
-        ></div>
-      )}
-
-      {/* Mobile sidebar */}
-      <div 
-        className={`fixed inset-y-0 left-0 z-50 w-64 transform ${
-          isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        } transition-transform duration-300 ease-in-out lg:hidden`}
-      >
-        <Sidebar />
-      </div>
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">

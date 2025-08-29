@@ -119,5 +119,63 @@ export const companiesApi = {
     }
 
     return response.json();
-  }
+  },
+
+  /**
+   * Create a new location for a company
+   */
+  async createLocation(
+    companyId: string, 
+    locationData: any, 
+    token: string
+  ): Promise<ApiResponse<any>> {
+    const response = await fetch(`${BASE_URL}/api/companies/${companyId}/locations`, {
+      method: 'POST',
+      headers: getAuthHeader(token),
+      body: JSON.stringify(locationData),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || 'Failed to create location');
+    }
+
+    return response.json();
+  },
+
+  /**
+   * Get all locations for a company
+   */
+  async getCompanyLocations(companyId: string, token: string): Promise<ApiResponse<{ locations: any[] }>> {
+    const url = `${BASE_URL}/api/companies/${companyId}/locations`;
+    console.log('Fetching company locations from:', url);
+    
+    const response = await fetch(url, {
+      headers: getAuthHeader(token),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      console.error('Error fetching company locations:', error);
+      throw new Error(error.message || 'Failed to fetch company locations');
+    }
+
+    return response.json();
+  },
+
+  /**
+   * Get location by ID
+   */
+  async getLocation(locationId: string, token: string): Promise<ApiResponse<{ location: any }>> {
+    const response = await fetch(`${BASE_URL}/api/locations/${locationId}`, {
+      headers: getAuthHeader(token),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || 'Failed to fetch location details');
+    }
+
+    return response.json();
+  },
 };
