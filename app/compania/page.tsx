@@ -103,7 +103,7 @@ export default function CompaniaPage() {
                   <CardTitle className="text-xl text-slate-900">Sucursales</CardTitle>
                   <CardDescription className="text-slate-600">Administra las sucursales de tu empresa</CardDescription>
                 </div>
-               
+              </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
