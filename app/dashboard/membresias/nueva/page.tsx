@@ -1,39 +1,66 @@
 'use client';
 
+'use client';
+
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, X, Check, Truck, Gift, Calendar, Percent, Package, Tag, Award } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Plus, X, Check, Truck, Percent } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { api } from '@/lib/api/api';
+
+// Valid benefit types according to the API
+type ValidBenefitType = 'shipping' | 'discount' | 'custom';
 
 type Benefit = {
   id: string;
   text: string;
-  type: 'text' | 'discount' | 'gift' | 'event' | 'shipping' | 'custom';
+  type: ValidBenefitType;
   value?: number;
   description?: string;
 };
 
 export default function NewMembershipPage() {
   const router = useRouter();
+  const { token, user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [benefits, setBenefits] = useState<Benefit[]>([]);
   const [newBenefit, setNewBenefit] = useState('');
-  const [formData, setFormData] = useState({
+  interface FormData {
+    name: string;
+    description: string;
+    price: string;
+    duration: string;
+    durationUnit: 'months' | 'years';
+    discount: string;
+    isRecurring: boolean;
+    welcomeGift: boolean;
+    birthdayGift: boolean;
+    earlyRenewalDiscount: string;
+    maxUsers: string;
+    validFrom: string;
+    validUntil: string;
+  }
+
+  const [formData, setFormData] = useState<FormData>({
     name: '',
     description: '',
     price: '',
     duration: '1',
-    durationUnit: 'months' as 'months' | 'years',
+    durationUnit: 'months',
     discount: '0',
     isRecurring: true,
     welcomeGift: false,
     birthdayGift: false,
-    earlyRenewalDiscount: '0',
+    earlyRenewalDiscount: '',
     maxUsers: '',
+    validFrom: new Date().toISOString().split('T')[0], // Default to today
+    validUntil: '',
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -44,11 +71,11 @@ export default function NewMembershipPage() {
     }));
   };
 
-  const addBenefit = (type: Benefit['type'] = 'custom', text: string = '') => {
+  const addBenefit = (type: ValidBenefitType = 'custom', text: string = '') => {
     const benefit: Benefit = {
       id: Date.now().toString(),
       text: text || newBenefit,
-      type,
+      type: type as ValidBenefitType,
     };
 
     if (type === 'discount') {
@@ -57,16 +84,19 @@ export default function NewMembershipPage() {
     } else if (type === 'shipping') {
       benefit.text = 'Envío gratuito';
       benefit.description = 'Envío gratuito en todos los pedidos';
-    } else if (type === 'gift') {
-      benefit.text = 'Producto de regalo';
-      benefit.description = 'Producto exclusivo para miembros';
-    } else if (type === 'event') {
-      benefit.text = 'Acceso a eventos especiales';
-      benefit.description = 'Invitaciones exclusivas a eventos';
+    } else if (type === 'custom') {
+      benefit.description = benefit.description || 'Beneficio personalizado';
     }
 
     setBenefits([...benefits, benefit]);
     if (type === 'custom') {
+      setNewBenefit('');
+    }
+  };
+
+  const handleAddBenefit = () => {
+    if (newBenefit.trim()) {
+      addBenefit('custom', newBenefit);
       setNewBenefit('');
     }
   };
@@ -77,25 +107,76 @@ export default function NewMembershipPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     setIsSubmitting(true);
 
     try {
-      // TODO: Replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      if (!token) {
+        throw new Error('No estás autenticado. Por favor inicia sesión nuevamente.');
+      }
+
+      // Get company ID from the authenticated user or fetch it
+      let companyId: string | undefined = user?.company_id;
       
-      // Simulate API call
-      console.log('Creating membership:', {
-        ...formData,
-        benefits: benefits.map(b => b.text),
-        price: parseFloat(formData.price),
-        duration: parseInt(formData.duration),
-        discount: parseInt(formData.discount)
-      });
+      // If company ID is not in user object, try to fetch it
+      if (!companyId) {
+        const profileResponse = await api.auth.getProfile(token);
+        if (profileResponse.success && profileResponse.data?.company_id) {
+          companyId = profileResponse.data.company_id;
+        } else {
+          // If still no company ID, try to get the first company
+          const companiesResponse = await api.companies.getAllCompanies(token);
+          console.log('Companies response:', companiesResponse); // Debug log
+          if (companiesResponse.success && companiesResponse.data?.data?.length > 0) {
+            // Access the first company from the paginated data
+            companyId = companiesResponse.data.data[0].id;
+          }
+        }
+      }
       
-      // Redirect to memberships list after creation
+      // If we still don't have a company ID, throw an error
+      if (!companyId) {
+        throw new Error('No se encontró ninguna compañía asociada a tu cuenta.');
+      }
+
+      // Format the data according to the API
+      const membershipData = {
+        name: formData.name,
+        description: formData.description,
+        price: parseFloat(formData.price) || 0,
+        duration: parseInt(formData.duration) || 1,
+        duration_unit: formData.durationUnit,
+        is_recurring: formData.isRecurring,
+        welcome_gift: formData.welcomeGift,
+        birthday_gift: formData.birthdayGift,
+        early_renewal_discount: formData.earlyRenewalDiscount ? parseInt(formData.earlyRenewalDiscount) : null,
+        max_users: formData.maxUsers ? parseInt(formData.maxUsers) : null,
+        valid_from: formData.validFrom ? `${formData.validFrom} 00:00:00` : null,
+        valid_until: formData.validUntil ? `${formData.validUntil} 23:59:59` : null,
+        benefits: benefits
+          .filter(benefit => benefit.text.trim() !== '')
+          .map(benefit => ({
+            text: benefit.text,
+            type: benefit.type,
+            description: benefit.description || ''
+          }))
+      };
+      
+      console.log('Sending membership data:', membershipData);
+      
+      // Call the API
+      const response = await api.memberships.createMembership(companyId.toString(), membershipData, token);
+      
+      if (!response.success) {
+        throw new Error(response.message || 'Error al crear la membresía');
+      }
+      
+      // Redirect to memberships list on success
       router.push('/dashboard/membresias');
+      
     } catch (error) {
       console.error('Error creating membership:', error);
+      setError(error instanceof Error ? error.message : 'Ocurrió un error al crear la membresía');
     } finally {
       setIsSubmitting(false);
     }
@@ -110,6 +191,13 @@ export default function NewMembershipPage() {
         </p>
       </div>
 
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+          <strong className="font-bold">Error: </strong>
+          <span className="block sm:inline">{error}</span>
+        </div>
+      )}
+      
       <form onSubmit={handleSubmit}>
         <div className="grid gap-6">
           <Card>
@@ -297,31 +385,11 @@ export default function NewMembershipPage() {
                       type="button" 
                       variant="outline" 
                       size="sm"
-                      onClick={() => addBenefit('gift')}
-                      disabled={benefits.some(b => b.type === 'gift')}
-                    >
-                      <Gift size={16} className="mr-2" />
-                      Producto de regalo
-                    </Button>
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => addBenefit('event')}
-                      disabled={benefits.some(b => b.type === 'event')}
-                    >
-                      <Calendar size={16} className="mr-2" />
-                      Eventos especiales
-                    </Button>
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      size="sm"
                       onClick={() => addBenefit('discount')}
                       disabled={benefits.some(b => b.type === 'discount')}
                     >
                       <Percent size={16} className="mr-2" />
-                      Descuento adicional
+                      Descuento especial
                     </Button>
                   </div>
                 </div>
@@ -333,7 +401,7 @@ export default function NewMembershipPage() {
                       type="button" 
                       variant="ghost" 
                       size="sm"
-                      onClick={() => addBenefit('custom')}
+                      onClick={handleAddBenefit}
                       disabled={!newBenefit.trim()}
                     >
                       <Plus className="h-4 w-4 mr-1" />
@@ -349,54 +417,53 @@ export default function NewMembershipPage() {
                     />
                   </div>
                 </div>
-                
-                {benefits.length > 0 && (
-                  <div className="mt-2 space-y-2">
-                    {benefits.map((benefit) => (
-                      <div key={benefit.id} className="flex items-start justify-between p-3 bg-muted rounded-md">
-                        <div>
-                          <div className="font-medium">{benefit.text}</div>
-                          {benefit.description && (
-                            <p className="text-sm text-muted-foreground">{benefit.description}</p>
-                          )}
-                          {benefit.type === 'discount' && benefit.value && (
-                            <div className="mt-1">
-                              <Label className="text-xs">Valor del descuento</Label>
-                              <div className="flex items-center gap-2">
-                                <Input 
-                                  type="number" 
-                                  value={benefit.value}
-                                  onChange={(e) => {
-                                    const value = parseInt(e.target.value);
-                                    setBenefits(benefits.map(b => 
-                                      b.id === benefit.id 
-                                        ? {...b, value: isNaN(value) ? 0 : value} 
-                                        : b
-                                    ));
-                                  }}
-                                  className="h-8 w-20"
-                                  min="1"
-                                  max="100"
-                                />
-                                <span className="text-sm text-muted-foreground">%</span>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                          onClick={() => removeBenefit(benefit.id)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
+          {benefits.length > 0 && (
+            <div className="mt-2 space-y-2">
+              {benefits.map((benefit) => (
+                <div key={benefit.id} className="flex items-start justify-between p-3 bg-muted rounded-md">
+                  <div>
+                    <div className="font-medium">{benefit.text}</div>
+                    {benefit.description && (
+                      <p className="text-sm text-muted-foreground">{benefit.description}</p>
+                    )}
+                    {benefit.type === 'discount' && (
+                      <div className="mt-1">
+                        <Label className="text-xs">Valor del descuento</Label>
+                        <div className="flex items-center gap-2">
+                          <Input 
+                            type="number" 
+                            value={benefit.value}
+                            onChange={(e) => {
+                              const value = parseInt(e.target.value);
+                              setBenefits(benefits.map(b => 
+                                b.id === benefit.id 
+                                  ? {...b, value: isNaN(value) ? 0 : value} 
+                                  : b
+                              ));
+                            }}
+                            className="h-8 w-20"
+                            min="1"
+                            max="100"
+                          />
+                          <span className="text-sm text-muted-foreground">%</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                    onClick={() => removeBenefit(benefit.id)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
             </CardContent>
           </Card>
 

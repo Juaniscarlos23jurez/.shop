@@ -49,3 +49,31 @@ export interface ProfileApiUser {
   updated_at: string;
   firebase_uid?: string; // Add firebase_uid as it might be useful
 }
+
+export interface Benefit {
+  text: string;
+  type: string;
+  description: string;
+  sort_order?: number;
+}
+
+export interface Membership {
+  id: number;
+  company_id: string;
+  name: string;
+  description: string;
+  price: number;
+  duration: number;
+  duration_unit: 'months' | 'years';
+  is_recurring: boolean;
+  welcome_gift: boolean;
+  birthday_gift: boolean;
+  early_renewal_discount: number | null;
+  max_users: number | null;
+  is_active: boolean;
+  valid_from: string;
+  valid_until: string | null;
+  benefits: Benefit[];
+  created_at: string;
+  updated_at: string;
+}

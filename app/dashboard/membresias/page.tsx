@@ -6,63 +6,58 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatCurrency } from '@/lib/utils/currency';
 import { Plus, User as UserIcon, Clock as ClockIcon, Tag as TagIcon, Percent as PercentIcon, Check as CheckIcon } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { api } from '@/lib/api/api';
 
-type Membership = {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  duration: number; // in months
-  discount: number; // percentage
-  benefits: string[];
-  memberCount: number;
-  isActive: boolean;
-  createdAt: string;
-};
+import { Benefit, Membership } from '@/types/api';
 
 export default function MembershipsPage() {
   const router = useRouter();
   const [memberships, setMemberships] = useState<Membership[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const { token, user } = useAuth();
 
   useEffect(() => {
-    // TODO: Replace with actual API call
     const fetchMemberships = async () => {
       try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 500));
+        if (!token) {
+          throw new Error('No estás autenticado');
+        }
+
+        let companyId = user?.company_id;
         
-        // Mock data - replace with actual API call
-        const mockMemberships: Membership[] = [
-          {
-            id: '1',
-            name: 'Premium',
-            description: 'Acceso completo a todos los beneficios',
-            price: 299,
-            duration: 12,
-            discount: 15,
-            benefits: ['15% de descuento en compras', 'Envío gratuito', 'Acceso prioritario'],
-            memberCount: 45,
-            isActive: true,
-            createdAt: '2023-01-15T00:00:00Z'
-          },
-          {
-            id: '2',
-            name: 'Básica',
-            description: 'Beneficios básicos para empezar',
-            price: 99,
-            duration: 6,
-            discount: 5,
-            benefits: ['5% de descuento en compras', 'Ofertas exclusivas'],
-            memberCount: 120,
-            isActive: true,
-            createdAt: '2023-03-10T00:00:00Z'
+        if (!companyId) {
+          const profileResponse = await api.auth.getProfile(token);
+          if (profileResponse.success && profileResponse.data?.company_id) {
+            companyId = profileResponse.data.company_id;
+          } else {
+            const companiesResponse = await api.companies.getAllCompanies(token);
+            if (companiesResponse.success && companiesResponse.data?.data?.length > 0) {
+              companyId = companiesResponse.data.data[0].id;
+            }
           }
-        ];
+        }
+
+        if (!companyId) {
+          throw new Error('No se encontró ninguna compañía asociada a tu cuenta');
+        }
+
+        const response = await api.memberships.getMemberships(companyId, token);
         
-        setMemberships(mockMemberships);
+        if (!response.success) {
+          throw new Error(response.message || 'Error al obtener las membresías');
+        }
+        
+        if (response.data?.data?.data) {
+          setMemberships(response.data.data.data);
+        } else {
+          setMemberships([]);
+        }
       } catch (error) {
         console.error('Error fetching memberships:', error);
+        // TODO: Mostrar mensaje de error al usuario
       } finally {
         setIsLoading(false);
       }
@@ -98,7 +93,7 @@ export default function MembershipsPage() {
         </Button>
       </div>
 
-      {/* Summary Cards */}
+          {/* Summary Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -121,14 +116,14 @@ export default function MembershipsPage() {
           <CardContent>
             <div className="text-2xl font-bold">{memberships.length}</div>
             <p className="text-xs text-muted-foreground">
-              {memberships.filter(m => m.isActive).length} activas
+              {memberships.filter(m => m.is_active).length} activas
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Miembros</CardTitle>
+            <CardTitle className="text-sm font-medium">Membresías Activas</CardTitle>
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
@@ -139,52 +134,30 @@ export default function MembershipsPage() {
               strokeWidth="2"
               className="h-4 w-4 text-muted-foreground"
             >
-              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-              <circle cx="9" cy="7" r="4" />
-              <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+              <path d="M12 2v4" />
+              <path d="m16 4-2 2" />
+              <path d="M18 12h4" />
+              <path d="m20 8-2-2" />
+              <path d="M4 12H0" />
+              <path d="m2 8 2-2" />
+              <path d="M2 16l2 2" />
+              <path d="M12 22v-4" />
+              <path d="m8 20 2-2" />
+              <path d="m16 20-2 2" />
+              <path d="M22 12h-4" />
             </svg>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {memberships.reduce((sum, m) => sum + m.memberCount, 0)}
-            </div>
+            <div className="text-2xl font-bold">{memberships.filter(m => m.is_active).length}</div>
             <p className="text-xs text-muted-foreground">
-              +12% desde el mes pasado
+              {memberships.length > 0 ? Math.round((memberships.filter(m => m.is_active).length / memberships.length) * 100) : 0}% del total
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Ingresos Mensuales</CardTitle>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              className="h-4 w-4 text-muted-foreground"
-            >
-              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-            </svg>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {memberships
-                .reduce((sum, m) => sum + (m.price * m.memberCount / m.duration), 0)
-                .toLocaleString('es-MX', { style: 'currency', currency: 'MXN' })}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              +8.1% desde el mes pasado
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Ingresos Anuales</CardTitle>
+            <CardTitle className="text-sm font-medium">Ingresos Totales</CardTitle>
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
@@ -200,18 +173,45 @@ export default function MembershipsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {memberships
-                .reduce((sum, m) => sum + (m.price * m.memberCount * 12 / m.duration), 0)
-                .toLocaleString('es-MX', { style: 'currency', currency: 'MXN' })}
+              {new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(
+                memberships.reduce((total, m) => total + (m.price || 0), 0)
+              )}
             </div>
             <p className="text-xs text-muted-foreground">
-              +19% desde el año pasado
+              {memberships.length > 0 ? Math.round(memberships.reduce((sum, m) => sum + (m.price || 0), 0) / memberships.length) : 0} promedio por membresía
             </p>
           </CardContent>
         </Card>
-      </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Duración Promedio</CardTitle>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              className="h-4 w-4 text-muted-foreground"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <path d="M12 6v6l4 2" />
+            </svg>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {memberships.length > 0 
+                ? Math.round(memberships.reduce((sum, m) => sum + (m.duration || 0), 0) / memberships.length) 
+                : 0} meses
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {memberships.filter(m => m.is_recurring).length} con renovación automática
+            </p>
+          </CardContent>
+        </Card>
+      </div>      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {memberships.map((membership) => (
           <Card key={membership.id} className="overflow-hidden">
             <CardHeader className="bg-gradient-to-r from-emerald-50 to-emerald-50 p-6">
@@ -234,12 +234,37 @@ export default function MembershipsPage() {
             <CardContent className="p-6">
               <div className="space-y-4">
                 <div className="flex items-center text-sm">
-                  <UserIcon className="mr-2 h-4 w-4 text-muted-foreground" />
-                  <span>{membership.memberCount} miembros</span>
+                  <ClockIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+                  <span>{membership.duration} {membership.duration_unit}</span>
                 </div>
-                <div className="flex items-center text-sm">
-                  <PercentIcon className="mr-2 h-4 w-4 text-muted-foreground" />
-                  <span>{membership.discount}% de descuento</span>
+                {membership.early_renewal_discount && (
+                  <div className="flex items-center text-sm">
+                    <PercentIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+                    <span>{membership.early_renewal_discount}% descuento por renovación anticipada</span>
+                  </div>
+                )}
+                {membership.max_users && (
+                  <div className="flex items-center text-sm">
+                    <UserIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+                    <span>Límite: {membership.max_users} usuarios</span>
+                  </div>
+                )}
+                <div className="flex flex-wrap gap-2">
+                  {membership.welcome_gift && (
+                    <span className="inline-flex items-center rounded-md bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
+                      Regalo de bienvenida
+                    </span>
+                  )}
+                  {membership.birthday_gift && (
+                    <span className="inline-flex items-center rounded-md bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
+                      Regalo de cumpleaños
+                    </span>
+                  )}
+                  {membership.is_recurring && (
+                    <span className="inline-flex items-center rounded-md bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
+                      Renovación automática
+                    </span>
+                  )}
                 </div>
                 <div className="pt-2">
                   <h4 className="mb-2 text-sm font-medium">Beneficios:</h4>
@@ -247,7 +272,12 @@ export default function MembershipsPage() {
                     {membership.benefits.map((benefit, index) => (
                       <li key={index} className="flex items-center text-sm">
                         <span className="mr-2 h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
-                        {benefit}
+                        <div>
+                          <div className="font-medium">{benefit.text}</div>
+                          {benefit.description && (
+                            <p className="text-xs text-muted-foreground">{benefit.description}</p>
+                          )}
+                        </div>
                       </li>
                     ))}
                   </ul>

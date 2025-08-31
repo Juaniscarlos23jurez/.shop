@@ -1,7 +1,7 @@
  found the endpoint for adding a new location. Here's how to use it:
 
 bash
-curl -X POST "https://laravel-pkpass-backend-development-pfaawl.laravel.cloud/api/companies/YOUR_COMPANY_ID/locations" \
+curl -X POST "http://127.0.0.1:8000/api/companies/YOUR_COMPANY_ID/locations" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -d '{
@@ -39,11 +39,11 @@ y para ver
 Para ver las ubicaciones de una compañía, usa este endpoint:
 
 bash
-curl -X GET "https://laravel-pkpass-backend-development-pfaawl.laravel.cloud/api/companies/YOUR_COMPANY_ID/locations"
+curl -X GET "http://127.0.0.1:8000/api/companies/YOUR_COMPANY_ID/locations"
 Para ver los detalles de una ubicación específica:
 
 bash
-curl -X GET "https://laravel-pkpass-backend-development-pfaawl.laravel.cloud/api/locations/LOCATION_ID"
+curl -X GET "http://127.0.0.1:8000/api/locations/LOCATION_ID"
 Reemplaza:
 
 YOUR_COMPANY_ID con el ID de tu compañía
