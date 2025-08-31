@@ -2,7 +2,7 @@ import { getAuthHeader } from './api';
 import { ApiResponse, BusinessHour } from '@/types/api';
 import { Company, CreateCompanyData, UpdateCompanyData } from '@/types/company';
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://laravel-pkpass-backend-development-pfaawl.laravel.cloud';
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 
 export const companiesApi = {
   /**

@@ -20,7 +20,7 @@ import { LogOut as LogOutIcon } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 
 const sidebarItems = [
   // Main sections
@@ -49,7 +49,7 @@ const sidebarItems = [
 export function Sidebar() {
   const { user, logout } = useAuth();
   const router = useRouter();
-  const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
+  const pathname = usePathname() || '';
   
   // Get user initials for avatar fallback
   const getUserInitials = (name?: string, email?: string) => {

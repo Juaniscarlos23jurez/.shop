@@ -1,6 +1,6 @@
-import { ApiResponse, UserProfile, ProfileApiUser, BusinessHour } from '@/types/api';
+import { ApiResponse, UserProfile, ProfileApiUser, BusinessHour, Membership } from '@/types/api';
 
-const BASE_URL = 'https://laravel-pkpass-backend-development-pfaawl.laravel.cloud';
+const BASE_URL = 'http://127.0.0.1:8000';
 
 export const api = {
   // Authentication methods
@@ -249,6 +249,87 @@ export const api = {
         };
       }
     }
+  },
+
+  // Memberships API
+  memberships: {
+    /**
+     * Create a new membership for a company
+     */
+    async createMembership(
+      companyId: string,
+      data: any,
+      token: string
+    ): Promise<ApiResponse<{ membership: any }>> {
+      return fetch(`${BASE_URL}/api/companies/${companyId}/memberships`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify(data)
+      }).then(handleResponse);
+    },
+
+    /**
+     * Get all memberships for a company
+     */
+    async getMemberships(
+      companyId: string,
+      token: string
+    ): Promise<ApiResponse<{ 
+      data: {
+        data: Membership[];
+        current_page: number;
+        last_page: number;
+        total: number;
+      }
+    }>> {
+      return fetch(`${BASE_URL}/api/companies/${companyId}/memberships`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+        },
+      }).then(handleResponse);
+    },
+
+    /**
+     * Update a membership
+     */
+    async updateMembership(
+      companyId: string,
+      membershipId: string,
+      data: any,
+      token: string
+    ): Promise<ApiResponse<{ membership: any }>> {
+      return fetch(`${BASE_URL}/api/companies/${companyId}/memberships/${membershipId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify(data)
+      }).then(handleResponse);
+    },
+
+    /**
+     * Delete a membership
+     */
+    async deleteMembership(
+      companyId: string,
+      membershipId: string,
+      token: string
+    ): Promise<ApiResponse> {
+      return fetch(`${BASE_URL}/api/companies/${companyId}/memberships/${membershipId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+        },
+      }).then(handleResponse);
+    },
   },
 };
 
