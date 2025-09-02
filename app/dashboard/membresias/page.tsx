@@ -5,7 +5,14 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatCurrency } from '@/lib/utils/currency';
-import { Plus, User as UserIcon, Clock as ClockIcon, Tag as TagIcon, Percent as PercentIcon, Check as CheckIcon } from 'lucide-react';
+import { Plus, User, Clock, Tag, Percent, CheckSquare } from 'lucide-react';
+
+// Icon aliases for readability
+const UserIcon = User;
+const ClockIcon = Clock;
+const TagIcon = Tag;
+const PercentIcon = Percent;
+const CheckIcon = CheckSquare;
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api/api';
 
@@ -26,21 +33,19 @@ export default function MembershipsPage() {
           throw new Error('No estás autenticado');
         }
 
-        let companyId = user?.company_id;
+        // Get user profile with company data
+        const companyResponse = await api.userCompanies.get(token);
+        console.log('Company response:', companyResponse);
         
-        if (!companyId) {
-          const profileResponse = await api.auth.getProfile(token);
-          if (profileResponse.success && profileResponse.data?.company_id) {
-            companyId = profileResponse.data.company_id;
-          } else {
-            const companiesResponse = await api.companies.getAllCompanies(token);
-            if (companiesResponse.success && companiesResponse.data?.data?.length > 0) {
-              companyId = companiesResponse.data.data[0].id;
-            }
-          }
+        if (!companyResponse.success || !companyResponse.data?.data?.id) {
+          console.error('Company response structure:', companyResponse);
+          throw new Error('No se encontró ninguna compañía asociada a tu cuenta');
         }
+        
+        const companyId = companyResponse.data.data.id;
 
         if (!companyId) {
+          console.error('Invalid company ID:', companyId);
           throw new Error('No se encontró ninguna compañía asociada a tu cuenta');
         }
 

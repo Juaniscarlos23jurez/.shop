@@ -8,6 +8,7 @@ interface AuthContextType {
   user: UserProfile | null;
   token: string | null;
   login: (email: string, password: string) => Promise<void>;
+  register: (name: string, email: string, password: string, password_confirmation: string, phone?: string) => Promise<void>;
   logout: () => void;
   loading: boolean;
   isAuthenticated: boolean;
@@ -61,52 +62,55 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loadUser();
   }, [token]); // Removed user from dependency array
 
+  const handleAuthSuccess = (access_token: string, userData: any) => {
+    if (!access_token) {
+      throw new Error('No access token received');
+    }
+    
+    localStorage.setItem('token', access_token);
+    setToken(access_token);
+    
+    if (userData) {
+      setUser({
+        firebase_uid: userData.id.toString(),
+        firebase_email: userData.email,
+        firebase_name: userData.name || userData.email.split('@')[0],
+        company_id: userData.company_id || undefined,
+      });
+    }
+  };
+
   const login = async (email: string, password: string) => {
     try {
       const response = await api.auth.login(email, password);
-      console.log('Login response:', response); // Debug log
+      console.log('Login response:', response);
       
       if (response.success && response.data) {
-        const { id_token, user } = response.data;
-        
-        if (!id_token) {
-          throw new Error('No access token received');
-        }
-        
-        localStorage.setItem('token', id_token);
-        setToken(id_token);
-        
-        if (user) {
-          setUser({
-            firebase_uid: user.uid,
-            firebase_email: user.email,
-            firebase_name: user.displayName || user.email.split('@')[0],
-            company_id: user.company_id || undefined, // Assuming company_id might be directly in user object from login
-          });
-        } else {
-          // If user data is not in the response, fetch it
-          const profileResponse = await api.auth.getProfile(id_token);
-          if (profileResponse.success && profileResponse.data?.user) {
-            const { user: profileUser, company_id: profileCompanyId } = profileResponse.data;
-            setUser({
-              id: profileUser.id,
-              name: profileUser.name,
-              email: profileUser.email,
-              phone: profileUser.phone,
-              is_active: profileUser.is_active,
-              created_at: profileUser.created_at,
-              updated_at: profileUser.updated_at,
-              firebase_uid: profileUser.firebase_uid || profileUser.id.toString(),
-              company_id: profileCompanyId || undefined,
-            });
-          }
-        }
+        const { access_token, user } = response.data;
+        handleAuthSuccess(access_token, user);
       } else {
         throw new Error(response.message || 'Failed to login');
       }
     } catch (error) {
       console.error('Login error:', error);
-      throw error; // Re-throw to be caught by the login page
+      throw error;
+    }
+  };
+
+  const register = async (name: string, email: string, password: string, password_confirmation: string, phone?: string) => {
+    try {
+      const response = await api.auth.register(name, email, password, password_confirmation, phone);
+      console.log('Register response:', response);
+      
+      if (response.success && response.data) {
+        const { access_token, user } = response.data;
+        handleAuthSuccess(access_token, user);
+      } else {
+        throw new Error(response.message || 'Registration failed');
+      }
+    } catch (error) {
+      console.error('Registration error:', error);
+      throw error;
     }
   };
 
@@ -123,7 +127,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isAuthenticated = Boolean(token && user);
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, loading, isAuthenticated }}>
+    <AuthContext.Provider value={{
+      user,
+      token,
+      login,
+      register,
+      logout,
+      loading,
+      isAuthenticated: !!token && !!user,
+    }}>
       {!loading && children}
     </AuthContext.Provider>
   );

@@ -3,42 +3,43 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 // Icons removed due to import issues
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { CompanyInfo } from "@/components/company/company-info";
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api/api';
 import { toast } from '@/components/ui/use-toast';
 import { StepNavigation } from '@/components/company/step-navigation';
 import { CompanyInfoForm } from '@/components/company/company-info-form';
-import { BusinessHoursForm } from '@/components/company/business-hours-form';
 import { BranchInfoForm } from '@/components/company/branch-info-form';
 import { BranchesList } from '@/components/company/branches-list';
 
 interface CompanyData {
-  id: string;
+  id?: number;
   name: string;
   description?: string;
+  status?: string;
+  email?: string;
+  phone?: string;
+  website?: string;
+  logo_url?: string;
+  business_type?: string;
   address?: string;
   city?: string;
-  phone?: string;
-  email?: string;
-  website?: string;
   state?: string;
   country?: string;
   postal_code?: string;
-  business_type?: string; // Added business_type
-  timezone?: string; // Added timezone
-  currency?: string; // Added currency
-  language?: string; // Added language
-  logo_url?: string;
-  business_hours?: Array<{
-    day_of_week: string;
-    is_open: boolean;
-    open_time?: string;
-    close_time?: string;
-  }>;
+  latitude?: number;
+  longitude?: number;
+  timezone?: string;
+  currency?: string;
+  language?: string;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
   location?: {
     name: string;
+    description?: string;
     address: string;
     phone?: string;
     email?: string;
@@ -50,10 +51,11 @@ interface CompanyData {
     state?: string;
     country?: string;
     postal_code?: string;
+    zip_code?: string;
     notes?: string;
   };
   locations?: Array<{
-    id?: string;
+    id?: number;
     name: string;
     address: string;
     phone?: string;
@@ -78,8 +80,10 @@ export default function CompaniaPage() {
 
   // Fetch company data on mount
   useEffect(() => {
-    console.log('Component mounted, fetching company data...');
-    fetchCompanyData();
+    if (token) {
+      console.log('Component mounted, fetching company data...');
+      fetchCompanyData();
+    }
   }, [token]); // Re-fetch if token changes
   
   // Check for edit mode and step in URL
@@ -96,27 +100,8 @@ export default function CompaniaPage() {
       setCurrentStep(0);
     }
   }, [urlStep, isEditing, isLoading]);
-  // Map Spanish day names to English for API
-  const dayNameMap: {[key: string]: string} = {
-    'Lunes': 'monday',
-    'Martes': 'tuesday',
-    'Miércoles': 'wednesday',
-    'Jueves': 'thursday',
-    'Viernes': 'friday',
-    'Sábado': 'saturday',
-    'Domingo': 'sunday'
-  };
 
   const [formData, setFormData] = useState<Partial<CompanyData>>({
-    business_hours: [
-      { day_of_week: 'monday', is_open: true, open_time: '09:00:00', close_time: '18:00:00' },
-      { day_of_week: 'tuesday', is_open: true, open_time: '09:00:00', close_time: '18:00:00' },
-      { day_of_week: 'wednesday', is_open: true, open_time: '09:00:00', close_time: '18:00:00' },
-      { day_of_week: 'thursday', is_open: true, open_time: '09:00:00', close_time: '18:00:00' },
-      { day_of_week: 'friday', is_open: true, open_time: '09:00:00', close_time: '18:00:00' },
-      { day_of_week: 'saturday', is_open: false, open_time: '', close_time: '' },
-      { day_of_week: 'sunday', is_open: false, open_time: '', close_time: '' },
-    ],
     timezone: 'America/Mexico_City',
     currency: 'MXN',
     language: 'es',
@@ -165,127 +150,86 @@ export default function CompaniaPage() {
     
     try {
       setIsLoading(true);
-      console.log('Fetching companies with token...');
-      const response = await api.companies.getAllCompanies(token);
-      console.log('Companies API response:', response);
+      console.log('Fetching company data with token...');
+      const response = await api.userCompanies.get(token);
+      console.log('Company API response:', response);
       
-      if (response.success && response.data) {
-        const companies = Array.isArray(response.data) ? response.data : 
-                         response.data.data ? response.data.data : [];
+      if (response.success && response.data && response.data.data) {
+        // The API returns company data in response.data.data
+        const company = response.data.data;
+        console.log('Raw company data:', company);
         
-        if (companies.length > 0) {
-          const company = companies[0];
-          console.log('Found company:', company);
-          setCompanyData(company);
-          
-          // Also try to fetch locations for this company
-          try {
-            const locationsResponse = await api.companies.getCompanyLocations(company.id, token);
-            console.log('Locations response:', locationsResponse);
-            
-            if (locationsResponse.success && locationsResponse.data) {
-              setCompanyData(prev => ({
-                ...prev!,
-                locations: locationsResponse.data?.locations || []
-              }));
-            }
-          } catch (locationsError) {
-            console.error('Error fetching locations:', locationsError);
-          }
-        }
-      } else {
-        console.error('Failed to fetch companies:', response.message);
-      }
-    } catch (error) {
-      console.error('Error in fetchCompanyData:', error);
-    } finally {
-      setIsLoading(false);
-    }
-    
-    // Log token info (safely)
-    console.log('Fetching companies with token:', {
-      exists: !!token,
-      length: token?.length,
-      startsWith: token?.substring(0, 10) + '...',
-      endsWith: '...' + token?.substring(token.length - 10)
-    });
-    
-    try {
-      console.log('Fetching companies...');
-      const companyResponse = await api.companies.getAllCompanies(token);
-      console.log('Raw company response:', JSON.stringify(companyResponse, null, 2));
-      
-      if (!companyResponse.success) {
-        console.error('Failed to fetch companies:', companyResponse.message);
-        throw new Error(companyResponse.message || 'Failed to fetch companies');
-      }
-      
-      // Log the full response structure for debugging
-      console.log('Response data structure:', {
-        hasData: !!companyResponse.data,
-        dataKeys: companyResponse.data ? Object.keys(companyResponse.data) : [],
-        rawData: companyResponse.data
-      });
-      
-      if (companyResponse.success) {
-        // Extract the companies array from the nested response
-        const companies = companyResponse.data?.data?.data || companyResponse.data?.data || [];
-        console.log('Companies array:', companies);
+        // Ensure we're getting the correct data structure
+        const companyData = {
+          id: company.id,
+          name: company.name,
+          description: company.description,
+          status: company.status,
+          email: company.email,
+          phone: company.phone,
+          website: company.website || undefined,
+          logo_url: company.logo_url || undefined,
+          business_type: company.business_type || undefined,
+          address: company.address,
+          city: company.city,
+          state: company.state,
+          country: company.country || undefined,
+          postal_code: company.postal_code || undefined,
+          timezone: company.timezone,
+          currency: company.currency,
+          language: company.language,
+          is_active: company.is_active
+        };
         
-        if (Array.isArray(companies) && companies.length > 0) {
-          const company = companies[0];
-          console.log('Found company:', company);
+        console.log('Processed company data:', companyData);
+        setCompanyData(companyData);
+        
+        // Initialize form data with company data
+        setFormData(prev => ({
+          ...prev,
+          ...company,
+          location: company.location || prev.location
+        }));
+        
+        // Force a re-render by updating the component
+        console.log('Company data set successfully:', company);
+        
+        // Also try to fetch locations for this company
+        try {
+          const locationsResponse = await api.userCompanies.getLocations(token);
+          console.log('Locations response:', locationsResponse);
           
-          try {
-            console.log('Fetching business hours for company:', company.id);
-            const hoursResponse = await api.companies.getBusinessHours(company.id, token);
-            console.log('Business hours response:', hoursResponse);
-            
-            // Extract business hours from the response
-            let businessHours: any[] = [];
-            if (hoursResponse?.success) {
-              const responseData = hoursResponse.data as any; // Type assertion to handle API response
-              if (Array.isArray(responseData)) {
-                businessHours = responseData;
-              } else if (responseData?.hours) {
-                businessHours = Array.isArray(responseData.hours) ? responseData.hours : [];
-              } else if (responseData?.data?.hours) {
-                businessHours = Array.isArray(responseData.data.hours) ? responseData.data.hours : [];
-              }
-            }
-            console.log('Business hours to set:', businessHours);
-            
-            const updatedCompany = {
-              ...company,
-              business_hours: businessHours || []
-            };
-            
-            console.log('Setting company data:', updatedCompany);
-            setCompanyData(updatedCompany);
-            
-            setFormData(prev => ({
+          if (locationsResponse.success && locationsResponse.data?.locations) {
+            const locations = locationsResponse.data.locations;
+            setCompanyData(prev => prev ? {
               ...prev,
-              ...company,
-              business_hours: businessHours?.length ? businessHours : (prev.business_hours || []),
-              location: company.location || prev.location
-            }));
-            
-          } catch (hoursError) {
-            console.error('Error fetching business hours:', hoursError);
-            // Set company data even if hours fail
-            setCompanyData(company);
+              locations
+            } : null);
           }
-        } else {
-          console.log('No companies found in response');
-          // Set default company data if no companies found
-          setCompanyData({
-            id: 'default',
-            name: 'Nueva Empresa',
-            business_hours: []
-          });
+        } catch (locationsError) {
+          console.error('Error fetching locations:', locationsError);
         }
+        
+        // Ensure null values are converted to undefined
+        const sanitizedCompany = {
+          ...company,
+          country: company.country || undefined,
+          postal_code: company.postal_code || undefined,
+          website: company.website || undefined,
+        };
+        
+        setFormData(prev => ({
+          ...prev,
+          ...sanitizedCompany,
+          location: company.location || prev.location
+        }));
       } else {
-        console.error('Failed to fetch companies:', companyResponse);
+        console.log('No company found in response, setting default data');
+        console.log('Response was:', response);
+        setCompanyData({
+          id: 0,
+          name: 'Nueva Empresa'
+        });
       }
     } catch (error) {
       console.error('Error in fetchCompanyData:', error);
@@ -294,16 +238,14 @@ export default function CompaniaPage() {
         description: 'Error al cargar los datos de la empresa', 
         variant: 'destructive' 
       });
-      setCompanyData(null); // Ensure we don't get stuck in loading state
+      setCompanyData(null);
     } finally {
       console.log('Finished loading company data');
       setIsLoading(false);
     }
   }, [token]);
 
-  useEffect(() => {
-    fetchCompanyData();
-  }, [fetchCompanyData]);
+  // Remove duplicate useEffect that might be causing issues
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -326,50 +268,6 @@ export default function CompaniaPage() {
     }
   };
 
-  // Save business hours
-  const saveBusinessHours = async () => {
-    if (!token || !companyData?.id || !formData.business_hours) return;
-    
-    try {
-      // Format the business hours for the API
-      const formattedHours = formData.business_hours.map(hour => {
-        const formatTime = (time: string) => {
-          if (!time) return null;
-          // If time already has seconds, return as is, otherwise add seconds
-          return time.split(':').length === 3 ? time : `${time}:00`;
-        };
-        
-        return {
-          ...hour,
-          open_time: hour.is_open ? formatTime(hour.open_time || '') : null,
-          close_time: hour.is_open ? formatTime(hour.close_time || '') : null
-        };
-      });
-      
-      const response = await api.companies.updateBusinessHours(
-        companyData.id,
-        { hours: formattedHours },
-        token
-      );
-      
-      if (response.success) {
-        toast({
-          title: '¡Éxito!',
-          description: 'Horario comercial actualizado correctamente',
-        });
-        toggleEditMode(false);
-      } else {
-        throw new Error(response.message || 'Error al guardar los horarios');
-      }
-    } catch (error) {
-      console.error('Error saving business hours:', error);
-      toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Error al guardar los horarios',
-        variant: 'destructive',
-      });
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -393,12 +291,11 @@ export default function CompaniaPage() {
       endsWith: '...' + token?.substring(token.length - 10)
     });
     
-    // Verify token format
-    if (!token || !token.startsWith('eyJ')) {
-      console.error('Invalid token format');
+    if (!token) {
+      console.error('No token available');
       toast({
         title: 'Error de autenticación',
-        description: 'El token de autenticación no es válido. Por favor, inicia sesión nuevamente.',
+        description: 'No hay token de autenticación. Por favor, inicia sesión nuevamente.',
         variant: 'destructive',
       });
       return;
@@ -415,29 +312,29 @@ export default function CompaniaPage() {
           throw new Error('El nombre y la dirección de la sucursal son obligatorios');
         }
         
-        // Validate company ID format
-        const companyId = companyData?.id;
-        if (!companyId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(companyId)) {
-          console.error('Invalid company ID format:', companyId);
-          throw new Error('ID de compañía inválido. Por favor, recarga la página e intenta de nuevo.');
+        if (!companyData?.id) {
+          throw new Error('No se encontró el ID de la compañía');
         }
 
         const locationPayload = {
           name: formData.location.name.trim(),
+          description: formData.location.description?.trim(),
           address: formData.location.address.trim(),
           phone: formData.location.phone ? String(formData.location.phone).replace(/\D/g, '') : undefined,
           email: formData.location.email?.trim(),
-          timezone: formData.location.timezone || formData.timezone,
+          timezone: formData.location.timezone || formData.timezone || 'America/Mexico_City',
           city: formData.location.city?.trim() || companyData?.city || '',
           state: formData.location.state?.trim() || companyData?.state || '',
           country: formData.location.country?.trim() || companyData?.country || 'México',
-          postal_code: formData.location.postal_code?.trim() || companyData?.postal_code || '',
+          zip_code: formData.location.zip_code?.trim() || formData.location.postal_code?.trim() || companyData?.postal_code || '',
           is_primary: true,
           is_active: true,
         };
+
+        console.log('Sending location payload:', JSON.stringify(locationPayload, null, 2));
         
         // Create the new location
-        const locationResponse = await api.companies.createLocation(companyData.id, locationPayload, token);
+        const locationResponse = await api.userCompanies.createLocation(locationPayload, token);
         
         if (!locationResponse.success) {
           throw new Error(locationResponse.message || 'Error al crear la sucursal');
@@ -458,26 +355,43 @@ export default function CompaniaPage() {
       }
 
       // Prepare the payload for company update
-      const companyPayload: Partial<CompanyData> = {
-        name: formData.name,
-        description: formData.description,
-        address: formData.address,
-        city: formData.city,
-        phone: formData.phone,
-        email: formData.email,
-        website: formData.website,
-        state: formData.state,
-        country: formData.country,
-        postal_code: formData.postal_code,
-        business_type: formData.business_type,
-        timezone: formData.timezone,
-        currency: formData.currency,
-        language: formData.language,
-        logo_url: formData.logo_url,
-      };
+      const data: Partial<CompanyData> = {
+        name: formData.name || undefined,
+        description: formData.description || undefined,
+        address: formData.address || undefined,
+        city: formData.city || undefined,
+        phone: formData.phone || undefined,
+        email: formData.email || undefined,
+        website: formData.website || undefined,
+        state: formData.state || undefined,
+        country: formData.country || undefined,
+        postal_code: formData.postal_code || undefined,
+        business_type: formData.business_type || undefined,
+        timezone: formData.timezone || undefined,
+        currency: formData.currency || undefined,
+        language: formData.language || undefined,
+        logo_url: formData.logo_url || undefined,
+              };
 
-      // Update company
-      const response = await api.companies.updateCompany(companyData.id, companyPayload, token);
+      // Validate required fields for new company
+      if (companyData?.id === 0 && (!formData.name || !formData.email)) {
+        throw new Error('El nombre y correo electrónico son obligatorios');
+      }
+
+      // Create or update company
+      const response = companyData?.id === 0 ?
+        await api.userCompanies.create({
+          name: formData.name!,
+          email: formData.email!,
+          description: formData.description,
+          phone: formData.phone,
+          address: formData.address,
+          city: formData.city,
+          state: formData.state,
+          country: formData.country || undefined,
+          zip_code: formData.postal_code || undefined
+        }, token) :
+        await api.companies.updateCompany(companyData?.id?.toString() || '0', data, token);
       if (!response.success || !response.data) {
         throw new Error(response.message || 'Error al actualizar la compañía');
       }
@@ -485,18 +399,6 @@ export default function CompaniaPage() {
       const companyResponseData = response.data.company || response.data;
       setCompanyData(companyResponseData);
 
-      // If this was step 2, update business hours
-      if (currentStep === 2 && formData.business_hours?.length) {
-        const hoursResponse = await api.companies.updateBusinessHours(
-          companyData.id, 
-          { hours: formData.business_hours }, 
-          token
-        );
-        
-        if (!hoursResponse.success) {
-          throw new Error(hoursResponse.message || 'Error al actualizar los horarios comerciales');
-        }
-      }
 
       // Move to the next step
       setCurrentStep(currentStep + 1);
@@ -530,356 +432,160 @@ export default function CompaniaPage() {
   }
 
   // Debug log to check the current state
-  console.log('Current state:', { companyData, isEditing, currentStep });
-  
-  // Only show the form if we're in edit mode
-  const shouldShowForm = isEditing;
-  
-   // If we don't have company data yet, show loading
-   if (!companyData) {
-     return (
-       <div className="flex items-center justify-center h-64">
-         <span className="text-lg animate-pulse">Cargando datos de la empresa...</span>
-       </div>
-     );
-   }
-  
-   if (shouldShowForm) {
-     return (
-       <div className="max-w-3xl mx-auto">
-         <StepNavigation currentStep={currentStep} />
+  // If we don't have company data yet, show loading
+  if (!companyData) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <span className="text-lg animate-pulse">Cargando datos de la empresa...</span>
+      </div>
+    );
+  }
 
-         <Card>
-           <CardHeader>
-             <CardTitle className="text-2xl">
-               {currentStep === 1 && 'Información de la Empresa'}
-               {currentStep === 2 && 'Horario Comercial'}
-               {currentStep === 3 && 'Agregar Sucursal'}
-             </CardTitle>
-             <CardDescription>
-               {currentStep === 1 && 'Completa la información básica de tu empresa'}
-               {currentStep === 2 && 'Configura los horarios de atención de tu negocio'}
-               {currentStep === 3 && 'Agrega tu primera sucursal'}
-             </CardDescription>
-           </CardHeader>
-           <CardContent>
-             <form onSubmit={handleSubmit} className="space-y-6">
-               <div className="space-y-4">
-                 {currentStep === 1 && (
-                   <CompanyInfoForm formData={formData} handleInputChange={handleInputChange} />
-                 )}
+  // Show the form if we're in edit mode
+  if (isEditing) {
+    return (
+      <div className="max-w-3xl mx-auto">
+        <StepNavigation currentStep={currentStep} />
 
-                 {/* Business Hours Section */}
-                 {currentStep === 2 && (
-                   <BusinessHoursForm 
-                     businessHours={formData.business_hours}
-                     setBusinessHours={setFormData}
-                   />
-                 )}
-               </div>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-2xl">
+              {currentStep === 1 && 'Información de la Empresa'}
+              {currentStep === 2 && 'Horario Comercial'}
+              {currentStep === 3 && 'Agregar Sucursal'}
+            </CardTitle>
+            <CardDescription>
+              {currentStep === 1 && 'Completa la información básica de tu empresa'}
+              {currentStep === 2 && 'Configura los horarios de atención de tu negocio'}
+              {currentStep === 3 && 'Agrega tu primera sucursal'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="space-y-4">
+                {currentStep === 1 && (
+                  <CompanyInfoForm 
+                    formData={{
+                      name: formData.name,
+                      description: formData.description,
+                      email: formData.email,
+                      phone: formData.phone,
+                      address: formData.address,
+                      city: formData.city,
+                      state: formData.state,
+                      postal_code: formData.postal_code || undefined,
+                      website: formData.website
+                    }} 
+                    handleInputChange={handleInputChange} 
+                  />
+                )}
 
-               {/* Branch Information Step */}
-               {currentStep === 3 && (
-                 <BranchInfoForm 
-                   formData={formData.location || { name: '', address: '', timezone: '' }} 
-                   handleInputChange={handleInputChange} 
-                 />
-               )}
 
-               <div className="flex justify-end space-x-3">
-                 {currentStep === 1 ? (
-                   <Button 
-                     type="submit"
-                     className="bg-emerald-600 hover:bg-emerald-700"
-                     disabled={isLoading || !formData.name || !formData.email}
-                   >
-                     {isLoading ? 'Guardando...' : 'Guardar Datos'}
-                   </Button>
-                 ) : (
-                   <div className="flex space-x-3">
-                     <Button 
-                       type="button"
-                       variant="outline"
-                       onClick={() => setCurrentStep(currentStep - 1)}
-                     >
-                       Atrás
-                     </Button>
-                     {currentStep === 3 ? (
-                       <Button 
-                         type="submit"
-                         className="bg-emerald-600 hover:bg-emerald-700"
-                         disabled={isLoading || !formData.location?.name || !formData.location?.address}
-                       >
-                         {isLoading ? 'Guardando...' : 'Crear Sucursal'}
-                       </Button>
-                     ) : (
-                       <Button 
-                         type="submit"
-                         className="bg-emerald-600 hover:bg-emerald-700"
-                         onClick={currentStep === 2 ? saveBusinessHours : () => setCurrentStep(currentStep + 1)}
-                         disabled={isLoading}
-                       >
-                         {currentStep === 2 ? 'Guardar Horas y Siguiente' : 'Siguiente'}
-                       </Button>
-                     )}
-                   </div>
-                 )}
-               </div>
-             </form>
-           </CardContent>
-         </Card>
-       </div>
-     );
-   }
+                {/* Branch Information Step */}
+                {currentStep === 3 && (
+                  <BranchInfoForm 
+                    formData={formData.location || { name: '', address: '', timezone: '' }} 
+                    handleInputChange={handleInputChange} 
+                  />
+                )}
+              </div>
 
-   return (
-     <div className="space-y-6">
-       <div className="flex items-center justify-between">
-         <div>
-           <h1 className="text-3xl font-bold text-slate-900">Compañía</h1>
-           <p className="text-slate-600 mt-1">Administra la información de tu empresa</p>
-         </div>
-       </div>
+              <div className="flex justify-end space-x-3">
+                {currentStep === 1 ? (
+                  <Button 
+                    type="submit"
+                    className="bg-emerald-600 hover:bg-emerald-700"
+                    disabled={isLoading || !formData.name || !formData.email}
+                  >
+                    {isLoading ? 'Guardando...' : 'Guardar Datos'}
+                  </Button>
+                ) : (
+                  <div className="flex space-x-3">
+                    <Button 
+                      type="button"
+                      variant="outline"
+                      onClick={() => setCurrentStep(currentStep - 1)}
+                    >
+                      Atrás
+                    </Button>
+                    {currentStep === 3 ? (
+                      <Button 
+                        type="submit"
+                        className="bg-emerald-600 hover:bg-emerald-700"
+                        disabled={isLoading || !formData.location?.name || !formData.location?.address}
+                      >
+                        {isLoading ? 'Guardando...' : 'Crear Sucursal'}
+                      </Button>
+                    ) : (
+                      <Button 
+                        type="submit"
+                        className="bg-emerald-600 hover:bg-emerald-700"
+                        onClick={() => setCurrentStep(currentStep + 1)}
+                        disabled={isLoading}
+                      >
+                        Siguiente
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
-       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-         {/* Información Principal */}
-         <Card className="col-span-1 md:col-span-2 lg:col-span-3">
-           <CardHeader className="pb-3">
-             <div className="flex items-center space-x-3">
-               <div className="p-2 rounded-lg bg-emerald-100 text-emerald-600">
-                 <span className="text-lg">🏢</span>
-               </div>
-               <div>
-                 <CardTitle className="text-xl text-slate-900">{companyData?.name || 'Compañía'}</CardTitle>
-                 <CardDescription className="text-slate-600">Información general de la compañía</CardDescription>
-               </div>
-             </div>
-           </CardHeader>
-           <CardContent className="space-y-4">
-             {isEditing ? (
-               <form onSubmit={handleSubmit} className="space-y-6">
-                 <div className="grid gap-4 md:grid-cols-2">
-                   <div className="space-y-2">
-                     <label className="text-sm font-medium text-slate-700">Nombre de la empresa</label>
-                     <input
-                       type="text"
-                       name="name"
-                       value={formData.name || ''}
-                       onChange={handleInputChange}
-                       className="w-full p-2 border rounded-md"
-                       required
-                     />
-                   </div>
-                   
-                   <div className="space-y-2">
-                     <label className="text-sm font-medium text-slate-700">Teléfono</label>
-                     <input
-                       type="tel"
-                       name="phone"
-                       value={formData.phone || ''}
-                       onChange={handleInputChange}
-                       className="w-full p-2 border rounded-md"
-                     />
-                   </div>
-                   
-                   <div className="space-y-2">
-                     <label className="text-sm font-medium text-slate-700">Correo Electrónico</label>
-                     <input
-                       type="email"
-                       name="email"
-                       value={formData.email || ''}
-                       onChange={handleInputChange}
-                       className="w-full p-2 border rounded-md"
-                       required
-                     />
-                   </div>
-                   
-                   <div className="space-y-2">
-                     <label className="text-sm font-medium text-slate-700">Sitio Web</label>
-                     <input
-                       type="url"
-                       name="website"
-                       value={formData.website || ''}
-                       onChange={handleInputChange}
-                       className="w-full p-2 border rounded-md"
-                       placeholder="https://"
-                     />
-                   </div>
-                   
-                   <div className="space-y-2 md:col-span-2">
-                     <label className="text-sm font-medium text-slate-700">Descripción</label>
-                     <textarea
-                       name="description"
-                       value={formData.description || ''}
-                       onChange={handleInputChange}
-                       rows={3}
-                       className="w-full p-2 border rounded-md"
-                     />
-                   </div>
-                   
-                   <div className="space-y-2">
-                     <label className="text-sm font-medium text-slate-700">Dirección</label>
-                     <input
-                       type="text"
-                       name="address"
-                       value={formData.address || ''}
-                       onChange={handleInputChange}
-                       className="w-full p-2 border rounded-md"
-                     />
-                   </div>
-                   
-                   <div className="space-y-2">
-                     <label className="text-sm font-medium text-slate-700">Ciudad</label>
-                     <input
-                       type="text"
-                       name="city"
-                       value={formData.city || ''}
-                       onChange={handleInputChange}
-                       className="w-full p-2 border rounded-md"
-                     />
-                   </div>
-                 </div>
-                 
-                 <div className="flex justify-end space-x-3 pt-4">
-                   <Button 
-                     type="button" 
-                     variant="outline" 
-                     onClick={() => toggleEditMode(true)}
-                     disabled={isLoading}
-                   >
-                     Cancelar
-                   </Button>
-                   <Button 
-                     type="submit" 
-                     className="bg-emerald-500 hover:bg-emerald-600"
-                     disabled={isLoading}
-                   >
-                     {isLoading ? (
-                       <> 
-                         <span className="mr-2 animate-pulse">⏳</span>
-                         Guardando...
-                       </>
-                     ) : 'Guardar Cambios'}
-                   </Button>
-                 </div>
-               </form>
-             ) : (
-               <>
-                 <p className="text-slate-700">{companyData?.description || 'No hay descripción disponible'}</p>
-                 
-                 <div className="grid gap-4 md:grid-cols-2">
-                   <div className="flex items-start space-x-3">
-                     <span className="text-slate-400 mt-0.5 flex-shrink-0">📍</span>
-                     <div>
-                       <h4 className="font-medium text-slate-900">Dirección</h4>
-                       <p className="text-slate-600">
-                         {companyData?.address || 'No especificada'}
-                         {companyData?.city && `, ${companyData.city}`}
-                         {companyData?.state && `, ${companyData.state}`}
-                         {companyData?.postal_code && `, ${companyData.postal_code}`}
-                       </p>
-                     </div>
-                   </div>
-                   
-                   <div className="flex items-start space-x-3">
-                     <span className="text-slate-400 mt-0.5 flex-shrink-0">📞</span>
-                     <div>
-                       <h4 className="font-medium text-slate-900">Teléfono</h4>
-                       <p className="text-slate-600">{companyData?.phone || 'No especificado'}</p>
-                     </div>
-                   </div>
-                   
-                   <div className="flex items-start space-x-3">
-                     <span className="text-slate-400 mt-0.5 flex-shrink-0">✉️</span>
-                     <div>
-                       <h4 className="font-medium text-slate-900">Correo Electrónico</h4>
-                       <p className="text-slate-600">{companyData?.email || 'No especificado'}</p>
-                     </div>
-                   </div>
-                   
-                   <div className="flex items-start space-x-3">
-                     <span className="text-slate-400 mt-0.5 flex-shrink-0">🌐</span>
-                     <div>
-                       <h4 className="font-medium text-slate-900">Sitio Web</h4>
-                       <p className="text-slate-600">
-                         {companyData?.website ? (
-                           <a 
-                             href={companyData.website.startsWith('http') ? companyData.website : `https://${companyData.website}`}
-                             target="_blank" 
-                             rel="noopener noreferrer"
-                             className="text-emerald-600 hover:underline"
-                           >
-                             {companyData.website}
-                           </a>
-                         ) : 'No especificado'}
-                       </p>
-                     </div>
-                   </div>
-                   
-                   <div className="flex items-start space-x-3">
-                     <span className="text-slate-400 mt-0.5 flex-shrink-0">🕒</span>
-                     <div className="flex-1">
-                       <div className="flex justify-between items-start">
-                         <h4 className="font-medium text-slate-900">Horario Comercial</h4>
-                         <Button 
-                           variant="ghost" 
-                           size="sm" 
-                           className="text-emerald-600 hover:bg-emerald-50 h-8 px-2"
-                           onClick={(e) => {
-                             e.stopPropagation();
-                             toggleEditMode(true, 2);
-                           }}
-                         >
-                           {companyData?.business_hours?.some(bh => bh.is_open) ? 'Editar Horas' : 'No completado'}
-                         </Button>
-                       </div>
-                       <div className="space-y-1">
-                         {companyData?.business_hours?.some(bh => bh.is_open) ? (
-                           companyData.business_hours
-                             .filter(bh => bh.is_open)
-                             .map((day, index) => {
-                               // Convert API day name to Spanish for display
-                               const dayInSpanish = Object.entries(dayNameMap).find(
-                                 ([spanish, english]) => english === day.day_of_week?.toLowerCase()
-                               )?.[0] || day.day_of_week;
-                               
-                               // Format time to remove seconds if present
-                               const formatTime = (time: string) => time ? time.split(':').slice(0, 2).join(':') : '';
-                               
-                               return (
-                                 <p key={index} className="text-slate-600 text-sm">
-                                   {dayInSpanish}: {formatTime(day.open_time || '')} - {formatTime(day.close_time || '')}
-                                 </p>
-                               );
-                             })
-                         ) : (
-                           <p className="text-slate-600 text-sm">No hay horarios configurados</p>
-                         )}
-                       </div>
-                     </div>
-                   </div>
-                 </div>
-               </>
-             )}
-           </CardContent>
-           {!isEditing && (
-             <CardFooter className="border-t border-slate-100">
-               <Button 
-                 variant="outline" 
-                 className="text-emerald-600 border-emerald-200 hover:bg-emerald-50"
-                 onClick={() => toggleEditMode(true)}
-               >
-                 Editar Información
-               </Button>
-             </CardFooter>
-           )}
-         </Card>
+  // Show the main view when not editing
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-900">Compañía</h1>
+          <p className="text-slate-600 mt-1">Administra la información de tu empresa</p>
+        </div>
+        <div className="text-xs text-gray-500">
+          Data: {companyData?.name || 'No name'} | ID: {companyData?.id || 'No ID'}
+        </div>
+      </div>
 
-         <BranchesList 
-           companyId={companyData?.id || ''} 
-           onAddBranchClick={() => toggleEditMode(true, 3)} 
-         />
-       </div>
-     </div>
-   );
- }
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <CompanyInfo
+          companyData={companyData || {
+            name: '',
+            description: '',
+            email: '',
+            phone: '',
+            address: '',
+            website: '',
+            city: '',
+            state: '',
+            country: '',
+            postal_code: ''
+          }}
+          isEditing={isEditing}
+          isLoading={isLoading}
+          formData={formData}
+          onSubmit={handleSubmit}
+          onInputChange={handleInputChange}
+          toggleEditMode={toggleEditMode}
+        />
+        {!isEditing && (
+          <div className="mt-4">
+            <Button 
+              variant="outline" 
+              className="text-emerald-600 border-emerald-200 hover:bg-emerald-50"
+              onClick={() => toggleEditMode(true)}
+            >
+              Editar Información
+            </Button>
+          </div>
+        )}
+        <BranchesList 
+          companyId={companyData?.id?.toString() || ''} 
+          onAddBranchClick={() => toggleEditMode(true, 3)} 
+        />
+      </div>
+    </div>
+  );
+}

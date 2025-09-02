@@ -13,7 +13,7 @@ interface BranchInfoFormProps {
     city?: string;
     state?: string;
     country?: string;
-    postal_code?: string;
+    zip_code?: string;
     notes?: string;
   };
   handleInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
@@ -95,6 +95,21 @@ export const BranchInfoForm: React.FC<BranchInfoFormProps> = ({ formData, handle
             value={formData.contact_person || ''}
             onChange={handleInputChange}
             className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="locationPostalCode" className="block text-sm font-medium text-slate-700 mb-1">
+            Código Postal <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            id="locationZipCode"
+            name="location.zip_code"
+            value={formData.zip_code || ''}
+            onChange={handleInputChange}
+            className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+            required
           />
         </div>
 
