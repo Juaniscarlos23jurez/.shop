@@ -34,7 +34,7 @@ export default function CompaniaPage() {
               </div>
               <div>
                 <CardTitle className="text-xl text-slate-900">{companyData.name}</CardTitle>
-                <CardDescription className="text-slate-600">Información general de la compañía</CardDescription>
+                <CardDescription className="text-slate-600">Información general de la comp1añía</CardDescription>
               </div>
             </div>
           </CardHeader>

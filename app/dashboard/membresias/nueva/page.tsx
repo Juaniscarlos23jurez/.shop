@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, X, Check, Truck, Percent } from 'lucide-react';
+import { Plus, X, Check, Package, DollarSign } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api/api';
 
@@ -115,24 +115,21 @@ export default function NewMembershipPage() {
         throw new Error('No estás autenticado. Por favor inicia sesión nuevamente.');
       }
 
-      // Get company ID from the authenticated user or fetch it
-      let companyId: string | undefined = user?.company_id;
+      // Get company data from profile
+      const companyResponse = await api.userCompanies.get(token);
+      console.log('Company response:', companyResponse);
       
-      // If company ID is not in user object, try to fetch it
-      if (!companyId) {
-        const profileResponse = await api.auth.getProfile(token);
-        if (profileResponse.success && profileResponse.data?.company_id) {
-          companyId = profileResponse.data.company_id;
-        } else {
-          // If still no company ID, try to get the first company
-          const companiesResponse = await api.companies.getAllCompanies(token);
-          console.log('Companies response:', companiesResponse); // Debug log
-          if (companiesResponse.success && companiesResponse.data?.data?.length > 0) {
-            // Access the first company from the paginated data
-            companyId = companiesResponse.data.data[0].id;
-          }
-        }
+      if (!companyResponse.success) {
+        console.error('API request failed:', companyResponse);
+        throw new Error(companyResponse.message || 'Error al obtener los datos de la compañía');
       }
+      
+      if (!companyResponse.data || !companyResponse.data.data || !companyResponse.data.data.id) {
+        console.error('Invalid company data structure:', companyResponse);
+        throw new Error('No se pudo obtener el ID de la compañía. Por favor, verifica que tengas una compañía configurada.');
+      }
+      
+      const companyId = companyResponse.data.data.id;
       
       // If we still don't have a company ID, throw an error
       if (!companyId) {
@@ -378,7 +375,7 @@ export default function NewMembershipPage() {
                       onClick={() => addBenefit('shipping')}
                       disabled={benefits.some(b => b.type === 'shipping')}
                     >
-                      <Truck size={16} className="mr-2" />
+                      <Package size={16} className="mr-2" />
                       Envío gratuito
                     </Button>
                     <Button 
@@ -388,7 +385,7 @@ export default function NewMembershipPage() {
                       onClick={() => addBenefit('discount')}
                       disabled={benefits.some(b => b.type === 'discount')}
                     >
-                      <Percent size={16} className="mr-2" />
+                      <DollarSign size={16} className="mr-2" />
                       Descuento especial
                     </Button>
                   </div>

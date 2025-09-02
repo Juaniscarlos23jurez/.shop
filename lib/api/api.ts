@@ -1,37 +1,51 @@
 import { ApiResponse, UserProfile, ProfileApiUser, BusinessHour, Membership } from '@/types/api';
 
-const BASE_URL = 'http://127.0.0.1:8000';
-
+const BASE_URL = 'https://laravel-pkpass-backend-development-pfaawl.laravel.cloud';
+//http://127.0.0.1:8000
 export const api = {
   // Authentication methods
   auth: {
     async login(email: string, password: string): Promise<ApiResponse<{ 
-      user: any; 
-      id_token: string;
+      access_token: string;
       token_type: string;
+      user: ProfileApiUser;
     }>> {
-      return fetch(`${BASE_URL}/api/auth/firebase/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify({ email, password })
-      }).then(handleResponse);
-    },
-
-    async register(name: string, email: string, password: string, phone?: string): Promise<ApiResponse> {
-      return fetch(`${BASE_URL}/api/auth/firebase/register`, {
+      return fetch(`${BASE_URL}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
         body: JSON.stringify({ 
-          name, 
           email, 
+          password 
+        })
+      }).then(handleResponse);
+    },
+
+    async register(
+      name: string, 
+      email: string, 
+      password: string, 
+      password_confirmation: string, 
+      phone?: string
+    ): Promise<ApiResponse<{
+      access_token: string;
+      token_type: string;
+      user: ProfileApiUser;
+    }>> {
+      return fetch(`${BASE_URL}/api/auth/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          name,
+          email,
           password,
-          ...(phone && { phone })
+          password_confirmation,
+          phone: phone || null
         })
       }).then(handleResponse);
     },
@@ -56,7 +70,185 @@ export const api = {
     },
   },
 
-  // Companies API
+  // Profile API
+
+  // User's Companies API
+  userCompanies: {
+    /**
+     * Get the authenticated user's company
+     */
+    async get(token: string): Promise<ApiResponse<any>> {
+      try {
+        const response = await fetch(`${BASE_URL}/api/auth/profile/company`, {
+          headers: getAuthHeader(token),
+        });
+        const result = await handleResponse(response);
+        console.log('Company API raw response:', result);
+        
+        // Ensure we have a valid response structure
+        if (result.success && result.data) {
+          return {
+            success: true,
+            data: result.data,
+            status: result.status,
+            statusText: result.statusText
+          };
+        }
+        
+        return result;
+      } catch (error) {
+        console.error('Error in userCompanies.get:', error);
+        return {
+          success: false,
+          message: error instanceof Error ? error.message : 'Error al obtener los datos de la compañía',
+          error: error instanceof Error ? error.message : String(error)
+        };
+      }
+    },
+
+    /**
+     * Create a new company for the authenticated user
+     */
+    async create(
+      data: {
+        name: string;
+        description?: string;
+        phone?: string;
+        email?: string;
+        address?: string;
+        city?: string;
+        state?: string;
+        country?: string;
+        zip_code?: string;
+      },
+      token: string
+    ): Promise<ApiResponse<{ company: any }>> {
+      return fetch(`${BASE_URL}/api/companies`, {
+        method: 'POST',
+        headers: {
+          ...getAuthHeader(token),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+      }).then(handleResponse);
+    },
+
+    /**
+     * Update the authenticated user's company
+     */
+    async update(
+      data: {
+        name?: string;
+        description?: string;
+        phone?: string;
+        email?: string;
+        address?: string;
+        city?: string;
+        state?: string;
+        country?: string;
+        zip_code?: string;
+      },
+      token: string
+    ): Promise<ApiResponse<{ company: any }>> {
+      return fetch(`${BASE_URL}/api/companies`, {
+        method: 'PUT',
+        headers: {
+          ...getAuthHeader(token),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+      }).then(handleResponse);
+    },
+
+    /**
+     * Get company locations
+     */
+    async getLocations(token: string): Promise<ApiResponse<{ locations: any[] }>> {
+      return fetch(`${BASE_URL}/api/locations`, {
+        headers: getAuthHeader(token)
+      }).then(handleResponse);
+    },
+
+    /**
+     * Create a new location
+     */
+    async createLocation(
+      data: {
+        name: string;
+        description?: string;
+        phone?: string;
+        email?: string;
+        address: string;
+        city?: string;
+        state?: string;
+        country?: string;
+        zip_code?: string;
+        latitude?: number;
+        longitude?: number;
+      },
+      token: string
+    ): Promise<ApiResponse<{ location: any }>> {
+      return fetch(`${BASE_URL}/api/locations`, {
+        method: 'POST',
+        headers: {
+          ...getAuthHeader(token),
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+      }).then(handleResponse);
+    },
+
+    /**
+     * Update a location
+     */
+    async updateLocation(
+      locationId: string,
+      data: {
+        name?: string;
+        description?: string;
+        phone?: string;
+        email?: string;
+        address?: string;
+        city?: string;
+        state?: string;
+        country?: string;
+        zip_code?: string;
+        latitude?: number;
+        longitude?: number;
+      },
+      token: string
+    ): Promise<ApiResponse<{ location: any }>> {
+      return fetch(`${BASE_URL}/api/locations/${locationId}`, {
+        method: 'PUT',
+        headers: {
+          ...getAuthHeader(token),
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+      }).then(handleResponse);
+    },
+
+    /**
+     * Update business hours
+     */
+    async updateBusinessHours(
+      data: { hours: Array<{
+        day_of_week: string;
+        is_open: boolean;
+        open_time?: string | null;
+        close_time?: string | null;
+      }> },
+      token: string
+    ): Promise<ApiResponse<{ hours: any[] }>> {
+      return fetch(`${BASE_URL}/api/companies/business-hours`, {
+        method: 'PUT',
+        headers: getAuthHeader(token),
+        body: JSON.stringify(data)
+      }).then(handleResponse);
+    },
+  },
+
+  // Companies API (admin/management)
   companies: {
     /**
      * Get business hours for a company
@@ -193,21 +385,17 @@ export const api = {
     async getCompanyLocations(companyId: string, token: string): Promise<ApiResponse<{ locations: any[] }>> {
       try {
         const response = await fetch(`${BASE_URL}/api/companies/${companyId}/locations`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/json',
-          },
+          headers: getAuthHeader(token)
         });
-
-        if (!response.ok) {
-          const error = await response.json().catch(() => ({}));
-          throw new Error(error.message || 'Failed to fetch company locations');
-        }
-
-        return response.json();
+        
+        return handleResponse(response);
       } catch (error) {
         console.error('Error in getCompanyLocations:', error);
-        throw error;
+        return { 
+          success: false, 
+          message: 'Network or server error',
+          error: error instanceof Error ? error.message : String(error)
+        };
       }
     },
 

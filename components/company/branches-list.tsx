@@ -58,9 +58,9 @@ export function BranchesList({
   const { token } = useAuth();
 
   const fetchLocations = useCallback(async () => {
-    console.log('fetchLocations called with companyId:', companyId);
-    if (!companyId || !token) {
-      console.log('Missing companyId or token, not fetching locations');
+    console.log('fetchLocations called');
+    if (!token) {
+      console.log('No token available, not fetching locations');
       return;
     }
     
@@ -68,11 +68,12 @@ export function BranchesList({
     setError(null);
     
     try {
-      console.log('Fetching locations for company:', companyId);
-      const response = await api.companies.getCompanyLocations(companyId, token);
+      console.log('Fetching all locations');
+      const response = await api.userCompanies.getLocations(token);
       console.log('Locations API response:', response);
-      // The API returns the data directly in response.data
-      const locationsData = Array.isArray(response.data) ? response.data : [];
+      
+      // The API returns { status: "success", locations: [...] }
+      const locationsData = response.data?.locations || [];
       console.log('Extracted locations data:', locationsData);
       setLocations(locationsData);
     } catch (err) {
@@ -81,7 +82,7 @@ export function BranchesList({
     } finally {
       setIsLoading(false);
     }
-  }, [companyId, token]);
+  }, [token]);
 
   useEffect(() => {
     console.log('useEffect triggered with companyId:', companyId, 'and token:', token ? 'token exists' : 'no token');
