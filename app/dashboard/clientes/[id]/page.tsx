@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Calendar as CalendarIcon, Mail, Phone, MapPin, User, Edit, Trash2, CreditCard, ShoppingCart, History, Tag, Award, Plus, Check, X } from 'lucide-react';
+import { Calendar as CalendarIcon, Mail, Phone, MapPin, User, Edit, Trash2, CreditCard, ShoppingCart, History, Tag, Award, Plus, Check, X, ArrowLeft } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { formatCurrency } from '@/lib/utils/currency';
