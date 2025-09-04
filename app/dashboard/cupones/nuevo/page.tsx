@@ -1,7 +1,11 @@
 'use client';
 
 import { useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { api } from '@/lib/api/api';
+import { CouponType, CouponCreateInput } from '@/types/api';
 import { useRouter } from 'next/navigation';
+import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,11 +19,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
 
-type DiscountType = 'percentage' | 'fixed' | 'free_shipping';
 
 export default function NewCouponPage() {
-  const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
   const [date, setDate] = useState<{
     from: Date;
     to?: Date;
@@ -28,14 +29,44 @@ export default function NewCouponPage() {
     to: new Date(new Date().setMonth(new Date().getMonth() + 1)),
   });
 
-  const [formData, setFormData] = useState({
+  type FormData = {
+    code: string;
+    name: string;
+    description: string;
+    type: CouponType;
+    is_active: boolean;
+    is_public: boolean;
+    is_single_use: boolean;
+    usage_limit: string;
+    usage_limit_per_user: string;
+    min_purchase_amount: string;
+    discount_percentage: string;
+    discount_amount: string;
+    buy_quantity: string;
+    get_quantity: string;
+    item_id: string;
+  };
+
+  const { token } = useAuth();
+  const router = useRouter();
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState<FormData>({
     code: '',
+    name: '',
     description: '',
-    discountType: 'percentage' as DiscountType,
-    discount: '',
-    minPurchase: '',
-    maxUses: '',
-    isActive: true,
+    type: 'percentage',
+    is_active: true,
+    is_public: true,
+    is_single_use: false,
+    usage_limit: '',
+    usage_limit_per_user: '',
+    min_purchase_amount: '',
+    discount_percentage: '',
+    discount_amount: '',
+    buy_quantity: '',
+    get_quantity: '',
+    item_id: ''
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -63,19 +94,52 @@ export default function NewCouponPage() {
     setIsLoading(true);
     
     try {
-      // TODO: Replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      console.log('Creating coupon:', {
+      if (!token) {
+        throw new Error('No se encontró el token de autenticación');
+      }
+
+      const companyResponse = await api.userCompanies.get(token);
+      if (!companyResponse.success || !companyResponse.data?.data?.id) {
+        throw new Error('Error al obtener datos de la compañía');
+      }
+
+      const payload = {
         ...formData,
-        validFrom: date?.from,
-        validUntil: date?.to,
+        starts_at: date?.from?.toISOString() || new Date().toISOString(),
+        expires_at: date?.to?.toISOString() || new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString(),
+        usage_limit: formData.usage_limit ? parseInt(formData.usage_limit) : undefined,
+        usage_limit_per_user: formData.usage_limit_per_user ? parseInt(formData.usage_limit_per_user) : undefined,
+        min_purchase_amount: formData.min_purchase_amount ? parseFloat(formData.min_purchase_amount) : undefined,
+        discount_percentage: formData.type === 'percentage' ? parseFloat(formData.discount_percentage) : undefined,
+        discount_amount: formData.type === 'fixed_amount' ? parseFloat(formData.discount_amount) : undefined,
+        buy_quantity: formData.type === 'buy_x_get_y' ? parseInt(formData.buy_quantity) : undefined,
+        get_quantity: formData.type === 'buy_x_get_y' ? parseInt(formData.get_quantity) : undefined,
+        item_id: formData.type === 'free_item' ? formData.item_id : undefined
+      } as CouponCreateInput;
+
+      const response = await api.coupons.createCoupon(
+        companyResponse.data.data.id,
+        payload,
+        token
+      );
+
+      if (!response.success) {
+        throw new Error(response.error || 'Error creating cupón');
+      }
+      
+      toast({
+        title: 'Cupón creado',
+        description: 'El cupón se ha creado correctamente',
       });
       
-      // Redirect to coupons list after creation
       router.push('/dashboard/cupones');
     } catch (error) {
       console.error('Error creating coupon:', error);
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Error al crear el cupón',
+        variant: 'destructive',
+      });
     } finally {
       setIsLoading(false);
     }
@@ -142,40 +206,54 @@ export default function NewCouponPage() {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="discountType">Tipo de descuento</Label>
+                  <Label htmlFor="name">Nombre</Label>
+                  <Input
+                    id="name"
+                    name="name"
+                    placeholder="Ej: Descuento de verano"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="type">Tipo de descuento</Label>
                   <select
-                    id="discountType"
-                    name="discountType"
+                    id="type"
+                    name="type"
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    value={formData.discountType}
+                    value={formData.type}
                     onChange={handleInputChange}
                   >
                     <option value="percentage">Porcentaje de descuento</option>
-                    <option value="fixed">Monto fijo</option>
+                    <option value="fixed_amount">Monto fijo</option>
                     <option value="free_shipping">Envío gratuito</option>
+                    <option value="buy_x_get_y">Compra X Lleva Y</option>
+                    <option value="free_item">Producto gratis</option>
                   </select>
                 </div>
 
-                {formData.discountType !== 'free_shipping' && (
+                {(formData.type === 'percentage' || formData.type === 'fixed_amount') && (
                   <div className="space-y-2">
                     <Label htmlFor="discount">
-                      {formData.discountType === 'percentage' ? 'Porcentaje de descuento' : 'Monto de descuento'}
+                      {formData.type === 'percentage' ? 'Porcentaje de descuento' : 'Monto de descuento'}
                     </Label>
                     <div className="relative">
                       <Input
                         id="discount"
-                        name="discount"
+                        name={formData.type === 'percentage' ? 'discount_percentage' : 'discount_amount'}
                         type="number"
                         min="0"
-                        max={formData.discountType === 'percentage' ? '100' : undefined}
-                        step={formData.discountType === 'percentage' ? '1' : '0.01'}
-                        value={formData.discount}
+                        max={formData.type === 'percentage' ? '100' : undefined}
+                        step={formData.type === 'percentage' ? '1' : '0.01'}
+                        value={formData.type === 'percentage' ? formData.discount_percentage : formData.discount_amount}
                         onChange={handleInputChange}
                         required
                         className="pl-8"
                       />
                       <span className="absolute left-3 top-2.5 text-muted-foreground">
-                        {formData.discountType === 'percentage' ? '%' : '$'}
+                        {formData.type === 'percentage' ? '%' : '$'}
                       </span>
                     </div>
                   </div>
@@ -185,12 +263,12 @@ export default function NewCouponPage() {
                   <Label htmlFor="minPurchase">Compra mínima (opcional)</Label>
                   <div className="relative">
                     <Input
-                      id="minPurchase"
-                      name="minPurchase"
+                      id="min_purchase_amount"
+                      name="min_purchase_amount"
                       type="number"
                       min="0"
                       step="0.01"
-                      value={formData.minPurchase}
+                      value={formData.min_purchase_amount}
                       onChange={handleInputChange}
                       className="pl-8"
                     />
@@ -199,17 +277,72 @@ export default function NewCouponPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="maxUses">Límite de usos (opcional)</Label>
+                  <Label htmlFor="usage_limit">Límite de usos (opcional)</Label>
                   <Input
-                    id="maxUses"
-                    name="maxUses"
+                    id="usage_limit"
+                    name="usage_limit"
                     type="number"
                     min="1"
-                    value={formData.maxUses}
+                    value={formData.usage_limit}
                     onChange={handleInputChange}
                     placeholder="Ilimitado si se deja en blanco"
                   />
                 </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="usage_limit_per_user">Límite por usuario (opcional)</Label>
+                  <Input
+                    id="usage_limit_per_user"
+                    name="usage_limit_per_user"
+                    type="number"
+                    min="1"
+                    value={formData.usage_limit_per_user}
+                    onChange={handleInputChange}
+                    placeholder="Ilimitado si se deja en blanco"
+                  />
+                </div>
+
+                {formData.type === 'buy_x_get_y' && (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="buy_quantity">Cantidad a comprar</Label>
+                      <Input
+                        id="buy_quantity"
+                        name="buy_quantity"
+                        type="number"
+                        min="1"
+                        value={formData.buy_quantity}
+                        onChange={handleInputChange}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="get_quantity">Cantidad a llevar</Label>
+                      <Input
+                        id="get_quantity"
+                        name="get_quantity"
+                        type="number"
+                        min="1"
+                        value={formData.get_quantity}
+                        onChange={handleInputChange}
+                        required
+                      />
+                    </div>
+                  </>
+                )}
+
+                {formData.type === 'free_item' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="item_id">ID del producto</Label>
+                    <Input
+                      id="item_id"
+                      name="item_id"
+                      value={formData.item_id}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -298,19 +431,51 @@ export default function NewCouponPage() {
                 />
               </div>
 
-              <div className="flex items-center justify-between pt-2">
-                <div className="space-y-0.5">
-                  <Label>Estado</Label>
-                  <p className="text-sm text-muted-foreground">
-                    {formData.isActive ? 'Activo' : 'Inactivo'}
-                  </p>
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Estado</Label>
+                    <p className="text-sm text-muted-foreground">
+                      {formData.is_active ? 'Activo' : 'Inactivo'}
+                    </p>
+                  </div>
+                  <Switch
+                    checked={formData.is_active}
+                    onCheckedChange={(checked) => 
+                      setFormData(prev => ({ ...prev, is_active: checked }))
+                    }
+                  />
                 </div>
-                <Switch
-                  checked={formData.isActive}
-                  onCheckedChange={(checked) => 
-                    setFormData(prev => ({ ...prev, isActive: checked }))
-                  }
-                />
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Cupón público</Label>
+                    <p className="text-sm text-muted-foreground">
+                      {formData.is_public ? 'Visible para todos' : 'Solo para usuarios seleccionados'}
+                    </p>
+                  </div>
+                  <Switch
+                    checked={formData.is_public}
+                    onCheckedChange={(checked) => 
+                      setFormData(prev => ({ ...prev, is_public: checked }))
+                    }
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Un solo uso por usuario</Label>
+                    <p className="text-sm text-muted-foreground">
+                      {formData.is_single_use ? 'Sí' : 'No'}
+                    </p>
+                  </div>
+                  <Switch
+                    checked={formData.is_single_use}
+                    onCheckedChange={(checked) => 
+                      setFormData(prev => ({ ...prev, is_single_use: checked }))
+                    }
+                  />
+                </div>
               </div>
             </CardContent>
           </Card>

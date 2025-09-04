@@ -77,3 +77,53 @@ export interface Membership {
   created_at: string;
   updated_at: string;
 }
+
+export type CouponType = 'percentage' | 'fixed_amount' | 'free_shipping' | 'buy_x_get_y' | 'free_item';
+
+export interface Coupon {
+  id: number;
+  company_id: string;
+  code: string;
+  name: string;
+  description?: string;
+  type: CouponType;
+  discount_amount?: number;
+  discount_percentage?: number;
+  min_purchase_amount?: number;
+  buy_quantity?: number;
+  get_quantity?: number;
+  item_id?: string;
+  starts_at: string;
+  expires_at?: string;
+  usage_limit?: number;
+  usage_limit_per_user?: number;
+  is_active: boolean;
+  is_public: boolean;
+  is_single_use: boolean;
+  membership_plan_ids?: number[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CouponCreateInput {
+  code: string;
+  name: string;
+  description?: string;
+  type: CouponType;
+  discount_amount?: number;
+  discount_percentage?: number;
+  min_purchase_amount?: number;
+  buy_quantity?: number;
+  get_quantity?: number;
+  item_id?: string;
+  starts_at: string;
+  expires_at?: string;
+  usage_limit?: number;
+  usage_limit_per_user?: number;
+  is_active?: boolean;
+  is_public?: boolean;
+  is_single_use?: boolean;
+  membership_plan_ids?: number[];
+}
+
+export interface CouponUpdateInput extends Partial<CouponCreateInput> {}
