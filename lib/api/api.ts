@@ -1,4 +1,5 @@
 import { ApiResponse, UserProfile, ProfileApiUser, BusinessHour, Membership, Coupon, CouponCreateInput, CouponUpdateInput } from '@/types/api';
+import { Product, ProductListResponse, ProductResponse, ProductCreateInput, ProductUpdateInput } from '@/types/product';
 
 const BASE_URL = 'https://laravel-pkpass-backend-development-pfaawl.laravel.cloud';
 //http://127.0.0.1:8000
@@ -563,6 +564,148 @@ export const api = {
         method: 'DELETE',
         headers: getAuthHeader(token),
       }).then(handleResponse);
+    },
+  },
+
+  // Products API
+  products: {
+    /**
+     * Get all products for a company
+     */
+    async getProducts(
+      companyId: string,
+      token: string,
+      page: number = 1,
+      perPage: number = 15,
+      type?: 'physical' | 'made_to_order' | 'service'
+    ): Promise<ApiResponse<ProductListResponse>> {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        per_page: perPage.toString(),
+        ...(type && { type })
+      });
+
+      return fetch(
+        `${BASE_URL}/api/companies/${companyId}/products?${params.toString()}`,
+        {
+          method: 'GET',
+          headers: getAuthHeader(token),
+        }
+      ).then(handleResponse);
+    },
+
+    /**
+     * Create a new product
+     */
+    async createProduct(
+      companyId: string,
+      data: ProductCreateInput,
+      token: string
+    ): Promise<ApiResponse<ProductResponse>> {
+      const headers = {
+        ...getAuthHeader(token),
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      };
+      
+      return fetch(`${BASE_URL}/api/companies/${companyId}/products`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(data),
+      }).then(handleResponse);
+    },
+
+    /**
+     * Get a specific product
+     */
+    async getProduct(
+      companyId: string,
+      productId: string,
+      token: string
+    ): Promise<ApiResponse<ProductResponse>> {
+      return fetch(
+        `${BASE_URL}/api/companies/${companyId}/products/${productId}`,
+        {
+          method: 'GET',
+          headers: getAuthHeader(token),
+        }
+      ).then(handleResponse);
+    },
+
+    /**
+     * Update a product
+     */
+    async updateProduct(
+      companyId: string,
+      productId: string,
+      data: ProductUpdateInput,
+      token: string
+    ): Promise<ApiResponse<ProductResponse>> {
+      return fetch(
+        `${BASE_URL}/api/companies/${companyId}/products/${productId}`,
+        {
+          method: 'PUT',
+          headers: getAuthHeader(token),
+          body: JSON.stringify(data),
+        }
+      ).then(handleResponse);
+    },
+
+    /**
+     * Delete a product
+     */
+    async deleteProduct(
+      companyId: string,
+      productId: string,
+      token: string
+    ): Promise<ApiResponse> {
+      return fetch(
+        `${BASE_URL}/api/companies/${companyId}/products/${productId}`,
+        {
+          method: 'DELETE',
+          headers: getAuthHeader(token),
+        }
+      ).then(handleResponse);
+    },
+
+    /**
+     * Update product stock (for physical products)
+     */
+    async updateProductStock(
+      companyId: string,
+      productId: string,
+      locationId: number,
+      stock: number,
+      token: string
+    ): Promise<ApiResponse<ProductResponse>> {
+      return fetch(
+        `${BASE_URL}/api/companies/${companyId}/products/${productId}/stock`,
+        {
+          method: 'PUT',
+          headers: getAuthHeader(token),
+          body: JSON.stringify({ location_id: locationId, stock }),
+        }
+      ).then(handleResponse);
+    },
+
+    /**
+     * Toggle product availability
+     */
+    async toggleProductAvailability(
+      companyId: string,
+      productId: string,
+      locationId: number,
+      isAvailable: boolean,
+      token: string
+    ): Promise<ApiResponse<ProductResponse>> {
+      return fetch(
+        `${BASE_URL}/api/companies/${companyId}/products/${productId}/availability`,
+        {
+          method: 'PUT',
+          headers: getAuthHeader(token),
+          body: JSON.stringify({ location_id: locationId, is_available: isAvailable }),
+        }
+      ).then(handleResponse);
     },
   },
 };
