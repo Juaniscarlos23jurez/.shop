@@ -1,4 +1,4 @@
-import { ApiResponse, UserProfile, ProfileApiUser, BusinessHour, Membership } from '@/types/api';
+import { ApiResponse, UserProfile, ProfileApiUser, BusinessHour, Membership, Coupon, CouponCreateInput, CouponUpdateInput } from '@/types/api';
 
 const BASE_URL = 'https://laravel-pkpass-backend-development-pfaawl.laravel.cloud';
 //http://127.0.0.1:8000
@@ -78,32 +78,9 @@ export const api = {
      * Get the authenticated user's company
      */
     async get(token: string): Promise<ApiResponse<any>> {
-      try {
-        const response = await fetch(`${BASE_URL}/api/auth/profile/company`, {
-          headers: getAuthHeader(token),
-        });
-        const result = await handleResponse(response);
-        console.log('Company API raw response:', result);
-        
-        // Ensure we have a valid response structure
-        if (result.success && result.data) {
-          return {
-            success: true,
-            data: result.data,
-            status: result.status,
-            statusText: result.statusText
-          };
-        }
-        
-        return result;
-      } catch (error) {
-        console.error('Error in userCompanies.get:', error);
-        return {
-          success: false,
-          message: error instanceof Error ? error.message : 'Error al obtener los datos de la compañía',
-          error: error instanceof Error ? error.message : String(error)
-        };
-      }
+      return fetch(`${BASE_URL}/api/auth/profile/company`, {
+        headers: getAuthHeader(token),
+      }).then(handleResponse);
     },
 
     /**
@@ -401,22 +378,12 @@ export const api = {
 
     async createLocation(companyId: string, locationData: any, token: string): Promise<ApiResponse> {
       try {
-        console.log('Creating location with data:', {
-          companyId,
-          locationData,
-          token: token ? 'Token exists' : 'No token provided'
-        });
-        
         const url = `${BASE_URL}/api/test/companies/${companyId}/locations`;
         const headers = {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
           'Authorization': `Bearer ${token}`
         };
-        
-        console.log('Sending request to:', url);
-        console.log('Headers:', JSON.stringify(headers, null, 2));
-        console.log('Payload:', JSON.stringify(locationData, null, 2));
         
         const response = await fetch(url, {
           method: 'POST',
@@ -425,7 +392,6 @@ export const api = {
         });
         
         const result = await handleResponse(response);
-        console.log('Location creation response:', result);
         return result;
         
       } catch (error) {
@@ -519,31 +485,99 @@ export const api = {
       }).then(handleResponse);
     },
   },
+
+  // Coupons API
+  coupons: {
+    /**
+     * Get all coupons for a company
+     */
+    async getCoupons(
+      companyId: string,
+      token: string
+    ): Promise<ApiResponse<{
+      data: {
+        data: Coupon[];
+        current_page: number;
+        last_page: number;
+        total: number;
+      }
+    }>> {
+      return fetch(`${BASE_URL}/api/companies/${companyId}/coupons`, {
+        headers: getAuthHeader(token),
+      }).then(handleResponse);
+    },
+
+    /**
+     * Create a new coupon
+     */
+    async createCoupon(
+      companyId: string,
+      data: CouponCreateInput,
+      token: string
+    ): Promise<ApiResponse<{ coupon: Coupon }>> {
+      return fetch(`${BASE_URL}/api/companies/${companyId}/coupons`, {
+        method: 'POST',
+        headers: getAuthHeader(token),
+        body: JSON.stringify(data)
+      }).then(handleResponse);
+    },
+
+    /**
+     * Get a specific coupon
+     */
+    async getCoupon(
+      companyId: string,
+      couponId: string,
+      token: string
+    ): Promise<ApiResponse<{ coupon: Coupon }>> {
+      return fetch(`${BASE_URL}/api/companies/${companyId}/coupons/${couponId}`, {
+        headers: getAuthHeader(token),
+      }).then(handleResponse);
+    },
+
+    /**
+     * Update a coupon
+     */
+    async updateCoupon(
+      companyId: string,
+      couponId: string,
+      data: CouponUpdateInput,
+      token: string
+    ): Promise<ApiResponse<{ coupon: Coupon }>> {
+      return fetch(`${BASE_URL}/api/companies/${companyId}/coupons/${couponId}`, {
+        method: 'PUT',
+        headers: getAuthHeader(token),
+        body: JSON.stringify(data)
+      }).then(handleResponse);
+    },
+
+    /**
+     * Delete a coupon
+     */
+    async deleteCoupon(
+      companyId: string,
+      couponId: string,
+      token: string
+    ): Promise<ApiResponse> {
+      return fetch(`${BASE_URL}/api/companies/${companyId}/coupons/${couponId}`, {
+        method: 'DELETE',
+        headers: getAuthHeader(token),
+      }).then(handleResponse);
+    },
+  },
 };
 
 // Helper function to handle API responses
 async function handleResponse(response: Response): Promise<ApiResponse> {
-  // Clone the response so we can read it multiple times
-  const responseClone = response.clone();
-  
-  // First, try to get the response as text to help with debugging
-  const responseText = await responseClone.text();
-  
+  const responseText = await response.text();
   let data: any;
+
   try {
-    // Try to parse the response as JSON
     data = responseText ? JSON.parse(responseText) : {};
-    
-    console.log('API Response:', {
-      status: response.status,
-      statusText: response.statusText,
-      url: response.url,
-      data: data
-    });
   } catch (error) {
     console.error('Failed to parse JSON response. Response text:', responseText);
-    return { 
-      success: false, 
+    return {
+      success: false,
       message: 'Invalid server response',
       error: `Failed to parse response as JSON. Status: ${response.status} ${response.statusText}`,
       status: response.status,
@@ -551,42 +585,32 @@ async function handleResponse(response: Response): Promise<ApiResponse> {
       responseText: responseText
     };
   }
-  
-  if (!response.ok) {
-    // Log detailed error information
-    console.error('API Error Response:', {
+
+  if (response.ok) {
+    return {
+      success: true,
+      data: data,
       status: response.status,
       statusText: response.statusText,
-      url: response.url,
-      headers: Object.fromEntries(response.headers.entries()),
-      data: data,
-      responseText: responseText
-    });
-    
-    // Try to extract error message from different response formats
-    const errorMessage = data?.message || 
-                        data?.error?.message || 
-                        data?.error || 
-                        (typeof data === 'string' ? data : null) ||
-                        response.statusText || 
-                        'An unknown error occurred';
-    
-    return { 
-      success: false, 
-      message: errorMessage,
-      error: errorMessage,
-      status: response.status,
-      statusText: response.statusText,
-      data: data,
-      responseText: responseText
     };
   }
-  
-  return { 
-    success: true, 
-    data: data,
+
+  // Handle errors
+  const errorMessage = data?.message || 
+                      data?.error?.message || 
+                      data?.error || 
+                      (typeof data === 'string' ? data : null) ||
+                      response.statusText || 
+                      'An unknown error occurred';
+
+  return {
+    success: false,
+    message: errorMessage,
+    error: errorMessage,
     status: response.status,
-    statusText: response.statusText
+    statusText: response.statusText,
+    data: data,
+    responseText: responseText
   };
 }
 

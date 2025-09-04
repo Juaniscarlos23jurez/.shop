@@ -1,78 +1,97 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Search, Filter, ArrowUpDown } from 'lucide-react';
+import { Plus, Search, Filter } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { useAuth } from '@/contexts/AuthContext';
+import { api } from '@/lib/api/api';
+import { Coupon } from '@/types/api';
 
-// Mock data for coupons
-const mockCoupons = [
-  {
-    id: '1',
-    code: 'WELCOME20',
-    description: '20% de descuento en la primera compra',
-    discount: 20,
-    discountType: 'percentage',
-    minPurchase: 500,
-    validFrom: '2024-01-01',
-    validUntil: '2024-12-31',
-    maxUses: 100,
-    used: 45,
-    status: 'active',
-  },
-  {
-    id: '2',
-    code: 'FREESHIP',
-    description: 'Envío gratuito en compras superiores a $1000',
-    discount: 0,
-    discountType: 'free_shipping',
-    minPurchase: 1000,
-    validFrom: '2024-01-01',
-    validUntil: '2024-12-31',
-    maxUses: 200,
-    used: 123,
-    status: 'active',
-  },
-  {
-    id: '3',
-    code: 'SUMMER25',
-    description: '25% de descuento en productos de verano',
-    discount: 25,
-    discountType: 'percentage',
-    minPurchase: 0,
-    validFrom: '2024-06-01',
-    validUntil: '2024-08-31',
-    maxUses: 500,
-    used: 0,
-    status: 'scheduled',
-  },
-  {
-    id: '4',
-    code: 'FRIEND10',
-    description: '10% de descuento para referidos',
-    discount: 10,
-    discountType: 'percentage',
-    minPurchase: 0,
-    validFrom: '2024-01-01',
-    validUntil: '2024-12-31',
-    maxUses: 1000,
-    used: 1000,
-    status: 'expired',
-  },
-];
+interface ExtendedCoupon extends Coupon {
+  used?: number;
+}
 
 export default function CuponesPage() {
   const router = useRouter();
+  const { token } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [coupons, setCoupons] = useState<ExtendedCoupon[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const filteredCoupons = mockCoupons.filter(coupon => {
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!token) return;
+      
+      try {
+        // First fetch company data
+        const companyResponse = await api.userCompanies.get(token);
+        console.log('Company Response:', JSON.stringify(companyResponse, null, 2));
+        if (!companyResponse.success || !companyResponse.data?.data?.id) {
+          throw new Error('Error al obtener datos de la compañía');
+        }
+
+        // Then fetch coupons with the company ID
+        const companyId = companyResponse.data.data.id;
+        console.log('Fetching coupons for company ID:', companyId);
+        
+        try {
+          const response = await api.coupons.getCoupons(companyId, token);
+          console.log('Coupons API Response (stringified):', JSON.stringify(response, null, 2));
+          
+          if (response.success) {
+            if (response.data?.data?.data) {
+              // The API returns a paginated response with the actual data in the 'data' property
+              console.log('Found coupons:', response.data.data.data);
+              setCoupons(response.data.data.data);
+            } else if (response.data?.data && Array.isArray(response.data.data)) {
+              // Handle case where the response structure might be different
+              console.log('Found coupons (alternative structure):', response.data.data);
+              setCoupons(response.data.data);
+            } else {
+              console.warn('No coupons found in the response');
+              setCoupons([]); // Set empty array instead of throwing error
+            }
+          } else {
+            console.error('API returned success:false with data:', response);
+            throw new Error(response.message || 'Error al obtener los cupones');
+          }
+        } catch (error) {
+          console.error('Error fetching coupons:', error);
+          throw new Error('Error al conectar con el servidor');
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Error al cargar los datos');
+        console.error('Error fetching data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [token]);
+
+  const getCouponStatus = (coupon: ExtendedCoupon): string => {
+    const now = new Date();
+    const startsAt = new Date(coupon.starts_at);
+    const expiresAt = coupon.expires_at ? new Date(coupon.expires_at) : null;
+
+    if (!coupon.is_active) return 'disabled';
+    if (startsAt > now) return 'scheduled';
+    if (expiresAt && expiresAt < now) return 'expired';
+    return 'active';
+  };
+
+  const filteredCoupons = coupons.filter(coupon => {
     const matchesSearch = coupon.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      coupon.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || coupon.status === statusFilter;
+      (coupon.description?.toLowerCase() || '').includes(searchTerm.toLowerCase());
+    const status = getCouponStatus(coupon);
+    const matchesStatus = statusFilter === 'all' || status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
@@ -91,11 +110,19 @@ export default function CuponesPage() {
     }
   };
 
-  const getDiscountText = (coupon: any) => {
-    if (coupon.discountType === 'free_shipping') {
+  const getDiscountText = (coupon: ExtendedCoupon) => {
+    if (coupon.type === 'free_shipping') {
       return 'Envío Gratis';
+    } else if (coupon.type === 'fixed_amount' && coupon.discount_amount) {
+      return `$${coupon.discount_amount} de descuento`;
+    } else if (coupon.type === 'percentage' && coupon.discount_percentage) {
+      return `${coupon.discount_percentage}% de descuento`;
+    } else if (coupon.type === 'buy_x_get_y' && coupon.buy_quantity && coupon.get_quantity) {
+      return `Compra ${coupon.buy_quantity} y lleva ${coupon.get_quantity}`;
+    } else if (coupon.type === 'free_item') {
+      return 'Producto gratis';
     }
-    return `${coupon.discount}% de descuento`;
+    return 'Descuento';
   };
 
   return (
@@ -144,7 +171,12 @@ export default function CuponesPage() {
           </div>
         </CardHeader>
         <CardContent>
-          {filteredCoupons.length > 0 ? (
+          {loading && <p>Cargando datos de la compañía y cupones...</p>}
+          {error ? (
+            <div className="text-center py-12">
+              <p className="text-red-500">{error}</p>
+            </div>
+          ) : filteredCoupons.length > 0 ? (
             <div className="space-y-4">
               {filteredCoupons.map((coupon) => (
                 <Card key={coupon.id} className="hover:shadow-md transition-shadow">
@@ -153,15 +185,17 @@ export default function CuponesPage() {
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
                           <h3 className="text-lg font-medium">{coupon.code}</h3>
-                          {getStatusBadge(coupon.status)}
+                          {getStatusBadge(getCouponStatus(coupon))}
                         </div>
                         <p className="text-sm text-muted-foreground">{coupon.description}</p>
                         <div className="flex items-center gap-4 text-sm">
                           <span className="text-foreground font-medium">{getDiscountText(coupon)}</span>
-                          {coupon.minPurchase > 0 && (
-                            <span>Mín. compra: ${coupon.minPurchase}</span>
+                          {coupon.min_purchase_amount && coupon.min_purchase_amount > 0 && (
+                            <span>Mín. compra: ${coupon.min_purchase_amount}</span>
                           )}
-                          <span>Usos: {coupon.used}/{coupon.maxUses}</span>
+                          {coupon.usage_limit && (
+                            <span>Usos: {coupon.used || 0}/{coupon.usage_limit}</span>
+                          )}
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
