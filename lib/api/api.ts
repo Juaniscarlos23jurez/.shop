@@ -85,6 +85,50 @@ export const api = {
     },
 
     /**
+     * Get company followers
+     */
+    async getFollowers(token: string): Promise<ApiResponse<{
+      company: { 
+        id: number; 
+        name: string;
+        owner_id?: number;
+      };
+      summary: {
+        total_followers: number;
+        followers_with_membership: number;
+        followers_without_membership: number;
+      };
+      followers: Array<{
+        company_id: number;
+        customer_id: number;
+        customer_name: string;
+        customer_email: string;
+        customer_phone?: string;
+        customer_since: string;
+        following_since: string;
+        membership_id: number | null;
+        membership_name: string | null;
+        membership_description: string | null;
+        membership_price: string | null;
+        has_active_membership: number; // 0 or 1
+      }>;
+    }>> {
+      console.log('Fetching followers from:', `${BASE_URL}/api/my-company/followers`);
+      try {
+        const response = await fetch(`${BASE_URL}/api/my-company/followers`, {
+          headers: getAuthHeader(token),
+        });
+        console.log('Raw followers response status:', response.status);
+        const result = await handleResponse(response);
+        console.log('Processed followers response:', result);
+        return result;
+      } catch (error) {
+        console.error('Error in getFollowers:', error);
+        throw error;
+      }
+    },
+
+    /**
      * Create a new company for the authenticated user
      */
     async create(

@@ -1,87 +1,129 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Search, Filter, ArrowUpDown, Mail, Phone, User, Calendar as CalendarIcon } from 'lucide-react';
+import { Plus, Search, Filter, ArrowUpDown, Mail, Phone, User, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { useAuth } from '@/contexts/AuthContext';
+import { api } from '@/lib/api/api';
 
-// Mock data for clients
-const mockClients = [
-  {
-    id: '1',
-    name: 'María García',
-    email: 'maria.garcia@example.com',
-    phone: '+52 55 1234 5678',
-    membership: 'Gold',
-    points: 1250,
-    lastPurchase: '2024-02-10',
-    totalSpent: 12500,
-    status: 'active',
-    avatar: '/placeholder-user.jpg',
-  },
-  {
-    id: '2',
-    name: 'Juan Pérez',
-    email: 'juan.perez@example.com',
-    phone: '+52 55 8765 4321',
-    membership: 'Plata',
-    points: 750,
-    lastPurchase: '2024-02-15',
-    totalSpent: 8750,
-    status: 'active',
-    avatar: '/placeholder-user.jpg',
-  },
-  {
-    id: '3',
-    name: 'Ana Martínez',
-    email: 'ana.martinez@example.com',
-    phone: '+52 55 1357 2468',
-    membership: 'Bronce',
-    points: 250,
-    lastPurchase: '2024-01-25',
-    totalSpent: 3200,
-    status: 'inactive',
-    avatar: '/placeholder-user.jpg',
-  },
-  {
-    id: '4',
-    name: 'Carlos López',
-    email: 'carlos.lopez@example.com',
-    phone: '+52 55 9876 5432',
-    membership: 'Oro',
-    points: 2000,
-    lastPurchase: '2024-02-18',
-    totalSpent: 21500,
-    status: 'active',
-    avatar: '/placeholder-user.jpg',
-  },
-  {
-    id: '5',
-    name: 'Laura Sánchez',
-    email: 'laura.sanchez@example.com',
-    phone: '+52 55 2468 1357',
-    membership: 'Plata',
-    points: 500,
-    lastPurchase: '2024-02-05',
-    totalSpent: 6500,
-    status: 'active',
-    avatar: '/placeholder-user.jpg',
-  },
-];
+interface Follower {
+  company_id: number;
+  customer_id: number;
+  customer_name: string;
+  customer_email: string;
+  customer_phone?: string;
+  customer_since: string;
+  following_since: string;
+  membership_id: number | null;
+  membership_name: string | null;
+  membership_description: string | null;
+  membership_price: string | null;
+  has_active_membership: number; // 0 or 1
+}
+
+interface ApiResponseData {
+  company: {
+    id: number;
+    name: string;
+  };
+  summary: {
+    total_followers: number;
+    followers_with_membership: number;
+    followers_without_membership: number;
+  };
+  followers: Follower[];
+}
+
+interface ApiResponseWrapper {
+  status: string;
+  data: ApiResponseData;
+  message?: string;
+}
+
+interface ApiResponse {
+  success: boolean;
+  data: ApiResponseWrapper;
+  status: number;
+  statusText: string;
+  message?: string;
+}
+
+// Define sortable fields explicitly to ensure type safety
+type SortableField = keyof Pick<Follower, 'customer_name' | 'customer_email' | 'following_since' | 'customer_since' | 'membership_name'>;
 
 export default function ClientesPage() {
   const router = useRouter();
+  const { token } = useAuth();
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [data, setData] = useState<ApiResponseData | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
+  const [statusFilter, setStatusFilter] = useState<'all' | 'with_membership' | 'without_membership'>('all');
+  
+  const [sortConfig, setSortConfig] = useState<{ key: SortableField; direction: 'asc' | 'desc' }>({
+    key: 'following_since',
+    direction: 'desc',
+  });
 
-  const handleSort = (key: string) => {
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!token) {
+        console.error('No authentication token available');
+        setError('No se pudo autenticar. Por favor, inicia sesión nuevamente.');
+        return;
+      }
+      
+      try {
+        console.log('Fetching followers data...');
+        setIsLoading(true);
+        
+        console.log('Using token:', token.substring(0, 10) + '...');
+        
+        const response = await api.userCompanies.getFollowers(token) as ApiResponse;
+        console.log('API Response:', response);
+        
+        if (response && response.success && response.data) {
+          const responseData = response.data as ApiResponseWrapper;
+          console.log('API Response Data:', responseData);
+          
+          if (responseData.status === 'success') {
+            console.log('Successfully loaded followers:', responseData.data);
+            setData(responseData.data);
+          } else {
+            const errorMsg = responseData.message || response.message || 'Error al cargar los datos de los clientes';
+            console.error('API Error:', errorMsg);
+            setError(errorMsg);
+          }
+        } else {
+          const errorMsg = response?.message || 'Error al procesar la respuesta del servidor';
+          console.error('API Error:', errorMsg);
+          setError(errorMsg);
+        }
+      } catch (err) {
+        const error = err as Error;
+        console.error('Error fetching followers:', error);
+        console.error('Error details:', {
+          name: error.name,
+          message: error.message,
+          stack: error.stack
+        });
+        setError(`Error al conectar con el servidor: ${error.message}`);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [token]);
+
+  const handleSort = (key: SortableField) => {
     let direction: 'asc' | 'desc' = 'asc';
     if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
       direction = 'desc';
@@ -89,48 +131,88 @@ export default function ClientesPage() {
     setSortConfig({ key, direction });
   };
 
-  const filteredClients = mockClients.filter(client => {
+  const filteredClients = data?.followers?.filter((follower) => {
     const matchesSearch = 
-      client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.phone.includes(searchTerm);
-    const matchesStatus = statusFilter === 'all' || client.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+      follower.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      follower.customer_email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (follower.customer_phone || '').includes(searchTerm);
+    
+    if (statusFilter === 'all') return matchesSearch;
+    if (statusFilter === 'with_membership') return matchesSearch && follower.has_active_membership === 1;
+    if (statusFilter === 'without_membership') return matchesSearch && follower.has_active_membership !== 1;
+    
+    return matchesSearch;
+  }) || [];
 
   const sortedClients = [...filteredClients].sort((a, b) => {
-    if (!sortConfig) return 0;
+    const { key, direction } = sortConfig;
     
-    const aValue = a[sortConfig.key as keyof typeof a];
-    const bValue = b[sortConfig.key as keyof typeof b];
+    // Type guard to ensure we only access valid properties
+    const getValue = (item: Follower, k: SortableField): string | number | null => {
+      const value = item[k];
+      return value;
+    };
     
-    if (aValue < bValue) {
-      return sortConfig.direction === 'asc' ? -1 : 1;
-    }
-    if (aValue > bValue) {
-      return sortConfig.direction === 'asc' ? 1 : -1;
-    }
+    const aValue = getValue(a, key);
+    const bValue = getValue(b, key);
+    
+    // Handle null or undefined values
+    if (aValue === null || aValue === undefined) return direction === 'asc' ? -1 : 1;
+    if (bValue === null || bValue === undefined) return direction === 'asc' ? 1 : -1;
+    
+    // Convert to string for consistent comparison
+    const strA = String(aValue).toLowerCase();
+    const strB = String(bValue).toLowerCase();
+    
+    if (strA < strB) return direction === 'asc' ? -1 : 1;
+    if (strA > strB) return direction === 'asc' ? 1 : -1;
     return 0;
   });
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'active':
-        return <Badge className="bg-green-100 text-green-800">Activo</Badge>;
-      case 'inactive':
-        return <Badge variant="outline">Inactivo</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
-    }
+  const getStatusBadge = (hasActiveMembership: number) => {
+    return hasActiveMembership === 1 ? (
+      <Badge className="bg-green-100 text-green-800">Con membresía</Badge>
+    ) : (
+      <Badge variant="outline">Sin membresía</Badge>
+    );
   };
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount: string | number | null): string => {
+    if (amount === null || amount === undefined) return 'N/A';
+    const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+    if (isNaN(numAmount)) return 'N/A';
     return new Intl.NumberFormat('es-MX', {
       style: 'currency',
       currency: 'MXN',
       minimumFractionDigits: 2,
-    }).format(amount);
+    }).format(numAmount);
   };
+
+  const formatDate = (dateString: string): string => {
+    try {
+      return format(parseISO(dateString), 'dd MMM yyyy HH:mm', { locale: es });
+    } catch (e) {
+      return dateString;
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-2">Cargando clientes...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative" role="alert">
+        <strong className="font-bold">Error: </strong>
+        <span className="block sm:inline">{error}</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -138,10 +220,21 @@ export default function ClientesPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Clientes</h1>
           <p className="text-muted-foreground">
-            Gestiona la información de tus clientes
+            {data?.company?.name ? `Clientes de ${data.company.name}` : 'Gestiona la información de tus clientes'}
           </p>
+          {data?.summary && (
+            <div className="flex gap-4 mt-2 text-sm text-muted-foreground">
+              <span>Total: {data.summary.total_followers}</span>
+              <span>Con membresía: {data.summary.followers_with_membership}</span>
+              <span>Sin membresía: {data.summary.followers_without_membership}</span>
+            </div>
+          )}
         </div>
-        <Button className="mt-4 md:mt-0" onClick={() => router.push('/dashboard/clientes/nuevo')}>
+        <Button 
+          className="mt-4 md:mt-0" 
+          onClick={() => router.push('/dashboard/clientes/nuevo')} 
+          disabled={!token}
+        >
           <Plus className="mr-2 h-4 w-4" />
           Nuevo Cliente
         </Button>
@@ -163,11 +256,12 @@ export default function ClientesPage() {
               <select
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
+                onChange={(e) => setStatusFilter(e.target.value as 'all' | 'with_membership' | 'without_membership')}
+                disabled={isLoading}
               >
-                <option value="all">Todos los estados</option>
-                <option value="active">Activos</option>
-                <option value="inactive">Inactivos</option>
+                <option value="all">Todos los clientes</option>
+                <option value="with_membership">Con membresía</option>
+                <option value="without_membership">Sin membresía</option>
               </select>
               <Button variant="outline" size="sm" className="flex items-center gap-2">
                 <Filter className="h-4 w-4" />
@@ -184,7 +278,7 @@ export default function ClientesPage() {
                   <th className="text-left py-3 px-4">
                     <button 
                       className="flex items-center gap-1 font-medium"
-                      onClick={() => handleSort('name')}
+                      onClick={() => handleSort('customer_name')}
                     >
                       Cliente
                       <ArrowUpDown className="h-4 w-4" />
@@ -193,36 +287,32 @@ export default function ClientesPage() {
                   <th className="text-left py-3 px-4">
                     <button 
                       className="flex items-center gap-1 font-medium"
-                      onClick={() => handleSort('membership')}
+                      onClick={() => handleSort('membership_name')}
                     >
                       Membresía
                       <ArrowUpDown className="h-4 w-4" />
                     </button>
                   </th>
                   <th className="text-right py-3 px-4">
+                    <div className="font-medium">
+                      Precio
+                    </div>
+                  </th>
+                  <th className="text-right py-3 px-4">
                     <button 
                       className="flex items-center gap-1 font-medium ml-auto"
-                      onClick={() => handleSort('points')}
+                      onClick={() => handleSort('customer_since')}
                     >
-                      Puntos
+                      Cliente desde
                       <ArrowUpDown className="h-4 w-4" />
                     </button>
                   </th>
                   <th className="text-right py-3 px-4">
                     <button 
                       className="flex items-center gap-1 font-medium ml-auto"
-                      onClick={() => handleSort('totalSpent')}
+                      onClick={() => handleSort('following_since')}
                     >
-                      Total Gastado
-                      <ArrowUpDown className="h-4 w-4" />
-                    </button>
-                  </th>
-                  <th className="text-right py-3 px-4">
-                    <button 
-                      className="flex items-center gap-1 font-medium ml-auto"
-                      onClick={() => handleSort('lastPurchase')}
-                    >
-                      Última Compra
+                      Siguiendo desde
                       <ArrowUpDown className="h-4 w-4" />
                     </button>
                   </th>
@@ -232,59 +322,67 @@ export default function ClientesPage() {
               </thead>
               <tbody className="divide-y">
                 {sortedClients.map((client) => (
-                  <tr key={client.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                  <tr key={client.customer_id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
                     <td className="py-4 px-4">
                       <div className="flex items-center gap-3">
                         <Avatar className="h-10 w-10">
-                          <AvatarImage src={client.avatar} alt={client.name} />
+                          <AvatarImage src="/placeholder-user.jpg" alt={client.customer_name} />
                           <AvatarFallback>
-                            {client.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                            {client.customer_name.split(' ').map(n => n[0]).join('').toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <div className="font-medium">{client.name}</div>
+                          <div className="font-medium">{client.customer_name}</div>
                           <div className="text-sm text-muted-foreground flex items-center gap-1">
                             <Mail className="h-3 w-3" />
-                            {client.email}
+                            {client.customer_email}
                           </div>
-                          <div className="text-sm text-muted-foreground flex items-center gap-1">
-                            <Phone className="h-3 w-3" />
-                            {client.phone}
-                          </div>
+                          {client.customer_phone && (
+                            <div className="text-sm text-muted-foreground flex items-center gap-1">
+                              <Phone className="h-3 w-3" />
+                              {client.customer_phone}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </td>
                     <td className="py-4 px-4">
-                      <Badge variant="outline" className="capitalize">
-                        {client.membership.toLowerCase()}
-                      </Badge>
-                    </td>
-                    <td className="py-4 px-4 text-right">
-                      <div className="font-medium">{client.points.toLocaleString()}</div>
-                      <div className="text-sm text-muted-foreground">puntos</div>
-                    </td>
-                    <td className="py-4 px-4 text-right">
-                      <div className="font-medium">{formatCurrency(client.totalSpent)}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {client.totalSpent > 0 ? `${Math.floor(client.totalSpent / 1000)}+ compras` : 'Sin compras'}
-                      </div>
+                      {client.membership_name ? (
+                        <div>
+                          <div className="font-medium">{client.membership_name}</div>
+                          {client.membership_description && (
+                            <div className="text-xs text-muted-foreground">
+                              {client.membership_description}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground">Sin membresía</span>
+                      )}
                     </td>
                     <td className="py-4 px-4 text-right">
                       <div className="font-medium">
-                        {format(new Date(client.lastPurchase), 'dd MMM yyyy', { locale: es })}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        {format(new Date(client.lastPurchase), 'HH:mm', { locale: es })}
+                        {formatCurrency(client.membership_price)}
                       </div>
                     </td>
                     <td className="py-4 px-4 text-right">
-                      {getStatusBadge(client.status)}
+                      <div className="text-sm">
+                        {formatDate(client.customer_since)}
+                      </div>
+                    </td>
+                    <td className="py-4 px-4 text-right">
+                      <div className="text-sm">
+                        {formatDate(client.following_since)}
+                      </div>
+                    </td>
+                    <td className="py-4 px-4 text-right">
+                      {getStatusBadge(client.has_active_membership)}
                     </td>
                     <td className="py-4 px-4 text-right">
                       <Button 
                         variant="ghost" 
                         size="sm"
-                        onClick={() => router.push(`/dashboard/clientes/${client.id}`)}
+                        onClick={() => router.push(`/dashboard/clientes/${client.customer_id}`)}
                       >
                         Ver detalles
                       </Button>
@@ -298,19 +396,29 @@ export default function ClientesPage() {
           {sortedClients.length === 0 && (
             <div className="text-center py-12">
               <User className="h-12 w-12 mx-auto text-muted-foreground" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">No se encontraron clientes</h3>
+              <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">
+                {searchTerm || statusFilter !== 'all' 
+                  ? 'No se encontraron clientes que coincidan con tu búsqueda'
+                  : 'Aún no tienes clientes registrados'}
+              </h3>
               <p className="mt-1 text-sm text-muted-foreground">
-                No hay clientes que coincidan con tu búsqueda.
+                {searchTerm || statusFilter !== 'all'
+                  ? 'Intenta con otros términos de búsqueda o filtros.'
+                  : 'Los clientes que sigan tu negocio aparecerán aquí.'}
               </p>
-              <div className="mt-6">
-                <Button onClick={() => {
-                  setSearchTerm('');
-                  setStatusFilter('all');
-                }}>
-                  <User className="mr-2 h-4 w-4" />
-                  Ver todos los clientes
-                </Button>
-              </div>
+              {(searchTerm || statusFilter !== 'all') && (
+                <div className="mt-6">
+                  <Button 
+                    onClick={() => {
+                      setSearchTerm('');
+                      setStatusFilter('all');
+                    }}
+                  >
+                    <User className="mr-2 h-4 w-4" />
+                    Ver todos los clientes
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </CardContent>
