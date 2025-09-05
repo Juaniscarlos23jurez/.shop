@@ -26,6 +26,7 @@ interface Follower {
   membership_description: string | null;
   membership_price: string | null;
   has_active_membership: number; // 0 or 1
+  points?: number; // Points for the customer
 }
 
 interface ApiResponseData {
@@ -299,6 +300,11 @@ export default function ClientesPage() {
                     </div>
                   </th>
                   <th className="text-right py-3 px-4">
+                    <div className="font-medium">
+                      Puntos
+                    </div>
+                  </th>
+                  <th className="text-right py-3 px-4">
                     <button 
                       className="flex items-center gap-1 font-medium ml-auto"
                       onClick={() => handleSort('customer_since')}
@@ -363,6 +369,11 @@ export default function ClientesPage() {
                     <td className="py-4 px-4 text-right">
                       <div className="font-medium">
                         {formatCurrency(client.membership_price)}
+                      </div>
+                    </td>
+                    <td className="py-4 px-4 text-right">
+                      <div className="font-medium">
+                        {client.points || '0'}
                       </div>
                     </td>
                     <td className="py-4 px-4 text-right">

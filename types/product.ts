@@ -8,6 +8,7 @@ export type Product = {
   is_active: boolean;
   category: string;
   image_url?: string;
+  points?: number;
   locations: ProductLocation[];
   created_at?: string;
   updated_at?: string;

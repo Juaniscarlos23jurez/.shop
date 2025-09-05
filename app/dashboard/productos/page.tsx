@@ -142,11 +142,12 @@ export default function ProductosPage() {
         <CardContent>
           <div className="rounded-md border overflow-hidden">
             <div className="grid grid-cols-12 items-center gap-2 p-3 font-medium text-slate-600 border-b bg-slate-50 text-sm">
-              <div className="col-span-5 pl-2">Producto</div>
+              <div className="col-span-4 pl-2">Producto</div>
               <div className="col-span-1 text-right pr-2">Precio</div>
+              <div className="col-span-1 text-center">Puntos</div>
               <div className="col-span-1 text-center">Stock</div>
               <div className="col-span-1 text-center">Tipo</div>
-              <div className="col-span-3">Ubicaciones</div>
+              <div className="col-span-2">Ubicaciones</div>
               <div className="col-span-1 text-center">Estado</div>
               <div className="col-span-1"></div>
             </div>
@@ -180,7 +181,7 @@ export default function ProductosPage() {
                     key={product.id}
                     className="grid grid-cols-12 items-start gap-2 p-2 border-b hover:bg-slate-50 transition-colors text-sm h-16"
                   >
-                    <div className="col-span-5 flex items-start pl-2 h-full">
+                    <div className="col-span-4 flex items-start pl-2 h-full">
                       <div className="flex-shrink-0 mt-1">
                         {product.image_url ? (
                           <img 
@@ -212,6 +213,11 @@ export default function ProductosPage() {
                       <span className="font-medium text-sm">{formatCurrency(Number(product.price))}</span>
                     </div>
                     <div className="col-span-1 text-center flex items-center h-full justify-center">
+                      <span className="px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded text-xs font-medium">
+                        {product.points || 0}
+                      </span>
+                    </div>
+                    <div className="col-span-1 text-center flex items-center h-full justify-center">
                       {product.track_stock ? (
                         <span className="px-1.5 py-0.5 bg-slate-100 rounded text-xs">
                           {product.locations?.reduce((sum, loc) => sum + (Number(loc.stock) || 0), 0) || 0}
@@ -225,7 +231,7 @@ export default function ProductosPage() {
                         <ProductTypeBadge type={product.product_type} />
                       </div>
                     </div>
-                    <div className="col-span-3 flex items-center h-full">
+                    <div className="col-span-2 flex items-center h-full">
                       <div className="max-h-12 overflow-y-auto py-1">
                         {product.locations?.length > 0 ? (
                           <div className="flex flex-wrap gap-1 items-center">

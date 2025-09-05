@@ -30,7 +30,6 @@ const sidebarItems = [
   { icon: Package, label: "Productos", href: "/dashboard/productos" },
   { icon: Users, label: "Clientes", href: "/dashboard/clientes" },
   { icon: CrownIcon, label: "Membresías", href: "/dashboard/membresias" },
-  { icon: GiftIcon, label: "Puntos", href: "/dashboard/puntos" },
   { icon: TicketIcon, label: "Cupones", href: "/dashboard/cupones" },
  
   // Communication & Feedback
