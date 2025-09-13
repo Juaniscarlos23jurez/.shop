@@ -1,69 +1,44 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ArrowLeft, MapPin, Phone, Mail, User, UserPlus, Settings, Pencil, Trash2 } from 'lucide-react';
-import Link from 'next/link';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { toast } from "@/components/ui/use-toast";
+import { api } from '@/lib/api';
+import { Branch, Employee } from '@/types/branch';
 import { useAuth } from '@/contexts/AuthContext';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { toast } from "@/components/ui/use-toast"; // Agregado import faltante
-import { api } from '@/lib/api'; // Agregado import faltante
+import Link from 'next/link';
 
-interface Branch {
-  id: number;
-  name: string;
-  description?: string;
-  phone?: string;
-  email?: string;
-  address: string;
-  city?: string;
-  state?: string;
-  country?: string;
-  zip_code?: string;
-  latitude?: number;
-  longitude?: number;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-}
+// Components
+import dynamic from 'next/dynamic';
 
-interface Employee {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  status: 'active' | 'inactive';
-  lastActive?: string;
-}
-
-const ROLES = [
-  'Administrador',
-  'Gerente',
-  'Supervisor',
-  'Cajero',
-  'Vendedor',
-  'Almacenista'
-];
+// Import components
+import { 
+  BranchInfo, 
+  EmployeeList, 
+  EmployeeForm, 
+  BranchForm, 
+  BranchStats, 
+  QuickActions 
+} from './components';
 
 export default function BranchDetailPage() {
   const { id } = useParams();
   const router = useRouter();
   const { token } = useAuth();
+  
+  // State
   const [branch, setBranch] = useState<Branch | null>(null);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('employees');
-  const [newEmployeeEmail, setNewEmployeeEmail] = useState('');
-  const [selectedRole, setSelectedRole] = useState(ROLES[0]);
   const [isEditing, setIsEditing] = useState(false);
-  const [editData, setEditData] = useState<Partial<Branch>>({});
+  const [showEmployeeForm, setShowEmployeeForm] = useState(false);
+  const [currentEmployee, setCurrentEmployee] = useState<Employee | null>(null);
 
-  // Fetch branch details from API
+  // Fetch branch details and employees
   useEffect(() => {
     const fetchData = async () => {
       if (!token) return;
@@ -85,33 +60,38 @@ export default function BranchDetailPage() {
           throw new Error(locationsResponse.message || 'Error al cargar las sucursales');
         }
         
-        // Find the current branch
-        const locations = locationsResponse.data?.locations || locationsResponse.data?.data?.locations || [];
+        // Find the current branch - handle both response formats
+        const responseData = locationsResponse.data as any;
+        const locations = Array.isArray(responseData) 
+          ? responseData 
+          : responseData?.locations || responseData?.data?.locations || [];
         const currentBranch = locations.find((loc: any) => loc.id.toString() === id);
         
         if (!currentBranch) {
           throw new Error('Sucursal no encontrada');
         }
         
-        setBranch({
-          ...currentBranch,
-          is_active: currentBranch.is_active ?? true
-        });
-        
-        setEditData({
+        // Format branch data to match our type
+        const formattedBranch: Branch = {
+          id: currentBranch.id.toString(),
           name: currentBranch.name,
-          description: currentBranch.description,
-          phone: currentBranch.phone,
-          email: currentBranch.email,
-          address: currentBranch.address,
-          city: currentBranch.city,
-          state: currentBranch.state,
-          country: currentBranch.country,
-          zip_code: currentBranch.zip_code,
-          is_active: currentBranch.is_active ?? true
-        });
+          description: currentBranch.description || '',
+          phone: currentBranch.phone || '',
+          email: currentBranch.email || '',
+          address: currentBranch.address || '',
+          city: currentBranch.city || '',
+          state: currentBranch.state || '',
+          country: currentBranch.country || 'México',
+          zipCode: currentBranch.zip_code || '',
+          isActive: currentBranch.is_active !== undefined ? currentBranch.is_active : true,
+          createdAt: currentBranch.created_at || new Date().toISOString(),
+          updatedAt: currentBranch.updated_at || new Date().toISOString()
+        };
+        
+        setBranch(formattedBranch);
         
         // TODO: Fetch employees for this location
+        // For now, we'll use an empty array
         setEmployees([]);
         
       } catch (error) {
@@ -129,76 +109,160 @@ export default function BranchDetailPage() {
     fetchData();
   }, [id, token]);
 
-  const handleAddEmployee = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newEmployeeEmail || !selectedRole) return;
-    
-    // In a real app, you would call your API to add the employee
-    const newEmployee: Employee = {
-      id: `emp-${Date.now()}`,
-      name: newEmployeeEmail.split('@')[0],
-      email: newEmployeeEmail,
-      role: selectedRole,
-      status: 'active',
-      lastActive: 'Recién agregado'
-    };
-
-    setEmployees([...employees, newEmployee]);
-    setNewEmployeeEmail('');
-    setSelectedRole(ROLES[0]);
-  };
-
-  const handleUpdateBranch = async () => {
-    if (!branch || !token) return;
+  // Handle branch update
+  const handleSaveBranch = async (updatedBranch: Branch) => {
+    if (!token) return;
     
     try {
       setLoading(true);
       
-      // Get company ID
-      const companyResponse = await api.userCompanies.get(token);
-      if (!companyResponse.success || !companyResponse.data?.data?.id) {
-        throw new Error('No se pudo obtener el ID de la compañía');
-      }
+      // Format data for API
+      const updateData = {
+        name: updatedBranch.name,
+        description: updatedBranch.description,
+        phone: updatedBranch.phone,
+        email: updatedBranch.email,
+        address: updatedBranch.address,
+        city: updatedBranch.city,
+        state: updatedBranch.state,
+        country: updatedBranch.country,
+        zip_code: updatedBranch.zipCode,
+        is_active: updatedBranch.isActive
+      };
       
-      // Update the location
-      const updateResponse = await api.userCompanies.updateLocation(
-        branch.id.toString(),
-        {
-          name: editData.name || '',
-          description: editData.description,
-          phone: editData.phone,
-          email: editData.email,
-          address: editData.address || '',
-          city: editData.city,
-          state: editData.state,
-          country: editData.country,
-          zip_code: editData.zip_code,
-          is_active: editData.is_active ?? true
-        },
+      // Update branch via API
+      const response = await api.userCompanies.updateLocation(
+        updatedBranch.id,
+        updateData,
         token
       );
       
-      if (!updateResponse.success) {
-        throw new Error(updateResponse.message || 'Error al actualizar la sucursal');
+      if (!response.success) {
+        throw new Error(response.message || 'Error al actualizar la sucursal');
       }
       
-      // Update local state
-      setBranch({
-        ...branch,
-        ...editData
-      });
+      // Update local state with the updated branch data
+      setBranch(updatedBranch);
+      setIsEditing(false);
       
       toast({
         title: '¡Éxito!',
-        description: 'Los datos de la sucursal se han actualizado correctamente',
+        description: 'La sucursal se ha actualizado correctamente',
       });
-      
-      setIsEditing(false);
     } catch (error) {
       console.error('Error updating branch:', error);
       toast({
         title: 'Error',
-        description: error instanceof Error ? error.message : 'Error al actualizar la sucursal',
+        description: error instanceof Error ? error.message : 'No se pudo actualizar la sucursal',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle employee actions
+  const handleAddEmployee = async (employee: Omit<Employee, 'id' | 'lastActive'>) => {
+    if (!token) return;
+    
+    try {
+      setLoading(true);
+      // TODO: Implement API call to add employee
+      // const response = await api.post(`/branches/${id}/employees`, employee, {
+      //   headers: { Authorization: `Bearer ${token}` }
+      // });
+      
+      // Mock response
+      const newEmployee: Employee = {
+        ...employee,
+        id: `emp-${Date.now()}`,
+        lastActive: new Date().toISOString()
+      };
+      
+      setEmployees([...employees, newEmployee]);
+      setShowEmployeeForm(false);
+      
+      toast({
+        title: '¡Éxito!',
+        description: 'El empleado ha sido agregado correctamente',
+      });
+    } catch (error) {
+      console.error('Error adding employee:', error);
+      toast({
+        title: 'Error',
+        description: 'No se pudo agregar al empleado',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateEmployee = async (employeeData: Omit<Employee, 'id' | 'lastActive'>) => {
+    if (!token || !currentEmployee) return;
+    
+    try {
+      setLoading(true);
+      
+      // Create updated employee object with the existing ID and lastActive
+      const updatedEmployee: Employee = {
+        ...employeeData,
+        id: currentEmployee.id,
+        lastActive: currentEmployee.lastActive
+      };
+      
+      // TODO: Implement actual API call to update employee
+      // This is a mock implementation
+      setEmployees(employees.map(emp => 
+        emp.id === currentEmployee.id ? updatedEmployee : emp
+      ));
+      
+      setCurrentEmployee(null);
+      setShowEmployeeForm(false);
+      
+      toast({
+        title: '¡Éxito!',
+        description: 'El empleado ha sido actualizado correctamente',
+      });
+    } catch (error) {
+      console.error('Error updating employee:', error);
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'No se pudo actualizar el empleado',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteEmployee = async (employeeId: string) => {
+    if (!token) return;
+    
+    // Confirm before deleting
+    const confirmDelete = window.confirm('¿Estás seguro de que deseas eliminar a este empleado?');
+    if (!confirmDelete) return;
+    
+    try {
+      setLoading(true);
+      
+      // TODO: Implement actual API call to delete employee
+      // await api.delete(`/branches/${id}/employees/${employeeId}`, {
+      //   headers: { Authorization: `Bearer ${token}` }
+      // });
+      
+      // This is a mock implementation
+      setEmployees(employees.filter(emp => emp.id !== employeeId));
+      
+      toast({
+        title: '¡Éxito!',
+        description: 'El empleado ha sido eliminado correctamente',
+      });
+    } catch (error) {
+      console.error('Error deleting employee:', error);
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'No se pudo eliminar al empleado',
         variant: 'destructive',
       });
     } finally {
@@ -208,19 +272,10 @@ export default function BranchDetailPage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="animate-pulse space-y-6">
-          <div className="h-8 w-48 bg-gray-200 rounded"></div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="md:col-span-2 space-y-6">
-              <div className="h-12 bg-gray-200 rounded"></div>
-              <div className="h-64 bg-gray-200 rounded"></div>
-            </div>
-            <div className="space-y-4">
-              <div className="h-8 bg-gray-200 rounded"></div>
-              <div className="h-32 bg-gray-200 rounded"></div>
-            </div>
-          </div>
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Cargando datos de la sucursal...</p>
         </div>
       </div>
     );
@@ -228,375 +283,97 @@ export default function BranchDetailPage() {
 
   if (!branch) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="text-center py-12">
-          <h2 className="text-xl font-semibold text-gray-700">Sucursal no encontrada</h2>
-          <p className="text-gray-500 mt-2">La sucursal que buscas no existe o no tienes permiso para verla.</p>
-          <Button className="mt-4" onClick={() => router.back()}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Volver a sucursales
-          </Button>
-        </div>
+      <div className="text-center py-12">
+        <h2 className="text-xl font-semibold">Sucursal no encontrada</h2>
+        <p className="text-muted-foreground mt-2">
+          La sucursal que estás buscando no existe o no tienes permiso para verla.
+        </p>
+        <Button className="mt-6" onClick={() => router.back()}>
+          Volver atrás
+        </Button>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="flex items-center mb-6">
-        <Button variant="ghost" size="sm" onClick={() => router.back()} className="mr-4">
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Volver
-        </Button>
-        <div className="flex-1">
-          <h1 className="text-2xl font-bold">{branch.name}</h1>
-          <p className="text-sm text-gray-500">ID: {branch.id}</p>
-        </div>
-        <Badge variant={branch.is_active ? 'default' : 'secondary'} className="mr-2">
-          {branch.is_active ? 'Activa' : 'Inactiva'}
-        </Badge>
-        <Button variant="outline" size="sm" onClick={() => setIsEditing(!isEditing)}>
-          {isEditing ? 'Cancelar' : 'Editar sucursal'}
+    <div className="container mx-auto px-4 py-8">
+      <div className="mb-6">
+        <Button variant="ghost" asChild>
+          <Link href="/dashboard/sucursales" className="flex items-center">
+            <span className="mr-2">←</span>
+            Volver a sucursales
+          </Link>
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <CardTitle>Información de la sucursal</CardTitle>
-                {isEditing && (
-                  <Button size="sm" onClick={handleUpdateBranch}>
-                    Guardar cambios
-                  </Button>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {isEditing ? (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm font-medium mb-1 block">Nombre</label>
-                      <Input 
-                        value={editData.name || ''} 
-                        onChange={(e) => setEditData({...editData, name: e.target.value})} 
-                        placeholder="Nombre de la sucursal"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium mb-1 block">Teléfono</label>
-                      <Input 
-                        value={editData.phone || ''} 
-                        onChange={(e) => setEditData({...editData, phone: e.target.value})}
-                        placeholder="Teléfono"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium mb-1 block">Correo electrónico</label>
-                    <Input 
-                      type="email"
-                      value={editData.email || ''} 
-                      onChange={(e) => setEditData({...editData, email: e.target.value})}
-                      placeholder="correo@ejemplo.com"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium mb-1 block">Dirección</label>
-                    <Input 
-                      value={editData.address || ''} 
-                      onChange={(e) => setEditData({...editData, address: e.target.value})}
-                      placeholder="Dirección completa"
-                    />
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <label className="text-sm font-medium mb-1 block">Ciudad</label>
-                      <Input 
-                        value={editData.city || ''} 
-                        onChange={(e) => setEditData({...editData, city: e.target.value})}
-                        placeholder="Ciudad"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium mb-1 block">Estado</label>
-                      <Input 
-                        value={editData.state || ''} 
-                        onChange={(e) => setEditData({...editData, state: e.target.value})}
-                        placeholder="Estado"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium mb-1 block">Código Postal</label>
-                      <Input 
-                        value={editData.zip_code || ''} 
-                        onChange={(e) => setEditData({...editData, zip_code: e.target.value})}
-                        placeholder="C.P."
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium mb-1 block">País</label>
-                    <Input 
-                      value={editData.country || ''} 
-                      onChange={(e) => setEditData({...editData, country: e.target.value})}
-                      placeholder="País"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium mb-1 block">Descripción</label>
-                    <textarea
-                      className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                      value={editData.description || ''}
-                      onChange={(e) => setEditData({...editData, description: e.target.value})}
-                      placeholder="Descripción de la sucursal"
-                      rows={3}
-                    />
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {branch.description && (
-                    <div>
-                      <h3 className="font-medium text-gray-700">Descripción</h3>
-                      <p className="text-gray-600 mt-1">{branch.description}</p>
-                    </div>
-                  )}
-                  <div className="flex items-center">
-                    <MapPin className="h-5 w-5 text-gray-400 mr-3" />
-                    <div>
-                      <h3 className="font-medium">Dirección</h3>
-                      <p className="text-gray-600">
-                        {branch.address}
-                        {branch.city && `, ${branch.city}`}
-                        {branch.state && `, ${branch.state}`}
-                        {branch.zip_code && ` ${branch.zip_code}`}
-                        {branch.country && `, ${branch.country}`}
-                      </p>
-                    </div>
-                  </div>
-                  {branch.phone && (
-                    <div className="flex items-center">
-                      <Phone className="h-5 w-5 text-gray-400 mr-3" />
-                      <div>
-                        <h3 className="font-medium">Teléfono</h3>
-                        <a href={`tel:${branch.phone}`} className="text-blue-600 hover:underline">
-                          {branch.phone}
-                        </a>
-                      </div>
-                    </div>
-                  )}
-                  {branch.email && (
-                    <div className="flex items-center">
-                      <Mail className="h-5 w-5 text-gray-400 mr-3" />
-                      <div>
-                        <h3 className="font-medium">Correo electrónico</h3>
-                        <a href={`mailto:${branch.email}`} className="text-blue-600 hover:underline">
-                          {branch.email}
-                        </a>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Empleados</CardTitle>
-              <CardDescription>
-                Administra los empleados y sus roles en esta sucursal.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Tabs defaultValue="employees" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-6">
-                  <TabsTrigger value="employees" onClick={() => setActiveTab('employees')}>
-                    <User className="h-4 w-4 mr-2" />
-                    Empleados ({employees.length})
-                  </TabsTrigger>
-                  <TabsTrigger value="add" onClick={() => setActiveTab('add')}>
-                    <UserPlus className="h-4 w-4 mr-2" />
-                    Agregar empleado
-                  </TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="employees">
-                  <div className="space-y-4">
-                    {employees.length === 0 ? (
-                      <div className="text-center py-8">
-                        <User className="h-12 w-12 mx-auto text-gray-400" />
-                        <h3 className="mt-2 text-sm font-medium text-gray-900">No hay empleados</h3>
-                        <p className="mt-1 text-sm text-gray-500">Comienza agregando tu primer empleado a esta sucursal.</p>
-                      </div>
-                    ) : (
-                      <div className="overflow-hidden border rounded-lg">
-                        <table className="min-w-full divide-y divide-gray-200">
-                          <thead className="bg-gray-50">
-                            <tr>
-                              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Nombre
-                              </th>
-                              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Rol
-                              </th>
-                              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Estado
-                              </th>
-                              <th scope="col" className="relative px-6 py-3">
-                                <span className="sr-only">Acciones</span>
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody className="bg-white divide-y divide-gray-200">
-                            {employees.map((employee) => (
-                              <tr key={employee.id} className="hover:bg-gray-50">
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  <div className="flex items-center">
-                                    <div className="flex-shrink-0 h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
-                                      <User className="h-5 w-5 text-gray-500" />
-                                    </div>
-                                    <div className="ml-4">
-                                      <div className="text-sm font-medium text-gray-900">{employee.name}</div>
-                                      <div className="text-sm text-gray-500">{employee.email}</div>
-                                    </div>
-                                  </div>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  <div className="text-sm text-gray-900">{employee.role}</div>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  <Badge variant={employee.status === 'active' ? 'default' : 'outline'}>
-                                    {employee.status === 'active' ? 'Activo' : 'Inactivo'}
-                                  </Badge>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                  <button className="text-indigo-600 hover:text-indigo-900 mr-4">
-                                    <Pencil className="h-4 w-4" />
-                                  </button>
-                                  <button className="text-red-600 hover:text-red-900">
-                                    <Trash2 className="h-4 w-4" />
-                                  </button>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                  </div>
-                </TabsContent>
-                
-                <TabsContent value="add">
-                  <div className="max-w-md space-y-6">
-                    <div>
-                      <h3 className="text-lg font-medium">Agregar empleado</h3>
-                      <p className="text-sm text-gray-500 mt-1">
-                        Invita a un nuevo empleado a esta sucursal. Se le enviará un correo electrónico con instrucciones.
-                      </p>
-                    </div>
-                    
-                    <form onSubmit={handleAddEmployee} className="space-y-4">
-                      <div>
-                        <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                          Correo electrónico
-                        </label>
-                        <Input
-                          type="email"
-                          id="email"
-                          placeholder="correo@ejemplo.com"
-                          value={newEmployeeEmail}
-                          onChange={(e) => setNewEmployeeEmail(e.target.value)}
-                          required
-                        />
-                      </div>
-                      
-                      <div>
-                        <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
-                          Rol
-                        </label>
-                        <Select value={selectedRole} onValueChange={setSelectedRole}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Seleccionar rol" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {ROLES.map((role) => (
-                              <SelectItem key={role} value={role}>
-                                {role}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <p className="mt-1 text-xs text-gray-500">
-                          Los permisos se asignarán según el rol seleccionado.
-                        </p>
-                      </div>
-                      
-                      <div className="pt-2">
-                        <Button type="submit" className="w-full">
-                          <UserPlus className="h-4 w-4 mr-2" />
-                          Enviar invitación
-                        </Button>
-                      </div>
-                    </form>
-                  </div>
-                </TabsContent>
-              </Tabs>
-            </CardContent>
-          </Card>
+      {isEditing ? (
+        <div className="bg-white rounded-lg shadow p-6 mb-6">
+          <h2 className="text-2xl font-bold mb-6">Editar sucursal</h2>
+          <BranchForm 
+            branch={branch}
+            onSave={handleSaveBranch}
+            onCancel={() => setIsEditing(false)}
+          />
         </div>
-        
+      ) : (
+        <BranchInfo 
+          branch={branch} 
+          onEditClick={() => setIsEditing(true)}
+        />
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
+        <div className="lg:col-span-2 space-y-6">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="mb-6">
+              <TabsTrigger value="employees">Empleados</TabsTrigger>
+              <TabsTrigger value="settings">Configuración</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="employees">
+              {showEmployeeForm ? (
+                <EmployeeForm
+                  employee={currentEmployee}
+                  onSave={currentEmployee ? handleUpdateEmployee : handleAddEmployee}
+                  onCancel={() => {
+                    setShowEmployeeForm(false);
+                    setCurrentEmployee(null);
+                  }}
+                />
+              ) : (
+                <EmployeeList
+                  employees={employees}
+                  onAddEmployee={() => setShowEmployeeForm(true)}
+                  onEditEmployee={(emp) => {
+                    setCurrentEmployee(emp);
+                    setShowEmployeeForm(true);
+                  }}
+                  onDeleteEmployee={handleDeleteEmployee}
+                />
+              )}
+            </TabsContent>
+
+            <TabsContent value="settings">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Configuración de la sucursal</CardTitle>
+                  <CardDescription>
+                    Configura las opciones avanzadas de esta sucursal.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">
+                    Configuración avanzada de la sucursal.
+                  </p>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </div>
+
         <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Estadísticas</CardTitle>
-              <CardDescription>Resumen de actividad de la sucursal</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <div className="text-sm font-medium text-gray-500">Empleados activos</div>
-                <div className="text-2xl font-semibold">
-                  {employees.filter(e => e.status === 'active').length}
-                </div>
-              </div>
-              <div>
-                <div className="text-sm font-medium text-gray-500">Total de roles</div>
-                <div className="text-2xl font-semibold">
-                  {new Set(employees.map(e => e.role)).size}
-                </div>
-              </div>
-              <div>
-                <div className="text-sm font-medium text-gray-500">Estado</div>
-                <div className="flex items-center mt-1">
-                  <span className={`h-2.5 w-2.5 rounded-full mr-2 ${branch.is_active ? 'bg-green-500' : 'bg-gray-400'}`}></span>
-                  <span>{branch.is_active ? 'Operativa' : 'Inactiva'}</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Acciones rápidas</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <Button variant="outline" className="w-full justify-start">
-                <Settings className="h-4 w-4 mr-2" />
-                Configuración de sucursal
-              </Button>
-              <Button variant="outline" className="w-full justify-start">
-                <UserPlus className="h-4 w-4 mr-2" />
-                Invitar empleados
-              </Button>
-              <Button variant="outline" className="w-full justify-start text-red-600 hover:text-red-700">
-                <Trash2 className="h-4 w-4 mr-2" />
-                Desactivar sucursal
-              </Button>
-            </CardContent>
-          </Card>
+          <BranchStats branch={branch} employees={employees} />
+          <QuickActions />
         </div>
       </div>
     </div>
