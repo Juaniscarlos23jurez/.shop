@@ -11,14 +11,25 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { toast } from "@/components/ui/use-toast"; // Agregado import faltante
+import { api } from '@/lib/api'; // Agregado import faltante
 
 interface Branch {
-  id: string;
+  id: number;
   name: string;
+  description?: string;
+  phone?: string;
+  email?: string;
   address: string;
-  phone: string;
-  email: string;
-  isActive: boolean;
+  city?: string;
+  state?: string;
+  country?: string;
+  zip_code?: string;
+  latitude?: number;
+  longitude?: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 interface Employee {
@@ -52,56 +63,64 @@ export default function BranchDetailPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState<Partial<Branch>>({});
 
-  // Mock data - replace with actual API calls
+  // Fetch branch details from API
   useEffect(() => {
     const fetchData = async () => {
+      if (!token) return;
+      
       try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 800));
+        setLoading(true);
         
-        // Mock branch data
-        const mockBranch: Branch = {
-          id: id as string,
-          name: `Sucursal ${id}`,
-          address: 'Av. Principal #123, Col. Centro',
-          phone: '555-123-4567',
-          email: `sucursal${id}@empresa.com`,
-          isActive: true
-        };
-
-        // Mock employees data
-        const mockEmployees: Employee[] = [
-          {
-            id: '1',
-            name: 'Juan Pérez',
-            email: 'juan.perez@empresa.com',
-            role: 'Gerente',
-            status: 'active',
-            lastActive: 'Hace 2 horas'
-          },
-          {
-            id: '2',
-            name: 'María García',
-            email: 'maria.garcia@empresa.com',
-            role: 'Vendedor',
-            status: 'active',
-            lastActive: 'Hace 5 minutos'
-          },
-          {
-            id: '3',
-            name: 'Carlos López',
-            email: 'carlos.lopez@empresa.com',
-            role: 'Cajero',
-            status: 'inactive',
-            lastActive: 'Ayer'
-          }
-        ];
-
-        setBranch(mockBranch);
-        setEditData(mockBranch);
-        setEmployees(mockEmployees);
+        // Get company ID first
+        const companyResponse = await api.userCompanies.get(token);
+        if (!companyResponse.success || !companyResponse.data?.data?.id) {
+          throw new Error('No se pudo obtener el ID de la compañía');
+        }
+        
+        const companyId = companyResponse.data.data.id;
+        
+        // Get all locations
+        const locationsResponse = await api.userCompanies.getLocations(token);
+        if (!locationsResponse.success) {
+          throw new Error(locationsResponse.message || 'Error al cargar las sucursales');
+        }
+        
+        // Find the current branch
+        const locations = locationsResponse.data?.locations || locationsResponse.data?.data?.locations || [];
+        const currentBranch = locations.find((loc: any) => loc.id.toString() === id);
+        
+        if (!currentBranch) {
+          throw new Error('Sucursal no encontrada');
+        }
+        
+        setBranch({
+          ...currentBranch,
+          is_active: currentBranch.is_active ?? true
+        });
+        
+        setEditData({
+          name: currentBranch.name,
+          description: currentBranch.description,
+          phone: currentBranch.phone,
+          email: currentBranch.email,
+          address: currentBranch.address,
+          city: currentBranch.city,
+          state: currentBranch.state,
+          country: currentBranch.country,
+          zip_code: currentBranch.zip_code,
+          is_active: currentBranch.is_active ?? true
+        });
+        
+        // TODO: Fetch employees for this location
+        setEmployees([]);
+        
       } catch (error) {
         console.error('Error fetching branch details:', error);
+        toast({
+          title: 'Error',
+          description: error instanceof Error ? error.message : 'Error al cargar los datos de la sucursal',
+          variant: 'destructive',
+        });
       } finally {
         setLoading(false);
       }
@@ -129,11 +148,61 @@ export default function BranchDetailPage() {
     setSelectedRole(ROLES[0]);
   };
 
-  const handleUpdateBranch = () => {
-    // In a real app, you would call your API to update the branch
-    if (branch) {
-      setBranch({ ...branch, ...editData });
+  const handleUpdateBranch = async () => {
+    if (!branch || !token) return;
+    
+    try {
+      setLoading(true);
+      
+      // Get company ID
+      const companyResponse = await api.userCompanies.get(token);
+      if (!companyResponse.success || !companyResponse.data?.data?.id) {
+        throw new Error('No se pudo obtener el ID de la compañía');
+      }
+      
+      // Update the location
+      const updateResponse = await api.userCompanies.updateLocation(
+        branch.id.toString(),
+        {
+          name: editData.name || '',
+          description: editData.description,
+          phone: editData.phone,
+          email: editData.email,
+          address: editData.address || '',
+          city: editData.city,
+          state: editData.state,
+          country: editData.country,
+          zip_code: editData.zip_code,
+          is_active: editData.is_active ?? true
+        },
+        token
+      );
+      
+      if (!updateResponse.success) {
+        throw new Error(updateResponse.message || 'Error al actualizar la sucursal');
+      }
+      
+      // Update local state
+      setBranch({
+        ...branch,
+        ...editData
+      });
+      
+      toast({
+        title: '¡Éxito!',
+        description: 'Los datos de la sucursal se han actualizado correctamente',
+      });
+      
       setIsEditing(false);
+    } catch (error) {
+      console.error('Error updating branch:', error);
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Error al actualizar la sucursal',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -183,8 +252,8 @@ export default function BranchDetailPage() {
           <h1 className="text-2xl font-bold">{branch.name}</h1>
           <p className="text-sm text-gray-500">ID: {branch.id}</p>
         </div>
-        <Badge variant={branch.isActive ? 'default' : 'secondary'} className="mr-2">
-          {branch.isActive ? 'Activa' : 'Inactiva'}
+        <Badge variant={branch.is_active ? 'default' : 'secondary'} className="mr-2">
+          {branch.is_active ? 'Activa' : 'Inactiva'}
         </Badge>
         <Button variant="outline" size="sm" onClick={() => setIsEditing(!isEditing)}>
           {isEditing ? 'Cancelar' : 'Editar sucursal'}
@@ -207,77 +276,129 @@ export default function BranchDetailPage() {
             <CardContent className="space-y-4">
               {isEditing ? (
                 <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium mb-1 block">Nombre</label>
+                      <Input 
+                        value={editData.name || ''} 
+                        onChange={(e) => setEditData({...editData, name: e.target.value})} 
+                        placeholder="Nombre de la sucursal"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium mb-1 block">Teléfono</label>
+                      <Input 
+                        value={editData.phone || ''} 
+                        onChange={(e) => setEditData({...editData, phone: e.target.value})}
+                        placeholder="Teléfono"
+                      />
+                    </div>
+                  </div>
                   <div>
-                    <label className="text-sm font-medium mb-1 block">Nombre</label>
+                    <label className="text-sm font-medium mb-1 block">Correo electrónico</label>
                     <Input 
-                      value={editData.name} 
-                      onChange={(e) => setEditData({...editData, name: e.target.value})} 
+                      type="email"
+                      value={editData.email || ''} 
+                      onChange={(e) => setEditData({...editData, email: e.target.value})}
+                      placeholder="correo@ejemplo.com"
                     />
                   </div>
                   <div>
                     <label className="text-sm font-medium mb-1 block">Dirección</label>
                     <Input 
-                      value={editData.address} 
-                      onChange={(e) => setEditData({...editData, address: e.target.value})} 
+                      value={editData.address || ''} 
+                      onChange={(e) => setEditData({...editData, address: e.target.value})}
+                      placeholder="Dirección completa"
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                      <label className="text-sm font-medium mb-1 block">Teléfono</label>
+                      <label className="text-sm font-medium mb-1 block">Ciudad</label>
                       <Input 
-                        value={editData.phone} 
-                        onChange={(e) => setEditData({...editData, phone: e.target.value})} 
+                        value={editData.city || ''} 
+                        onChange={(e) => setEditData({...editData, city: e.target.value})}
+                        placeholder="Ciudad"
                       />
                     </div>
                     <div>
-                      <label className="text-sm font-medium mb-1 block">Correo electrónico</label>
+                      <label className="text-sm font-medium mb-1 block">Estado</label>
                       <Input 
-                        type="email"
-                        value={editData.email} 
-                        onChange={(e) => setEditData({...editData, email: e.target.value})} 
+                        value={editData.state || ''} 
+                        onChange={(e) => setEditData({...editData, state: e.target.value})}
+                        placeholder="Estado"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium mb-1 block">Código Postal</label>
+                      <Input 
+                        value={editData.zip_code || ''} 
+                        onChange={(e) => setEditData({...editData, zip_code: e.target.value})}
+                        placeholder="C.P."
                       />
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="isActive"
-                      checked={editData.isActive}
-                      onChange={(e) => setEditData({...editData, isActive: e.target.checked})}
-                      className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                  <div>
+                    <label className="text-sm font-medium mb-1 block">País</label>
+                    <Input 
+                      value={editData.country || ''} 
+                      onChange={(e) => setEditData({...editData, country: e.target.value})}
+                      placeholder="País"
                     />
-                    <label htmlFor="isActive" className="text-sm font-medium">
-                      Sucursal activa
-                    </label>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium mb-1 block">Descripción</label>
+                    <textarea
+                      className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      value={editData.description || ''}
+                      onChange={(e) => setEditData({...editData, description: e.target.value})}
+                      placeholder="Descripción de la sucursal"
+                      rows={3}
+                    />
                   </div>
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <div className="flex items-start">
-                    <MapPin className="h-5 w-5 text-gray-400 mt-0.5 mr-3 flex-shrink-0" />
+                  {branch.description && (
+                    <div>
+                      <h3 className="font-medium text-gray-700">Descripción</h3>
+                      <p className="text-gray-600 mt-1">{branch.description}</p>
+                    </div>
+                  )}
+                  <div className="flex items-center">
+                    <MapPin className="h-5 w-5 text-gray-400 mr-3" />
                     <div>
                       <h3 className="font-medium">Dirección</h3>
-                      <p className="text-gray-600">{branch.address}</p>
+                      <p className="text-gray-600">
+                        {branch.address}
+                        {branch.city && `, ${branch.city}`}
+                        {branch.state && `, ${branch.state}`}
+                        {branch.zip_code && ` ${branch.zip_code}`}
+                        {branch.country && `, ${branch.country}`}
+                      </p>
                     </div>
                   </div>
-                  <div className="flex items-center">
-                    <Phone className="h-5 w-5 text-gray-400 mr-3" />
-                    <div>
-                      <h3 className="font-medium">Teléfono</h3>
-                      <a href={`tel:${branch.phone}`} className="text-blue-600 hover:underline">
-                        {branch.phone}
-                      </a>
+                  {branch.phone && (
+                    <div className="flex items-center">
+                      <Phone className="h-5 w-5 text-gray-400 mr-3" />
+                      <div>
+                        <h3 className="font-medium">Teléfono</h3>
+                        <a href={`tel:${branch.phone}`} className="text-blue-600 hover:underline">
+                          {branch.phone}
+                        </a>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center">
-                    <Mail className="h-5 w-5 text-gray-400 mr-3" />
-                    <div>
-                      <h3 className="font-medium">Correo electrónico</h3>
-                      <a href={`mailto:${branch.email}`} className="text-blue-600 hover:underline">
-                        {branch.email}
-                      </a>
+                  )}
+                  {branch.email && (
+                    <div className="flex items-center">
+                      <Mail className="h-5 w-5 text-gray-400 mr-3" />
+                      <div>
+                        <h3 className="font-medium">Correo electrónico</h3>
+                        <a href={`mailto:${branch.email}`} className="text-blue-600 hover:underline">
+                          {branch.email}
+                        </a>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               )}
             </CardContent>
@@ -335,7 +456,7 @@ export default function BranchDetailPage() {
                               <tr key={employee.id} className="hover:bg-gray-50">
                                 <td className="px-6 py-4 whitespace-nowrap">
                                   <div className="flex items-center">
-                                    <div className="flex-shrink-10 h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+                                    <div className="flex-shrink-0 h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
                                       <User className="h-5 w-5 text-gray-500" />
                                     </div>
                                     <div className="ml-4">
@@ -450,8 +571,8 @@ export default function BranchDetailPage() {
               <div>
                 <div className="text-sm font-medium text-gray-500">Estado</div>
                 <div className="flex items-center mt-1">
-                  <span className={`h-2.5 w-2.5 rounded-full mr-2 ${branch.isActive ? 'bg-green-500' : 'bg-gray-400'}`}></span>
-                  <span>{branch.isActive ? 'Operativa' : 'Inactiva'}</span>
+                  <span className={`h-2.5 w-2.5 rounded-full mr-2 ${branch.is_active ? 'bg-green-500' : 'bg-gray-400'}`}></span>
+                  <span>{branch.is_active ? 'Operativa' : 'Inactiva'}</span>
                 </div>
               </div>
             </CardContent>
