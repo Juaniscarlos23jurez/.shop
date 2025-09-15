@@ -90,9 +90,55 @@ export default function BranchDetailPage() {
         
         setBranch(formattedBranch);
         
-        // TODO: Fetch employees for this location
-        // For now, we'll use an empty array
-        setEmployees([]);
+        // Fetch employees for this location
+        try {
+          const employeesResponse = await api.userCompanies.getLocationEmployees(
+            companyId,
+            currentBranch.id.toString(),
+            token
+          );
+          
+          console.log('Employees API Response:', employeesResponse);
+          
+          if (employeesResponse.success) {
+            // The employees might be directly in the data array or in a nested employees property
+            const employeesData = Array.isArray(employeesResponse.data) 
+              ? employeesResponse.data 
+              : employeesResponse.data?.employees || [];
+              
+            if (employeesData.length > 0) {
+              // Map the API response to our Employee type
+              const formattedEmployees = employeesData.map((emp: any) => ({
+                id: emp.id?.toString() || `emp-${Math.random().toString(36).substr(2, 9)}`,
+                name: emp.name || emp.full_name || 'Nombre no disponible',
+                email: emp.email || '',
+                role: (emp.role && ['admin', 'manager', 'employee'].includes(emp.role.toLowerCase())) 
+                  ? emp.role.toLowerCase() as 'admin' | 'manager' | 'employee'
+                  : 'employee',
+                isActive: emp.status ? emp.status === 'active' : true,
+                lastActive: emp.last_active || emp.last_login || new Date().toISOString(),
+                phone: emp.phone || emp.phone_number || '',
+                position: emp.position || emp.job_title || 'Empleado',
+                avatar: emp.avatar || emp.profile_photo_url || ''
+              }));
+              setEmployees(formattedEmployees);
+            } else {
+              console.log('No employees found for this location');
+              setEmployees([]);
+            }
+          } else {
+            console.error('Error in API response:', employeesResponse.message || 'Unknown error');
+            setEmployees([]);
+          }
+        } catch (error) {
+          console.error('Error fetching employees:', error);
+          toast({
+            title: 'Error',
+            description: 'No se pudieron cargar los empleados de la sucursal',
+            variant: 'destructive',
+          });
+          setEmployees([]);
+        }
         
       } catch (error) {
         console.error('Error fetching branch details:', error);
@@ -162,35 +208,81 @@ export default function BranchDetailPage() {
   };
 
   // Handle employee actions
-  const handleAddEmployee = async (employee: Omit<Employee, 'id' | 'lastActive'>) => {
-    if (!token) return;
+  const handleAddEmployee = async (employeeData: any) => {
+    if (!token || !branch) return;
     
     try {
       setLoading(true);
-      // TODO: Implement API call to add employee
-      // const response = await api.post(`/branches/${id}/employees`, employee, {
-      //   headers: { Authorization: `Bearer ${token}` }
-      // });
       
-      // Mock response
-      const newEmployee: Employee = {
-        ...employee,
-        id: `emp-${Date.now()}`,
-        lastActive: new Date().toISOString()
-      };
+      // First, get the company ID
+      const companyResponse = await api.userCompanies.get(token);
+      if (!companyResponse.success || !companyResponse.data?.data?.id) {
+        throw new Error('No se pudo obtener el ID de la compañía');
+      }
       
-      setEmployees([...employees, newEmployee]);
+      const companyId = companyResponse.data.data.id;
+      
+      // Create employee with location assignment
+      const createResponse = await api.userCompanies.createEmployee(
+        companyId,
+        {
+          ...employeeData,
+          location_assignment: {
+            ...employeeData.location_assignment,
+            location_id: branch.id,
+            schedule: {
+              monday: { start: "09:00", end: "18:00", is_working: true },
+              tuesday: { start: "09:00", end: "18:00", is_working: true },
+              wednesday: { start: "09:00", end: "18:00", is_working: true },
+              thursday: { start: "09:00", end: "18:00", is_working: true },
+              friday: { start: "09:00", end: "18:00", is_working: true },
+              saturday: { start: null, end: null, is_working: false },
+              sunday: { start: null, end: null, is_working: false }
+            }
+          }
+        },
+        token
+      );
+      
+      if (!createResponse.success) {
+        throw new Error(createResponse.message || 'Error al crear el empleado');
+      }
+      
+      // Refresh the employees list
+      const employeesResponse = await api.userCompanies.getLocationEmployees(
+        companyId,
+        branch.id,
+        token
+      );
+      
+      if (employeesResponse.success && employeesResponse.data?.employees) {
+        const formattedEmployees = employeesResponse.data.employees.map((emp: any) => ({
+          id: emp.id.toString(),
+          name: emp.name || 'Nombre no disponible',
+          email: emp.email || '',
+          role: (emp.role && ['admin', 'manager', 'employee'].includes(emp.role.toLowerCase())) 
+            ? emp.role.toLowerCase() as 'admin' | 'manager' | 'employee'
+            : 'employee',
+          isActive: emp.status ? emp.status === 'active' : true,
+          lastActive: emp.last_active || new Date().toISOString(),
+          phone: emp.phone || '',
+          position: emp.position || 'Empleado',
+          avatar: emp.avatar || ''
+        }));
+        setEmployees(formattedEmployees);
+      }
+      
       setShowEmployeeForm(false);
       
       toast({
         title: '¡Éxito!',
-        description: 'El empleado ha sido agregado correctamente',
+        description: 'El empleado ha sido agregado correctamente a la sucursal',
       });
     } catch (error) {
       console.error('Error adding employee:', error);
       toast({
         title: 'Error',
-        description: 'No se pudo agregar al empleado',
+        description: error instanceof Error ? error.message : 'No se pudo agregar al empleado',
         variant: 'destructive',
       });
     } finally {
@@ -199,36 +291,74 @@ export default function BranchDetailPage() {
   };
 
   const handleUpdateEmployee = async (employeeData: Omit<Employee, 'id' | 'lastActive'>) => {
-    if (!token || !currentEmployee) return;
+    if (!token || !currentEmployee || !branch) return;
     
     try {
       setLoading(true);
       
-      // Create updated employee object with the existing ID and lastActive
-      const updatedEmployee: Employee = {
-        ...employeeData,
-        id: currentEmployee.id,
-        lastActive: currentEmployee.lastActive
+      // First, get the company ID
+      const companyResponse = await api.userCompanies.get(token);
+      if (!companyResponse.success || !companyResponse.data?.data?.id) {
+        throw new Error('No se pudo obtener el ID de la compañía');
+      }
+      
+      const companyId = companyResponse.data.data.id;
+      
+      // Update employee assignment with new data
+      const updateData = {
+        // Include any fields that can be updated
+        role: employeeData.role,
+        // Add any other fields that can be updated
       };
       
-      // TODO: Implement actual API call to update employee
-      // This is a mock implementation
-      setEmployees(employees.map(emp => 
-        emp.id === currentEmployee.id ? updatedEmployee : emp
-      ));
+      const updateResponse = await api.userCompanies.updateEmployeeAssignment(
+        companyId,
+        branch.id,
+        currentEmployee.id,
+        updateData,
+        token
+      );
+      
+      if (!updateResponse.success) {
+        throw new Error(updateResponse.message || 'Error al actualizar la información del empleado');
+      }
+      
+      // Refresh the employees list
+      const employeesResponse = await api.userCompanies.getLocationEmployees(
+        companyId,
+        branch.id,
+        token
+      );
+      
+      if (employeesResponse.success && employeesResponse.data?.employees) {
+        const formattedEmployees = employeesResponse.data.employees.map((emp: any) => ({
+          id: emp.id.toString(),
+          name: emp.name || 'Nombre no disponible',
+          email: emp.email || '',
+          role: (emp.role && ['admin', 'manager', 'employee'].includes(emp.role.toLowerCase())) 
+            ? emp.role.toLowerCase() as 'admin' | 'manager' | 'employee'
+            : 'employee',
+          isActive: emp.status ? emp.status === 'active' : true,
+          lastActive: emp.last_active || new Date().toISOString(),
+          phone: emp.phone || '',
+          position: emp.position || 'Empleado',
+          avatar: emp.avatar || ''
+        }));
+        setEmployees(formattedEmployees);
+      }
       
       setCurrentEmployee(null);
       setShowEmployeeForm(false);
       
       toast({
         title: '¡Éxito!',
-        description: 'El empleado ha sido actualizado correctamente',
+        description: 'La información del empleado ha sido actualizada correctamente',
       });
     } catch (error) {
       console.error('Error updating employee:', error);
       toast({
         title: 'Error',
-        description: error instanceof Error ? error.message : 'No se pudo actualizar el empleado',
+        description: error instanceof Error ? error.message : 'No se pudo actualizar la información del empleado',
         variant: 'destructive',
       });
     } finally {
@@ -237,32 +367,68 @@ export default function BranchDetailPage() {
   };
 
   const handleDeleteEmployee = async (employeeId: string) => {
-    if (!token) return;
+    if (!token || !branch) return;
     
     // Confirm before deleting
-    const confirmDelete = window.confirm('¿Estás seguro de que deseas eliminar a este empleado?');
+    const confirmDelete = window.confirm('¿Estás seguro de que deseas eliminar a este empleado de esta sucursal?');
     if (!confirmDelete) return;
     
     try {
       setLoading(true);
       
-      // TODO: Implement actual API call to delete employee
-      // await api.delete(`/branches/${id}/employees/${employeeId}`, {
-      //   headers: { Authorization: `Bearer ${token}` }
-      // });
+      // First, get the company ID
+      const companyResponse = await api.userCompanies.get(token);
+      if (!companyResponse.success || !companyResponse.data?.data?.id) {
+        throw new Error('No se pudo obtener el ID de la compañía');
+      }
       
-      // This is a mock implementation
-      setEmployees(employees.filter(emp => emp.id !== employeeId));
+      const companyId = companyResponse.data.data.id;
+      
+      // Remove employee from location
+      const deleteResponse = await api.userCompanies.removeEmployeeFromLocation(
+        companyId,
+        branch.id,
+        employeeId,
+        token
+      );
+      
+      if (!deleteResponse.success) {
+        throw new Error(deleteResponse.message || 'Error al eliminar al empleado de la sucursal');
+      }
+      
+      // Refresh the employees list
+      const employeesResponse = await api.userCompanies.getLocationEmployees(
+        companyId,
+        branch.id,
+        token
+      );
+      
+      if (employeesResponse.success && employeesResponse.data?.employees) {
+        const formattedEmployees = employeesResponse.data.employees.map((emp: any) => ({
+          id: emp.id.toString(),
+          name: emp.name || 'Nombre no disponible',
+          email: emp.email || '',
+          role: (emp.role && ['admin', 'manager', 'employee'].includes(emp.role.toLowerCase())) 
+            ? emp.role.toLowerCase() as 'admin' | 'manager' | 'employee'
+            : 'employee',
+          isActive: emp.status ? emp.status === 'active' : true,
+          lastActive: emp.last_active || new Date().toISOString(),
+          phone: emp.phone || '',
+          position: emp.position || 'Empleado',
+          avatar: emp.avatar || ''
+        }));
+        setEmployees(formattedEmployees);
+      }
       
       toast({
         title: '¡Éxito!',
-        description: 'El empleado ha sido eliminado correctamente',
+        description: 'El empleado ha sido eliminado correctamente de la sucursal',
       });
     } catch (error) {
       console.error('Error deleting employee:', error);
       toast({
         title: 'Error',
-        description: error instanceof Error ? error.message : 'No se pudo eliminar al empleado',
+        description: error instanceof Error ? error.message : 'No se pudo eliminar al empleado de la sucursal',
         variant: 'destructive',
       });
     } finally {
@@ -334,6 +500,7 @@ export default function BranchDetailPage() {
               {showEmployeeForm ? (
                 <EmployeeForm
                   employee={currentEmployee}
+                  locationId={id as string}
                   onSave={currentEmployee ? handleUpdateEmployee : handleAddEmployee}
                   onCancel={() => {
                     setShowEmployeeForm(false);
@@ -342,13 +509,11 @@ export default function BranchDetailPage() {
                 />
               ) : (
                 <EmployeeList
-                  employees={employees}
                   onAddEmployee={() => setShowEmployeeForm(true)}
                   onEditEmployee={(emp) => {
                     setCurrentEmployee(emp);
                     setShowEmployeeForm(true);
                   }}
-                  onDeleteEmployee={handleDeleteEmployee}
                 />
               )}
             </TabsContent>

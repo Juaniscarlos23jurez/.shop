@@ -21,6 +21,22 @@ export interface Employee {
   role: Role;
   isActive: boolean;
   lastActive: string;
+  phone?: string;
+  position?: string;
+  first_name?: string;
+  last_name?: string;
+  department?: string;
+  hire_date?: string | Date;
+  salary?: number;
+  emergency_contact_name?: string;
+  emergency_contact_phone?: string;
+  address?: string;
+  location_assignment?: {
+    role: string;
+    is_primary: boolean;
+    start_date: string | Date;
+    location_id?: string;
+  };
 }
 
 export const ROLES = [
