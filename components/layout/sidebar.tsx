@@ -14,7 +14,10 @@ import {
   Ticket as TicketIcon,
   Gift as GiftIcon,
   Bell as BellIcon,
-  Crown as CrownIcon
+  Crown as CrownIcon,
+  ShoppingCart,
+  Clock4,
+  CreditCard as CreditCardIcon
 } from 'lucide-react';
 import { LogOut as LogOutIcon } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -41,6 +44,12 @@ const sidebarItems = [
   { icon: PieChart, label: "Reportes", href: "/dashboard/reportes" },
   { icon: Building2, label: "Compañía", href: "/dashboard/compania" },
   { icon: GitBranch, label: "Sucursales", href: "/dashboard/sucursales" },
+
+  // Empleados
+  { icon: Users, label: "Empleados", href: "/dashboard/empleados" },
+  { icon: ShoppingCart, label: "Punto de Venta", href: "/dashboard/pos" },
+  { icon: Clock4, label: "Horarios", href: "/dashboard/horarios" },
+  { icon: CreditCardIcon, label: "Nómina", href: "/dashboard/nomina" },
 
   { icon: Settings, label: "Configuración", href: "/dashboard/configuracion" },
 ];
