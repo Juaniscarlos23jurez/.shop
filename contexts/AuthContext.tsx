@@ -7,11 +7,12 @@ import { ApiResponse, LoginResponse, UserProfile } from '@/types/api';
 interface AuthContextType {
   user: UserProfile | null;
   token: string | null;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, isEmployee?: boolean) => Promise<void>;
   register: (name: string, email: string, password: string, password_confirmation: string, phone?: string) => Promise<void>;
   logout: () => void;
   loading: boolean;
   isAuthenticated: boolean;
+  isEmployee: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -25,6 +26,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return null;
   });
   const [loading, setLoading] = useState(true);
+  const [isEmployee, setIsEmployee] = useState(false);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -80,13 +82,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string, isEmployeeLogin: boolean = false) => {
     try {
-      const response = await api.auth.login(email, password);
+      let response: ApiResponse<LoginResponse>;
+      
+      if (isEmployeeLogin) {
+        response = await api.auth.employeeLogin(email, password);
+      } else {
+        response = await api.auth.login(email, password);
+      }
+      
       console.log('Login response:', response);
       
       if (response.success && response.data) {
         const { access_token, user } = response.data;
+        setIsEmployee(!!isEmployeeLogin);
         handleAuthSuccess(access_token, user);
       } else {
         throw new Error(response.message || 'Failed to login');

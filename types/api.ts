@@ -23,13 +23,18 @@ export interface BusinessHoursResponse {
 }
 
 export interface LoginResponse {
-  user: {
-    uid: string;
-    email: string;
-    displayName?: string;
-  };
-  id_token: string;
+  access_token: string;
   token_type: string;
+  user: {
+    id: number;
+    name: string;
+    email: string;
+    phone: string | null;
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
+    firebase_uid?: string;
+  };
 }
 
 export interface UserProfile {
