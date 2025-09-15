@@ -75,6 +75,47 @@ export const api = {
 
   // User's Companies API
   userCompanies: {
+    async createEmployee(
+      companyId: string,
+      data: {
+        first_name: string;
+        last_name: string;
+        email: string;
+        password: string;
+        password_confirmation: string;
+        phone: string;
+        position: string;
+        department: string;
+        hire_date: string;
+        salary: number;
+        emergency_contact_name: string;
+        emergency_contact_phone: string;
+        address: string;
+        location_assignment?: {
+          location_id: string | number;
+          role: string;
+          is_primary: boolean;
+          start_date: string;
+          schedule?: {
+            [key: string]: {
+              start: string | null;
+              end: string | null;
+              is_working: boolean;
+            };
+          };
+        };
+      },
+      token: string
+    ): Promise<ApiResponse<{ employee: any }>> {
+      return fetch(`${BASE_URL}/api/companies/${companyId}/employees`, {
+        method: 'POST',
+        headers: {
+          ...getAuthHeader(token),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      }).then(handleResponse);
+    },
     /**
      * Get the authenticated user's company
      */
@@ -189,6 +230,96 @@ export const api = {
       return fetch(`${BASE_URL}/api/locations`, {
         headers: getAuthHeader(token)
       }).then(handleResponse);
+    },
+
+    /**
+     * Get employees for a location
+     */
+    async getLocationEmployees(
+      companyId: string,
+      locationId: string,
+      token: string
+    ): Promise<ApiResponse<{ data: any[] }>> {
+      return fetch(
+        `${BASE_URL}/api/companies/${companyId}/locations/${locationId}/employees`,
+        {
+          headers: getAuthHeader(token)
+        }
+      ).then(async (response) => {
+        const result = await handleResponse(response);
+        // Transform the response to match the expected format
+        if (result.success && result.data) {
+          return {
+            ...result,
+            data: {
+              data: Array.isArray(result.data) ? result.data : result.data.data || []
+            }
+          };
+        }
+        return result;
+      });
+    },
+
+    /**
+     * Assign employee to location
+     */
+    async assignEmployeeToLocation(
+      companyId: string,
+      locationId: string,
+      employeeId: string,
+      token: string
+    ): Promise<ApiResponse<{ success: boolean }>> {
+      return fetch(
+        `${BASE_URL}/api/companies/${companyId}/locations/${locationId}/employees/${employeeId}`,
+        {
+          method: 'POST',
+          headers: {
+            ...getAuthHeader(token),
+            'Content-Type': 'application/json'
+          }
+        }
+      ).then(handleResponse);
+    },
+
+    /**
+     * Update employee assignment
+     */
+    async updateEmployeeAssignment(
+      companyId: string,
+      locationId: string,
+      employeeId: string,
+      data: Record<string, any>,
+      token: string
+    ): Promise<ApiResponse<{ success: boolean }>> {
+      return fetch(
+        `${BASE_URL}/api/companies/${companyId}/locations/${locationId}/employees/${employeeId}`,
+        {
+          method: 'PUT',
+          headers: {
+            ...getAuthHeader(token),
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(data)
+        }
+      ).then(handleResponse);
+    },
+
+    /**
+     * Remove employee from location
+     */
+    async removeEmployeeFromLocation(
+      companyId: string,
+      locationId: string,
+      employeeId: string,
+      token: string
+    ): Promise<ApiResponse<{ success: boolean }>> {
+      return fetch(
+        `${BASE_URL}/api/companies/${companyId}/locations/${locationId}/employees/${employeeId}`,
+        {
+          method: 'DELETE',
+          headers: getAuthHeader(token)
+        }
+      ).then(handleResponse);
     },
 
     /**
