@@ -11,9 +11,16 @@ interface AuthFormProps {
   title: string;
   buttonText: string;
   isLoading?: boolean;
+  isEmployeeLogin?: boolean;
 }
 
-export function AuthForm({ onSubmit, buttonText, isLoading: propIsLoading = false }: AuthFormProps) {
+export function AuthForm({ 
+  onSubmit, 
+  buttonText, 
+  isLoading: propIsLoading = false, 
+  isEmployeeLogin = false 
+}: AuthFormProps) {
+  const primaryColor = isEmployeeLogin ? 'blue' : 'green';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -44,7 +51,7 @@ export function AuthForm({ onSubmit, buttonText, isLoading: propIsLoading = fals
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[#22c55e] focus:border-[#22c55e] sm:text-sm"
+              className={`appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-${primaryColor}-500 focus:border-${primaryColor}-500 sm:text-sm`}
             />
           </div>
         </div>
@@ -55,7 +62,7 @@ export function AuthForm({ onSubmit, buttonText, isLoading: propIsLoading = fals
               Contraseña
             </Label>
             <div className="text-sm">
-              <Link href="/auth/forgot-password" className="font-medium text-[#22c55e] hover:text-green-600">
+              <Link href="/auth/forgot-password" className={`font-medium text-${primaryColor}-600 hover:text-${primaryColor}-500`}>
                 ¿Olvidaste tu contraseña?
               </Link>
             </div>
@@ -69,7 +76,7 @@ export function AuthForm({ onSubmit, buttonText, isLoading: propIsLoading = fals
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[#22c55e] focus:border-[#22c55e] sm:text-sm"
+              className={`appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-${primaryColor}-500 focus:border-${primaryColor}-500 sm:text-sm`}
             />
           </div>
         </div>
@@ -79,7 +86,7 @@ export function AuthForm({ onSubmit, buttonText, isLoading: propIsLoading = fals
             id="remember-me"
             name="remember-me"
             type="checkbox"
-            className="h-4 w-4 text-[#22c55e] focus:ring-[#22c55e] border-gray-300 rounded"
+            className={`h-4 w-4 text-${primaryColor}-600 focus:ring-${primaryColor}-500 border-gray-300 rounded`}
           />
           <Label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
             Recordarme
@@ -89,7 +96,7 @@ export function AuthForm({ onSubmit, buttonText, isLoading: propIsLoading = fals
         <div>
           <Button
             type="submit"
-            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#22c55e] hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#22c55e] transition-colors duration-200"
+            className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-${primaryColor}-600 hover:bg-${primaryColor}-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-${primaryColor}-500 transition-colors duration-200`}
             disabled={isSubmitting || propIsLoading}
           >
             {isSubmitting || propIsLoading ? (

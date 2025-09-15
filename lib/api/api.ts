@@ -1,5 +1,6 @@
 import { ApiResponse, UserProfile, ProfileApiUser, BusinessHour, Membership, Coupon, CouponCreateInput, CouponUpdateInput } from '@/types/api';
 import { Product, ProductListResponse, ProductResponse, ProductCreateInput, ProductUpdateInput } from '@/types/product';
+import { ordersApi } from './orders';
 
 const BASE_URL = 'https://laravel-pkpass-backend-development-pfaawl.laravel.cloud';
 //http://127.0.0.1:8000
@@ -12,6 +13,24 @@ export const api = {
       user: ProfileApiUser;
     }>> {
       return fetch(`${BASE_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({ 
+          email, 
+          password 
+        })
+      }).then(handleResponse);
+    },
+
+    async employeeLogin(email: string, password: string): Promise<ApiResponse<{ 
+      access_token: string;
+      token_type: string;
+      user: ProfileApiUser;
+    }>> {
+      return fetch(`${BASE_URL}/api/auth/employee/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -741,6 +760,9 @@ export const api = {
       }).then(handleResponse);
     },
   },
+
+  // Orders API
+  orders: ordersApi,
 
   // Products API
   products: {

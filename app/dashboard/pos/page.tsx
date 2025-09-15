@@ -12,7 +12,12 @@ import { Product } from "@/types/api";
 import { useToast } from "@/hooks/use-toast";
 
 interface CartItem extends Product {
+  id: number;
+  name: string;
+  price: string;
   quantity: number;
+  sku?: string;
+  images?: Array<{ url: string }>;
 }
 
 interface Order {
@@ -27,11 +32,14 @@ interface Order {
   status: 'pending' | 'completed' | 'cancelled';
   description: string;
   createdAt: string;
+  customerId?: string;
+  pointsEarned?: number;
 }
 
 export default function PuntoVentaPage() {
   const { toast } = useToast();
   const { token } = useAuth();
+  const authToken = token || ''; // Ensure token is always a string
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -39,8 +47,9 @@ export default function PuntoVentaPage() {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [pendingOrders, setPendingOrders] = useState<Order[]>([]);
+  const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
   const [orderDescription, setOrderDescription] = useState('');
-  const companyId = '1'; // Asumiendo que el ID de la compañía es 1
+  const companyId = '1'; // ID de la compañía como string
 
   // Cargar órdenes pendientes del localStorage
   useEffect(() => {
@@ -107,52 +116,19 @@ export default function PuntoVentaPage() {
     return total + (parseFloat(item.price) * item.quantity);
   }, 0);
 
-  const handlePaymentComplete = async (paymentData: {
-    method: 'cash' | 'card' | 'transfer';
+  const handlePaymentComplete = async (paymentData: { 
+    method: string;
     amount: number;
     change?: number;
+    customerId?: string;
+    pointsEarned?: number;
   }) => {
     try {
       setIsProcessing(true);
-      // Aquí iría la lógica para procesar el pago en tu API
-      console.log('Procesando pago:', {
-        items: cart,
-        total: cartTotal,
-        payment: paymentData,
-        companyId,
-      });
-
-      // Simular tiempo de procesamiento
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      // Mostrar ticket o mensaje de éxito
-      toast({
-        title: 'Venta Completada',
-        description: 'La venta se ha procesado exitosamente',
-        variant: 'default'
-      });
       
-      // Limpiar carrito después de la venta
-      setCart([]);
-    } catch (error) {
-      console.error('Error al procesar el pago:', error);
-      toast({
-        title: 'Error',
-        description: 'Ocurrió un error al procesar el pago',
-        variant: 'destructive'
-      });
-    } finally {
-      setIsProcessing(false);
-      setIsPaymentModalOpen(false);
-    }
-  };
-
-  const generateOrder = async () => {
-    try {
-      setIsProcessing(true);
-      
-      const newOrder: Order = {
-        id: `order-${Date.now()}`,
+      // Crear la orden localmente
+      const orderData: Order = {
+        id: Date.now().toString(),
         items: cart.map(item => ({
           id: item.id,
           name: item.name,
@@ -160,31 +136,92 @@ export default function PuntoVentaPage() {
           quantity: item.quantity
         })),
         total: cartTotal,
-        status: 'pending',
-        description: orderDescription,
-        createdAt: new Date().toISOString()
+        status: 'completed' as const,
+        description: orderDescription || `Orden #${Date.now().toString()}`,
+        createdAt: new Date().toISOString(),
+        customerId: paymentData.customerId,
+        pointsEarned: paymentData.pointsEarned
       };
-      
-      // Limpiar la descripción
-      setOrderDescription('');
 
-      // Guardar la nueva orden en el estado y localStorage
-      const updatedOrders = [newOrder, ...pendingOrders];
+      // Guardar la orden en el estado
+      setPendingOrders(prev => [...prev, orderData]);
+
+      // Guardar en localStorage
+      const savedOrders = localStorage.getItem('pendingOrders');
+      const orders = savedOrders ? JSON.parse(savedOrders) : [];
+      localStorage.setItem('pendingOrders', JSON.stringify([...orders, orderData]));
+
+      // TODO: Implementar la llamada a la API para actualizar los puntos del cliente
+      if (paymentData.customerId && paymentData.pointsEarned) {
+        try {
+          // Aquí iría la llamada a la API para actualizar los puntos
+          console.log('Actualizando puntos del cliente:', {
+            customerId: paymentData.customerId,
+            pointsEarned: paymentData.pointsEarned
+          });
+        } catch (error) {
+          console.error('Error al actualizar puntos:', error);
+          toast({
+            title: 'Error',
+            description: 'No se pudieron actualizar los puntos del cliente',
+            variant: 'destructive'
+          });
+        }
+      }
+
+      // Si hay una orden pendiente actual, eliminarla
+      if (currentOrderId) {
+        const updatedOrders = pendingOrders.filter(order => order.id !== currentOrderId);
+        setPendingOrders(updatedOrders);
+        localStorage.setItem('pendingOrders', JSON.stringify(updatedOrders));
+        setCurrentOrderId(null);
+      }
+
+      // Limpiar el carrito y cerrar el modal
+      setCart([]);
+      setIsPaymentModalOpen(false);
+      setOrderDescription('');
+      
+      toast({
+        title: 'Venta completada',
+        description: `Orden #${orderData.id} procesada correctamente${paymentData.pointsEarned ? `. +${paymentData.pointsEarned} puntos` : ''}`,
+      });
+
+      setIsProcessing(false);
+    } catch (error) {
+      console.error('Error al procesar el pago:', error);
+      toast({
+        title: 'Error',
+        description: 'No se pudo procesar el pago. Por favor, inténtalo de nuevo.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsProcessing(false);
+      setIsPaymentModalOpen(false);
+    }
+  };
+
+  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(event.target.value);
+  };
+
+  const generateOrder = async () => {
+    try {
+      setIsProcessing(true);
+      
+      // Actualizar el estado y localStorage
       setPendingOrders(updatedOrders);
       localStorage.setItem('pendingOrders', JSON.stringify(updatedOrders));
 
-      // Simular tiempo de procesamiento
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mostrar confirmación con toast
+      // Limpiar carrito después de generar la orden
+      setCart([]);
+      setOrderDescription('');
+
       toast({
         title: 'Orden Generada',
         description: 'La orden ha sido guardada y está pendiente de pago',
         variant: 'default'
       });
-      
-      // Limpiar carrito después de generar la orden
-      setCart([]);
     } catch (error) {
       console.error('Error al generar la orden:', error);
       toast({
@@ -403,10 +440,8 @@ export default function PuntoVentaPage() {
                               ...products.find(p => p.id === item.id)!,
                               quantity: item.quantity
                             })));
-                            // Eliminar la orden de pendientes
-                            const updatedOrders = pendingOrders.filter(o => o.id !== order.id);
-                            setPendingOrders(updatedOrders);
-                            localStorage.setItem('pendingOrders', JSON.stringify(updatedOrders));
+                            // Guardar el ID de la orden actual para eliminarla después del pago
+                            setCurrentOrderId(order.id);
                             // Abrir modal de pago
                             setIsPaymentModalOpen(true);
                           }}

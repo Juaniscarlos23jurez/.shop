@@ -25,7 +25,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter, usePathname } from 'next/navigation';
 
-const sidebarItems = [
+// Admin sidebar items (shown for non-employee users)
+const adminSidebarItems = [
   // Main sections
   { icon: Home, label: "Dashboard", href: "/dashboard" },
  
@@ -54,10 +55,18 @@ const sidebarItems = [
   { icon: Settings, label: "Configuración", href: "/dashboard/configuracion" },
 ];
 
+// Employee sidebar items (only Point of Sale)
+const employeeSidebarItems = [
+  { icon: ShoppingCart, label: "Punto de Venta", href: "/dashboard/pos" }
+];
+
 export function Sidebar() {
-  const { user, logout } = useAuth();
+  const { user, logout, isEmployee } = useAuth();
   const router = useRouter();
   const pathname = usePathname() || '';
+  
+  // Use different sidebar items based on user role
+  const sidebarItems = isEmployee ? employeeSidebarItems : adminSidebarItems;
   
   // Get user initials for avatar fallback
   const getUserInitials = (name?: string, email?: string) => {
