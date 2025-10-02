@@ -962,3 +962,173 @@ export function getAuthHeader(token: string) {
     'Content-Type': 'application/json',
   };
 }
+
+// Point Rules API
+export const pointRulesApi = {
+  /**
+   * Get all point rules for a company
+   * @param companyId - ID of the company
+   * @param token - Authentication token
+   */
+  async getPointRules(companyId: string | number, token: string) {
+    const response = await fetch(
+      `${BASE_URL}/api/companies/${companyId}/point-rules`,
+      {
+        headers: getAuthHeader(token),
+      }
+    );
+
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to fetch point rules');
+    }
+
+    return data;
+  },
+
+  /**
+   * Get a specific point rule
+   * @param companyId - ID of the company
+   * @param ruleId - ID of the point rule
+   * @param token - Authentication token
+   */
+  async getPointRule(companyId: string | number, ruleId: string | number, token: string) {
+    const response = await fetch(
+      `${BASE_URL}/api/companies/${companyId}/point-rules/${ruleId}`,
+      {
+        headers: getAuthHeader(token),
+      }
+    );
+
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to fetch point rule');
+    }
+
+    return data;
+  },
+
+  /**
+   * Create a new point rule
+   * @param companyId - ID of the company
+   * @param ruleData - Point rule data
+   * @param token - Authentication token
+   */
+  async createPointRule(
+    companyId: string | number,
+    ruleData: {
+      spend_amount: number;
+      points: number;
+      is_active?: boolean;
+      starts_at?: string | null;
+      ends_at?: string | null;
+      metadata?: Record<string, any>;
+    },
+    token: string
+  ) {
+    const response = await fetch(
+      `${BASE_URL}/api/companies/${companyId}/point-rules`,
+      {
+        method: 'POST',
+        headers: getAuthHeader(token),
+        body: JSON.stringify(ruleData),
+      }
+    );
+
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to create point rule');
+    }
+
+    return data;
+  },
+
+  /**
+   * Update a point rule
+   * @param companyId - ID of the company
+   * @param ruleId - ID of the point rule
+   * @param ruleData - Updated point rule data
+   * @param token - Authentication token
+   */
+  async updatePointRule(
+    companyId: string | number,
+    ruleId: string | number,
+    ruleData: {
+      spend_amount?: number;
+      points?: number;
+      is_active?: boolean;
+      starts_at?: string | null;
+      ends_at?: string | null;
+      metadata?: Record<string, any>;
+    },
+    token: string
+  ) {
+    const response = await fetch(
+      `${BASE_URL}/api/companies/${companyId}/point-rules/${ruleId}`,
+      {
+        method: 'PUT',
+        headers: getAuthHeader(token),
+        body: JSON.stringify(ruleData),
+      }
+    );
+
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to update point rule');
+    }
+
+    return data;
+  },
+
+  /**
+   * Delete a point rule
+   * @param companyId - ID of the company
+   * @param ruleId - ID of the point rule to delete
+   * @param token - Authentication token
+   */
+  async deletePointRule(companyId: string | number, ruleId: string | number, token: string) {
+    const response = await fetch(
+      `${BASE_URL}/api/companies/${companyId}/point-rules/${ruleId}`,
+      {
+        method: 'DELETE',
+        headers: getAuthHeader(token),
+      }
+    );
+
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.message || 'Failed to delete point rule');
+    }
+
+    return { success: true };
+  },
+};
+
+// Company API with point rules
+export const companyApi = {
+  /**
+   * Get company details including point rules
+   * @param companyId - ID of the company
+   * @param token - Authentication token
+   */
+  async getCompanyWithPointRules(companyId: string | number, token: string) {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/api/companies/${companyId}?with=pointRules`,
+      {
+        headers: getAuthHeader(token),
+      }
+    );
+
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to fetch company details');
+    }
+
+    return data;
+  },
+};

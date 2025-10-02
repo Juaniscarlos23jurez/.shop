@@ -12,9 +12,10 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ArrowLeft, Package as Box, Clock as ClockIcon, Wrench as WrenchIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
-import { getProduct, updateProduct } from '@/lib/api/products';
+import { updateProduct } from '@/lib/api/products';
 import { toast } from '@/components/ui/use-toast';
 import { Product } from '@/types/product';
+import { api } from '@/lib/api/api';
 
 export default function EditarProductoPage() {
   const router = useRouter();
@@ -36,47 +37,41 @@ export default function EditarProductoPage() {
       try {
         setIsLoading(true);
         
-        // Fetch company first
-        const companyResponse = await fetch('https://laravel-pkpass-backend-development-pfaawl.laravel.cloud/api/auth/profile/company', {
+        // Fetch company via API helper
+        const companyRes = await api.userCompanies.get(token);
+        const company = companyRes.success ? (companyRes.data?.data ?? companyRes.data) : null;
+        if (!company || !company.id) {
+          throw new Error('No se encontró una compañía asignada a tu usuario');
+        }
+        const resolvedCompanyId = String(company.id);
+        setCompanyId(resolvedCompanyId);
+
+        // Fetch product data using backend-supported route
+        const productRes = await fetch(`https://laravel-pkpass-backend-development-pfaawl.laravel.cloud/api/products/${id}`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Accept': 'application/json',
           },
         });
-        
-        if (companyResponse.ok) {
-          const companyData = await companyResponse.json();
-          if (companyData.company_id) {
-            setCompanyId(companyData.company_id);
-            
-            // Fetch product data
-            const productResponse = await getProduct(companyData.company_id, id as string, token);
-            if (productResponse.success && productResponse.product) {
-              const productData = productResponse.product;
-              setProduct(productData);
-              setProductType(productData.product_type);
-              
-              // Set selected locations
-              if (productData.locations && productData.locations.length > 0) {
-                setSelectedLocations(productData.locations.map(loc => loc.id));
-              }
-            }
-            
-            // Fetch locations
-            const locationsResponse = await fetch('https://laravel-pkpass-backend-development-pfaawl.laravel.cloud/api/locations', {
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Accept': 'application/json',
-              },
-            });
-            
-            if (locationsResponse.ok) {
-              const locationsData = await locationsResponse.json();
-              setLocations(locationsData.locations || []);
-            }
-          } else {
-            throw new Error('No se encontró una compañía asignada a tu usuario');
+        if (productRes.ok) {
+          const data = await productRes.json();
+          const productData = Array.isArray(data.data) ? data.data[0] : data.data;
+          if (!productData) {
+            throw new Error('Producto no encontrado');
           }
+          setProduct(productData);
+          setProductType(productData.product_type);
+          if (productData.locations && productData.locations.length > 0) {
+            setSelectedLocations(productData.locations.map((loc: any) => loc.id));
+          }
+        } else {
+          throw new Error('No se pudo cargar el producto');
+        }
+
+        // Fetch locations via API helper
+        const locationsRes = await api.userCompanies.getLocations(token);
+        if (locationsRes.success) {
+          setLocations(locationsRes.data?.locations || []);
         }
       } catch (error) {
         console.error('Error:', error);
@@ -95,10 +90,10 @@ export default function EditarProductoPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!token || !companyId) {
+    if (!token || !id || !companyId) {
       toast({
         title: 'Error',
-        description: 'No se pudo autenticar. Por favor, inicia sesión de nuevo.',
+        description: 'Faltan datos necesarios para actualizar el producto',
         variant: 'destructive',
       });
       return;
@@ -109,47 +104,56 @@ export default function EditarProductoPage() {
     try {
       const formData = new FormData(e.target as HTMLFormElement);
       
+      // Get stock data from form inputs
+      const stockData: Record<string, number> = {};
+      if (productType === 'physical') {
+        selectedLocations.forEach(locId => {
+          const stockInput = document.querySelector(`input[name="stock-${locId}"]`) as HTMLInputElement;
+          if (stockInput) {
+            stockData[locId] = parseInt(stockInput.value) || 0;
+          }
+        });
+      }
+      
       const productData = {
         name: formData.get('name') as string,
         description: formData.get('description') as string || '',
-        price: parseFloat(formData.get('price') as string),
-        points: parseInt(formData.get('points') as string, 10) || 0,
+        price: parseFloat(formData.get('price') as string) || 0,
         product_type: productType,
-        sku: formData.get('sku') as string || undefined,
-        category: formData.get('category') as string || 'otros',
+        category: formData.get('category') as string || '',
         is_active: formData.get('is_active') === 'on',
-        track_stock: productType === 'physical',
-        ...(productType === 'physical' && {
-          stock: parseInt(formData.get('stock') as string, 10) || 0,
-        }),
-        ...(productType === 'made_to_order' && {
-          lead_time_days: parseInt(formData.get('lead_time') as string, 10) || 1,
-        }),
-        locations: selectedLocations.map(locationId => ({
-          id: locationId,
+        points: formData.get('points') ? parseInt(formData.get('points') as string) : 0,
+        locations: selectedLocations.map(locId => ({
+          id: locId,
           is_available: true,
           ...(productType === 'physical' && { 
-            stock: parseInt(formData.get(`stock_${locationId}`) as string, 10) || 0 
+            stock: stockData[locId] || 0 
           })
-        }))
+        })),
       };
 
-      const response = await updateProduct(companyId, id as string, productData, token);
-      
+      const response = await api.products.updateProduct(
+        companyId,
+        id as string,
+        productData,
+        token
+      );
+
       if (response.success) {
         toast({
           title: '¡Éxito!',
-          description: 'El producto se ha actualizado correctamente',
+          description: 'Producto actualizado correctamente',
+          variant: 'default',
         });
-        router.push('/dashboard/productos');
+        router.push(`/dashboard/productos/${id}`);
       } else {
         throw new Error(response.message || 'Error al actualizar el producto');
       }
     } catch (error) {
-      console.error('Error updating product:', error);
+      console.error('Error al actualizar el producto:', error);
       toast({
         title: 'Error',
-        description: error instanceof Error ? error.message : 'Ocurrió un error al actualizar el producto',
+        description: error instanceof Error ? error.message : 'Error al actualizar el producto',
         variant: 'destructive',
       });
     } finally {
