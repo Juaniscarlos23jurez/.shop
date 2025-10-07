@@ -132,3 +132,85 @@ export interface CouponCreateInput {
 }
 
 export interface CouponUpdateInput extends Partial<CouponCreateInput> {}
+
+// Sales Types
+export interface SaleItem {
+  id: number;
+  sale_id: number;
+  product_id: number;
+  quantity: number;
+  unit_price: string;
+  subtotal: string;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+  product?: {
+    id: number;
+    name: string;
+    sku?: string;
+    price: string;
+  };
+}
+
+export interface Sale {
+  id: number;
+  location_id: number;
+  employee_id?: number;
+  user_id?: number;
+  client_id?: number;
+  total?: string; // from API
+  total_amount?: string; // backward compatibility
+  payment_method: 'cash' | 'card' | 'transfer' | 'points';
+  payment_status: 'completed' | 'pending' | 'failed';
+  sale_status: 'completed' | 'cancelled';
+  points_earned?: number;
+  created_at: string;
+  updated_at: string;
+  location?: {
+    id: number;
+    name: string;
+    address?: string;
+  };
+  employee?: {
+    id: number;
+    name: string;
+    email: string;
+  };
+  user?: {
+    id: number;
+    name: string;
+    email: string;
+  };
+  client?: {
+    id: number;
+    name: string;
+    email?: string;
+  };
+  items?: SaleItem[];
+}
+
+export interface SalesListResponse {
+  data: Sale[];
+  current_page: number;
+  last_page: number;
+  per_page: number;
+  total: number;
+}
+
+export interface SalesStatistics {
+  total_sales: number;
+  total_revenue: string;
+  average_sale: string;
+  total_items_sold: number;
+  sales_by_payment_method?: {
+    cash: number;
+    card: number;
+    transfer: number;
+    points: number;
+  };
+  sales_by_status?: {
+    completed: number;
+    pending: number;
+    cancelled: number;
+  };
+}
