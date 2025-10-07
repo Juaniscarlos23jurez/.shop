@@ -764,6 +764,110 @@ export const api = {
   // Orders API
   orders: ordersApi,
 
+  // Sales API
+  sales: {
+    /**
+     * Get sales list with optional filters
+     */
+    async listSales(
+      params: {
+        location_id?: number | string;
+        date_from?: string; // YYYY-MM-DD
+        date_to?: string;   // YYYY-MM-DD
+        per_page?: number | string;
+        page?: number | string;
+      } = {},
+      token: string
+    ): Promise<ApiResponse<any>> {
+      const search = new URLSearchParams();
+      if (params.location_id !== undefined) search.set('location_id', String(params.location_id));
+      if (params.date_from) search.set('date_from', params.date_from);
+      if (params.date_to) search.set('date_to', params.date_to);
+      if (params.per_page !== undefined) search.set('per_page', String(params.per_page));
+      if (params.page !== undefined) search.set('page', String(params.page));
+
+      const url = `${BASE_URL}/api/sales${search.toString() ? `?${search.toString()}` : ''}`;
+      return fetch(url, {
+        method: 'GET',
+        headers: getAuthHeader(token),
+      }).then(handleResponse);
+    },
+
+    /**
+     * Create a new sale
+     */
+    async createSale(
+      data: {
+        location_id: number | string;
+        user_id?: number | string | null;
+        points_earned?: number; // optional: allow FE to send computed points
+        payment_method: 'cash' | 'card' | 'transfer' | 'points';
+        items: Array<{
+          product_id: number | string;
+          quantity: number;
+          notes?: string;
+        }>;
+      },
+      token: string
+    ): Promise<ApiResponse<any>> {
+      return fetch(`${BASE_URL}/api/sales`, {
+        method: 'POST',
+        headers: getAuthHeader(token),
+        body: JSON.stringify(data),
+      }).then(handleResponse);
+    },
+
+    /**
+     * Get sale details
+     */
+    async getSale(id: number | string, token: string): Promise<ApiResponse<any>> {
+      return fetch(`${BASE_URL}/api/sales/${id}`, {
+        method: 'GET',
+        headers: getAuthHeader(token),
+      }).then(handleResponse);
+    },
+
+    /**
+     * Update sale status
+     */
+    async updateSale(
+      id: number | string,
+      data: {
+        payment_status?: 'completed' | 'pending' | 'failed';
+        sale_status?: 'completed' | 'cancelled';
+      },
+      token: string
+    ): Promise<ApiResponse<any>> {
+      return fetch(`${BASE_URL}/api/sales/${id}`, {
+        method: 'PATCH',
+        headers: getAuthHeader(token),
+        body: JSON.stringify(data),
+      }).then(handleResponse);
+    },
+
+    /**
+     * Sales statistics
+     */
+    async getStatistics(
+      params: {
+        location_id?: number | string;
+        date_from?: string;
+        date_to?: string;
+      } = {},
+      token: string
+    ): Promise<ApiResponse<any>> {
+      const search = new URLSearchParams();
+      if (params.location_id !== undefined) search.set('location_id', String(params.location_id));
+      if (params.date_from) search.set('date_from', params.date_from);
+      if (params.date_to) search.set('date_to', params.date_to);
+      const url = `${BASE_URL}/api/sales/statistics${search.toString() ? `?${search.toString()}` : ''}`;
+      return fetch(url, {
+        method: 'GET',
+        headers: getAuthHeader(token),
+      }).then(handleResponse);
+    },
+  },
+
   // Products API
   products: {
     /**
