@@ -5,9 +5,9 @@ import { AuthProvider } from '@/contexts/AuthContext'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'v0 App',
-  description: 'Created with v0',
-  generator: 'v0.dev',
+  title: 'Fideliza',
+  description: 'haz crecer tu negocio',
+  generator: 'Fideliza',
 }
 
 export default function RootLayout({
