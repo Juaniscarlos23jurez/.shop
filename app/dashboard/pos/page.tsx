@@ -50,6 +50,7 @@ export default function PuntoVentaPage() {
   const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
   const [orderDescription, setOrderDescription] = useState('');
   const companyId = '1'; // ID de la compañía como string
+  const [locationId, setLocationId] = useState<string | number | null>(null);
 
   // Cargar órdenes pendientes del localStorage
   useEffect(() => {
@@ -77,6 +78,31 @@ export default function PuntoVentaPage() {
     if (token) {
       fetchProducts();
     }
+  }, [token]);
+
+  // Cargar ubicación (location_id) por defecto
+  useEffect(() => {
+    const fetchLocations = async () => {
+      try {
+        if (!token) return;
+        const locResp = await api.userCompanies.getLocations(token);
+        if (locResp.success) {
+          const first = (locResp.data?.locations || [])[0];
+          if (first?.id) {
+            setLocationId(first.id);
+          } else {
+            // Fallback si no hay ubicaciones registradas
+            setLocationId(1);
+          }
+        } else {
+          setLocationId(1);
+        }
+      } catch (e) {
+        console.error('Error fetching locations:', e);
+        setLocationId(1);
+      }
+    };
+    fetchLocations();
   }, [token]);
 
   const addToCart = (product: Product) => {
@@ -120,54 +146,63 @@ export default function PuntoVentaPage() {
     method: string;
     amount: number;
     change?: number;
-    customerId?: string;
+    userId?: string;
     pointsEarned?: number;
+    note?: string;
   }) => {
     try {
       setIsProcessing(true);
       
-      // Crear la orden localmente
-      const orderData: Order = {
-        id: Date.now().toString(),
-        items: cart.map(item => ({
-          id: item.id,
-          name: item.name,
-          price: item.price,
-          quantity: item.quantity
-        })),
-        total: cartTotal,
-        status: 'completed' as const,
-        description: orderDescription || `Orden #${Date.now().toString()}`,
-        createdAt: new Date().toISOString(),
-        customerId: paymentData.customerId,
-        pointsEarned: paymentData.pointsEarned
-      };
-
-      // Guardar la orden en el estado
-      setPendingOrders(prev => [...prev, orderData]);
-
-      // Guardar en localStorage
-      const savedOrders = localStorage.getItem('pendingOrders');
-      const orders = savedOrders ? JSON.parse(savedOrders) : [];
-      localStorage.setItem('pendingOrders', JSON.stringify([...orders, orderData]));
-
-      // TODO: Implementar la llamada a la API para actualizar los puntos del cliente
-      if (paymentData.customerId && paymentData.pointsEarned) {
-        try {
-          // Aquí iría la llamada a la API para actualizar los puntos
-          console.log('Actualizando puntos del cliente:', {
-            customerId: paymentData.customerId,
-            pointsEarned: paymentData.pointsEarned
-          });
-        } catch (error) {
-          console.error('Error al actualizar puntos:', error);
-          toast({
-            title: 'Error',
-            description: 'No se pudieron actualizar los puntos del cliente',
-            variant: 'destructive'
-          });
-        }
+      // Validar token
+      if (!token) {
+        throw new Error('No hay token de autenticación');
       }
+
+      // Validar que hay items en el carrito
+      if (cart.length === 0) {
+        throw new Error('El carrito está vacío');
+      }
+
+      // Preparar datos para la API
+      const mappedItems = cart.map((item) => ({
+        product_id: item.id,
+        quantity: item.quantity,
+        notes: paymentData.note || undefined,
+      }));
+      const locId = locationId ?? 1;
+
+      // Convertir user_id a número si existe
+      const userId = paymentData.userId ? parseInt(paymentData.userId, 10) : undefined;
+
+      console.log('Creando venta con datos:', {
+        location_id: locId,
+        user_id: userId,
+        points_earned: paymentData.pointsEarned,
+        payment_method: paymentData.method,
+        items: mappedItems,
+      });
+
+      // Llamar API para crear la venta
+      const saleResp = await api.sales.createSale(
+        {
+          location_id: locId,
+          user_id: userId,
+          ...(typeof paymentData.pointsEarned === 'number' ? { points_earned: paymentData.pointsEarned } : {}),
+          payment_method: paymentData.method as any,
+          items: mappedItems,
+        },
+        token
+      );
+
+      console.log('Respuesta de la API:', saleResp);
+
+      if (!saleResp.success) {
+        throw new Error(saleResp.message || 'No se pudo crear la venta');
+      }
+
+      // Extraer información de la venta creada
+      const saleData = saleResp.data?.sale || saleResp.data;
+      const pointsEarnedFromAPI = saleData?.points_earned || paymentData.pointsEarned || 0;
 
       // Si hay una orden pendiente actual, eliminarla
       if (currentOrderId) {
@@ -179,20 +214,18 @@ export default function PuntoVentaPage() {
 
       // Limpiar el carrito y cerrar el modal
       setCart([]);
-      setIsPaymentModalOpen(false);
       setOrderDescription('');
       
       toast({
         title: 'Venta completada',
-        description: `Orden #${orderData.id} procesada correctamente${paymentData.pointsEarned ? `. +${paymentData.pointsEarned} puntos` : ''}`,
+        description: `Venta #${saleData?.id || 'N/A'} creada correctamente. Total: $${cartTotal.toFixed(2)}${pointsEarnedFromAPI > 0 ? ` | +${pointsEarnedFromAPI} puntos` : ''}`,
       });
 
-      setIsProcessing(false);
     } catch (error) {
       console.error('Error al procesar el pago:', error);
       toast({
-        title: 'Error',
-        description: 'No se pudo procesar el pago. Por favor, inténtalo de nuevo.',
+        title: 'Error al procesar la venta',
+        description: error instanceof Error ? error.message : 'No se pudo procesar el pago. Por favor, inténtalo de nuevo.',
         variant: 'destructive',
       });
     } finally {
@@ -209,7 +242,23 @@ export default function PuntoVentaPage() {
     try {
       setIsProcessing(true);
       
+      // Crear la orden pendiente
+      const orderData: Order = {
+        id: Date.now().toString(),
+        items: cart.map(item => ({
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity
+        })),
+        total: cartTotal,
+        status: 'pending' as const,
+        description: orderDescription || `Orden #${Date.now().toString()}`,
+        createdAt: new Date().toISOString(),
+      };
+
       // Actualizar el estado y localStorage
+      const updatedOrders = [...pendingOrders, orderData];
       setPendingOrders(updatedOrders);
       localStorage.setItem('pendingOrders', JSON.stringify(updatedOrders));
 

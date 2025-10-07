@@ -28,7 +28,7 @@ interface PaymentModalProps {
     method: PaymentMethod;
     amount: number;
     change?: number;
-    customerId?: string;
+    userId?: string;
     pointsEarned?: number;
     note?: string;
   }) => void;
@@ -220,7 +220,9 @@ export function PaymentModal({ isOpen, onClose, total, onPaymentComplete }: Paym
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    console.log('PaymentModal: handleSubmit called', { paymentMethod, customer, total });
+    
     if (paymentMethod === 'cash' && (!cashAmount || parseFloat(cashAmount) < total)) {
       toast({
         title: 'Error',
@@ -258,14 +260,21 @@ export function PaymentModal({ isOpen, onClose, total, onPaymentComplete }: Paym
     }
 
     try {
-      onPaymentComplete({
+      const paymentData = {
         method: paymentMethod,
         amount: paymentMethod === 'cash' ? parseFloat(cashAmount) : total,
         change: paymentMethod === 'cash' ? change : undefined,
-        customerId: customer?.id,
+        userId: customer?.id,
         pointsEarned: paymentMethod === 'points' ? -total : (customer ? pointsEarned : undefined),
         note: note || undefined,
-      });
+      };
+      
+      console.log('PaymentModal: Calling onPaymentComplete with:', paymentData);
+      
+      await onPaymentComplete(paymentData);
+      
+      console.log('PaymentModal: onPaymentComplete finished successfully');
+      
       // Reset form
       setPaymentMethod('cash');
       setCashAmount('');
@@ -275,7 +284,12 @@ export function PaymentModal({ isOpen, onClose, total, onPaymentComplete }: Paym
       setNote("");
       onClose();
     } catch (error) {
-      console.error('Error processing payment:', error);
+      console.error('PaymentModal: Error processing payment:', error);
+      toast({
+        title: 'Error',
+        description: 'Ocurrió un error al procesar el pago',
+        variant: 'destructive'
+      });
     }
   };
 
