@@ -1,5 +1,6 @@
 import { ApiResponse, UserProfile, ProfileApiUser, BusinessHour, Membership, Coupon, CouponCreateInput, CouponUpdateInput } from '@/types/api';
 import { Product, ProductListResponse, ProductResponse, ProductCreateInput, ProductUpdateInput } from '@/types/product';
+import { Category, CategoryCreateInput, CategoryUpdateInput, CategoryResponse, CategoryListResponse } from '@/types/category';
 import { ordersApi } from './orders';
 
 const BASE_URL = 'https://laravel-pkpass-backend-development-pfaawl.laravel.cloud';
@@ -1007,6 +1008,122 @@ export const api = {
           body: JSON.stringify({ location_id: locationId, is_available: isAvailable }),
         }
       ).then(handleResponse);
+    },
+  },
+
+  // Categories API
+  categories: {
+    /**
+     * Get all categories
+     */
+    async getCategories(token: string): Promise<CategoryListResponse> {
+      const response = await fetch(`${BASE_URL}/api/categories`, {
+        method: 'GET',
+        headers: getAuthHeader(token),
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        console.error('Categories fetch error:', data);
+        throw new Error(data.message || data.error || 'Failed to fetch categories');
+      }
+
+      return data;
+    },
+
+    /**
+     * Create a new category
+     */
+    async createCategory(
+      data: CategoryCreateInput,
+      token: string
+    ): Promise<CategoryResponse> {
+      const response = await fetch(`${BASE_URL}/api/categories`, {
+        method: 'POST',
+        headers: {
+          ...getAuthHeader(token),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      const responseData = await response.json();
+      
+      if (!response.ok) {
+        console.error('Category creation error:', responseData);
+        throw new Error(responseData.message || responseData.error || 'Failed to create category');
+      }
+
+      return responseData;
+    },
+
+    /**
+     * Get a specific category
+     */
+    async getCategory(
+      categoryId: string | number,
+      token: string
+    ): Promise<CategoryResponse> {
+      const response = await fetch(`${BASE_URL}/api/categories/${categoryId}`, {
+        method: 'GET',
+        headers: getAuthHeader(token),
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to fetch category');
+      }
+
+      return data;
+    },
+
+    /**
+     * Update a category
+     */
+    async updateCategory(
+      categoryId: string | number,
+      data: CategoryUpdateInput,
+      token: string
+    ): Promise<CategoryResponse> {
+      const response = await fetch(`${BASE_URL}/api/categories/${categoryId}`, {
+        method: 'PUT',
+        headers: {
+          ...getAuthHeader(token),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      const responseData = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(responseData.message || 'Failed to update category');
+      }
+
+      return responseData;
+    },
+
+    /**
+     * Delete a category
+     */
+    async deleteCategory(
+      categoryId: string | number,
+      token: string
+    ): Promise<{ status: string; message: string }> {
+      const response = await fetch(`${BASE_URL}/api/categories/${categoryId}`, {
+        method: 'DELETE',
+        headers: getAuthHeader(token),
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to delete category');
+      }
+
+      return data;
     },
   },
 };
