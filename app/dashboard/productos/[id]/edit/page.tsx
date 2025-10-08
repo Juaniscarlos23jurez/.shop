@@ -9,13 +9,17 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { ArrowLeft, Package as Box, Clock as ClockIcon, Wrench as WrenchIcon } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ArrowLeft, Package as Box, Clock as ClockIcon, Wrench as WrenchIcon, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { updateProduct } from '@/lib/api/products';
 import { toast } from '@/components/ui/use-toast';
 import { Product } from '@/types/product';
+import { Category } from '@/types/category';
 import { api } from '@/lib/api/api';
+import { storage } from '@/lib/firebase';
+import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 export default function EditarProductoPage() {
   const router = useRouter();
@@ -28,6 +32,13 @@ export default function EditarProductoPage() {
   const [selectedLocations, setSelectedLocations] = useState<number[]>([]);
   const [product, setProduct] = useState<Partial<Product>>({});
   const [productType, setProductType] = useState<'physical' | 'made_to_order' | 'service'>('physical');
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCreatingCategory, setIsCreatingCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [newCategoryDescription, setNewCategoryDescription] = useState('');
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   
   // Fetch product data, company and locations on component mount
   useEffect(() => {
@@ -73,6 +84,9 @@ export default function EditarProductoPage() {
         if (locationsRes.success) {
           setLocations(locationsRes.data?.locations || []);
         }
+
+        // Fetch categories
+        await fetchCategories();
       } catch (error) {
         console.error('Error:', error);
         toast({
@@ -88,6 +102,103 @@ export default function EditarProductoPage() {
     fetchData();
   }, [token, id]);
 
+  // Revoke object URL when component unmounts or when preview changes
+  useEffect(() => {
+    return () => {
+      if (previewImage) URL.revokeObjectURL(previewImage);
+    };
+  }, [previewImage]);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setPreviewImage((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return url;
+      });
+      setSelectedFile(file);
+    }
+  };
+
+  const uploadImageIfNeeded = async (): Promise<string | null> => {
+    if (!selectedFile || !companyId) return null;
+    try {
+      const filePath = `companies/${companyId}/products/${id || 'new'}/${Date.now()}_${selectedFile.name}`;
+      const fileRef = storageRef(storage, filePath);
+      await uploadBytes(fileRef, selectedFile);
+      const url = await getDownloadURL(fileRef);
+      return url;
+    } catch (err) {
+      console.error('Error uploading image to Firebase:', err);
+      toast({
+        title: 'Error al subir imagen',
+        description: 'Continúo sin actualizar la imagen. Puedes intentar de nuevo.',
+        variant: 'destructive',
+      });
+      return null;
+    }
+  };
+
+  const fetchCategories = async () => {
+    if (!token) return;
+    
+    try {
+      const response = await api.categories.getCategories(token);
+      setCategories(response.data || []);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+      // Don't show error toast for categories - just log it
+      // The form will still work with manual category input
+    }
+  };
+
+  const handleCreateCategory = async () => {
+    if (!token || !newCategoryName.trim()) {
+      toast({
+        title: 'Error',
+        description: 'El nombre de la categoría es requerido',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsCreatingCategory(true);
+    
+    try {
+      await api.categories.createCategory(
+        {
+          name: newCategoryName,
+          description: newCategoryDescription || undefined,
+          is_active: true,
+        },
+        token
+      );
+
+      toast({
+        title: '¡Éxito!',
+        description: 'Categoría creada correctamente',
+      });
+
+      // Reset form and close modal
+      setNewCategoryName('');
+      setNewCategoryDescription('');
+      setIsModalOpen(false);
+
+      // Refresh categories
+      await fetchCategories();
+    } catch (error) {
+      console.error('Error creating category:', error);
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Error al crear la categoría',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsCreatingCategory(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!token || !id || !companyId) {
@@ -101,41 +212,61 @@ export default function EditarProductoPage() {
 
     setIsSaving(true);
     
+    const uploadedUrl = await uploadImageIfNeeded();
+      
     try {
       const formData = new FormData(e.target as HTMLFormElement);
-      
+
+      // Lead time conversion (minutes/hours/days -> days)
+      const leadTimeValue = parseFloat((formData.get('lead_time') as string) || '0');
+      const leadTimeUnit = (formData.get('lead_time_unit') as string) || 'days';
+      const computeLeadTimeDays = (value: number, unit: string) => {
+        if (!value || value <= 0) return undefined;
+        switch (unit) {
+          case 'minutes':
+            return Math.max(1, Math.ceil(value / (60 * 24)));
+          case 'hours':
+            return Math.max(1, Math.ceil(value / 24));
+          case 'days':
+          default:
+            return Math.max(1, Math.ceil(value));
+        }
+      };
       // Get stock data from form inputs
       const stockData: Record<string, number> = {};
       if (productType === 'physical') {
-        selectedLocations.forEach(locId => {
-          const stockInput = document.querySelector(`input[name="stock-${locId}"]`) as HTMLInputElement;
+        selectedLocations.forEach((locId) => {
+          const stockInput = document.querySelector(
+            `input[name="stock-${locId}"]`
+          ) as HTMLInputElement | null;
           if (stockInput) {
             stockData[locId] = parseInt(stockInput.value) || 0;
           }
         });
       }
       
-      const productData = {
+      const updateData: any = {
         name: formData.get('name') as string,
         description: formData.get('description') as string || '',
         price: parseFloat(formData.get('price') as string) || 0,
         product_type: productType,
+        sku: formData.get('sku') as string || undefined,
         category: formData.get('category') as string || '',
         is_active: formData.get('is_active') === 'on',
+        image_url: uploadedUrl || product.image_url,
         points: formData.get('points') ? parseInt(formData.get('points') as string) : 0,
         locations: selectedLocations.map(locId => ({
           id: locId,
           is_available: true,
-          ...(productType === 'physical' && { 
-            stock: stockData[locId] || 0 
-          })
+          ...(productType === 'physical' ? { stock: stockData[locId] || 0 } : {}),
         })),
+        ...(productType === 'made_to_order' ? { lead_time_days: computeLeadTimeDays(leadTimeValue, leadTimeUnit) } : {}),
       };
 
       const response = await api.products.updateProduct(
         companyId,
         id as string,
-        productData,
+        updateData,
         token
       );
 
@@ -321,22 +452,94 @@ export default function EditarProductoPage() {
                   
                   {productType === 'made_to_order' && (
                     <div className="space-y-2">
-                      <Label htmlFor="lead_time">Tiempo de Entrega (días)</Label>
-                      <Input 
-                        id="lead_time" 
-                        name="lead_time" 
-                        type="number" 
-                        min="1" 
-                        defaultValue={product.lead_time_days || 1}
-                        placeholder="Ej: 7" 
-                        required 
-                      />
+                      <Label htmlFor="lead_time">Tiempo de Entrega</Label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Input 
+                          id="lead_time" 
+                          name="lead_time" 
+                          type="number" 
+                          min="1" 
+                          defaultValue={product.lead_time_days || 1}
+                          placeholder="Ej: 7" 
+                          required 
+                        />
+                        <select
+                          id="lead_time_unit"
+                          name="lead_time_unit"
+                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                          defaultValue="days"
+                        >
+                          <option value="minutes">Minutos</option>
+                          <option value="hours">Horas</option>
+                          <option value="days">Días</option>
+                        </select>
+                      </div>
                     </div>
                   )}
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="category">Categoría</Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="category">Categoría</Label>
+                    <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+                      <DialogTrigger asChild>
+                        <Button type="button" variant="outline" size="sm" className="h-8">
+                          <Plus className="h-4 w-4 mr-1" />
+                          Nueva Categoría
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Crear Nueva Categoría</DialogTitle>
+                          <DialogDescription>
+                            Agrega una nueva categoría para organizar tus productos
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4 py-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="new-category-name">Nombre *</Label>
+                            <Input
+                              id="new-category-name"
+                              placeholder="Ej: Bebidas"
+                              value={newCategoryName}
+                              onChange={(e) => setNewCategoryName(e.target.value)}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="new-category-description">Descripción</Label>
+                            <Textarea
+                              id="new-category-description"
+                              placeholder="Descripción de la categoría (opcional)"
+                              value={newCategoryDescription}
+                              onChange={(e) => setNewCategoryDescription(e.target.value)}
+                              rows={3}
+                            />
+                          </div>
+                        </div>
+                        <DialogFooter>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => {
+                              setIsModalOpen(false);
+                              setNewCategoryName('');
+                              setNewCategoryDescription('');
+                            }}
+                            disabled={isCreatingCategory}
+                          >
+                            Cancelar
+                          </Button>
+                          <Button
+                            type="button"
+                            onClick={handleCreateCategory}
+                            disabled={isCreatingCategory || !newCategoryName.trim()}
+                          >
+                            {isCreatingCategory ? 'Creando...' : 'Crear Categoría'}
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
                   <select
                     id="category"
                     name="category"
@@ -344,10 +547,14 @@ export default function EditarProductoPage() {
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <option value="">Selecciona una categoría</option>
-                    <option value="ropa">Ropa</option>
-                    <option value="accesorios">Accesorios</option>
-                    <option value="hogar">Hogar</option>
-                    <option value="otros">Otros</option>
+                    {categories
+                      .filter(cat => cat.is_active)
+                      .sort((a, b) => a.order - b.order)
+                      .map((category) => (
+                        <option key={category.id} value={category.slug}>
+                          {category.name}
+                        </option>
+                      ))}
                   </select>
                 </div>
               </div>
@@ -430,10 +637,10 @@ export default function EditarProductoPage() {
                   className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-lg cursor-pointer bg-slate-50 hover:bg-slate-100"
                 >
                   <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                    {product.image_url ? (
-                      <img 
-                        src={product.image_url} 
-                        alt={product.name} 
+                    {previewImage || product.image_url ? (
+                      <img
+                        src={previewImage || (product.image_url as string)}
+                        alt={product.name}
                         className="max-h-40 max-w-full mb-4 rounded-md"
                       />
                     ) : (
@@ -460,7 +667,13 @@ export default function EditarProductoPage() {
                       </>
                     )}
                   </div>
-                  <input id="dropzone-file" type="file" className="hidden" multiple />
+                  <input
+                    id="dropzone-file"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleImageChange}
+                  />
                 </label>
               </div>
             </CardContent>
