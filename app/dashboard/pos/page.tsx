@@ -330,9 +330,9 @@ export default function PuntoVentaPage() {
                       onClick={() => addToCart(product)}
                     >
                       <div className="aspect-square bg-gray-100 rounded-md mb-2 flex items-center justify-center">
-                        {product.images?.[0]?.url ? (
+                        {product.image_url ? (
                           <img 
-                            src={product.images[0].url} 
+                            src={product.image_url} 
                             alt={product.name}
                             className="w-full h-full object-cover rounded-md"
                           />
