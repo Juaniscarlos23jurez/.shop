@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,11 +7,35 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { QRScanner } from './QRScanner';
 import { Customer } from '@/types/customer';
-import { QrCode } from 'lucide-react';
+import { QrCode, TicketPercent } from 'lucide-react';
 import { CustomerSearch } from './CustomerSearch';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { api, pointRulesApi } from '@/lib/api/api';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+
+interface Coupon {
+  id: number;
+  code: string;
+  name: string;
+  description: string;
+  type: 'fixed_amount' | 'percentage' | 'free_shipping';
+  discount_amount: string | null;
+  discount_percentage: number | null;
+  min_purchase_amount: string;
+  starts_at: string;
+  expires_at: string;
+  usage_limit: number;
+  usage_count: number;
+  usage_limit_per_user: number;
+  is_active: boolean;
+}
+
+interface AppliedCoupon extends Coupon {
+  discountAmount: number;
+  finalAmount: number;
+}
 
 type PaymentMethod = 'cash' | 'card' | 'transfer' | 'points';
 
@@ -55,17 +79,14 @@ export function PaymentModal({ isOpen, onClose, total, onPaymentComplete }: Paym
   const [pointRules, setPointRules] = useState<PointRule[]>([]);
   const [companyId, setCompanyId] = useState<string | number | null>(null);
   const [note, setNote] = useState("");
+  const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const [selectedCoupon, setSelectedCoupon] = useState<AppliedCoupon | null>(null);
+  const [isLoadingCoupons, setIsLoadingCoupons] = useState(false);
+  const [discountedTotal, setDiscountedTotal] = useState(total);
 
-  // Fetch point rules when component mounts
+  // Fetch point rules and coupons when component mounts
   useEffect(() => {
-    const fetchPointRules = async () => {
-      console.log('PaymentModal: Checking point rules fetch conditions', { 
-        isOpen, 
-        hasToken: !!token, 
-        userCompanyId: user?.company_id,
-        resolvedCompanyId: companyId
-      });
-      
+    const fetchData = async () => {
       if (!token) {
         console.log('PaymentModal: No token available');
         return;
@@ -99,6 +120,7 @@ export function PaymentModal({ isOpen, onClose, total, onPaymentComplete }: Paym
         return;
       }
       
+      // Fetch point rules
       try {
         console.log('PaymentModal: Fetching point rules for company:', resolvedCompanyId);
         const response = await pointRulesApi.getPointRules(resolvedCompanyId, token);
@@ -113,19 +135,120 @@ export function PaymentModal({ isOpen, onClose, total, onPaymentComplete }: Paym
       } catch (error) {
         console.error('PaymentModal: Error fetching point rules:', error);
       }
+      
+      // Fetch coupons
+      try {
+        setIsLoadingCoupons(true);
+        console.log('PaymentModal: Fetching coupons for company:', resolvedCompanyId);
+        const response = await api.coupons.getCoupons(resolvedCompanyId, token);
+        console.log('PaymentModal: Coupons response:', response);
+        
+        if (response.success && response.data?.data) {
+          const validCoupons = response.data.data.filter((coupon: Coupon) => {
+            const now = new Date();
+            const startsAt = new Date(coupon.starts_at);
+            const expiresAt = new Date(coupon.expires_at);
+            return (
+              coupon.is_active &&
+              now >= startsAt &&
+              now <= expiresAt &&
+              coupon.usage_count < coupon.usage_limit
+            );
+          });
+          
+          setCoupons(validCoupons);
+          console.log('PaymentModal: Valid coupons loaded:', validCoupons);
+        } else {
+          console.log('PaymentModal: No coupons data in response');
+        }
+      } catch (error) {
+        console.error('PaymentModal: Error fetching coupons:', error);
+      } finally {
+        setIsLoadingCoupons(false);
+      }
     };
 
     if (isOpen) {
-      fetchPointRules();
+      fetchData();
     }
   }, [token, user?.company_id, isOpen]);
 
-  // Recalculate points when customer or total changes
+  // Recalculate points when customer, total, or selected coupon changes
   useEffect(() => {
     if (customer && total > 0) {
-      setPointsEarned(calculatePoints(total));
+      setPointsEarned(calculatePoints(selectedCoupon ? discountedTotal : total));
     }
-  }, [customer, total, pointRules]);
+  }, [customer, total, pointRules, selectedCoupon, discountedTotal]);
+  
+  // Update discounted total when total or selected coupon changes
+  useEffect(() => {
+    if (selectedCoupon) {
+      // Only update if the total has actually changed to prevent unnecessary re-renders
+      const newDiscountedTotal = calculateDiscountedTotal(selectedCoupon, total);
+      if (newDiscountedTotal !== discountedTotal) {
+        setDiscountedTotal(newDiscountedTotal);
+      }
+    } else if (discountedTotal !== total) {
+      setDiscountedTotal(total);
+    }
+  }, [total, selectedCoupon?.id]); // Only depend on the coupon ID, not the entire coupon object
+  
+  const calculateDiscountedTotal = (coupon: Coupon, currentTotal: number) => {
+    let discount = 0;
+    
+    if (coupon.type === 'fixed_amount' && coupon.discount_amount) {
+      discount = parseFloat(coupon.discount_amount);
+    } else if (coupon.type === 'percentage' && coupon.discount_percentage) {
+      discount = (currentTotal * coupon.discount_percentage) / 100;
+    }
+    // For free_shipping, we don't modify the total here as it's handled separately
+    
+    return Math.max(0, currentTotal - discount);
+  };
+
+  const applyCoupon = (coupon: Coupon) => {
+    const discount = (() => {
+      if (coupon.type === 'fixed_amount' && coupon.discount_amount) {
+        return parseFloat(coupon.discount_amount);
+      } else if (coupon.type === 'percentage' && coupon.discount_percentage) {
+        return (total * coupon.discount_percentage) / 100;
+      }
+      return 0;
+    })();
+    
+    const finalAmount = coupon.type === 'free_shipping' 
+      ? total // No change to total for free shipping
+      : Math.max(0, total - discount);
+    
+    setDiscountedTotal(finalAmount);
+    
+    // Only update if the coupon has actually changed to prevent unnecessary re-renders
+    if (!selectedCoupon || selectedCoupon.id !== coupon.id || 
+        selectedCoupon.discountAmount !== discount || 
+        selectedCoupon.finalAmount !== finalAmount) {
+      
+      setSelectedCoupon({
+        ...coupon,
+        discountAmount: discount,
+        finalAmount
+      });
+    }
+    
+    toast({
+      title: 'Cupón aplicado',
+      description: `Se aplicó el cupón ${coupon.code} con un descuento de $${discount.toFixed(2)}`,
+    });
+  };
+  
+  const removeCoupon = useCallback(() => {
+    setSelectedCoupon(null);
+    setDiscountedTotal(total);
+    
+    toast({
+      title: 'Cupón eliminado',
+      description: 'El cupón ha sido eliminado',
+    });
+  }, [total]);
 
   const handleCustomerSelected = (selectedCustomer: Customer) => {
     setCustomer(selectedCustomer);
@@ -221,12 +344,20 @@ export function PaymentModal({ isOpen, onClose, total, onPaymentComplete }: Paym
   };
 
   const handleSubmit = async () => {
-    console.log('PaymentModal: handleSubmit called', { paymentMethod, customer, total });
+    const currentTotal = selectedCoupon ? discountedTotal : total;
+    console.log('PaymentModal: handleSubmit called', { 
+      paymentMethod, 
+      customer, 
+      total,
+      discountedTotal,
+      selectedCoupon,
+      currentTotal
+    });
     
-    if (paymentMethod === 'cash' && (!cashAmount || parseFloat(cashAmount) < total)) {
+    if (paymentMethod === 'cash' && (!cashAmount || parseFloat(cashAmount) < currentTotal)) {
       toast({
         title: 'Error',
-        description: 'El monto en efectivo debe ser mayor o igual al total',
+        description: `El monto en efectivo debe ser mayor o igual al total ($${currentTotal.toFixed(2)})`,
         variant: 'destructive'
       });
       return;
@@ -262,11 +393,17 @@ export function PaymentModal({ isOpen, onClose, total, onPaymentComplete }: Paym
     try {
       const paymentData = {
         method: paymentMethod,
-        amount: paymentMethod === 'cash' ? parseFloat(cashAmount) : total,
+        amount: paymentMethod === 'cash' ? parseFloat(cashAmount) : currentTotal,
         change: paymentMethod === 'cash' ? change : undefined,
         userId: customer?.id,
-        pointsEarned: paymentMethod === 'points' ? -total : (customer ? pointsEarned : undefined),
+        pointsEarned: paymentMethod === 'points' ? -currentTotal : (customer ? pointsEarned : undefined),
         note: note || undefined,
+        coupon: selectedCoupon ? {
+          id: selectedCoupon.id,
+          code: selectedCoupon.code,
+          discount: selectedCoupon.discountAmount,
+          type: selectedCoupon.type
+        } : undefined
       };
       
       console.log('PaymentModal: Calling onPaymentComplete with:', paymentData);
@@ -282,6 +419,8 @@ export function PaymentModal({ isOpen, onClose, total, onPaymentComplete }: Paym
       setCustomer(null);
       setPointsEarned(0);
       setNote("");
+      setSelectedCoupon(null);
+      setDiscountedTotal(total);
       onClose();
     } catch (error) {
       console.error('PaymentModal: Error processing payment:', error);
@@ -482,10 +621,91 @@ export function PaymentModal({ isOpen, onClose, total, onPaymentComplete }: Paym
             </div>
           )}
 
-          <div className="border-t pt-4">
-            <div className="flex justify-between font-medium">
-              <span>Total a Pagar:</span>
-              <span>${total.toFixed(2)}</span>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label className="font-normal">Cupón de descuento</Label>
+              {!selectedCoupon ? (
+                <Select 
+                  onValueChange={(value) => {
+                    const coupon = coupons.find(c => c.id === parseInt(value));
+                    if (coupon) applyCoupon(coupon);
+                  }}
+                  disabled={isLoadingCoupons || coupons.length === 0}
+                >
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder={isLoadingCoupons ? "Cargando..." : "Aplicar cupón"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {coupons.length > 0 ? (
+                      coupons.map((coupon) => (
+                        <SelectItem 
+                          key={coupon.id} 
+                          value={coupon.id.toString()}
+                          className="flex flex-col items-start"
+                        >
+                          <div className="font-medium">{coupon.code}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {coupon.type === 'fixed_amount' && `$${coupon.discount_amount} de descuento`}
+                            {coupon.type === 'percentage' && `${coupon.discount_percentage}% de descuento`}
+                            {coupon.type === 'free_shipping' && 'Envío gratis'}
+                            {coupon.min_purchase_amount && ` (Mín. $${parseFloat(coupon.min_purchase_amount).toFixed(2)})`}
+                          </div>
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <div className="p-2 text-sm text-muted-foreground">
+                        No hay cupones disponibles
+                      </div>
+                    )}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <div className="px-3 py-1.5 text-sm bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-md flex items-center gap-1">
+                    <TicketPercent className="h-4 w-4" />
+                    {selectedCoupon.code}
+                    {selectedCoupon.discountAmount > 0 && (
+                      <span className="ml-1">-${selectedCoupon.discountAmount.toFixed(2)}</span>
+                    )}
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={removeCoupon}
+                    className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                  >
+                    Quitar
+                  </Button>
+                </div>
+              )}
+            </div>
+            
+            <div className="border-t pt-4 space-y-2">
+              <div className="flex justify-between">
+                <span>Subtotal:</span>
+                <span>${total.toFixed(2)}</span>
+              </div>
+              
+              {selectedCoupon && selectedCoupon.discountAmount > 0 && (
+                <div className="flex justify-between text-green-600 dark:text-green-400">
+                  <span>Descuento ({selectedCoupon.code}):</span>
+                  <span>-${selectedCoupon.discountAmount.toFixed(2)}</span>
+                </div>
+              )}
+              
+              <div className="flex justify-between font-medium pt-2 border-t">
+                <span>Total a Pagar:</span>
+                <div className="flex items-center gap-2">
+                  {selectedCoupon && selectedCoupon.discountAmount > 0 && (
+                    <span className="text-sm text-muted-foreground line-through">
+                      ${total.toFixed(2)}
+                    </span>
+                  )}
+                  <span className={selectedCoupon ? "text-lg font-bold text-green-600 dark:text-green-400" : ""}>
+                    ${(selectedCoupon ? discountedTotal : total).toFixed(2)}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -497,8 +717,8 @@ export function PaymentModal({ isOpen, onClose, total, onPaymentComplete }: Paym
           <Button 
             onClick={handleSubmit}
             disabled={
-              (paymentMethod === 'cash' && (isNaN(parseFloat(cashAmount)) || parseFloat(cashAmount) < total)) ||
-              (paymentMethod === 'points' && (!customer || customer.points < total))
+              (paymentMethod === 'cash' && (isNaN(parseFloat(cashAmount)) || parseFloat(cashAmount) < (selectedCoupon ? discountedTotal : total))) ||
+              (paymentMethod === 'points' && (!customer || customer.points < (selectedCoupon ? discountedTotal : total)))
             }
           >
             Procesar Pago

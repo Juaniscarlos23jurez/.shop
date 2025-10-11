@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 // Icons removed due to import issues
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,8 @@ import { StepNavigation } from '@/components/company/step-navigation';
 import { CompanyInfoForm } from '@/components/company/company-info-form';
 import { BranchInfoForm } from '@/components/company/branch-info-form';
 import { BranchesList } from '@/components/company/branches-list';
+import { storage } from '@/lib/firebase';
+import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 interface CompanyData {
   id?: number;
@@ -77,6 +79,9 @@ export default function CompaniaPage() {
   const [companyData, setCompanyData] = useState<CompanyData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [currentStep, setCurrentStep] = useState(1);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [selectedLogoFile, setSelectedLogoFile] = useState<File | null>(null);
+  const logoInputRef = useRef<HTMLInputElement | null>(null);
 
   // Fetch company data on mount
   useEffect(() => {
@@ -111,6 +116,65 @@ export default function CompaniaPage() {
       timezone: 'America/Mexico_City',
     }
   });
+
+  const handleOpenLogoDialog = () => {
+    logoInputRef.current?.click();
+  };
+
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    setLogoPreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return url;
+    });
+    setSelectedLogoFile(file);
+  };
+
+  const handleLogoDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleLogoDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const file = e.dataTransfer.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      const url = URL.createObjectURL(file);
+      setLogoPreview((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return url;
+      });
+      setSelectedLogoFile(file);
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (logoPreview) URL.revokeObjectURL(logoPreview);
+    };
+  }, [logoPreview]);
+
+  const uploadLogoIfNeeded = async (companyId: string): Promise<string | null> => {
+    if (!selectedLogoFile) return null;
+    try {
+      const path = `companies/${companyId}/logo/${Date.now()}_${selectedLogoFile.name}`;
+      const fileRef = storageRef(storage, path);
+      await uploadBytes(fileRef, selectedLogoFile);
+      const url = await getDownloadURL(fileRef);
+      return url;
+    } catch (err) {
+      console.error('Error uploading logo to Firebase:', err);
+      toast({
+        title: 'Error al subir logo',
+        description: 'Se continuará sin actualizar el logo.',
+        variant: 'destructive',
+      });
+      return null;
+    }
+  };
 
   // Toggle edit mode
   const toggleEditMode = useCallback((edit: boolean, step: number = 1) => {
@@ -378,6 +442,15 @@ export default function CompaniaPage() {
         throw new Error('El nombre y correo electrónico son obligatorios');
       }
 
+      // If a new logo file is selected, upload to Firebase and set logo_url
+      const resolvedCompanyId = companyData?.id?.toString() || '0';
+      if (selectedLogoFile) {
+        const uploadedLogoUrl = await uploadLogoIfNeeded(resolvedCompanyId);
+        if (uploadedLogoUrl) {
+          data.logo_url = uploadedLogoUrl;
+        }
+      }
+
       // Create or update company
       const response = companyData?.id === 0 ?
         await api.userCompanies.create({
@@ -391,7 +464,7 @@ export default function CompaniaPage() {
           country: formData.country || undefined,
           zip_code: formData.postal_code || undefined
         }, token) :
-        await api.companies.updateCompany(companyData?.id?.toString() || '0', data, token);
+        await api.companies.updateCompany(resolvedCompanyId, data, token);
       if (!response.success || !response.data) {
         throw new Error(response.message || 'Error al actualizar la compañía');
       }
@@ -464,20 +537,73 @@ export default function CompaniaPage() {
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-4">
                 {currentStep === 1 && (
-                  <CompanyInfoForm 
-                    formData={{
-                      name: formData.name,
-                      description: formData.description,
-                      email: formData.email,
-                      phone: formData.phone,
-                      address: formData.address,
-                      city: formData.city,
-                      state: formData.state,
-                      postal_code: formData.postal_code || undefined,
-                      website: formData.website
-                    }} 
-                    handleInputChange={handleInputChange} 
-                  />
+                  <>
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-slate-700">Logo de la empresa</label>
+                      <div className="flex items-center justify-center w-full">
+                        <label
+                          onClick={handleOpenLogoDialog}
+                          onDragOver={handleLogoDragOver}
+                          onDrop={handleLogoDrop}
+                          className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-lg cursor-pointer bg-slate-50 hover:bg-slate-100"
+                        >
+                          <div className="flex flex-col items-center justify-center p-4">
+                            {logoPreview || companyData?.logo_url ? (
+                              <img
+                                src={logoPreview || (companyData?.logo_url as string)}
+                                alt="Logo de la empresa"
+                                className="max-h-24 max-w-full mb-2 rounded-md"
+                              />
+                            ) : (
+                              <>
+                                <svg
+                                  className="w-8 h-8 mb-2 text-slate-500"
+                                  aria-hidden="true"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  fill="none"
+                                  viewBox="0 0 20 16"
+                                >
+                                  <path
+                                    stroke="currentColor"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth="2"
+                                    d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"
+                                  />
+                                </svg>
+                                <p className="text-sm text-slate-600">
+                                  <span className="font-medium">Haz clic para subir</span> o arrastra y suelta
+                                </p>
+                                <p className="text-xs text-slate-500">PNG, JPG o SVG (MAX. 5MB)</p>
+                              </>
+                            )}
+                          </div>
+                          <input
+                            ref={logoInputRef}
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={handleLogoChange}
+                          />
+                        </label>
+                      </div>
+                    </div>
+
+                    <CompanyInfoForm 
+                      formData={{
+                        name: formData.name,
+                        description: formData.description,
+                        email: formData.email,
+                        phone: formData.phone,
+                        address: formData.address,
+                        city: formData.city,
+                        state: formData.state,
+                        postal_code: formData.postal_code || undefined,
+                        website: formData.website
+                      }} 
+                      handleInputChange={handleInputChange} 
+                    />
+                  </>
                 )}
 
 
