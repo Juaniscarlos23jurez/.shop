@@ -214,7 +214,7 @@ export default function SucursalesPage() {
                   </span>
                   <Button variant="outline" size="sm" asChild>
                     <Link href={`/dashboard/sucursales/${branch.id}`}>
-                      Ver detalles
+                      Ver detalles1
                     </Link>
                   </Button>
                 </div>

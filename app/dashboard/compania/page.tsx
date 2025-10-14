@@ -435,6 +435,8 @@ export default function CompaniaPage() {
         currency: formData.currency || undefined,
         language: formData.language || undefined,
         logo_url: formData.logo_url || undefined,
+        latitude: formData.latitude || undefined,
+        longitude: formData.longitude || undefined,
               };
 
       // Validate required fields for new company
@@ -530,8 +532,7 @@ export default function CompaniaPage() {
             <CardDescription>
               {currentStep === 1 && 'Completa la información básica de tu empresa'}
               {currentStep === 2 && 'Configura los horarios de atención de tu negocio'}
-              {currentStep === 3 && 'Agrega tu primera sucursal'}
-            </CardDescription>
+             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -601,7 +602,10 @@ export default function CompaniaPage() {
                         postal_code: formData.postal_code || undefined,
                         website: formData.website
                       }} 
-                      handleInputChange={handleInputChange} 
+                      handleInputChange={handleInputChange}
+                      onLocationChange={({ latitude, longitude }) => {
+                        setFormData(prev => ({ ...prev, latitude, longitude }));
+                      }} 
                     />
                   </>
                 )}

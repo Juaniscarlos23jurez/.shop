@@ -1,3 +1,4 @@
+import React, { useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -6,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Switch } from "@/components/ui/switch";
 import { Branch } from "@/types/branch";
+import { Autocomplete, GoogleMap, Marker, useJsApiLoader } from '@react-google-maps/api';
 
 const branchFormSchema = z.object({
   name: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
@@ -44,6 +46,50 @@ export function BranchForm({ branch, onSave, onCancel }: BranchFormProps) {
       isActive: branch.isActive
     }
   });
+
+  // Google Maps loader (match id with other components)
+  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
+  const hasApiKey = Boolean(apiKey);
+  const { isLoaded } = useJsApiLoader(
+    hasApiKey
+      ? { id: 'google-maps-script', googleMapsApiKey: apiKey, libraries: ['places'] }
+      : { id: 'google-maps-script-skip', googleMapsApiKey: 'invalid', libraries: [] }
+  );
+
+  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+  const [markerPos, setMarkerPos] = useState<{ lat: number; lng: number } | null>(null);
+  const mapCenter = useMemo(() => {
+    if (markerPos) return markerPos;
+    return { lat: 19.4326, lng: -99.1332 };
+  }, [markerPos]);
+
+  const onPlaceChanged = () => {
+    if (!autocompleteRef.current) return;
+    const place = autocompleteRef.current.getPlace();
+    if (!place) return;
+
+    const comps = (place.address_components || []) as google.maps.GeocoderAddressComponent[];
+    const get = (type: string) => comps.find(c => c.types.includes(type))?.long_name || '';
+
+    const streetNumber = get('street_number');
+    const route = get('route');
+    const address = [route, streetNumber].filter(Boolean).join(' ');
+    const city = get('locality') || get('sublocality') || get('administrative_area_level_2');
+    const state = get('administrative_area_level_1');
+    const country = get('country');
+    const zip = get('postal_code');
+
+    if (address) form.setValue('address', address, { shouldValidate: true, shouldDirty: true });
+    if (city) form.setValue('city', city, { shouldValidate: true, shouldDirty: true });
+    if (state) form.setValue('state', state, { shouldValidate: true, shouldDirty: true });
+    if (country) form.setValue('country', country, { shouldValidate: true, shouldDirty: true });
+    if (zip) form.setValue('zipCode', zip, { shouldValidate: true, shouldDirty: true });
+
+    const loc = place.geometry?.location;
+    if (loc) {
+      setMarkerPos({ lat: loc.lat(), lng: loc.lng() });
+    }
+  };
 
   const onSubmit = (data: BranchFormValues) => {
     onSave({
@@ -120,12 +166,35 @@ export function BranchForm({ branch, onSave, onCancel }: BranchFormProps) {
               <FormItem className="md:col-span-2">
                 <FormLabel>Dirección</FormLabel>
                 <FormControl>
-                  <Input placeholder="Dirección" {...field} />
+                  {hasApiKey && isLoaded ? (
+                    <Autocomplete
+                      onLoad={(ac) => (autocompleteRef.current = ac)}
+                      onPlaceChanged={onPlaceChanged}
+                      options={{ fields: ['address_components', 'geometry', 'name', 'formatted_address'] }}
+                    >
+                      <Input placeholder="Dirección" {...field} />
+                    </Autocomplete>
+                  ) : (
+                    <Input placeholder="Dirección" {...field} />
+                  )}
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
+
+          {hasApiKey && isLoaded && markerPos && (
+            <div className="md:col-span-2 h-48 w-full overflow-hidden rounded-md border border-slate-200">
+              <GoogleMap
+                mapContainerStyle={{ width: '100%', height: '100%' }}
+                center={mapCenter}
+                zoom={15}
+                options={{ streetViewControl: false, mapTypeControl: false, fullscreenControl: false }}
+              >
+                <Marker position={markerPos} />
+              </GoogleMap>
+            </div>
+          )}
           
           <FormField
             control={form.control}

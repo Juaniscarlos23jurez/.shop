@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,10 +19,10 @@ import {
   BranchInfo, 
   EmployeeList, 
   EmployeeForm, 
-  BranchForm, 
   BranchStats, 
-  QuickActions 
+  QuickActions
 } from './components';
+import { EditBranchView } from './components/EditBranchView';
 
 export default function BranchDetailPage() {
   const { id } = useParams();
@@ -34,11 +34,26 @@ export default function BranchDetailPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('employees');
+  const searchParams = useSearchParams();
   const [isEditing, setIsEditing] = useState(false);
   const [showEmployeeForm, setShowEmployeeForm] = useState(false);
   const [currentEmployee, setCurrentEmployee] = useState<Employee | null>(null);
 
   // Fetch branch details and employees
+  // Check URL for edit and tab query params on initial load
+  useEffect(() => {
+    const editParam = searchParams?.get('edit');
+    const tabParam = searchParams?.get('tab');
+    
+    if (editParam === 'true') {
+      setIsEditing(true);
+    }
+    
+    if (tabParam && ['employees', 'settings'].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
+
   useEffect(() => {
     const fetchData = async () => {
       if (!token) return;
@@ -104,7 +119,9 @@ export default function BranchDetailPage() {
             // The employees might be directly in the data array or in a nested employees property
             const employeesData = Array.isArray(employeesResponse.data) 
               ? employeesResponse.data 
-              : employeesResponse.data?.employees || [];
+              : (employeesResponse.data && Array.isArray(employeesResponse.data.data))
+                ? employeesResponse.data.data
+                : [];
               
             if (employeesData.length > 0) {
               // Map the API response to our Employee type
@@ -473,74 +490,94 @@ export default function BranchDetailPage() {
       </div>
 
       {isEditing ? (
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 className="text-2xl font-bold mb-6">Editar sucursal</h2>
-          <BranchForm 
-            branch={branch}
-            onSave={handleSaveBranch}
-            onCancel={() => setIsEditing(false)}
-          />
-        </div>
-      ) : (
-        <BranchInfo 
-          branch={branch} 
-          onEditClick={() => setIsEditing(true)}
+        <EditBranchView 
+          branch={branch}
+          onSave={handleSaveBranch}
+          onCancel={() => {
+            setIsEditing(false);
+            // Update URL when editing is cancelled
+            router.replace(`/dashboard/sucursales/${id}`, { scroll: false });
+          }}
         />
+      ) : (
+        <>
+          <BranchInfo 
+            branch={branch} 
+            onEditClick={() => {
+              setIsEditing(true);
+              // Update URL when editing starts
+              router.push(`/dashboard/sucursales/${id}?edit=true`, { scroll: false });
+            }}
+          />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
+            <div className="lg:col-span-2 space-y-6">
+              <Tabs 
+                value={activeTab} 
+                onValueChange={(value) => {
+                  setActiveTab(value);
+                  // Update URL without edit param when switching tabs
+                  if (isEditing) {
+                    router.replace(`/dashboard/sucursales/${id}?tab=${value}`, { scroll: false });
+                  } else {
+                    // Just update the tab in URL if not in edit mode
+                    const newUrl = new URL(window.location.href);
+                    newUrl.searchParams.set('tab', value);
+                    window.history.replaceState({}, '', newUrl.toString());
+                  }
+                }} 
+                className="space-y-4"
+              >
+                <TabsList className="mb-6">
+                  <TabsTrigger value="employees">Empleados</TabsTrigger>
+                  <TabsTrigger value="settings">Configuración</TabsTrigger>
+                </TabsList>
+                <TabsContent value="employees">
+                  {showEmployeeForm ? (
+                    <EmployeeForm
+                      employee={currentEmployee}
+                      locationId={id as string}
+                      onSave={currentEmployee ? handleUpdateEmployee : handleAddEmployee}
+                      onCancel={() => {
+                        setShowEmployeeForm(false);
+                        setCurrentEmployee(null);
+                      }}
+                    />
+                  ) : (
+                    <EmployeeList
+                      onAddEmployee={() => setShowEmployeeForm(true)}
+                      onEditEmployee={(emp) => {
+                        setCurrentEmployee(emp);
+                        setShowEmployeeForm(true);
+                      }}
+                    />
+                  )}
+                </TabsContent>
+
+                <TabsContent value="settings">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Configuración de la sucursal</CardTitle>
+                      <CardDescription>
+                        Configura las opciones avanzadas de esta sucursal.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-muted-foreground">
+                        Configuración avanzada de la sucursal.
+                      </p>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              </Tabs>
+            </div>
+
+            <div className="space-y-6">
+              <QuickActions />
+              <BranchStats branch={branch} employees={employees} />
+            </div>
+          </div>
+        </>
       )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
-        <div className="lg:col-span-2 space-y-6">
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="mb-6">
-              <TabsTrigger value="employees">Empleados</TabsTrigger>
-              <TabsTrigger value="settings">Configuración</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="employees">
-              {showEmployeeForm ? (
-                <EmployeeForm
-                  employee={currentEmployee}
-                  locationId={id as string}
-                  onSave={currentEmployee ? handleUpdateEmployee : handleAddEmployee}
-                  onCancel={() => {
-                    setShowEmployeeForm(false);
-                    setCurrentEmployee(null);
-                  }}
-                />
-              ) : (
-                <EmployeeList
-                  onAddEmployee={() => setShowEmployeeForm(true)}
-                  onEditEmployee={(emp) => {
-                    setCurrentEmployee(emp);
-                    setShowEmployeeForm(true);
-                  }}
-                />
-              )}
-            </TabsContent>
-
-            <TabsContent value="settings">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Configuración de la sucursal</CardTitle>
-                  <CardDescription>
-                    Configura las opciones avanzadas de esta sucursal.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">
-                    Configuración avanzada de la sucursal.
-                  </p>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        </div>
-
-        <div className="space-y-6">
-          <BranchStats branch={branch} employees={employees} />
-          <QuickActions />
-        </div>
-      </div>
     </div>
   );
 }

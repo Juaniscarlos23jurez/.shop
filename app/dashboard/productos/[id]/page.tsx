@@ -222,7 +222,15 @@ export default function DetalleProductoPage() {
             <CardContent className="space-y-4">
               <div>
                 <h3 className="text-sm font-medium text-slate-500 mb-1">Categoría</h3>
-                <p className="text-slate-900 capitalize">{product.category || 'Sin categoría'}</p>
+                <p className="text-slate-900 capitalize">
+                  {(() => {
+                    if (product.category) return product.category;
+                    const cats = product.categories?.filter((c: any) => c?.name)?.map((c: any) => c.name) || [];
+                    if (cats.length === 1) return cats[0];
+                    if (cats.length > 1) return cats.join(', ');
+                    return 'Sin categoría';
+                  })()}
+                </p>
               </div>
               <div>
                 <h3 className="text-sm font-medium text-slate-500 mb-1">Creado</h3>
