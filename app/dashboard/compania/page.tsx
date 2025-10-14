@@ -56,6 +56,12 @@ interface CompanyData {
     postal_code?: string;
     zip_code?: string;
     notes?: string;
+    // Geo IDs and coordinates
+    country_id?: number | string;
+    state_id?: number | string;
+    city_id?: number | string;
+    latitude?: number;
+    longitude?: number;
   };
   locations?: Array<{
     id?: number;
@@ -382,7 +388,7 @@ export default function CompaniaPage() {
           throw new Error('No se encontró el ID de la compañía');
         }
 
-        const locationPayload = {
+        const locationPayload: any = {
           name: formData.location.name.trim(),
           description: formData.location.description?.trim(),
           address: formData.location.address.trim(),
@@ -396,6 +402,25 @@ export default function CompaniaPage() {
           is_primary: true,
           is_active: true,
         };
+        
+        // Include geo IDs if present
+        if (formData.location.country_id) {
+          locationPayload.country_id = Number(formData.location.country_id);
+        }
+        if (formData.location.state_id) {
+          locationPayload.state_id = Number(formData.location.state_id);
+        }
+        if (formData.location.city_id) {
+          locationPayload.city_id = Number(formData.location.city_id);
+        }
+        
+        // Include coordinates if present
+        if (formData.location.latitude !== undefined) {
+          locationPayload.latitude = Number(formData.location.latitude);
+        }
+        if (formData.location.longitude !== undefined) {
+          locationPayload.longitude = Number(formData.location.longitude);
+        }
 
         console.log('Sending location payload:', JSON.stringify(locationPayload, null, 2));
         

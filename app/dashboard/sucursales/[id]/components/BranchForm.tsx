@@ -202,10 +202,10 @@ export function BranchForm({ branch, onSave, onCancel }: BranchFormProps) {
     onSave({
       ...branch,
       ...data,
-      // Keep names for text fields, but also send ids and lat/lng for API usage
-      country_id: countryId || undefined,
-      state_id: stateId || undefined,
-      city_id: cityId || undefined,
+      // Send IDs and coordinates as per backend requirements
+      country_id: countryId ? Number(countryId) : undefined,
+      state_id: stateId ? Number(stateId) : undefined,
+      city_id: cityId ? Number(cityId) : undefined,
       latitude: markerPos?.lat,
       longitude: markerPos?.lng,
       updatedAt: new Date().toISOString()

@@ -222,7 +222,14 @@ export const BranchInfoForm: React.FC<BranchInfoFormProps> = ({ formData, handle
           <select
             name="location.country_id"
             value={String(formData.country_id || '')}
-            onChange={handleInputChange}
+            onChange={(e) => {
+              handleInputChange(e);
+              // Also update the text field
+              const selectedCountry = countries.find(c => String(c.id) === e.target.value);
+              if (selectedCountry) {
+                synthChange('location.country', selectedCountry.name);
+              }
+            }}
             className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
           >
             <option value="">Selecciona un país</option>
@@ -237,7 +244,14 @@ export const BranchInfoForm: React.FC<BranchInfoFormProps> = ({ formData, handle
           <select
             name="location.state_id"
             value={String(formData.state_id || '')}
-            onChange={handleInputChange}
+            onChange={(e) => {
+              handleInputChange(e);
+              // Also update the text field
+              const selectedState = states.find(s => String(s.id) === e.target.value);
+              if (selectedState) {
+                synthChange('location.state', selectedState.name);
+              }
+            }}
             disabled={!formData.country_id}
             className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 disabled:bg-slate-100"
           >
@@ -253,7 +267,14 @@ export const BranchInfoForm: React.FC<BranchInfoFormProps> = ({ formData, handle
           <select
             name="location.city_id"
             value={String(formData.city_id || '')}
-            onChange={handleInputChange}
+            onChange={(e) => {
+              handleInputChange(e);
+              // Also update the text field
+              const selectedCity = cities.find(ci => String(ci.id) === e.target.value);
+              if (selectedCity) {
+                synthChange('location.city', selectedCity.name);
+              }
+            }}
             disabled={!formData.state_id}
             className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 disabled:bg-slate-100"
           >
