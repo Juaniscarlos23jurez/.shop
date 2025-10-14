@@ -6,6 +6,42 @@ import { ordersApi } from './orders';
 const BASE_URL = 'https://laravel-pkpass-backend-development-pfaawl.laravel.cloud';
 //http://127.0.0.1:8000
 export const api = {
+  // Public Geo endpoints (no auth required)
+  publicGeo: {
+    async getCountries(active?: boolean): Promise<ApiResponse<any>> {
+      const params = new URLSearchParams();
+      if (typeof active === 'boolean') params.set('active', String(active));
+      const url = `${BASE_URL}/api/public/countries${params.toString() ? `?${params.toString()}` : ''}`;
+      return fetch(url, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+        },
+      }).then(handleResponse);
+    },
+
+    async getStates(country_id: number | string, active?: boolean): Promise<ApiResponse<any>> {
+      const params = new URLSearchParams({ country_id: String(country_id) });
+      if (typeof active === 'boolean') params.set('active', String(active));
+      return fetch(`${BASE_URL}/api/public/states?${params.toString()}`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+        },
+      }).then(handleResponse);
+    },
+
+    async getCities(state_id: number | string, active?: boolean): Promise<ApiResponse<any>> {
+      const params = new URLSearchParams({ state_id: String(state_id) });
+      if (typeof active === 'boolean') params.set('active', String(active));
+      return fetch(`${BASE_URL}/api/public/cities?${params.toString()}`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+        },
+      }).then(handleResponse);
+    },
+  },
   // Authentication methods
   auth: {
     async login(email: string, password: string): Promise<ApiResponse<{ 
@@ -358,6 +394,10 @@ export const api = {
         zip_code?: string;
         latitude?: number;
         longitude?: number;
+        // optional geo ids
+        country_id?: number | string;
+        state_id?: number | string;
+        city_id?: number | string;
       },
       token: string
     ): Promise<ApiResponse<{ location: any }>> {
@@ -388,6 +428,10 @@ export const api = {
         zip_code?: string;
         latitude?: number;
         longitude?: number;
+        // optional geo ids
+        country_id?: number | string;
+        state_id?: number | string;
+        city_id?: number | string;
       },
       token: string
     ): Promise<ApiResponse<{ location: any }>> {

@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Autocomplete, GoogleMap, Marker, useJsApiLoader } from '@react-google-maps/api';
 import { Button } from '@/components/ui/button';
+import { api } from '@/lib/api/api';
 
 interface BranchInfoFormProps {
   formData: {
@@ -18,6 +19,12 @@ interface BranchInfoFormProps {
     country?: string;
     zip_code?: string;
     notes?: string;
+    // New optional fields for geo IDs and coordinates
+    country_id?: number | string;
+    state_id?: number | string;
+    city_id?: number | string;
+    latitude?: number;
+    longitude?: number;
   };
   handleInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
 }
@@ -26,6 +33,9 @@ export const BranchInfoForm: React.FC<BranchInfoFormProps> = ({ formData, handle
   const router = useRouter();
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
   const [markerPos, setMarkerPos] = useState<{ lat: number; lng: number } | null>(null);
+  const [countries, setCountries] = useState<Array<{ id: number; name: string }>>([]);
+  const [states, setStates] = useState<Array<{ id: number; name: string }>>([]);
+  const [cities, setCities] = useState<Array<{ id: number; name: string }>>([]);
 
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
   const hasApiKey = Boolean(apiKey);
@@ -72,8 +82,68 @@ export const BranchInfoForm: React.FC<BranchInfoFormProps> = ({ formData, handle
       const lat = location.lat();
       const lng = location.lng();
       setMarkerPos({ lat, lng });
+      // persist into form
+      synthChange('location.latitude', String(lat));
+      synthChange('location.longitude', String(lng));
     }
   };
+
+  // Load countries on mount
+  useEffect(() => {
+    let ignore = false;
+    api.publicGeo.getCountries(true)
+      .then(res => {
+        if (!ignore) {
+          const list = (res as any)?.data?.data || [];
+          setCountries(Array.isArray(list) ? list : []);
+          // debug
+          console.debug('[BranchInfoForm] countries loaded:', list?.length ?? 0);
+        }
+      })
+      .catch(() => {});
+    return () => { ignore = true; };
+  }, []);
+
+  // Load states when country changes
+  useEffect(() => {
+    const cId = formData.country_id || '';
+    if (!cId) { setStates([]); setCities([]); return; }
+    let ignore = false;
+    api.publicGeo.getStates(cId, true)
+      .then(res => {
+        if (!ignore) {
+          const list = (res as any)?.data?.data || [];
+          setStates(Array.isArray(list) ? list : []);
+          console.debug('[BranchInfoForm] states loaded:', list?.length ?? 0, 'for country', String(cId));
+        }
+      })
+      .catch(() => {});
+    // Reset dependent selections
+    synthChange('location.state_id', '');
+    synthChange('location.city_id', '');
+    return () => { ignore = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.country_id]);
+
+  // Load cities when state changes
+  useEffect(() => {
+    const sId = formData.state_id || '';
+    if (!sId) { setCities([]); return; }
+    let ignore = false;
+    api.publicGeo.getCities(sId, true)
+      .then(res => {
+        if (!ignore) {
+          const list = (res as any)?.data?.data || [];
+          setCities(Array.isArray(list) ? list : []);
+          console.debug('[BranchInfoForm] cities loaded:', list?.length ?? 0, 'for state', String(sId));
+        }
+      })
+      .catch(() => {});
+    // Reset dependent selection
+    synthChange('location.city_id', '');
+    return () => { ignore = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.state_id]);
 
   return (
     <div className="space-y-4">
@@ -145,6 +215,53 @@ export const BranchInfoForm: React.FC<BranchInfoFormProps> = ({ formData, handle
               </GoogleMap>
             </div>
           )}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">País</label>
+          <select
+            name="location.country_id"
+            value={String(formData.country_id || '')}
+            onChange={handleInputChange}
+            className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+          >
+            <option value="">Selecciona un país</option>
+            {countries.map(c => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">Estado</label>
+          <select
+            name="location.state_id"
+            value={String(formData.state_id || '')}
+            onChange={handleInputChange}
+            disabled={!formData.country_id}
+            className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 disabled:bg-slate-100"
+          >
+            <option value="">Selecciona un estado</option>
+            {states.map(s => (
+              <option key={s.id} value={s.id}>{s.name}</option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">Ciudad</label>
+          <select
+            name="location.city_id"
+            value={String(formData.city_id || '')}
+            onChange={handleInputChange}
+            disabled={!formData.state_id}
+            className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 disabled:bg-slate-100"
+          >
+            <option value="">Selecciona una ciudad</option>
+            {cities.map(ci => (
+              <option key={ci.id} value={ci.id}>{ci.name}</option>
+            ))}
+          </select>
         </div>
 
         <div>
