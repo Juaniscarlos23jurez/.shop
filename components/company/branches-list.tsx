@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { api } from '@/lib/api/api';
 import { useAuth } from '@/contexts/AuthContext';
+import Link from 'next/link';
 import {
   Dialog,
   DialogContent,
@@ -147,17 +148,24 @@ export function BranchesList({
                   {location.city}, {location.state} • {location.status}
                 </p>
               </div>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="text-slate-500 hover:bg-slate-100"
-                onClick={() => {
-                  setSelectedLocation(location);
-                  setIsModalOpen(true);
-                }}
-              >
-                Ver Detalles
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-slate-500 hover:bg-slate-100"
+                  onClick={() => {
+                    setSelectedLocation(location);
+                    setIsModalOpen(true);
+                  }}
+                >
+                  Ver Detalles
+                </Button>
+                <Button variant="outline" size="sm" asChild>
+                  <Link href={`/dashboard/sucursales/${location.id}?edit=true`}>
+                    Editar
+                  </Link>
+                </Button>
+              </div>
             </div>
           </div>
         ))}

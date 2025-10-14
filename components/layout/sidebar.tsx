@@ -50,9 +50,7 @@ const adminSidebarItems = [
   // Empleados
   { icon: Users, label: "Empleados", href: "/dashboard/empleados" },
   { icon: ShoppingCart, label: "Punto de Venta", href: "/dashboard/pos" },
-  { icon: Clock4, label: "Horarios", href: "/dashboard/horarios" },
-  { icon: CreditCardIcon, label: "Nómina", href: "/dashboard/nomina" },
-
+ 
   { icon: Settings, label: "Configuración", href: "/dashboard/configuracion" },
 ];
 

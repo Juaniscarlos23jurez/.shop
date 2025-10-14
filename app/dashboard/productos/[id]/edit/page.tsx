@@ -251,7 +251,12 @@ export default function EditarProductoPage() {
         price: parseFloat(formData.get('price') as string) || 0,
         product_type: productType,
         sku: formData.get('sku') as string || undefined,
-        category: formData.get('category') as string || '',
+        ...(formData.get('category_id')
+          ? {
+              category_id: parseInt(formData.get('category_id') as string),
+              category_ids: [parseInt(formData.get('category_id') as string)],
+            }
+          : {}),
         is_active: formData.get('is_active') === 'on',
         image_url: uploadedUrl || product.image_url,
         points: formData.get('points') ? parseInt(formData.get('points') as string) : 0,
@@ -263,12 +268,25 @@ export default function EditarProductoPage() {
         ...(productType === 'made_to_order' ? { lead_time_days: computeLeadTimeDays(leadTimeValue, leadTimeUnit) } : {}),
       };
 
+      // Debug logs
+      try {
+        console.log('[EditarProducto] category_id:', formData.get('category_id'));
+        console.log('[EditarProducto] category_ids:', formData.get('category_id') ? [parseInt(formData.get('category_id') as string)] : []);
+        console.log('[EditarProducto] updateData to send:', JSON.stringify(updateData, null, 2));
+      } catch (logErr) {
+        // ignore JSON stringify circular errors
+      }
+
       const response = await api.products.updateProduct(
         companyId,
         id as string,
         updateData,
         token
       );
+
+      try {
+        console.log('[EditarProducto] update response:', response);
+      } catch (logErr) {}
 
       if (response.success) {
         toast({
@@ -282,6 +300,14 @@ export default function EditarProductoPage() {
       }
     } catch (error) {
       console.error('Error al actualizar el producto:', error);
+      try {
+        // Extra logging in case the API returned something structured
+        // @ts-ignore
+        if (error && error.response) {
+          // @ts-ignore
+          console.log('[EditarProducto] error.response:', error.response);
+        }
+      } catch {}
       toast({
         title: 'Error',
         description: error instanceof Error ? error.message : 'Error al actualizar el producto',
@@ -480,7 +506,7 @@ export default function EditarProductoPage() {
                 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="category">Categoría</Label>
+                    <Label htmlFor="category_id">Categoría</Label>
                     <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
                       <DialogTrigger asChild>
                         <Button type="button" variant="outline" size="sm" className="h-8">
@@ -541,9 +567,12 @@ export default function EditarProductoPage() {
                     </Dialog>
                   </div>
                   <select
-                    id="category"
-                    name="category"
-                    defaultValue={product.category || ''}
+                    id="category_id"
+                    name="category_id"
+                    defaultValue={(() => {
+                      const firstCatId = (product as any)?.categories?.[0]?.id;
+                      return firstCatId ? String(firstCatId) : '';
+                    })()}
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <option value="">Selecciona una categoría</option>
@@ -551,7 +580,7 @@ export default function EditarProductoPage() {
                       .filter(cat => cat.is_active)
                       .sort((a, b) => a.order - b.order)
                       .map((category) => (
-                        <option key={category.id} value={category.slug}>
+                        <option key={category.id} value={String(category.id)}>
                           {category.name}
                         </option>
                       ))}
