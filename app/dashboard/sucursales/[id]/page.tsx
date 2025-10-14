@@ -100,7 +100,13 @@ export default function BranchDetailPage() {
           zipCode: currentBranch.zip_code || '',
           isActive: currentBranch.is_active !== undefined ? currentBranch.is_active : true,
           createdAt: currentBranch.created_at || new Date().toISOString(),
-          updatedAt: currentBranch.updated_at || new Date().toISOString()
+          updatedAt: currentBranch.updated_at || new Date().toISOString(),
+          // Preserve geo IDs and coordinates if present
+          country_id: currentBranch.country_id,
+          state_id: currentBranch.state_id,
+          city_id: currentBranch.city_id,
+          latitude: currentBranch.latitude,
+          longitude: currentBranch.longitude
         };
         
         setBranch(formattedBranch);
@@ -179,8 +185,8 @@ export default function BranchDetailPage() {
     try {
       setLoading(true);
       
-      // Format data for API
-      const updateData = {
+      // Format data for API - include IDs and coordinates as per backend requirements
+      const updateData: any = {
         name: updatedBranch.name,
         description: updatedBranch.description,
         phone: updatedBranch.phone,
@@ -192,6 +198,25 @@ export default function BranchDetailPage() {
         zip_code: updatedBranch.zipCode,
         is_active: updatedBranch.isActive
       };
+      
+      // Include optional geo IDs if present
+      if ((updatedBranch as any).country_id) {
+        updateData.country_id = (updatedBranch as any).country_id;
+      }
+      if ((updatedBranch as any).state_id) {
+        updateData.state_id = (updatedBranch as any).state_id;
+      }
+      if ((updatedBranch as any).city_id) {
+        updateData.city_id = (updatedBranch as any).city_id;
+      }
+      
+      // Include coordinates if present
+      if ((updatedBranch as any).latitude !== undefined) {
+        updateData.latitude = (updatedBranch as any).latitude;
+      }
+      if ((updatedBranch as any).longitude !== undefined) {
+        updateData.longitude = (updatedBranch as any).longitude;
+      }
       
       // Update branch via API
       const response = await api.userCompanies.updateLocation(
