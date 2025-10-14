@@ -1,6 +1,9 @@
 "use client";
 
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import * as Select from '@radix-ui/react-select';
+import { Search as SearchIcon } from 'lucide-react';
+import { api } from '@/lib/api/api';
 import { GoogleMap, Marker, Autocomplete, useJsApiLoader } from '@react-google-maps/api';
 
 interface CompanyInfoFormProps {
@@ -14,14 +17,28 @@ interface CompanyInfoFormProps {
     state?: string;
     postal_code?: string;
     website?: string;
+    business_type_id?: number | string;
   };
-  handleInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+  handleInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
   onLocationChange?: (coords: { latitude: number; longitude: number }) => void;
 }
 
 export const CompanyInfoForm: React.FC<CompanyInfoFormProps> = ({ formData, handleInputChange, onLocationChange }) => {
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
   const [markerPos, setMarkerPos] = useState<{ lat: number; lng: number } | null>(null);
+  const [businessTypes, setBusinessTypes] = useState<Array<{ id: number; name: string; slug: string }>>([]);
+  const [loadingBusinessTypes, setLoadingBusinessTypes] = useState<boolean>(false);
+  const [searchTerm, setSearchTerm] = useState<string>('');
+
+  // Filter business types based on search term
+  const filteredBusinessTypes = useMemo(() => {
+    if (!searchTerm) return businessTypes;
+    const term = searchTerm.toLowerCase();
+    return businessTypes.filter(bt => 
+      bt.name.toLowerCase().includes(term) || 
+      (bt.slug && bt.slug.toLowerCase().includes(term))
+    );
+  }, [businessTypes, searchTerm]);
 
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
   const hasApiKey = Boolean(apiKey);
@@ -39,6 +56,29 @@ export const CompanyInfoForm: React.FC<CompanyInfoFormProps> = ({ formData, hand
     if (markerPos) return markerPos;
     return { lat: 19.4326, lng: -99.1332 }; // CDMX fallback
   }, [markerPos]);
+
+  // Fetch public business types for select
+  useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      try {
+        setLoadingBusinessTypes(true);
+        const res = await api.publicGeo.getBusinessTypes();
+        if (mounted && res.success) {
+          const list = Array.isArray(res.data) ? res.data : (res as any).data?.data || [];
+          setBusinessTypes(list);
+        }
+      } catch (err) {
+        console.error('Error fetching business types:', err);
+      } finally {
+        setLoadingBusinessTypes(false);
+      }
+    };
+    load();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const synthChange = (name: string, value: string) => {
     const event = {
@@ -75,6 +115,7 @@ export const CompanyInfoForm: React.FC<CompanyInfoFormProps> = ({ formData, hand
       onLocationChange?.({ latitude: lat, longitude: lng });
     }
   };
+
   return (
     <>
       <div>
@@ -228,6 +269,97 @@ export const CompanyInfoForm: React.FC<CompanyInfoFormProps> = ({ formData, hand
         </div>
       </div>
 
+      <div className="w-full">
+        <label className="block text-sm font-medium text-slate-700 mb-1">
+          Tipo de negocio
+        </label>
+        <Select.Root 
+          value={formData.business_type_id ? String(formData.business_type_id) : undefined}
+          onValueChange={(value) => {
+            const event = {
+              target: {
+                name: 'business_type_id',
+                value: value === '' ? '' : Number(value)
+              }
+            } as React.ChangeEvent<HTMLSelectElement>;
+            handleInputChange(event);
+          }}
+          onOpenChange={(open) => {
+            if (!open) setSearchTerm('');
+          }}
+        >
+          <Select.Trigger 
+            className="flex items-center justify-between w-full px-3 py-2 text-left border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white"
+            aria-label="Seleccionar tipo de negocio"
+          >
+            <Select.Value placeholder={loadingBusinessTypes ? 'Cargando tipos...' : 'Selecciona un tipo'} />
+            <Select.Icon className="ml-2">
+              <svg className="h-4 w-4 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </Select.Icon>
+          </Select.Trigger>
+          
+          <Select.Portal>
+            <Select.Content 
+              className="z-50 overflow-hidden bg-white rounded-md shadow-lg border border-slate-200 w-[var(--radix-select-trigger-width)]"
+              onCloseAutoFocus={(e) => e.preventDefault()}
+              position="popper"
+              sideOffset={5}
+            >
+              <div className="p-2 border-b border-slate-100">
+                <div className="relative">
+                  <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400 pointer-events-none" />
+                  <input
+                    type="text"
+                    placeholder="Buscar tipo..."
+                    className="w-full pl-8 pr-3 py-1.5 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                        // Permitir navegación por teclado
+                        return;
+                      }
+                      if (e.key === 'Escape') {
+                        setSearchTerm('');
+                      } else if (e.key === 'Enter') {
+                        e.preventDefault();
+                      } else {
+                        e.stopPropagation();
+                      }
+                    }}
+                    autoComplete="off"
+                  />
+                </div>
+              </div>
+              <Select.Viewport className="p-1 max-h-60 overflow-auto">
+                {filteredBusinessTypes.length === 0 ? (
+                  <div className="px-4 py-2 text-sm text-slate-500">
+                    {loadingBusinessTypes ? 'Cargando...' : 'No se encontraron resultados'}
+                  </div>
+                ) : (
+                  filteredBusinessTypes.map((bt) => (
+                    <Select.Item 
+                      key={bt.id} 
+                      value={String(bt.id)}
+                      className="relative flex items-center px-8 py-1.5 text-sm text-slate-700 rounded cursor-pointer select-none hover:bg-slate-100 focus:bg-slate-100 focus:outline-none"
+                    >
+                      <Select.ItemText>{bt.name}</Select.ItemText>
+                      <Select.ItemIndicator className="absolute left-2 inline-flex items-center">
+                        <svg className="h-4 w-4 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      </Select.ItemIndicator>
+                    </Select.Item>
+                  ))
+                )}
+              </Select.Viewport>
+            </Select.Content>
+          </Select.Portal>
+        </Select.Root>
+      </div>
+
       <div>
         <label htmlFor="website" className="block text-sm font-medium text-slate-700 mb-1">
           Sitio Web
@@ -245,4 +377,3 @@ export const CompanyInfoForm: React.FC<CompanyInfoFormProps> = ({ formData, hand
     </>
   );
 };
- 

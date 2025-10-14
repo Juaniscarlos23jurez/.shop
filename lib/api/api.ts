@@ -41,6 +41,17 @@ export const api = {
         },
       }).then(handleResponse);
     },
+
+    // Listado público de tipos de negocio
+    async getBusinessTypes(): Promise<ApiResponse<{ id: number; name: string; slug: string }[]>> {
+      const url = `${BASE_URL}/api/public/business-types`;
+      return fetch(url, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+        },
+      }).then(handleResponse);
+    },
   },
   // Authentication methods
   auth: {
@@ -239,6 +250,7 @@ export const api = {
         state?: string;
         country?: string;
         zip_code?: string;
+        business_type_id?: number;
       },
       token: string
     ): Promise<ApiResponse<{ company: any }>> {
@@ -266,6 +278,7 @@ export const api = {
         state?: string;
         country?: string;
         zip_code?: string;
+        business_type_id?: number;
       },
       token: string
     ): Promise<ApiResponse<{ company: any }>> {

@@ -26,6 +26,7 @@ interface CompanyData {
   website?: string;
   logo_url?: string;
   business_type?: string;
+  business_type_id?: number | string;
   address?: string;
   city?: string;
   state?: string;
@@ -234,6 +235,7 @@ export default function CompaniaPage() {
           website: company.website || undefined,
           logo_url: company.logo_url || undefined,
           business_type: company.business_type || undefined,
+          business_type_id: company.business_type_id || undefined,
           address: company.address,
           city: company.city,
           state: company.state,
@@ -430,7 +432,7 @@ export default function CompaniaPage() {
         state: formData.state || undefined,
         country: formData.country || undefined,
         postal_code: formData.postal_code || undefined,
-        business_type: formData.business_type || undefined,
+        business_type_id: formData.business_type_id ? Number(formData.business_type_id) : undefined,
         timezone: formData.timezone || undefined,
         currency: formData.currency || undefined,
         language: formData.language || undefined,
@@ -464,7 +466,8 @@ export default function CompaniaPage() {
           city: formData.city,
           state: formData.state,
           country: formData.country || undefined,
-          zip_code: formData.postal_code || undefined
+          zip_code: formData.postal_code || undefined,
+          business_type_id: formData.business_type_id ? Number(formData.business_type_id) : undefined
         }, token) :
         await api.companies.updateCompany(resolvedCompanyId, data, token);
       if (!response.success || !response.data) {
@@ -600,7 +603,8 @@ export default function CompaniaPage() {
                         city: formData.city,
                         state: formData.state,
                         postal_code: formData.postal_code || undefined,
-                        website: formData.website
+                        website: formData.website,
+                        business_type_id: formData.business_type_id
                       }} 
                       handleInputChange={handleInputChange}
                       onLocationChange={({ latitude, longitude }) => {

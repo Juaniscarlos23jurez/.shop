@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { api } from '@/lib/api/api';
 
 
 interface CompanyData {
@@ -13,6 +14,8 @@ interface CompanyData {
   website?: string;
   logo_url?: string;
   business_type?: string;
+  business_type_id?: number | string;
+  businessType?: { id: number; name: string; slug: string } | null;
   address?: string;
   city?: string;
   state?: string;
@@ -47,6 +50,37 @@ export function CompanyInfo({
   onInputChange,
   toggleEditMode
 }: CompanyInfoProps) {
+  const [businessTypes, setBusinessTypes] = useState<Array<{ id: number; name: string; slug: string }>>([]);
+  const [loadingBusinessTypes, setLoadingBusinessTypes] = useState<boolean>(false);
+
+  useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      try {
+        setLoadingBusinessTypes(true);
+        const res = await api.publicGeo.getBusinessTypes();
+        if (mounted && res.success) {
+          const list = Array.isArray(res.data) ? res.data : (res as any).data?.data || [];
+          setBusinessTypes(list);
+        }
+      } catch (e) {
+        // no-op, keep silent in view card
+      } finally {
+        setLoadingBusinessTypes(false);
+      }
+    };
+    load();
+    return () => { mounted = false; };
+  }, []);
+
+  const businessTypeLabel = (
+    companyData.businessType?.name ||
+    companyData.business_type ||
+    (companyData.business_type_id
+      ? businessTypes.find(bt => bt.id === Number(companyData.business_type_id))?.name
+      : undefined) ||
+    'No especificado'
+  );
   return (
     <Card className="col-span-1 md:col-span-2 lg:col-span-3">
       <CardHeader className="pb-3">
@@ -204,7 +238,10 @@ export function CompanyInfo({
                   <p className="text-slate-600">{companyData.email || 'No especificado'}</p>
                 </div>
               </div>
-              
+              <div>
+                <h4 className="font-medium text-slate-900">Tipo de negocio</h4>
+                <p className="text-slate-600">{businessTypeLabel}</p>
+              </div>
               <div className="flex items-start space-x-3">
                 <span className="text-slate-400 mt-0.5 flex-shrink-0">🌐</span>
                 <div>
