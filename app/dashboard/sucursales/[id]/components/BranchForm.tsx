@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -8,6 +8,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Switch } from "@/components/ui/switch";
 import { Branch } from "@/types/branch";
 import { Autocomplete, GoogleMap, Marker, useJsApiLoader } from '@react-google-maps/api';
+import { api } from '@/lib/api/api';
 
 const branchFormSchema = z.object({
   name: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
@@ -58,6 +59,12 @@ export function BranchForm({ branch, onSave, onCancel }: BranchFormProps) {
 
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
   const [markerPos, setMarkerPos] = useState<{ lat: number; lng: number } | null>(null);
+  const [countries, setCountries] = useState<Array<{ id: number; name: string }>>([]);
+  const [states, setStates] = useState<Array<{ id: number; name: string }>>([]);
+  const [cities, setCities] = useState<Array<{ id: number; name: string }>>([]);
+  const [countryId, setCountryId] = useState<string>('');
+  const [stateId, setStateId] = useState<string>('');
+  const [cityId, setCityId] = useState<string>('');
   const mapCenter = useMemo(() => {
     if (markerPos) return markerPos;
     return { lat: 19.4326, lng: -99.1332 };
@@ -91,10 +98,116 @@ export function BranchForm({ branch, onSave, onCancel }: BranchFormProps) {
     }
   };
 
+  // Load countries on mount
+  useEffect(() => {
+    let ignore = false;
+    api.publicGeo.getCountries(true)
+      .then(res => {
+        if (!ignore) {
+          const list = (res as any)?.data?.data || [];
+          setCountries(Array.isArray(list) ? list : []);
+          console.debug('[BranchForm] countries loaded:', list?.length ?? 0);
+        }
+      })
+      .catch(() => {});
+    return () => { ignore = true; };
+  }, []);
+
+  // Initialize from existing branch (IDs preferred)
+  useEffect(() => {
+    // Initialize marker from existing branch coords if present
+    if (!markerPos && (branch as any)?.latitude && (branch as any)?.longitude) {
+      setMarkerPos({ lat: Number((branch as any).latitude), lng: Number((branch as any).longitude) });
+    }
+  }, [branch, markerPos]);
+
+  // When countries load, preselect country by id or by name
+  useEffect(() => {
+    if (countryId) return; // already set
+    const brCountryId = (branch as any)?.country_id;
+    if (brCountryId) {
+      setCountryId(String(brCountryId));
+      return;
+    }
+    if (countries.length && branch.country) {
+      const match = countries.find(c => c.name.toLowerCase() === branch.country.toLowerCase());
+      if (match) setCountryId(String(match.id));
+    }
+  }, [countries, branch, countryId]);
+
+  // Load states when country changes
+  useEffect(() => {
+    if (!countryId) { setStates([]); setCities([]); setStateId(''); setCityId(''); return; }
+    let ignore = false;
+    api.publicGeo.getStates(countryId, true)
+      .then(res => {
+        if (!ignore) {
+          const list = (res as any)?.data?.data || [];
+          setStates(Array.isArray(list) ? list : []);
+          console.debug('[BranchForm] states loaded:', list?.length ?? 0, 'for country', countryId);
+        }
+      })
+      .catch(() => {});
+    setStateId('');
+    setCityId('');
+    return () => { ignore = true; };
+  }, [countryId]);
+
+  // When states load, preselect by id or name
+  useEffect(() => {
+    if (!states.length || stateId) return;
+    const brStateId = (branch as any)?.state_id;
+    if (brStateId) {
+      setStateId(String(brStateId));
+      return;
+    }
+    if (branch.state) {
+      const match = states.find(s => s.name.toLowerCase() === branch.state.toLowerCase());
+      if (match) setStateId(String(match.id));
+    }
+  }, [states, branch, stateId]);
+
+  // Load cities when state changes
+  useEffect(() => {
+    if (!stateId) { setCities([]); setCityId(''); return; }
+    let ignore = false;
+    api.publicGeo.getCities(stateId, true)
+      .then(res => {
+        if (!ignore) {
+          const list = (res as any)?.data?.data || [];
+          setCities(Array.isArray(list) ? list : []);
+          console.debug('[BranchForm] cities loaded:', list?.length ?? 0, 'for state', stateId);
+        }
+      })
+      .catch(() => {});
+    setCityId('');
+    return () => { ignore = true; };
+  }, [stateId]);
+
+  // When cities load, preselect by id or name
+  useEffect(() => {
+    if (!cities.length || cityId) return;
+    const brCityId = (branch as any)?.city_id;
+    if (brCityId) {
+      setCityId(String(brCityId));
+      return;
+    }
+    if (branch.city) {
+      const match = cities.find(ci => ci.name.toLowerCase() === branch.city.toLowerCase());
+      if (match) setCityId(String(match.id));
+    }
+  }, [cities, branch, cityId]);
+
   const onSubmit = (data: BranchFormValues) => {
     onSave({
       ...branch,
       ...data,
+      // Keep names for text fields, but also send ids and lat/lng for API usage
+      country_id: countryId || undefined,
+      state_id: stateId || undefined,
+      city_id: cityId || undefined,
+      latitude: markerPos?.lat,
+      longitude: markerPos?.lng,
       updatedAt: new Date().toISOString()
     });
   };
@@ -198,12 +311,24 @@ export function BranchForm({ branch, onSave, onCancel }: BranchFormProps) {
           
           <FormField
             control={form.control}
-            name="city"
+            name="country"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Ciudad</FormLabel>
+                <FormLabel>País</FormLabel>
                 <FormControl>
-                  <Input placeholder="Ciudad" {...field} />
+                  <select
+                    value={countryId}
+                    onChange={(e) => {
+                      setCountryId(e.target.value);
+                      field.onChange(countries.find(c => String(c.id) === e.target.value)?.name || '');
+                    }}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-md"
+                  >
+                    <option value="">Selecciona un país</option>
+                    {countries.map(c => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -217,7 +342,20 @@ export function BranchForm({ branch, onSave, onCancel }: BranchFormProps) {
               <FormItem>
                 <FormLabel>Estado</FormLabel>
                 <FormControl>
-                  <Input placeholder="Estado" {...field} />
+                  <select
+                    value={stateId}
+                    onChange={(e) => {
+                      setStateId(e.target.value);
+                      field.onChange(states.find(s => String(s.id) === e.target.value)?.name || '');
+                    }}
+                    disabled={!countryId}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-md disabled:bg-slate-100"
+                  >
+                    <option value="">Selecciona un estado</option>
+                    {states.map(s => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
+                  </select>
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -226,12 +364,25 @@ export function BranchForm({ branch, onSave, onCancel }: BranchFormProps) {
           
           <FormField
             control={form.control}
-            name="country"
+            name="city"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>País</FormLabel>
+                <FormLabel>Ciudad</FormLabel>
                 <FormControl>
-                  <Input placeholder="País" {...field} />
+                  <select
+                    value={cityId}
+                    onChange={(e) => {
+                      setCityId(e.target.value);
+                      field.onChange(cities.find(ci => String(ci.id) === e.target.value)?.name || '');
+                    }}
+                    disabled={!stateId}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-md disabled:bg-slate-100"
+                  >
+                    <option value="">Selecciona una ciudad</option>
+                    {cities.map(ci => (
+                      <option key={ci.id} value={ci.id}>{ci.name}</option>
+                    ))}
+                  </select>
                 </FormControl>
                 <FormMessage />
               </FormItem>

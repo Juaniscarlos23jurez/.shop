@@ -12,6 +12,12 @@ export interface Branch {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  // Optional geo identifiers and coordinates
+  country_id?: number | string;
+  state_id?: number | string;
+  city_id?: number | string;
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface Employee {
