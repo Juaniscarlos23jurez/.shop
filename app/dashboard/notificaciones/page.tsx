@@ -20,18 +20,48 @@ type UiNotification = {
 
 export default function NotificacionesPage() {
   const { token, user } = useAuth();
-  const companyId = user?.company_id ? String(user.company_id) : undefined;
+  const initialCompanyId = user?.company_id ? String(user.company_id) : undefined;
   const [activeTab, setActiveTab] = useState<'all' | 'queued' | 'scheduled' | 'sent' | 'failed'>('all');
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState<UiNotification[]>([]);
+  const [resolvedCompanyId, setResolvedCompanyId] = useState<string | undefined>(initialCompanyId);
 
   useEffect(() => {
     const load = async () => {
-      if (!token || !companyId) return;
+      if (!token) return;
+      
+      // Resolve companyId if not available
+      let cid = resolvedCompanyId;
+      if (!cid) {
+        try {
+          const companyResponse = await api.userCompanies.get(token);
+          if (companyResponse.success && companyResponse.data) {
+            const data = companyResponse.data;
+            cid = String(
+              data.id || 
+              data.company_id || 
+              data.company?.id || 
+              data.company?.company_id ||
+              data.data?.id ||
+              data.data?.company_id ||
+              data.data?.company?.id ||
+              ''
+            );
+            if (cid && cid !== 'undefined') {
+              setResolvedCompanyId(cid);
+            }
+          }
+        } catch (e) {
+          console.error('Error resolving companyId:', e);
+        }
+      }
+      
+      if (!cid) return;
+      
       setLoading(true);
       try {
         const status = activeTab === 'all' ? undefined : activeTab;
-        const res = await api.companies.listNotifications(companyId, token, { per_page: 50, status });
+        const res = await api.companies.listNotifications(cid, token, { per_page: 50, status });
         if (res.success && res.data) {
           // Try to support various shapes: either data is an array or paginated object
           const raw = (res.data as any).data ?? res.data;
@@ -57,7 +87,7 @@ export default function NotificacionesPage() {
       }
     };
     load();
-  }, [activeTab, token, companyId]);
+  }, [activeTab, token, resolvedCompanyId]);
 
   const filteredNotifications = useMemo(() => items, [items]);
 
