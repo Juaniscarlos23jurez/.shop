@@ -648,6 +648,51 @@ export const api = {
     },
 
     /**
+     * Followers: list company followers with filters
+     * Endpoint: GET /api/companies/{companyId}/followers
+     * Filters:
+     * - mode: 'both' | 'fcm_only' | 'email_only' | 'none'
+     * - has_fcm: boolean
+     * - has_email: boolean
+     * Pagination:
+     * - per_page, page
+     */
+    async listFollowers(
+      companyId: string,
+      token: string,
+      params: {
+        mode?: 'both' | 'fcm_only' | 'email_only' | 'none';
+        has_fcm?: boolean;
+        has_email?: boolean;
+        per_page?: number | string;
+        page?: number | string;
+      } = {}
+    ): Promise<ApiResponse<any>> {
+      const search = new URLSearchParams();
+      if (params.mode) search.set('mode', params.mode);
+      if (typeof params.has_fcm === 'boolean') search.set('has_fcm', String(params.has_fcm));
+      if (typeof params.has_email === 'boolean') search.set('has_email', String(params.has_email));
+      if (params.per_page !== undefined) search.set('per_page', String(params.per_page));
+      if (params.page !== undefined) search.set('page', String(params.page));
+
+      const url = `${BASE_URL}/api/companies/${companyId}/followers${search.toString() ? `?${search.toString()}` : ''}`;
+      // Debug: safe logging (do not print token)
+      try {
+        console.log('[API] GET listFollowers URL:', url);
+        console.log('[API] GET listFollowers params:', Object.fromEntries(search.entries()));
+      } catch {}
+      return fetch(url, {
+        method: 'GET',
+        headers: getAuthHeader(token),
+      }).then(async (response) => {
+        try {
+          console.log('[API] listFollowers response status:', response.status);
+        } catch {}
+        return handleResponse(response);
+      });
+    },
+
+    /**
      * Notifications: create a company notification
      */
     async createNotification(

@@ -53,6 +53,21 @@ export async function getProducts(
 }
 
 /**
+ * TEMP: Public user's products by UID (stub)
+ * This is provided to satisfy imports from `app/[uid]/page.tsx`.
+ * Replace with a real public endpoint integration when available.
+ */
+export async function getUserProducts(uid: string): Promise<Product[]> {
+  try {
+    console.warn('[products.getUserProducts] Not implemented. Returning empty list for uid:', uid);
+    return [];
+  } catch (e) {
+    console.error('[products.getUserProducts] error:', e);
+    return [];
+  }
+}
+
+/**
  * Get a single product by ID
  */
 export async function getProduct(
