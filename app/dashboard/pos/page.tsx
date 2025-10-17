@@ -65,8 +65,21 @@ export default function PuntoVentaPage() {
       try {
         setLoading(true);
         const response = await api.products.getProducts(companyId, token || '', 1, 100);
-        if (response.data) {
-          setProducts(response.data.data || []);
+        if (response?.data) {
+          // Normalizar diferentes formas de respuesta para asegurar un array
+          const root: any = response.data;
+          const normalized: Product[] = Array.isArray(root?.data)
+            ? root.data
+            : Array.isArray(root?.products)
+              ? root.products
+              : Array.isArray(root)
+                ? root
+                : Array.isArray((root?.data as any)?.products)
+                  ? (root.data as any).products
+                  : [];
+          setProducts(normalized);
+        } else {
+          setProducts([]);
         }
       } catch (error) {
         console.error('Error fetching products:', error);
@@ -133,10 +146,16 @@ export default function PuntoVentaPage() {
     });
   };
 
-  const filteredProducts = products.filter(product =>
-    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.sku?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredProducts = Array.isArray(products)
+    ? products.filter((product) =>
+        (product.name || '')
+          .toLowerCase()
+          .includes((searchTerm || '').toLowerCase()) ||
+        (product.sku || '')
+          .toLowerCase()
+          .includes((searchTerm || '').toLowerCase())
+      )
+    : [];
 
   const cartTotal = cart.reduce((total, item) => {
     return total + (parseFloat(item.price) * item.quantity);
