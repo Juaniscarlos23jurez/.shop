@@ -43,6 +43,7 @@ export default function ProductosPage() {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState<number>(0);
   const [productType, setProductType] = useState<string>('all');
   const [error, setError] = useState<string | null>(null);
 
@@ -61,17 +62,42 @@ export default function ProductosPage() {
       }
       
       const response = await getProducts(companyId, token, params);
+      // Debug: log raw api wrapper response
+      console.log('[Productos] getProducts response:', response);
       
-      if (response.success && response.data) {
-        setProducts(response.data.data);
-        setTotalPages(response.data.last_page || 1);
-        setCurrentPage(response.data.current_page || 1);
+      if (response?.success && response?.data) {
+        // Normalizar posibles formatos de respuesta
+        const payload: any = response.data;
+        console.log('[Productos] payload:', payload);
+        const normalized: Product[] = Array.isArray(payload?.data)
+          ? payload.data
+          : Array.isArray(payload?.products)
+            ? payload.products
+            : Array.isArray(payload)
+              ? payload
+              : Array.isArray(payload?.data?.products)
+                ? payload.data.products
+                : [];
+        console.log('[Productos] normalized products length:', normalized.length);
+        setProducts(normalized);
+        // Intentar leer total y paginación de distintas llaves comunes
+        const total = payload?.total ?? payload?.meta?.total ?? payload?.data?.total ?? normalized.length ?? 0;
+        setTotalItems(Number.isFinite(total) ? Number(total) : normalized.length);
+        const lastPage = payload?.last_page ?? payload?.meta?.last_page ?? (total ? Math.max(1, Math.ceil(Number(total) / ITEMS_PER_PAGE)) : 1);
+        const current = payload?.current_page ?? payload?.meta?.current_page ?? page ?? 1;
+        setTotalPages(Number.isFinite(lastPage) ? Number(lastPage) : 1);
+        setCurrentPage(Number.isFinite(current) ? Number(current) : 1);
+        setError(null);
       } else {
+        setProducts([]);
+        setTotalItems(0);
         setError('Error al cargar los productos');
       }
     } catch (err) {
       console.error('Error fetching products:', err);
       setError('Error al conectar con el servidor');
+      setProducts([]);
+      setTotalItems(0);
     } finally {
       setLoading(false);
     }
@@ -135,7 +161,7 @@ export default function ProductosPage() {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <CardTitle>Lista de Productos</CardTitle>
             <div className="text-sm text-slate-500">
-              Mostrando {products.length} de {totalPages * ITEMS_PER_PAGE} productos
+              Mostrando {Array.isArray(products) ? products.length : 0} de {totalItems} productos
             </div>
           </div>
         </CardHeader>
@@ -176,7 +202,7 @@ export default function ProductosPage() {
               </div>
             ) : (
               <>
-                {products.map((product) => (
+                {(Array.isArray(products) ? products : []).map((product) => (
                   <div 
                     key={product.id}
                     className="grid grid-cols-12 items-start gap-2 p-2 border-b hover:bg-slate-50 transition-colors text-sm h-16"

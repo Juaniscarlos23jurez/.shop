@@ -629,6 +629,62 @@ export const api = {
       }
     },
 
+    /**
+     * Notifications: list company notifications
+     */
+    async listNotifications(
+      companyId: string,
+      token: string,
+      params: { per_page?: number | string; status?: string } = {}
+    ): Promise<ApiResponse<{ data: any }>> {
+      const search = new URLSearchParams();
+      if (params.per_page !== undefined) search.set('per_page', String(params.per_page));
+      if (params.status) search.set('status', params.status);
+      const url = `${BASE_URL}/api/companies/${companyId}/notifications${search.toString() ? `?${search.toString()}` : ''}`;
+      return fetch(url, {
+        method: 'GET',
+        headers: getAuthHeader(token),
+      }).then(handleResponse);
+    },
+
+    /**
+     * Notifications: create a company notification
+     */
+    async createNotification(
+      companyId: string,
+      data: {
+        channel: 'push' | 'email';
+        title: string;
+        body: string;
+        data?: Record<string, any> | null;
+        segment_type: 'all' | 'active' | 'inactive' | 'with_orders' | 'no_orders' | 'custom';
+        segment_filters?: Record<string, any> | null;
+        recipient_ids?: number[] | null;
+        scheduled_at?: string | null; // ISO 8601 or null
+      },
+      token: string
+    ): Promise<ApiResponse<{ data: { notification: any; total_recipients?: number } }>> {
+      return fetch(`${BASE_URL}/api/companies/${companyId}/notifications`, {
+        method: 'POST',
+        headers: getAuthHeader(token),
+        body: JSON.stringify(data),
+      }).then(handleResponse);
+    },
+
+    /**
+     * Notifications: get a single notification
+     */
+    async getNotification(
+      companyId: string,
+      notificationId: string | number,
+      token: string
+    ): Promise<ApiResponse<{ data: any }>> {
+      return fetch(`${BASE_URL}/api/companies/${companyId}/notifications/${notificationId}`, {
+        method: 'GET',
+        headers: getAuthHeader(token),
+      }).then(handleResponse);
+    },
+
     async createLocation(companyId: string, locationData: any, token: string): Promise<ApiResponse> {
       try {
         const url = `${BASE_URL}/api/test/companies/${companyId}/locations`;
