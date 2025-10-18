@@ -40,6 +40,7 @@ const adminSidebarItems = [
   // Communication & Feedback
   { icon: MessageSquare, label: "Comentarios", href: "/dashboard/comentarios" },
   { icon: BellIcon, label: "Notificaciones", href: "/dashboard/notificaciones" },
+  { icon: MessageSquare, label: "Anuncios", href: "/dashboard/anuncios" },
   
   // Reports & Settings
   { icon: BarChart3, label: "Analytics", href: "/dashboard/analytics" },
@@ -48,9 +49,11 @@ const adminSidebarItems = [
   { icon: GitBranch, label: "Sucursales", href: "/dashboard/sucursales" },
 
   // Empleados
-  { icon: Users, label: "Empleados", href: "/dashboard/empleados" },
-  { icon: ShoppingCart, label: "Punto de Venta", href: "/dashboard/pos" },
+   { icon: ShoppingCart, label: "Punto de Venta", href: "/dashboard/pos" },
  
+  // Payments
+  { icon: CreditCardIcon, label: "Stripe", href: "/dashboard/stripe" },
+
   { icon: Settings, label: "Configuración", href: "/dashboard/configuracion" },
 ];
 
