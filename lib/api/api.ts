@@ -730,6 +730,126 @@ export const api = {
       }).then(handleResponse);
     },
 
+    /**
+     * Announcements (Banners): Public list of active announcements for a company
+     * GET /api/public/companies/{companyId}/announcements
+     */
+    async listPublicAnnouncements(
+      companyId: string,
+      params: { per_page?: number | string; page?: number | string } = {}
+    ): Promise<ApiResponse<any>> {
+      const search = new URLSearchParams();
+      if (params.per_page !== undefined) search.set('per_page', String(params.per_page));
+      if (params.page !== undefined) search.set('page', String(params.page));
+      const url = `${BASE_URL}/api/public/companies/${companyId}/announcements${search.toString() ? `?${search.toString()}` : ''}`;
+      return fetch(url, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+        },
+      }).then(handleResponse);
+    },
+
+    /**
+     * Announcements (Banners): Protected list for a company (owner only)
+     * GET /api/companies/{companyId}/announcements
+     */
+    async listAnnouncements(
+      companyId: string,
+      token: string,
+      params: { per_page?: number | string; page?: number | string } = {}
+    ): Promise<ApiResponse<any>> {
+      const search = new URLSearchParams();
+      if (params.per_page !== undefined) search.set('per_page', String(params.per_page));
+      if (params.page !== undefined) search.set('page', String(params.page));
+      const url = `${BASE_URL}/api/companies/${companyId}/announcements${search.toString() ? `?${search.toString()}` : ''}`;
+      return fetch(url, {
+        method: 'GET',
+        headers: getAuthHeader(token),
+      }).then(handleResponse);
+    },
+
+    /**
+     * Announcements: Get single
+     * GET /api/companies/{companyId}/announcements/{id}
+     */
+    async getAnnouncement(
+      companyId: string,
+      id: string | number,
+      token: string
+    ): Promise<ApiResponse<any>> {
+      return fetch(`${BASE_URL}/api/companies/${companyId}/announcements/${id}`, {
+        method: 'GET',
+        headers: getAuthHeader(token),
+      }).then(handleResponse);
+    },
+
+    /**
+     * Announcements: Create
+     * POST /api/companies/{companyId}/announcements
+     */
+    async createAnnouncement(
+      companyId: string,
+      data: {
+        title: string;
+        subtitle?: string | null;
+        text?: string | null;
+        link_url?: string | null;
+        image_url?: string | null;
+        is_active?: boolean;
+        starts_at?: string | null;
+        ends_at?: string | null;
+      },
+      token: string
+    ): Promise<ApiResponse<any>> {
+      return fetch(`${BASE_URL}/api/companies/${companyId}/announcements`, {
+        method: 'POST',
+        headers: getAuthHeader(token),
+        body: JSON.stringify(data),
+      }).then(handleResponse);
+    },
+
+    /**
+     * Announcements: Update
+     * PUT /api/companies/{companyId}/announcements/{id}
+     */
+    async updateAnnouncement(
+      companyId: string,
+      id: string | number,
+      data: {
+        title?: string;
+        subtitle?: string | null;
+        text?: string | null;
+        link_url?: string | null;
+        image_url?: string | null;
+        is_active?: boolean;
+        starts_at?: string | null;
+        ends_at?: string | null;
+      },
+      token: string
+    ): Promise<ApiResponse<any>> {
+      return fetch(`${BASE_URL}/api/companies/${companyId}/announcements/${id}`, {
+        method: 'PUT',
+        headers: getAuthHeader(token),
+        body: JSON.stringify(data),
+      }).then(handleResponse);
+    },
+
+    /**
+     * Announcements: Delete
+     * DELETE /api/companies/{companyId}/announcements/{id}
+     */
+    async deleteAnnouncement(
+      companyId: string,
+      id: string | number,
+      token: string
+    ): Promise<ApiResponse<any>> {
+      return fetch(`${BASE_URL}/api/companies/${companyId}/announcements/${id}`, {
+        method: 'DELETE',
+        headers: getAuthHeader(token),
+      }).then(handleResponse);
+    },
+
     async createLocation(companyId: string, locationData: any, token: string): Promise<ApiResponse> {
       try {
         const url = `${BASE_URL}/api/test/companies/${companyId}/locations`;
