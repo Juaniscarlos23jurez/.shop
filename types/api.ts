@@ -92,20 +92,26 @@ export interface Coupon {
   name: string;
   description?: string;
   type: CouponType;
-  discount_amount?: number;
+  discount_amount?: number | string;
   discount_percentage?: number;
-  min_purchase_amount?: number;
+  min_purchase_amount?: number | string;
   buy_quantity?: number;
   get_quantity?: number;
   item_id?: string;
   starts_at: string;
   expires_at?: string;
   usage_limit?: number;
+  usage_count?: number;
   usage_limit_per_user?: number;
   is_active: boolean;
   is_public: boolean;
   is_single_use: boolean;
   membership_plan_ids?: number[];
+  applicable_products?: number[];
+  excluded_products?: number[];
+  applicable_categories?: number[];
+  excluded_categories?: number[];
+  metadata?: any;
   created_at: string;
   updated_at: string;
 }
@@ -129,9 +135,39 @@ export interface CouponCreateInput {
   is_public?: boolean;
   is_single_use?: boolean;
   membership_plan_ids?: number[];
+  applicable_products?: number[];
+  excluded_products?: number[];
+  applicable_categories?: number[];
+  excluded_categories?: number[];
+  metadata?: any;
 }
 
 export interface CouponUpdateInput extends Partial<CouponCreateInput> {}
+
+export interface CouponValidationRequest {
+  code: string;
+  user_id?: number | string;
+  subtotal: number;
+}
+
+export interface CouponValidationResponse {
+  valid: boolean;
+  coupon?: Coupon;
+  discount_amount?: number;
+  discount_type?: string;
+  final_subtotal?: number;
+  errors?: string[];
+}
+
+export interface CouponAssignmentRequest {
+  user_ids: number[];
+  expires_at?: string;
+}
+
+export interface CouponAssignByMembershipRequest {
+  membership_plan_ids: number[];
+  expires_at?: string;
+}
 
 // Sales Types
 export interface SaleItem {
@@ -160,10 +196,17 @@ export interface Sale {
   client_id?: number;
   total?: string; // from API
   total_amount?: string; // backward compatibility
+  subtotal?: string;
+  tax?: string;
+  discount_amount?: string;
+  discount_type?: string;
+  coupon_id?: number;
+  coupon_code?: string;
   payment_method: 'cash' | 'card' | 'transfer' | 'points';
   payment_status: 'completed' | 'pending' | 'failed';
   sale_status: 'completed' | 'cancelled';
   points_earned?: number;
+  notes?: string;
   created_at: string;
   updated_at: string;
   location?: {
@@ -187,6 +230,7 @@ export interface Sale {
     email?: string;
   };
   items?: SaleItem[];
+  coupon?: Coupon;
 }
 
 export interface SalesListResponse {

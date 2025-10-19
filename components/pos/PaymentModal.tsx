@@ -15,22 +15,7 @@ import { api, pointRulesApi } from '@/lib/api/api';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
-interface Coupon {
-  id: number;
-  code: string;
-  name: string;
-  description: string;
-  type: 'fixed_amount' | 'percentage' | 'free_shipping';
-  discount_amount: string | null;
-  discount_percentage: number | null;
-  min_purchase_amount: string;
-  starts_at: string;
-  expires_at: string;
-  usage_limit: number;
-  usage_count: number;
-  usage_limit_per_user: number;
-  is_active: boolean;
-}
+import { Coupon } from '@/types/api';
 
 interface AppliedCoupon extends Coupon {
   discountAmount: number;
@@ -83,8 +68,10 @@ export function PaymentModal({ isOpen, onClose, total, onPaymentComplete }: Paym
   const [selectedCoupon, setSelectedCoupon] = useState<AppliedCoupon | null>(null);
   const [isLoadingCoupons, setIsLoadingCoupons] = useState(false);
   const [discountedTotal, setDiscountedTotal] = useState(total);
+  const [couponCode, setCouponCode] = useState('');
+  const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
 
-  // Fetch point rules and coupons when component mounts
+  // Fetch point rules when component mounts
   useEffect(() => {
     const fetchData = async () => {
       if (!token) {
@@ -135,43 +122,72 @@ export function PaymentModal({ isOpen, onClose, total, onPaymentComplete }: Paym
       } catch (error) {
         console.error('PaymentModal: Error fetching point rules:', error);
       }
-      
-      // Fetch coupons
-      try {
-        setIsLoadingCoupons(true);
-        console.log('PaymentModal: Fetching coupons for company:', resolvedCompanyId);
-        const response = await api.coupons.getCoupons(resolvedCompanyId, token);
-        console.log('PaymentModal: Coupons response:', response);
-        
-        if (response.success && response.data?.data) {
-          const validCoupons = response.data.data.filter((coupon: Coupon) => {
-            const now = new Date();
-            const startsAt = new Date(coupon.starts_at);
-            const expiresAt = new Date(coupon.expires_at);
-            return (
-              coupon.is_active &&
-              now >= startsAt &&
-              now <= expiresAt &&
-              coupon.usage_count < coupon.usage_limit
-            );
-          });
-          
-          setCoupons(validCoupons);
-          console.log('PaymentModal: Valid coupons loaded:', validCoupons);
-        } else {
-          console.log('PaymentModal: No coupons data in response');
-        }
-      } catch (error) {
-        console.error('PaymentModal: Error fetching coupons:', error);
-      } finally {
-        setIsLoadingCoupons(false);
-      }
     };
 
     if (isOpen) {
       fetchData();
     }
   }, [token, user?.company_id, isOpen]);
+
+  // Fetch user-specific coupons when customer is selected
+  useEffect(() => {
+    const fetchUserCoupons = async () => {
+      if (!token || !companyId || !customer) {
+        // If no customer, fetch public coupons
+        if (!customer && token && companyId) {
+          try {
+            setIsLoadingCoupons(true);
+            const response = await api.coupons.getCoupons(String(companyId), token);
+            
+            if (response.success && response.data?.data?.data) {
+              // Filter only public, active coupons
+              const publicCoupons = response.data.data.data.filter((coupon: Coupon) => {
+                const now = new Date();
+                const startsAt = new Date(coupon.starts_at);
+                const expiresAt = coupon.expires_at ? new Date(coupon.expires_at) : null;
+                return (
+                  coupon.is_active &&
+                  coupon.is_public &&
+                  now >= startsAt &&
+                  (!expiresAt || now <= expiresAt) &&
+                  (!coupon.usage_limit || (coupon.usage_count || 0) < coupon.usage_limit)
+                );
+              });
+              setCoupons(publicCoupons);
+            }
+          } catch (error) {
+            console.error('PaymentModal: Error fetching public coupons:', error);
+          } finally {
+            setIsLoadingCoupons(false);
+          }
+        }
+        return;
+      }
+
+      try {
+        setIsLoadingCoupons(true);
+        console.log('PaymentModal: Fetching user coupons for customer:', customer.id);
+        const response = await api.coupons.getUserCoupons(String(companyId), String(customer.id), token);
+        
+        if (response.success && response.data?.coupons) {
+          setCoupons(response.data.coupons);
+          console.log('PaymentModal: User coupons loaded:', response.data.coupons);
+        } else {
+          console.log('PaymentModal: No user coupons available');
+          setCoupons([]);
+        }
+      } catch (error) {
+        console.error('PaymentModal: Error fetching user coupons:', error);
+        setCoupons([]);
+      } finally {
+        setIsLoadingCoupons(false);
+      }
+    };
+
+    if (isOpen) {
+      fetchUserCoupons();
+    }
+  }, [token, companyId, customer, isOpen]);
 
   // Recalculate points when customer, total, or selected coupon changes
   useEffect(() => {
@@ -197,7 +213,9 @@ export function PaymentModal({ isOpen, onClose, total, onPaymentComplete }: Paym
     let discount = 0;
     
     if (coupon.type === 'fixed_amount' && coupon.discount_amount) {
-      discount = parseFloat(coupon.discount_amount);
+      discount = typeof coupon.discount_amount === 'string' 
+        ? parseFloat(coupon.discount_amount) 
+        : coupon.discount_amount;
     } else if (coupon.type === 'percentage' && coupon.discount_percentage) {
       discount = (currentTotal * coupon.discount_percentage) / 100;
     }
@@ -206,38 +224,69 @@ export function PaymentModal({ isOpen, onClose, total, onPaymentComplete }: Paym
     return Math.max(0, currentTotal - discount);
   };
 
-  const applyCoupon = (coupon: Coupon) => {
-    const discount = (() => {
-      if (coupon.type === 'fixed_amount' && coupon.discount_amount) {
-        return parseFloat(coupon.discount_amount);
-      } else if (coupon.type === 'percentage' && coupon.discount_percentage) {
-        return (total * coupon.discount_percentage) / 100;
-      }
-      return 0;
-    })();
-    
-    const finalAmount = coupon.type === 'free_shipping' 
-      ? total // No change to total for free shipping
-      : Math.max(0, total - discount);
-    
-    setDiscountedTotal(finalAmount);
-    
-    // Only update if the coupon has actually changed to prevent unnecessary re-renders
-    if (!selectedCoupon || selectedCoupon.id !== coupon.id || 
-        selectedCoupon.discountAmount !== discount || 
-        selectedCoupon.finalAmount !== finalAmount) {
-      
-      setSelectedCoupon({
-        ...coupon,
-        discountAmount: discount,
-        finalAmount
+  const applyCouponByCode = async (code: string) => {
+    if (!companyId || !token) {
+      toast({
+        title: 'Error',
+        description: 'No se pudo validar el cupón',
+        variant: 'destructive'
       });
+      return;
     }
-    
-    toast({
-      title: 'Cupón aplicado',
-      description: `Se aplicó el cupón ${coupon.code} con un descuento de $${discount.toFixed(2)}`,
-    });
+
+    setIsValidatingCoupon(true);
+
+    try {
+      const validationData = {
+        code,
+        user_id: customer?.id,
+        subtotal: total
+      };
+
+      const response = await api.coupons.validateCoupon(
+        String(companyId),
+        validationData,
+        token
+      );
+
+      if (response.success && response.data?.valid && response.data.coupon) {
+        const { coupon, discount_amount, final_subtotal } = response.data;
+        
+        setSelectedCoupon({
+          ...coupon,
+          discountAmount: discount_amount || 0,
+          finalAmount: final_subtotal || total
+        });
+        
+        setDiscountedTotal(final_subtotal || total);
+        setCouponCode('');
+        
+        toast({
+          title: 'Cupón aplicado',
+          description: `Se aplicó el cupón ${code} con un descuento de $${(discount_amount || 0).toFixed(2)}`,
+        });
+      } else {
+        const errors = response.data?.errors || ['Cupón inválido'];
+        toast({
+          title: 'Cupón no válido',
+          description: errors[0] || 'El cupón no es válido para esta compra',
+          variant: 'destructive'
+        });
+      }
+    } catch (error) {
+      console.error('Error validating coupon:', error);
+      toast({
+        title: 'Error',
+        description: 'No se pudo validar el cupón',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsValidatingCoupon(false);
+    }
+  };
+
+  const applyCoupon = async (coupon: Coupon) => {
+    await applyCouponByCode(coupon.code);
   };
   
   const removeCoupon = useCallback(() => {
@@ -398,6 +447,7 @@ export function PaymentModal({ isOpen, onClose, total, onPaymentComplete }: Paym
         userId: customer?.id,
         pointsEarned: paymentMethod === 'points' ? -currentTotal : (customer ? pointsEarned : undefined),
         note: note || undefined,
+        couponCode: selectedCoupon?.code,
         coupon: selectedCoupon ? {
           id: selectedCoupon.id,
           code: selectedCoupon.code,
@@ -421,6 +471,7 @@ export function PaymentModal({ isOpen, onClose, total, onPaymentComplete }: Paym
       setNote("");
       setSelectedCoupon(null);
       setDiscountedTotal(total);
+      setCouponCode('');
       onClose();
     } catch (error) {
       console.error('PaymentModal: Error processing payment:', error);
@@ -621,10 +672,43 @@ export function PaymentModal({ isOpen, onClose, total, onPaymentComplete }: Paym
             </div>
           )}
 
-          <div className="space-y-2">
+          <div className="space-y-3">
             <div className="flex items-center justify-between">
               <Label className="font-normal">Cupón de descuento</Label>
-              {!selectedCoupon ? (
+            </div>
+            
+            {!selectedCoupon ? (
+              <div className="space-y-2">
+                {/* Manual coupon code input */}
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Código de cupón"
+                    value={couponCode}
+                    onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                    className="flex-1"
+                    disabled={isValidatingCoupon}
+                  />
+                  <Button
+                    onClick={() => applyCouponByCode(couponCode)}
+                    disabled={!couponCode || isValidatingCoupon}
+                    variant="outline"
+                  >
+                    {isValidatingCoupon ? 'Validando...' : 'Aplicar'}
+                  </Button>
+                </div>
+                
+                {/* Available coupons dropdown */}
+                {coupons.length > 0 && (
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-background px-2 text-muted-foreground">o selecciona uno</span>
+                    </div>
+                  </div>
+                )}
+                
                 <Select 
                   onValueChange={(value) => {
                     const coupon = coupons.find(c => c.id === parseInt(value));
@@ -632,8 +716,8 @@ export function PaymentModal({ isOpen, onClose, total, onPaymentComplete }: Paym
                   }}
                   disabled={isLoadingCoupons || coupons.length === 0}
                 >
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder={isLoadingCoupons ? "Cargando..." : "Aplicar cupón"} />
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder={isLoadingCoupons ? "Cargando cupones..." : coupons.length > 0 ? "Seleccionar cupón disponible" : "No hay cupones disponibles"} />
                   </SelectTrigger>
                   <SelectContent>
                     {coupons.length > 0 ? (
@@ -645,10 +729,15 @@ export function PaymentModal({ isOpen, onClose, total, onPaymentComplete }: Paym
                         >
                           <div className="font-medium">{coupon.code}</div>
                           <div className="text-xs text-muted-foreground">
-                            {coupon.type === 'fixed_amount' && `$${coupon.discount_amount} de descuento`}
+                            {coupon.name}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {coupon.type === 'fixed_amount' && `$${typeof coupon.discount_amount === 'string' ? parseFloat(coupon.discount_amount).toFixed(2) : coupon.discount_amount?.toFixed(2)} de descuento`}
                             {coupon.type === 'percentage' && `${coupon.discount_percentage}% de descuento`}
                             {coupon.type === 'free_shipping' && 'Envío gratis'}
-                            {coupon.min_purchase_amount && ` (Mín. $${parseFloat(coupon.min_purchase_amount).toFixed(2)})`}
+                            {coupon.type === 'buy_x_get_y' && 'Compra y lleva más'}
+                            {coupon.type === 'free_item' && 'Producto gratis'}
+                            {coupon.min_purchase_amount && ` (Mín. $${typeof coupon.min_purchase_amount === 'string' ? parseFloat(coupon.min_purchase_amount).toFixed(2) : coupon.min_purchase_amount?.toFixed(2)})`}
                           </div>
                         </SelectItem>
                       ))
@@ -659,26 +748,26 @@ export function PaymentModal({ isOpen, onClose, total, onPaymentComplete }: Paym
                     )}
                   </SelectContent>
                 </Select>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <div className="px-3 py-1.5 text-sm bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-md flex items-center gap-1">
-                    <TicketPercent className="h-4 w-4" />
-                    {selectedCoupon.code}
-                    {selectedCoupon.discountAmount > 0 && (
-                      <span className="ml-1">-${selectedCoupon.discountAmount.toFixed(2)}</span>
-                    )}
-                  </div>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={removeCoupon}
-                    className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-                  >
-                    Quitar
-                  </Button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <div className="px-3 py-1.5 text-sm bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-md flex items-center gap-1">
+                  <TicketPercent className="h-4 w-4" />
+                  {selectedCoupon.code}
+                  {selectedCoupon.discountAmount > 0 && (
+                    <span className="ml-1">-${selectedCoupon.discountAmount.toFixed(2)}</span>
+                  )}
                 </div>
-              )}
-            </div>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={removeCoupon}
+                  className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                >
+                  Quitar
+                </Button>
+              </div>
+            )}
             
             <div className="border-t pt-4 space-y-2">
               <div className="flex justify-between">
