@@ -26,6 +26,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { getProducts } from '@/lib/api/products';
+import type { Product } from '@/types/product';
 
 
 export default function NewCouponPage() {
@@ -93,8 +95,15 @@ export default function NewCouponPage() {
     user?.company_id ? String(user.company_id) : undefined
   );
 
+  // Products state for "free_item" coupon type
+  const [products, setProducts] = useState<Product[]>([]);
+  const [productsLoading, setProductsLoading] = useState(false);
+
   // Filtered followers based on membership filter
   const filteredFollowers = useMemo(() => {
+    // Ensure followers is always an array
+    if (!Array.isArray(followers)) return [];
+    
     if (filterMode === 'all') return followers;
     if (filterMode === 'membership_only') {
       return followers.filter(f => f.has_active_membership === 1);
@@ -147,9 +156,36 @@ export default function NewCouponPage() {
 
         const res = await api.companies.listFollowers(cid, token, { per_page: 100 });
         
-        if (res.success && res.data?.data) {
-          setFollowers(res.data.data);
+        console.log('[DEBUG] Followers API Response:', {
+          success: res.success,
+          dataKeys: res.data ? Object.keys(res.data) : [],
+          fullData: res.data
+        });
+        
+        // Try to normalize different possible response shapes
+        let raw: any[] = [];
+        const d = res.data;
+        if (d?.followers && Array.isArray(d.followers)) {
+          raw = d.followers;
+        } else if (d?.data?.data && Array.isArray(d.data.data)) {
+          raw = d.data.data;
+        } else if (d?.data && Array.isArray(d.data)) {
+          raw = d.data;
+        } else if (Array.isArray(d)) {
+          raw = d;
         }
+
+        const mapped = raw.map((f: any) => ({
+          customer_id: f.customer_id ?? f.id,
+          customer_name: f.customer_name ?? f.name ?? '',
+          customer_email: f.customer_email ?? f.email ?? '',
+          customer_fcm_token: f.customer_fcm_token ?? f.fcm_token ?? null,
+          has_active_membership: Number(f.has_active_membership ?? 0),
+          membership_plan_name: f.membership_plan_name ?? null,
+        }));
+        
+        console.log('[DEBUG] Mapped followers:', mapped.length, mapped);
+        setFollowers(mapped);
       } catch (error) {
         console.error('Error loading followers:', error);
       } finally {
@@ -188,6 +224,56 @@ export default function NewCouponPage() {
     setSelectedRecipients([]);
   };
 
+  // Load products when needed for free_item type
+  useEffect(() => {
+    const loadProducts = async () => {
+      if (!token) return;
+      if (formData.type !== 'free_item') return;
+
+      try {
+        setProductsLoading(true);
+        // Ensure company id is resolved
+        let cid = resolvedCompanyId;
+        if (!cid) {
+          const companyResponse = await api.userCompanies.get(token);
+          if (companyResponse.success && companyResponse.data) {
+            const data = companyResponse.data;
+            cid = String(
+              data.id ||
+              data.company_id ||
+              data.company?.id ||
+              data.data?.id ||
+              ''
+            );
+            if (cid && cid !== 'undefined') setResolvedCompanyId(cid);
+          }
+        }
+        if (!cid) return;
+
+        const resp = await getProducts(cid, token, { page: 1, per_page: 100 });
+        // Normalize like productos/page.tsx
+        const payload: any = resp?.data;
+        const normalized: Product[] = Array.isArray(payload?.data)
+          ? payload.data
+          : Array.isArray(payload?.products)
+            ? payload.products
+            : Array.isArray(payload)
+              ? payload
+              : Array.isArray(payload?.data?.products)
+                ? payload.data.products
+                : [];
+        setProducts(normalized);
+      } catch (e) {
+        console.error('[Cupones] Error loading products:', e);
+        setProducts([]);
+      } finally {
+        setProductsLoading(false);
+      }
+    };
+
+    loadProducts();
+  }, [formData.type, token, resolvedCompanyId]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -198,77 +284,96 @@ export default function NewCouponPage() {
       }
 
       const companyResponse = await api.userCompanies.get(token);
+      console.log('[Cupones] Company response:', companyResponse);
+      
       if (!companyResponse.success || !companyResponse.data?.data?.id) {
         throw new Error('Error al obtener datos de la compañía');
       }
 
-      const payload = {
-        ...formData,
+      const companyId = companyResponse.data.data.id;
+
+      // Build payload with user_ids directly (NEW BACKEND FORMAT)
+      const payload: any = {
+        company_id: companyId,  // ← AGREGAR company_id explícitamente
+        code: formData.code,
+        name: formData.name,
+        description: formData.description,
+        type: formData.type,
+        is_active: formData.is_active,
+        is_public: formData.is_public,
+        is_single_use: formData.is_single_use,
         starts_at: date?.from?.toISOString() || new Date().toISOString(),
         expires_at: date?.to?.toISOString() || new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString(),
-        usage_limit: formData.usage_limit ? parseInt(formData.usage_limit) : undefined,
-        usage_limit_per_user: formData.usage_limit_per_user ? parseInt(formData.usage_limit_per_user) : undefined,
-        min_purchase_amount: formData.min_purchase_amount ? parseFloat(formData.min_purchase_amount) : undefined,
-        discount_percentage: formData.type === 'percentage' ? parseFloat(formData.discount_percentage) : undefined,
-        discount_amount: formData.type === 'fixed_amount' ? parseFloat(formData.discount_amount) : undefined,
-        buy_quantity: formData.type === 'buy_x_get_y' ? parseInt(formData.buy_quantity) : undefined,
-        get_quantity: formData.type === 'buy_x_get_y' ? parseInt(formData.get_quantity) : undefined,
-        item_id: formData.type === 'free_item' ? formData.item_id : undefined
-      } as CouponCreateInput;
+      };
+
+      // Add optional numeric fields
+      if (formData.usage_limit) {
+        payload.usage_limit = parseInt(formData.usage_limit);
+      }
+      if (formData.usage_limit_per_user) {
+        payload.usage_limit_per_user = parseInt(formData.usage_limit_per_user);
+      }
+      if (formData.min_purchase_amount) {
+        payload.min_purchase_amount = parseFloat(formData.min_purchase_amount);
+      }
+
+      // Add type-specific fields
+      if (formData.type === 'percentage' && formData.discount_percentage) {
+        payload.discount_percentage = parseFloat(formData.discount_percentage);
+      }
+      if (formData.type === 'fixed_amount' && formData.discount_amount) {
+        payload.discount_amount = parseFloat(formData.discount_amount);
+      }
+      if (formData.type === 'buy_x_get_y') {
+        if (formData.buy_quantity) payload.buy_quantity = parseInt(formData.buy_quantity);
+        if (formData.get_quantity) payload.get_quantity = parseInt(formData.get_quantity);
+        if (formData.item_id) payload.item_id = formData.item_id;
+      }
+      if (formData.type === 'free_item' && formData.item_id) {
+        payload.item_id = formData.item_id;
+      }
+
+      // Add user_ids if there are selected recipients (NEW: sent in creation payload)
+      if (selectedRecipients.length > 0) {
+        payload.user_ids = selectedRecipients;
+      }
+
+      // TODO: Add membership_plan_ids selector in UI
+      // payload.membership_plan_ids = [];
+
+      console.log('[Cupones] Payload to send:', JSON.stringify(payload, null, 2));
 
       const response = await api.coupons.createCoupon(
-        companyResponse.data.data.id,
+        companyId,
         payload,
         token
       );
+
+      console.log('[Cupones] Create response:', response);
 
       if (!response.success) {
         throw new Error(response.error || 'Error creating cupón');
       }
 
-      const createdCoupon = response.data?.coupon;
-      
-      // If there are selected recipients and coupon is not public, assign it
-      if (selectedRecipients.length > 0 && createdCoupon && !formData.is_public) {
-        try {
-          const assignResponse = await api.coupons.assignToUsers(
-            String(companyResponse.data.data.id),
-            String(createdCoupon.id),
-            {
-              user_ids: selectedRecipients,
-              expires_at: date?.to?.toISOString()
-            },
-            token
-          );
+      const createdCoupon: any = response.data?.coupon || response.data;
+      console.log('[Cupones] Created coupon:', createdCoupon);
 
-          if (assignResponse.success) {
-            toast({
-              title: 'Cupón creado y asignado',
-              description: `El cupón se ha creado y asignado a ${selectedRecipients.length} usuario(s)`,
-            });
-          } else {
-            toast({
-              title: 'Cupón creado',
-              description: 'El cupón se creó pero hubo un error al asignarlo a los usuarios',
-              variant: 'default',
-            });
-          }
-        } catch (assignError) {
-          console.error('Error assigning coupon:', assignError);
-          toast({
-            title: 'Cupón creado',
-            description: 'El cupón se creó pero hubo un error al asignarlo a los usuarios',
-            variant: 'default',
-          });
-        }
-      } else {
-        toast({
-          title: 'Cupón creado',
-          description: formData.is_public 
-            ? 'El cupón público se ha creado correctamente'
-            : 'El cupón se ha creado correctamente',
-        });
+      // Show success message
+      const userCount = createdCoupon?.user_assignments?.length || selectedRecipients.length;
+      const membershipCount = createdCoupon?.membership_plans?.length || 0;
+      
+      let description = 'El cupón se ha creado correctamente';
+      if (userCount > 0) {
+        description += ` y asignado a ${userCount} usuario(s)`;
       }
+      if (membershipCount > 0) {
+        description += ` con ${membershipCount} plan(es) de membresía`;
+      }
+
+      toast({
+        title: 'Cupón creado',
+        description,
+      });
       
       router.push('/dashboard/cupones');
     } catch (error) {
@@ -471,14 +576,28 @@ export default function NewCouponPage() {
 
                 {formData.type === 'free_item' && (
                   <div className="space-y-2">
-                    <Label htmlFor="item_id">ID del producto</Label>
-                    <Input
-                      id="item_id"
-                      name="item_id"
+                    <Label htmlFor="item_id">Producto gratis</Label>
+                    <Select
                       value={formData.item_id}
-                      onChange={handleInputChange}
-                      required
-                    />
+                      onValueChange={(val) => setFormData(prev => ({ ...prev, item_id: val }))}
+                      disabled={productsLoading}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={productsLoading ? 'Cargando productos...' : 'Selecciona un producto'} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {products.length > 0 ? (
+                          products.map((p) => (
+                            <SelectItem key={p.id} value={String(p.id)}>
+                              {p.name} {p.price ? `- $${parseFloat(String(p.price)).toFixed(2)}` : ''}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <div className="p-2 text-sm text-muted-foreground">No hay productos disponibles</div>
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">Selecciona el producto que será gratuito con esta promoción.</p>
                   </div>
                 )}
               </div>
