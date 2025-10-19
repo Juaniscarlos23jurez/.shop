@@ -1,4 +1,4 @@
-import { ApiResponse, UserProfile, ProfileApiUser, BusinessHour, Membership, Coupon, CouponCreateInput, CouponUpdateInput } from '@/types/api';
+import { ApiResponse, UserProfile, ProfileApiUser, BusinessHour, Membership, Coupon, CouponCreateInput, CouponUpdateInput, CouponValidationRequest, CouponValidationResponse, CouponAssignmentRequest, CouponAssignByMembershipRequest } from '@/types/api';
 import { Product, ProductListResponse, ProductResponse, ProductCreateInput, ProductUpdateInput } from '@/types/product';
 import { Category, CategoryCreateInput, CategoryUpdateInput, CategoryResponse, CategoryListResponse } from '@/types/category';
 import { ordersApi } from './orders';
@@ -1038,6 +1038,81 @@ export const api = {
         headers: getAuthHeader(token),
       }).then(handleResponse);
     },
+
+    /**
+     * Validate a coupon code
+     */
+    async validateCoupon(
+      companyId: string,
+      data: CouponValidationRequest,
+      token: string
+    ): Promise<ApiResponse<CouponValidationResponse>> {
+      return fetch(`${BASE_URL}/api/companies/${companyId}/coupons/validate`, {
+        method: 'POST',
+        headers: getAuthHeader(token),
+        body: JSON.stringify(data)
+      }).then(handleResponse);
+    },
+
+    /**
+     * Assign coupon to specific users
+     */
+    async assignToUsers(
+      companyId: string,
+      couponId: string,
+      data: CouponAssignmentRequest,
+      token: string
+    ): Promise<ApiResponse<any>> {
+      return fetch(`${BASE_URL}/api/companies/${companyId}/coupons/${couponId}/assign-users`, {
+        method: 'POST',
+        headers: getAuthHeader(token),
+        body: JSON.stringify(data)
+      }).then(handleResponse);
+    },
+
+    /**
+     * Assign coupon by membership plan
+     */
+    async assignByMembership(
+      companyId: string,
+      couponId: string,
+      data: CouponAssignByMembershipRequest,
+      token: string
+    ): Promise<ApiResponse<any>> {
+      return fetch(`${BASE_URL}/api/companies/${companyId}/coupons/${couponId}/assign-by-membership`, {
+        method: 'POST',
+        headers: getAuthHeader(token),
+        body: JSON.stringify(data)
+      }).then(handleResponse);
+    },
+
+    /**
+     * Get available coupons for a user
+     */
+    async getUserCoupons(
+      companyId: string,
+      userId: string,
+      token: string
+    ): Promise<ApiResponse<{ coupons: Coupon[] }>> {
+      return fetch(`${BASE_URL}/api/companies/${companyId}/users/${userId}/coupons`, {
+        headers: getAuthHeader(token),
+      }).then(handleResponse);
+    },
+
+    /**
+     * Remove coupon assignment from user
+     */
+    async removeUserAssignment(
+      companyId: string,
+      couponId: string,
+      userId: string,
+      token: string
+    ): Promise<ApiResponse> {
+      return fetch(`${BASE_URL}/api/companies/${companyId}/coupons/${couponId}/users/${userId}`, {
+        method: 'DELETE',
+        headers: getAuthHeader(token),
+      }).then(handleResponse);
+    },
   },
 
   // Orders API
@@ -1081,6 +1156,8 @@ export const api = {
         user_id?: number | string | null;
         points_earned?: number; // optional: allow FE to send computed points
         payment_method: 'cash' | 'card' | 'transfer' | 'points';
+        coupon_code?: string; // optional: coupon code to apply
+        notes?: string; // optional: sale notes
         items: Array<{
           product_id: number | string;
           quantity: number;

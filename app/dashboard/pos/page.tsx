@@ -168,6 +168,7 @@ export default function PuntoVentaPage() {
     userId?: string;
     pointsEarned?: number;
     note?: string;
+    couponCode?: string;
   }) => {
     try {
       setIsProcessing(true);
@@ -198,6 +199,8 @@ export default function PuntoVentaPage() {
         user_id: userId,
         points_earned: paymentData.pointsEarned,
         payment_method: paymentData.method,
+        coupon_code: paymentData.couponCode,
+        notes: paymentData.note,
         items: mappedItems,
       });
 
@@ -207,6 +210,8 @@ export default function PuntoVentaPage() {
           location_id: locId,
           user_id: userId,
           ...(typeof paymentData.pointsEarned === 'number' ? { points_earned: paymentData.pointsEarned } : {}),
+          ...(paymentData.couponCode ? { coupon_code: paymentData.couponCode } : {}),
+          ...(paymentData.note ? { notes: paymentData.note } : {}),
           payment_method: paymentData.method as any,
           items: mappedItems,
         },
@@ -222,6 +227,7 @@ export default function PuntoVentaPage() {
       // Extraer información de la venta creada
       const saleData = saleResp.data?.sale || saleResp.data;
       const pointsEarnedFromAPI = saleData?.points_earned || paymentData.pointsEarned || 0;
+      const discountApplied = saleData?.discount_amount ? parseFloat(saleData.discount_amount) : 0;
 
       // Si hay una orden pendiente actual, eliminarla
       if (currentOrderId) {
@@ -235,9 +241,12 @@ export default function PuntoVentaPage() {
       setCart([]);
       setOrderDescription('');
       
+      const discountMessage = discountApplied > 0 ? ` | Descuento: $${discountApplied.toFixed(2)}` : '';
+      const pointsMessage = pointsEarnedFromAPI > 0 ? ` | +${pointsEarnedFromAPI} puntos` : '';
+      
       toast({
         title: 'Venta completada',
-        description: `Venta #${saleData?.id || 'N/A'} creada correctamente. Total: $${cartTotal.toFixed(2)}${pointsEarnedFromAPI > 0 ? ` | +${pointsEarnedFromAPI} puntos` : ''}`,
+        description: `Venta #${saleData?.id || 'N/A'} creada correctamente. Total: $${cartTotal.toFixed(2)}${discountMessage}${pointsMessage}`,
       });
 
     } catch (error) {

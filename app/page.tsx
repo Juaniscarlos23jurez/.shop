@@ -6,6 +6,10 @@ import Link from "next/link"
 import { Inter } from 'next/font/google'
 
 const inter = Inter({ subsets: ['latin'] })
+// Contact lead-gen links (override via NEXT_PUBLIC_* envs)
+const WHATSAPP_URL = process.env.NEXT_PUBLIC_WHATSAPP_URL || 'https://wa.me/521234567890'
+const SALES_EMAIL = process.env.NEXT_PUBLIC_SALES_EMAIL || 'ventas@tudominio.com'
+const CALENDLY_URL = process.env.NEXT_PUBLIC_CALENDLY_URL || 'https://calendly.com/tus-ventas/demo-30min'
 
 export default function HomePage() {
   const features = [
@@ -67,7 +71,7 @@ export default function HomePage() {
               <div className="ml-10 flex items-center space-x-1">
                 <a href="#features" className="text-gray-600 hover:text-gray-900 px-4 py-2 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">Características</a>
                 <a href="#how-it-works" className="text-gray-600 hover:text-gray-900 px-4 py-2 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">¿Cómo funciona?</a>
-                <a href="#pricing" className="text-gray-600 hover:text-gray-900 px-4 py-2 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">Precios</a>
+                <a href="#contact" className="text-gray-600 hover:text-gray-900 px-4 py-2 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">Contacto</a>
                 <a href="#testimonials" className="text-gray-600 hover:text-gray-900 px-4 py-2 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">Testimonios</a>
               </div>
             </div>
@@ -75,8 +79,8 @@ export default function HomePage() {
               <Link href="/auth/login">
                 <Button variant="ghost" className="text-gray-600 hover:bg-gray-100">Iniciar sesión</Button>
               </Link>
-              <Link href="/auth/register">
-                <Button className="bg-[#22c55e] hover:bg-green-600 text-white shadow-md hover:shadow-lg transition-all">Comenzar gratis</Button>
+              <Link href="#contact">
+                <Button className="bg-[#22c55e] hover:bg-green-600 text-white shadow-md hover:shadow-lg transition-all">Hablar con ventas</Button>
               </Link>
             </div>
           </div>
@@ -101,17 +105,14 @@ export default function HomePage() {
                 La plataforma todo en uno para crear programas de fidelización que tus clientes amarán. Aumenta las ventas recurrentes, mejora la retención y construye relaciones duraderas con tus clientes.
               </p>
               <div className="mt-8 flex flex-col sm:flex-row justify-center gap-4">
-                <Link href="/auth/register" className="w-full sm:w-auto">
+                <Link href="#contact" className="w-full sm:w-auto">
                   <Button size="lg" className="w-full sm:w-auto bg-[#22c55e] hover:bg-green-600 text-white shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 transform">
-                    Comenzar gratis - Sin tarjeta
+                    Hablar con ventas
                   </Button>
                 </Link>
-                <Link href="#video-demo" className="w-full sm:w-auto">
-                  <Button size="lg" variant="outline" className="w-full sm:w-auto border-gray-300 text-gray-700 hover:bg-gray-50 flex items-center justify-center space-x-2">
-                    <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
-                    </svg>
-                    <span>Ver video demo</span>
+                <Link href={CALENDLY_URL} className="w-full sm:w-auto" target="_blank" rel="noopener noreferrer">
+                  <Button size="lg" variant="outline" className="w-full sm:w-auto border-gray-300 text-gray-700 hover:bg-gray-50">
+                    Agendar demo
                   </Button>
                 </Link>
               </div>
@@ -302,35 +303,35 @@ export default function HomePage() {
         <section className="bg-[#22c55e] py-16">
           <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
             <h2 className="text-3xl font-black text-white mb-6">
-              ¿Listo para transformar la lealtad de tus clientes?
+              ¿Listo para hablar con nuestro equipo?
             </h2>
             <p className="text-green-100 text-lg mb-8 max-w-2xl mx-auto">
-              Únete a cientos de negocios que ya están fidelizando clientes con nuestra plataforma.
+              Conversemos sobre tus metas y cómo podemos ayudarte a aumentar las ventas recurrentes.
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-4 max-w-md mx-auto">
-              <Link href="/auth/register" className="w-full sm:w-auto">
+              <Link href="#contact" className="w-full sm:w-auto">
                 <Button size="lg" className="w-full bg-white text-[#0f172a] hover:bg-gray-100 font-medium">
-                  Comenzar gratis
+                  Hablar con ventas
                 </Button>
               </Link>
-              <Link href="#contact" className="w-full sm:w-auto">
+              <Link href={CALENDLY_URL} className="w-full sm:w-auto" target="_blank" rel="noopener noreferrer">
                 <Button size="lg" variant="outline" className="w-full text-white border-white hover:bg-green-600 hover:border-green-600">
-                  Hablar con ventas
+                  Agendar demo
                 </Button>
               </Link>
             </div>
           </div>
         </section>
 
-        {/* Pricing Section */}
+        {/* Plans Section (de-emphasized pricing) */}
         <section id="pricing" className="py-16 bg-gray-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
               <h2 className="text-3xl font-black text-[#0f172a] mb-4">
-                Precios simples y predecibles
+                Planes y soluciones a medida
               </h2>
               <p className="text-[#64748b] text-lg max-w-2xl mx-auto">
-                Elige el plan que mejor se adapte a las necesidades de tu negocio
+                Te asesoramos para definir el plan ideal según tu etapa y objetivos
               </p>
             </div>
             
@@ -338,8 +339,8 @@ export default function HomePage() {
               {[
                 {
                   name: 'Básico',
-                  price: '29',
-                  period: 'mes',
+                  price: 'A medida',
+                  period: '',
                   description: 'Perfecto para pequeños negocios que están comenzando',
                   features: [
                     'Hasta 500 clientes',
@@ -348,13 +349,13 @@ export default function HomePage() {
                     'Soporte por correo electrónico',
                     'Análisis básicos'
                   ],
-                  cta: 'Comenzar prueba gratuita',
+                  cta: 'Hablar con ventas',
                   popular: false
                 },
                 {
                   name: 'Profesional',
-                  price: '79',
-                  period: 'mes',
+                  price: 'A medida',
+                  period: '',
                   description: 'Ideal para negocios en crecimiento',
                   features: [
                     'Hasta 2,000 clientes',
@@ -364,7 +365,7 @@ export default function HomePage() {
                     'Análisis avanzados',
                     'Integración con redes sociales'
                   ],
-                  cta: 'Comenzar prueba gratuita',
+                  cta: 'Hablar con ventas',
                   popular: true
                 },
                 {
@@ -399,8 +400,8 @@ export default function HomePage() {
                   <div className="p-6">
                     <h3 className="text-lg font-bold text-gray-900 mb-1">{plan.name}</h3>
                     <div className="flex items-baseline mb-4">
-                      {plan.price === 'Personalizado' ? (
-                        <span className="text-4xl font-bold text-gray-900">Personalizado</span>
+                      {plan.price === 'Personalizado' || plan.price === 'A medida' ? (
+                        <span className="text-3xl font-bold text-gray-900">{plan.price}</span>
                       ) : (
                         <>
                           <span className="text-4xl font-bold text-gray-900">${plan.price}</span>
@@ -419,15 +420,17 @@ export default function HomePage() {
                         </li>
                       ))}
                     </ul>
-                    <button 
-                      className={`w-full py-3 px-4 rounded-lg font-medium ${
-                        plan.popular 
-                          ? 'bg-[#22c55e] text-white hover:bg-green-600' 
-                          : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
-                      } transition-colors`}
-                    >
-                      {plan.cta}
-                    </button>
+                    <Link href="#contact">
+                      <Button 
+                        className={`w-full ${
+                          plan.popular 
+                            ? 'bg-[#22c55e] text-white hover:bg-green-600' 
+                            : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
+                        } transition-colors`}
+                      >
+                        {plan.cta}
+                      </Button>
+                    </Link>
                   </div>
                 </div>
               ))}
@@ -453,22 +456,58 @@ export default function HomePage() {
       <section className="bg-[#22c55e] py-12">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
-            ¿Listo para transformar la lealtad de tus clientes?
+            ¿Hablamos de tu estrategia de lealtad?
           </h2>
           <p className="text-green-100 text-lg mb-8 max-w-2xl mx-auto">
-            Únete a miles de negocios que ya están aumentando sus ventas con Fideliza+
+            Agenda una llamada o escríbenos por WhatsApp para conocer tus objetivos y proponerte la mejor solución.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4 max-w-md mx-auto">
-            <Link href="/auth/register" className="w-full sm:w-auto">
-              <Button size="lg" className="w-full bg-white text-[#0f172a] hover:bg-gray-100 font-medium">
-                Comenzar gratis por 14 días
-              </Button>
-            </Link>
             <Link href="#contact" className="w-full sm:w-auto">
-              <Button size="lg" variant="outline" className="w-full text-white border-white hover:bg-green-600 hover:border-green-600">
+              <Button size="lg" className="w-full bg-white text-[#0f172a] hover:bg-gray-100 font-medium">
                 Hablar con ventas
               </Button>
             </Link>
+            <Link href={CALENDLY_URL} className="w-full sm:w-auto" target="_blank" rel="noopener noreferrer">
+              <Button size="lg" variant="outline" className="w-full text-white border-white hover:bg-green-600 hover:border-green-600">
+                Agendar demo
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Contact Section */}
+      <section id="contact" className="py-16 bg-white">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-10">
+            <h2 className="text-3xl font-black text-[#0f172a] mb-4">Conecta con nuestro equipo</h2>
+            <p className="text-[#64748b] text-lg">Elige el canal que prefieras. Respondemos rápido.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Card className="p-6 border border-gray-100 rounded-2xl text-center">
+              <div className="text-2xl mb-2">💬</div>
+              <h3 className="text-lg font-bold mb-2">WhatsApp</h3>
+              <p className="text-sm text-gray-600 mb-4">Escríbenos y te atendemos al instante.</p>
+              <Link href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">
+                <Button className="w-full bg-[#22c55e] hover:bg-green-600 text-white">Abrir WhatsApp</Button>
+              </Link>
+            </Card>
+            <Card className="p-6 border border-gray-100 rounded-2xl text-center">
+              <div className="text-2xl mb-2">📧</div>
+              <h3 className="text-lg font-bold mb-2">Email</h3>
+              <p className="text-sm text-gray-600 mb-4">Cuéntanos sobre tu negocio y te contactamos.</p>
+              <Link href={`mailto:${SALES_EMAIL}`}>
+                <Button variant="outline" className="w-full">Enviar correo</Button>
+              </Link>
+            </Card>
+            <Card className="p-6 border border-gray-100 rounded-2xl text-center">
+              <div className="text-2xl mb-2">📅</div>
+              <h3 className="text-lg font-bold mb-2">Agendar demo</h3>
+              <p className="text-sm text-gray-600 mb-4">Reserva una demo de 30 minutos.</p>
+              <Link href={CALENDLY_URL} target="_blank" rel="noopener noreferrer">
+                <Button variant="outline" className="w-full">Ver disponibilidad</Button>
+              </Link>
+            </Card>
           </div>
         </div>
       </section>

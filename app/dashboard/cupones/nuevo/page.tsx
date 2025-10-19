@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api/api';
 import { CouponType, CouponCreateInput } from '@/types/api';
@@ -18,6 +18,14 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 
 export default function NewCouponPage() {
@@ -47,7 +55,7 @@ export default function NewCouponPage() {
     item_id: string;
   };
 
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -69,6 +77,34 @@ export default function NewCouponPage() {
     item_id: ''
   });
 
+  // Followers/Users state
+  const [followers, setFollowers] = useState<Array<{
+    customer_id: number;
+    customer_name: string;
+    customer_email: string;
+    customer_fcm_token?: string | null;
+    has_active_membership?: number;
+    membership_plan_name?: string | null;
+  }>>([]);
+  const [selectedRecipients, setSelectedRecipients] = useState<number[]>([]);
+  const [filterMode, setFilterMode] = useState<'all' | 'membership_only' | 'no_membership'>('all');
+  const [followersLoading, setFollowersLoading] = useState(false);
+  const [resolvedCompanyId, setResolvedCompanyId] = useState<string | undefined>(
+    user?.company_id ? String(user.company_id) : undefined
+  );
+
+  // Filtered followers based on membership filter
+  const filteredFollowers = useMemo(() => {
+    if (filterMode === 'all') return followers;
+    if (filterMode === 'membership_only') {
+      return followers.filter(f => f.has_active_membership === 1);
+    }
+    if (filterMode === 'no_membership') {
+      return followers.filter(f => f.has_active_membership === 0);
+    }
+    return followers;
+  }, [followers, filterMode]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target as HTMLInputElement;
     setFormData(prev => ({
@@ -76,6 +112,53 @@ export default function NewCouponPage() {
       [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
     }));
   };
+
+  // Load followers on component mount
+  useEffect(() => {
+    const loadFollowers = async () => {
+      if (!token) return;
+      
+      try {
+        setFollowersLoading(true);
+        
+        // Get companyId
+        let cid = resolvedCompanyId;
+        if (!cid) {
+          const companyResponse = await api.userCompanies.get(token);
+          if (companyResponse.success && companyResponse.data) {
+            const data = companyResponse.data;
+            cid = String(
+              data.id || 
+              data.company_id || 
+              data.company?.id || 
+              data.data?.id ||
+              ''
+            );
+            if (cid && cid !== 'undefined') {
+              setResolvedCompanyId(cid);
+            }
+          }
+        }
+        
+        if (!cid) {
+          console.error('No se pudo obtener el ID de la compañía');
+          return;
+        }
+
+        const res = await api.companies.listFollowers(cid, token, { per_page: 100 });
+        
+        if (res.success && res.data?.data) {
+          setFollowers(res.data.data);
+        }
+      } catch (error) {
+        console.error('Error loading followers:', error);
+      } finally {
+        setFollowersLoading(false);
+      }
+    };
+
+    loadFollowers();
+  }, [token, resolvedCompanyId]);
 
   const generateRandomCode = () => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -87,6 +170,22 @@ export default function NewCouponPage() {
       ...prev,
       code: result
     }));
+  };
+
+  const toggleRecipient = (customerId: number) => {
+    setSelectedRecipients(prev =>
+      prev.includes(customerId)
+        ? prev.filter(id => id !== customerId)
+        : [...prev, customerId]
+    );
+  };
+
+  const selectAll = () => {
+    setSelectedRecipients(filteredFollowers.map(f => f.customer_id));
+  };
+
+  const deselectAll = () => {
+    setSelectedRecipients([]);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -126,11 +225,50 @@ export default function NewCouponPage() {
       if (!response.success) {
         throw new Error(response.error || 'Error creating cupón');
       }
+
+      const createdCoupon = response.data?.coupon;
       
-      toast({
-        title: 'Cupón creado',
-        description: 'El cupón se ha creado correctamente',
-      });
+      // If there are selected recipients and coupon is not public, assign it
+      if (selectedRecipients.length > 0 && createdCoupon && !formData.is_public) {
+        try {
+          const assignResponse = await api.coupons.assignToUsers(
+            String(companyResponse.data.data.id),
+            String(createdCoupon.id),
+            {
+              user_ids: selectedRecipients,
+              expires_at: date?.to?.toISOString()
+            },
+            token
+          );
+
+          if (assignResponse.success) {
+            toast({
+              title: 'Cupón creado y asignado',
+              description: `El cupón se ha creado y asignado a ${selectedRecipients.length} usuario(s)`,
+            });
+          } else {
+            toast({
+              title: 'Cupón creado',
+              description: 'El cupón se creó pero hubo un error al asignarlo a los usuarios',
+              variant: 'default',
+            });
+          }
+        } catch (assignError) {
+          console.error('Error assigning coupon:', assignError);
+          toast({
+            title: 'Cupón creado',
+            description: 'El cupón se creó pero hubo un error al asignarlo a los usuarios',
+            variant: 'default',
+          });
+        }
+      } else {
+        toast({
+          title: 'Cupón creado',
+          description: formData.is_public 
+            ? 'El cupón público se ha creado correctamente'
+            : 'El cupón se ha creado correctamente',
+        });
+      }
       
       router.push('/dashboard/cupones');
     } catch (error) {
@@ -479,6 +617,112 @@ export default function NewCouponPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* User Segmentation Card - Only show for non-public coupons */}
+          {!formData.is_public && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Segmentación de Usuarios</CardTitle>
+                <CardDescription>
+                  Selecciona los usuarios que podrán usar este cupón privado
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Filter */}
+                <div className="space-y-2">
+                  <Label>Filtrar usuarios</Label>
+                  <Select value={filterMode} onValueChange={(value: any) => setFilterMode(value)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos los usuarios</SelectItem>
+                      <SelectItem value="membership_only">Solo con membresía</SelectItem>
+                      <SelectItem value="no_membership">Sin membresía</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Selection controls */}
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-muted-foreground">
+                    {selectedRecipients.length} de {filteredFollowers.length} seleccionados
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={selectAll}
+                      disabled={followersLoading}
+                    >
+                      Seleccionar todos
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={deselectAll}
+                      disabled={followersLoading}
+                    >
+                      Deseleccionar
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Users list */}
+                {followersLoading ? (
+                  <div className="text-center py-8">
+                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-primary border-t-transparent"></div>
+                    <p className="text-sm text-muted-foreground mt-2">Cargando usuarios...</p>
+                  </div>
+                ) : filteredFollowers.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <p>No hay usuarios disponibles</p>
+                  </div>
+                ) : (
+                  <div className="border rounded-lg max-h-96 overflow-y-auto">
+                    {filteredFollowers.map((follower) => (
+                      <div
+                        key={follower.customer_id}
+                        className="flex items-center space-x-3 p-3 hover:bg-muted/50 border-b last:border-b-0"
+                      >
+                        <Checkbox
+                          id={`follower-${follower.customer_id}`}
+                          checked={selectedRecipients.includes(follower.customer_id)}
+                          onCheckedChange={() => toggleRecipient(follower.customer_id)}
+                        />
+                        <label
+                          htmlFor={`follower-${follower.customer_id}`}
+                          className="flex-1 cursor-pointer"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="font-medium">{follower.customer_name}</p>
+                              <p className="text-sm text-muted-foreground">{follower.customer_email}</p>
+                            </div>
+                            {follower.has_active_membership === 1 && (
+                              <div className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
+                                {follower.membership_plan_name || 'Membresía'}
+                              </div>
+                            )}
+                          </div>
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {selectedRecipients.length > 0 && (
+                  <div className="bg-muted/50 p-3 rounded-lg">
+                    <p className="text-sm font-medium">
+                      El cupón se asignará automáticamente a {selectedRecipients.length} usuario(s) seleccionado(s)
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
           <div className="flex justify-end gap-4">
             <Button
