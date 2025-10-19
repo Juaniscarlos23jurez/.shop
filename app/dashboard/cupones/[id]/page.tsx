@@ -1,161 +1,455 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { api } from '@/lib/api/api';
+import { CouponType, CouponUpdateInput, Coupon } from '@/types/api';
 import { useRouter, useParams } from 'next/navigation';
+import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus, X, Check, ArrowLeft, Copy, Loader2 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
-import { format, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-
-type DiscountType = 'percentage' | 'fixed' | 'free_shipping';
-
-interface Coupon {
-  id: string;
-  code: string;
-  description: string;
-  discountType: DiscountType;
-  discount: number;
-  minPurchase: number;
-  maxUses: number;
-  used: number;
-  validFrom: string;
-  validUntil: string;
-  isActive: boolean;
-  status: 'active' | 'scheduled' | 'expired' | 'disabled';
-}
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { getProducts } from '@/lib/api/products';
+import type { Product } from '@/types/product';
 
 export default function EditCouponPage() {
   const router = useRouter();
   const { id } = useParams();
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
   const [date, setDate] = useState<{
     from: Date;
     to?: Date;
-  }>();
+  } | undefined>();
 
-  const [formData, setFormData] = useState<Omit<Coupon, 'id' | 'status' | 'used'>>({
+  type FormData = {
+    code: string;
+    name: string;
+    description: string;
+    type: CouponType;
+    is_active: boolean;
+    is_public: boolean;
+    is_single_use: boolean;
+    usage_limit: string;
+    usage_limit_per_user: string;
+    min_purchase_amount: string;
+    discount_percentage: string;
+    discount_amount: string;
+    buy_quantity: string;
+    get_quantity: string;
+    item_id: string;
+  };
+
+  const { token, user } = useAuth();
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [originalCoupon, setOriginalCoupon] = useState<Coupon | null>(null);
+  const [formData, setFormData] = useState<FormData>({
     code: '',
+    name: '',
     description: '',
-    discountType: 'percentage',
-    discount: 0,
-    minPurchase: 0,
-    maxUses: 0,
-    validFrom: new Date().toISOString(),
-    validUntil: new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString(),
-    isActive: true,
+    type: 'percentage',
+    is_active: true,
+    is_public: true,
+    is_single_use: false,
+    usage_limit: '',
+    usage_limit_per_user: '',
+    min_purchase_amount: '',
+    discount_percentage: '',
+    discount_amount: '',
+    buy_quantity: '',
+    get_quantity: '',
+    item_id: ''
   });
 
-  // Fetch coupon data
-  useEffect(() => {
-    const fetchCoupon = async () => {
-      try {
-        setIsLoading(true);
-        // TODO: Replace with actual API call
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        // Mock data - in a real app, this would come from your API
-        const mockCoupon: Coupon = {
-          id: id as string,
-          code: 'SUMMER25',
-          description: '25% de descuento en productos de verano',
-          discountType: 'percentage',
-          discount: 25,
-          minPurchase: 0,
-          maxUses: 500,
-          used: 127,
-          validFrom: new Date().toISOString(),
-          validUntil: new Date(new Date().setMonth(new Date().getMonth() + 3)).toISOString(),
-          isActive: true,
-          status: 'active',
-        };
+  // Followers/Users state
+  const [followers, setFollowers] = useState<Array<{
+    customer_id: number;
+    customer_name: string;
+    customer_email: string;
+    customer_fcm_token?: string | null;
+    has_active_membership?: number;
+    membership_plan_name?: string | null;
+  }>>([]);
+  const [selectedRecipients, setSelectedRecipients] = useState<number[]>([]);
+  const [filterMode, setFilterMode] = useState<'all' | 'membership_only' | 'no_membership'>('all');
+  const [followersLoading, setFollowersLoading] = useState(false);
+  const [resolvedCompanyId, setResolvedCompanyId] = useState<string | undefined>(
+    user?.company_id ? String(user.company_id) : undefined
+  );
 
-        setFormData({
-          code: mockCoupon.code,
-          description: mockCoupon.description,
-          discountType: mockCoupon.discountType,
-          discount: mockCoupon.discount,
-          minPurchase: mockCoupon.minPurchase,
-          maxUses: mockCoupon.maxUses,
-          validFrom: mockCoupon.validFrom,
-          validUntil: mockCoupon.validUntil,
-          isActive: mockCoupon.isActive,
-        });
+  // Products state for "free_item" coupon type
+  const [products, setProducts] = useState<Product[]>([]);
+  const [productsLoading, setProductsLoading] = useState(false);
 
-        setDate({
-          from: new Date(mockCoupon.validFrom),
-          to: new Date(mockCoupon.validUntil)
-        });
-      } catch (error) {
-        console.error('Error fetching coupon:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (id) {
-      fetchCoupon();
+  // Filtered followers based on membership filter
+  const filteredFollowers = useMemo(() => {
+    if (!Array.isArray(followers)) return [];
+    
+    if (filterMode === 'all') return followers;
+    if (filterMode === 'membership_only') {
+      return followers.filter(f => f.has_active_membership === 1);
     }
-  }, [id]);
+    if (filterMode === 'no_membership') {
+      return followers.filter(f => f.has_active_membership === 0);
+    }
+    return followers;
+  }, [followers, filterMode]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target as HTMLInputElement;
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : 
-              type === 'number' ? parseFloat(value) || 0 : value
+      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
     }));
   };
+
+  // Fetch coupon data
+  useEffect(() => {
+    const fetchCoupon = async () => {
+      if (!token || !id) return;
+      
+      try {
+        setIsLoading(true);
+        
+        // Get company ID
+        const companyResponse = await api.userCompanies.get(token);
+        if (!companyResponse.success || !companyResponse.data?.data?.id) {
+          throw new Error('Error al obtener datos de la compañía');
+        }
+        const companyId = companyResponse.data.data.id;
+        setResolvedCompanyId(companyId);
+
+        // Fetch coupon
+        const response = await api.coupons.getCoupon(companyId, id as string, token);
+        console.log('[EditCoupon] Coupon response:', response);
+        
+        if (!response.success || !response.data?.coupon) {
+          throw new Error('Error al obtener el cupón');
+        }
+
+        const coupon = response.data.coupon;
+        setOriginalCoupon(coupon);
+
+        // Populate form
+        setFormData({
+          code: coupon.code || '',
+          name: coupon.name || '',
+          description: coupon.description || '',
+          type: coupon.type || 'percentage',
+          is_active: coupon.is_active ?? true,
+          is_public: coupon.is_public ?? true,
+          is_single_use: coupon.is_single_use ?? false,
+          usage_limit: coupon.usage_limit ? String(coupon.usage_limit) : '',
+          usage_limit_per_user: coupon.usage_limit_per_user ? String(coupon.usage_limit_per_user) : '',
+          min_purchase_amount: coupon.min_purchase_amount ? String(coupon.min_purchase_amount) : '',
+          discount_percentage: coupon.discount_percentage ? String(coupon.discount_percentage) : '',
+          discount_amount: coupon.discount_amount ? String(coupon.discount_amount) : '',
+          buy_quantity: coupon.buy_quantity ? String(coupon.buy_quantity) : '',
+          get_quantity: coupon.get_quantity ? String(coupon.get_quantity) : '',
+          item_id: coupon.item_id ? String(coupon.item_id) : ''
+        });
+
+        setDate({
+          from: coupon.starts_at ? new Date(coupon.starts_at) : new Date(),
+          to: coupon.expires_at ? new Date(coupon.expires_at) : undefined
+        });
+
+        // Load assigned users if not public
+        if (!coupon.is_public && coupon.user_assignments) {
+          const assignedIds = coupon.user_assignments.map((ua: any) => ua.customer_id || ua.user_id);
+          setSelectedRecipients(assignedIds);
+        }
+      } catch (error) {
+        console.error('Error fetching coupon:', error);
+        toast({
+          title: 'Error',
+          description: error instanceof Error ? error.message : 'Error al cargar el cupón',
+          variant: 'destructive',
+        });
+        router.push('/dashboard/cupones');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCoupon();
+  }, [id, token, router, toast]);
+
+  // Load followers on component mount
+  useEffect(() => {
+    const loadFollowers = async () => {
+      if (!token) return;
+      
+      try {
+        setFollowersLoading(true);
+        
+        // Get companyId
+        let cid = resolvedCompanyId;
+        if (!cid) {
+          const companyResponse = await api.userCompanies.get(token);
+          if (companyResponse.success && companyResponse.data) {
+            const data = companyResponse.data;
+            cid = String(
+              data.id || 
+              data.company_id || 
+              data.company?.id || 
+              data.data?.id ||
+              ''
+            );
+            if (cid && cid !== 'undefined') {
+              setResolvedCompanyId(cid);
+            }
+          }
+        }
+        
+        if (!cid) {
+          console.error('No se pudo obtener el ID de la compañía');
+          return;
+        }
+
+        const res = await api.companies.listFollowers(cid, token, { per_page: 100 });
+        
+        // Normalize different possible response shapes
+        let raw: any[] = [];
+        const d = res.data;
+        if (d?.followers && Array.isArray(d.followers)) {
+          raw = d.followers;
+        } else if (d?.data?.data && Array.isArray(d.data.data)) {
+          raw = d.data.data;
+        } else if (d?.data && Array.isArray(d.data)) {
+          raw = d.data;
+        } else if (Array.isArray(d)) {
+          raw = d;
+        }
+
+        const mapped = raw.map((f: any) => ({
+          customer_id: f.customer_id ?? f.id,
+          customer_name: f.customer_name ?? f.name ?? '',
+          customer_email: f.customer_email ?? f.email ?? '',
+          customer_fcm_token: f.customer_fcm_token ?? f.fcm_token ?? null,
+          has_active_membership: Number(f.has_active_membership ?? 0),
+          membership_plan_name: f.membership_plan_name ?? null,
+        }));
+        
+        setFollowers(mapped);
+      } catch (error) {
+        console.error('Error loading followers:', error);
+      } finally {
+        setFollowersLoading(false);
+      }
+    };
+
+    loadFollowers();
+  }, [token, resolvedCompanyId]);
+
+  const generateRandomCode = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let result = '';
+    for (let i = 0; i < 8; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setFormData(prev => ({
+      ...prev,
+      code: result
+    }));
+  };
+
+  const toggleRecipient = (customerId: number) => {
+    setSelectedRecipients(prev =>
+      prev.includes(customerId)
+        ? prev.filter(id => id !== customerId)
+        : [...prev, customerId]
+    );
+  };
+
+  const selectAll = () => {
+    setSelectedRecipients(filteredFollowers.map(f => f.customer_id));
+  };
+
+  const deselectAll = () => {
+    setSelectedRecipients([]);
+  };
+
+  // Load products when needed for free_item type
+  useEffect(() => {
+    const loadProducts = async () => {
+      if (!token) return;
+      if (formData.type !== 'free_item') return;
+
+      try {
+        setProductsLoading(true);
+        let cid = resolvedCompanyId;
+        if (!cid) {
+          const companyResponse = await api.userCompanies.get(token);
+          if (companyResponse.success && companyResponse.data) {
+            const data = companyResponse.data;
+            cid = String(
+              data.id ||
+              data.company_id ||
+              data.company?.id ||
+              data.data?.id ||
+              ''
+            );
+            if (cid && cid !== 'undefined') setResolvedCompanyId(cid);
+          }
+        }
+        if (!cid) return;
+
+        const resp = await getProducts(cid, token, { page: 1, per_page: 100 });
+        const payload: any = resp?.data;
+        const normalized: Product[] = Array.isArray(payload?.data)
+          ? payload.data
+          : Array.isArray(payload?.products)
+            ? payload.products
+            : Array.isArray(payload)
+              ? payload
+              : Array.isArray(payload?.data?.products)
+                ? payload.data.products
+                : [];
+        setProducts(normalized);
+      } catch (e) {
+        console.error('[EditCoupon] Error loading products:', e);
+        setProducts([]);
+      } finally {
+        setProductsLoading(false);
+      }
+    };
+
+    loadProducts();
+  }, [formData.type, token, resolvedCompanyId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
     
     try {
-      // TODO: Replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      if (!token || !id) {
+        throw new Error('No se encontró el token de autenticación');
+      }
+
+      const companyResponse = await api.userCompanies.get(token);
+      console.log('[EditCoupon] Company response:', companyResponse);
       
-      console.log('Updating coupon:', {
-        ...formData,
-        validFrom: date?.from.toISOString(),
-        validUntil: date?.to?.toISOString(),
+      if (!companyResponse.success || !companyResponse.data?.data?.id) {
+        throw new Error('Error al obtener datos de la compañía');
+      }
+
+      const companyId = companyResponse.data.data.id;
+
+      // Build update payload
+      const payload: any = {
+        code: formData.code,
+        name: formData.name,
+        description: formData.description,
+        type: formData.type,
+        is_active: formData.is_active,
+        is_public: formData.is_public,
+        is_single_use: formData.is_single_use,
+        starts_at: date?.from?.toISOString() || new Date().toISOString(),
+        expires_at: date?.to?.toISOString() || null,
+      };
+
+      // Add optional numeric fields
+      if (formData.usage_limit) {
+        payload.usage_limit = parseInt(formData.usage_limit);
+      }
+      if (formData.usage_limit_per_user) {
+        payload.usage_limit_per_user = parseInt(formData.usage_limit_per_user);
+      }
+      if (formData.min_purchase_amount) {
+        payload.min_purchase_amount = parseFloat(formData.min_purchase_amount);
+      }
+
+      // Add type-specific fields
+      if (formData.type === 'percentage' && formData.discount_percentage) {
+        payload.discount_percentage = parseFloat(formData.discount_percentage);
+      }
+      if (formData.type === 'fixed_amount' && formData.discount_amount) {
+        payload.discount_amount = parseFloat(formData.discount_amount);
+      }
+      if (formData.type === 'buy_x_get_y') {
+        if (formData.buy_quantity) payload.buy_quantity = parseInt(formData.buy_quantity);
+        if (formData.get_quantity) payload.get_quantity = parseInt(formData.get_quantity);
+        if (formData.item_id) payload.item_id = formData.item_id;
+      }
+      if (formData.type === 'free_item' && formData.item_id) {
+        payload.item_id = formData.item_id;
+      }
+
+      // Add user_ids if there are selected recipients
+      if (!formData.is_public && selectedRecipients.length > 0) {
+        payload.user_ids = selectedRecipients;
+      }
+
+      console.log('[EditCoupon] Payload to send:', JSON.stringify(payload, null, 2));
+
+      const response = await api.coupons.updateCoupon(
+        companyId,
+        id as string,
+        payload,
+        token
+      );
+
+      console.log('[EditCoupon] Update response:', response);
+
+      if (!response.success) {
+        throw new Error(response.error || 'Error al actualizar el cupón');
+      }
+
+      toast({
+        title: 'Cupón actualizado',
+        description: 'El cupón se ha actualizado correctamente',
       });
       
-      // Redirect to coupons list after update
       router.push('/dashboard/cupones');
     } catch (error) {
       console.error('Error updating coupon:', error);
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Error al actualizar el cupón',
+        variant: 'destructive',
+      });
     } finally {
       setIsSaving(false);
     }
   };
 
   const getStatusBadge = () => {
-    if (!date?.to) return null;
+    if (!date?.from) return null;
     
     const now = new Date();
-    const validUntil = new Date(date.to);
+    const startsAt = new Date(date.from);
+    const expiresAt = date.to ? new Date(date.to) : null;
     
-    if (now > validUntil) {
+    if (!formData.is_active) {
+      return <Badge variant="outline">Inactivo</Badge>;
+    }
+    if (startsAt > now) {
+      return <Badge className="bg-blue-100 text-blue-800">Programado</Badge>;
+    }
+    if (expiresAt && now > expiresAt) {
       return <Badge variant="outline">Expirado</Badge>;
     }
     
-    if (now < new Date(formData.validFrom)) {
-      return <Badge className="bg-blue-100 text-blue-800">Programado</Badge>;
-    }
-    
-    return formData.isActive 
-      ? <Badge className="bg-green-100 text-green-800">Activo</Badge>
-      : <Badge variant="outline">Inactivo</Badge>;
+    return <Badge className="bg-green-100 text-green-800">Activo</Badge>;
   };
 
   if (isLoading) {
