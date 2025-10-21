@@ -58,13 +58,17 @@ export function CustomerSearch({ onSelect, onClear, selectedCustomer }: Customer
             customer_name: string;
             customer_email: string;
             customer_phone?: string;
-          }) => ({
-            id: follower.customer_id.toString(),
-            name: follower.customer_name,
-            email: follower.customer_email,
-            phone: follower.customer_phone,
-            points: 0,
-          }));
+            points_balance: number;
+          }) => {
+            console.log('🟠 Mapping follower:', follower.customer_name, 'with points_balance:', follower.points_balance);
+            return {
+              id: follower.customer_id.toString(),
+              name: follower.customer_name,
+              email: follower.customer_email,
+              phone: follower.customer_phone,
+              points: follower.points_balance,
+            };
+          });
           console.log('CustomerSearch: Mapped customers:', mappedCustomers);
           setAllFollowers(mappedCustomers);
           setCustomers(mappedCustomers);
@@ -96,6 +100,8 @@ export function CustomerSearch({ onSelect, onClear, selectedCustomer }: Customer
   }, [searchQuery, allFollowers]);
 
   const handleSelect = (customer: Customer) => {
+    console.log('🟠 CustomerSearch: Customer selected:', customer);
+    console.log('🟠 CustomerSearch: Customer points:', customer.points);
     onSelect(customer);
     setIsOpen(false);
     setSearchQuery('');

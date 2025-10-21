@@ -29,6 +29,25 @@ interface CustomerPoints {
   newTotal: number;
 }
 
+interface FollowerData {
+  company_id: number;
+  customer_id: number;
+  customer_name: string;
+  customer_email: string;
+  customer_fcm_token?: string;
+  customer_profile_photo_path?: string;
+  customer_since: string;
+  following_since: string;
+  points_balance: number;
+  total_points_earned: number;
+  total_points_spent: number;
+  membership_id: number | null;
+  membership_name: string | null;
+  membership_description: string | null;
+  membership_price: string | null;
+  has_active_membership: number;
+}
+
 interface PaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -70,6 +89,17 @@ export function PaymentModal({ isOpen, onClose, total, onPaymentComplete }: Paym
   const [discountedTotal, setDiscountedTotal] = useState(total);
   const [couponCode, setCouponCode] = useState('');
   const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
+  const [customerPointsBalance, setCustomerPointsBalance] = useState<number | null>(null);
+  const [isLoadingPoints, setIsLoadingPoints] = useState(false);
+
+  // Debug: Log customer state changes
+  useEffect(() => {
+    console.log('🟡 Customer state changed:', customer);
+    if (customer) {
+      console.log('🟡 Customer points:', customer.points);
+      console.log('🟡 Customer points balance:', customerPointsBalance);
+    }
+  }, [customer, customerPointsBalance]);
 
   // Fetch point rules when component mounts
   useEffect(() => {
@@ -299,20 +329,60 @@ export function PaymentModal({ isOpen, onClose, total, onPaymentComplete }: Paym
     });
   }, [total]);
 
-  const handleCustomerSelected = (selectedCustomer: Customer) => {
+  const handleCustomerSelected = async (selectedCustomer: Customer) => {
+    console.log('🔵 PaymentModal: handleCustomerSelected called');
+    console.log('🔵 Selected customer:', selectedCustomer);
+    console.log('🔵 Customer points:', selectedCustomer.points);
+    
     setCustomer(selectedCustomer);
+    setCustomerPointsBalance(selectedCustomer.points);
     const points = calculatePoints(total);
     setPointsEarned(points);
+    
+    console.log('🔵 Customer state set with points:', selectedCustomer.points);
+    console.log('🔵 Points to be earned:', points);
     
     toast({
       title: 'Cliente seleccionado',
       description: `${selectedCustomer.name} - ${selectedCustomer.points} puntos actuales. Ganará ${points.toFixed(1)} puntos`,
     });
+    
+    // Optionally fetch fresh data in the background
+    if (token) {
+      setIsLoadingPoints(true);
+      console.log('🔵 Fetching fresh customer data from API...');
+      try {
+        const response = await api.userCompanies.getFollowers(token);
+        console.log('🔵 API Response:', response);
+        if (response.success && response.data?.followers) {
+          const follower = response.data.followers.find(
+            (f: FollowerData) => f.customer_id === parseInt(selectedCustomer.id)
+          );
+          console.log('🔵 Found follower:', follower);
+          if (follower && follower.points_balance !== selectedCustomer.points) {
+            console.log('🔵 Updating points from', selectedCustomer.points, 'to', follower.points_balance);
+            setCustomerPointsBalance(follower.points_balance);
+            // Update the customer object with fresh points
+            setCustomer({
+              ...selectedCustomer,
+              points: follower.points_balance
+            });
+          } else {
+            console.log('🔵 Points are already up to date or follower not found');
+          }
+        }
+      } catch (error) {
+        console.error('🔴 Error fetching customer points:', error);
+      } finally {
+        setIsLoadingPoints(false);
+      }
+    }
   };
 
   const handleCustomerCleared = () => {
     setCustomer(null);
     setPointsEarned(0);
+    setCustomerPointsBalance(null);
   };
 
   const handleQRScanned = async (customerId: string) => {
@@ -539,11 +609,22 @@ export function PaymentModal({ isOpen, onClose, total, onPaymentComplete }: Paym
                 </div>
                 <div className="text-right">
                   <p className="text-sm text-green-700 dark:text-green-300">
-                    Puntos actuales: {customer.points}
+                    Puntos actuales: {isLoadingPoints ? (
+                      <span className="inline-block animate-pulse">...</span>
+                    ) : (
+                      <span className="font-bold">
+                        {customerPointsBalance !== null ? customerPointsBalance : customer.points}
+                      </span>
+                    )}
                   </p>
                   <p className="text-sm font-semibold text-green-600 dark:text-green-400">
                     Ganará: +{pointsEarned.toFixed(1)} pts
                   </p>
+                  {customerPointsBalance !== null && (
+                    <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                      Total después: {(customerPointsBalance + pointsEarned).toFixed(1)} pts
+                    </p>
+                  )}
                 </div>
               </div>
             </div>

@@ -212,8 +212,13 @@ export const api = {
         customer_name: string;
         customer_email: string;
         customer_phone?: string;
+        customer_fcm_token?: string;
+        customer_profile_photo_path?: string;
         customer_since: string;
         following_since: string;
+        points_balance: number;
+        total_points_earned: number;
+        total_points_spent: number;
         membership_id: number | null;
         membership_name: string | null;
         membership_description: string | null;
