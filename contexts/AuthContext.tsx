@@ -37,11 +37,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.log('getProfile response on load:', response); // Debug log
           if (response.success && response.data?.user) {
             const { user: profileUser, company_id: profileCompanyId } = response.data;
+
+            let derivedCompanyId: number | string | undefined = profileCompanyId;
+
+            // Fallback: fetch company if company_id is missing
+            if (!derivedCompanyId) {
+              try {
+                console.log('[Auth] company_id missing from profile, fetching /auth/profile/company');
+                const companyRes = await api.userCompanies.get(token);
+                console.log('[Auth] /auth/profile/company response:', companyRes);
+                // Try common shapes
+                const cData = companyRes.data;
+                if (cData) {
+                  // Typical shape: { status, data: { id, ... } }
+                  if (cData.data && typeof cData.data.id !== 'undefined') derivedCompanyId = cData.data.id;
+                  else if (typeof cData.id !== 'undefined') derivedCompanyId = cData.id;
+                  else if (cData.company && typeof cData.company.id !== 'undefined') derivedCompanyId = cData.company.id;
+                }
+                console.log('[Auth] derivedCompanyId:', derivedCompanyId);
+              } catch (e) {
+                console.warn('[Auth] Failed to fetch company profile for company_id', e);
+              }
+            }
+
             setUser({
               firebase_uid: profileUser.firebase_uid || profileUser.id.toString(),
               firebase_email: profileUser.email,
               firebase_name: profileUser.name,
-              company_id: profileCompanyId || undefined,
+              company_id: derivedCompanyId !== undefined && derivedCompanyId !== null
+                ? String(derivedCompanyId)
+                : undefined,
             });
           } else {
             // If we can't get user data with the token, clear it
@@ -145,6 +170,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout,
       loading,
       isAuthenticated: !!token && !!user,
+      isEmployee,
     }}>
       {!loading && children}
     </AuthContext.Provider>

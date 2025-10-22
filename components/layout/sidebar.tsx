@@ -36,6 +36,9 @@ const adminSidebarItems = [
   { icon: Users, label: "Clientes", href: "/dashboard/clientes" },
   { icon: CrownIcon, label: "Membresías", href: "/dashboard/membresias" },
   { icon: TicketIcon, label: "Cupones", href: "/dashboard/cupones" },
+  
+  // Orders
+  { icon: Clock4, label: "Órdenes Pendientes", href: "/dashboard/ordenes-pendientes" },
  
   // Communication & Feedback
   { icon: MessageSquare, label: "Comentarios", href: "/dashboard/comentarios" },
