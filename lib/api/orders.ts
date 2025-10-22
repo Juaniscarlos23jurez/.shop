@@ -88,6 +88,7 @@ export const ordersApi = {
 
   /**
    * Update order status
+   * PATCH /api/companies/{companyId}/orders/{orderId}/status
    */
   async updateOrderStatus(
     companyId: string,
@@ -95,8 +96,8 @@ export const ordersApi = {
     status: string,
     token: string
   ): Promise<ApiResponse<any>> {
-    const response = await fetch(`${BASE_URL}/api/companies/${companyId}/orders/${orderId}`, {
-      method: 'PUT',
+    const response = await fetch(`${BASE_URL}/api/companies/${companyId}/orders/${orderId}/status`, {
+      method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -108,6 +109,38 @@ export const ordersApi = {
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.message || 'Failed to update order status');
+    }
+
+    return response.json();
+  },
+
+  /**
+   * Update payment status
+   * PATCH /api/companies/{companyId}/orders/{orderId}/payment-status
+   */
+  async updatePaymentStatus(
+    companyId: string,
+    orderId: string | number,
+    payment_status: string,
+    payment_reference?: string,
+    token?: string
+  ): Promise<ApiResponse<any>> {
+    const response = await fetch(`${BASE_URL}/api/companies/${companyId}/orders/${orderId}/payment-status`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        payment_status,
+        ...(payment_reference && { payment_reference })
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to update payment status');
     }
 
     return response.json();
@@ -151,6 +184,28 @@ export const ordersApi = {
 
     if (!response.ok) {
       throw new Error('Failed to fetch orders');
+    }
+
+    return response.json();
+  },
+
+  /**
+   * Get order statistics
+   * GET /api/companies/{companyId}/orders/statistics
+   */
+  async getOrderStatistics(
+    companyId: string,
+    token: string
+  ): Promise<ApiResponse<any>> {
+    const response = await fetch(`${BASE_URL}/api/companies/${companyId}/orders/statistics`, {
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch order statistics');
     }
 
     return response.json();
