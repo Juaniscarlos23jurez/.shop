@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Search, Plus, Minus, ShoppingCart } from 'lucide-react';
 import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/api/api";
+import { ordersApi } from "@/lib/api/orders";
 import { PaymentModal } from "@/components/pos/PaymentModal";
 import { Product } from "@/types/api";
 import { useToast } from "@/hooks/use-toast";
@@ -21,7 +22,7 @@ interface CartItem extends Product {
 }
 
 interface Order {
-  id: string;
+  id: string | number;
   items: Array<{
     id: number;
     name: string;
@@ -29,11 +30,34 @@ interface Order {
     quantity: number;
   }>;
   total: number;
-  status: 'pending' | 'completed' | 'cancelled';
+  status: 'pending' | 'accepted' | 'preparing' | 'ready' | 'completed' | 'cancelled';
   description: string;
   createdAt: string;
   customerId?: string;
   pointsEarned?: number;
+}
+
+interface AcceptedOrder {
+  id: number;
+  status: string;
+  total: string;
+  created_at: string;
+  items: Array<{
+    id: number;
+    product_id: number;
+    quantity: number;
+    unit_price: string;
+    product: {
+      id: number;
+      name: string;
+      price: string;
+    };
+  }>;
+  user: {
+    id: number;
+    name: string;
+    email: string;
+  };
 }
 
 export default function PuntoVentaPage() {
@@ -51,6 +75,12 @@ export default function PuntoVentaPage() {
   const [orderDescription, setOrderDescription] = useState('');
   const companyId = '1'; // ID de la compañía como string
   const [locationId, setLocationId] = useState<string | number | null>(null);
+  const [acceptedOrders, setAcceptedOrders] = useState<AcceptedOrder[]>([]);
+  const [preparingOrders, setPreparingOrders] = useState<AcceptedOrder[]>([]);
+  const [readyOrders, setReadyOrders] = useState<AcceptedOrder[]>([]);
+  const [loadingOrders, setLoadingOrders] = useState(false);
+  const [updatingOrderId, setUpdatingOrderId] = useState<number | null>(null);
+  const [activeOrderTab, setActiveOrderTab] = useState<'accepted' | 'preparing' | 'ready'>('accepted');
 
   // Cargar órdenes pendientes del localStorage
   useEffect(() => {
@@ -116,6 +146,50 @@ export default function PuntoVentaPage() {
       }
     };
     fetchLocations();
+  }, [token]);
+
+  // Cargar órdenes en progreso (accepted, preparing, ready)
+  const fetchOrdersInProgress = async () => {
+    if (!token) return;
+    try {
+      setLoadingOrders(true);
+      console.log('[POS] Fetching orders in progress');
+      
+      const statuses = ['accepted', 'preparing', 'ready'];
+      
+      for (const status of statuses) {
+        try {
+          const response = await ordersApi.getAllOrders(companyId, token, {
+            status,
+            per_page: 50
+          });
+          console.log(`[POS] ${status} orders response:`, response);
+          
+          if (response.success && response.data) {
+            const ordersData = response.data.data || response.data;
+            const orders = Array.isArray(ordersData) ? ordersData : [];
+            
+            if (status === 'accepted') setAcceptedOrders(orders);
+            if (status === 'preparing') setPreparingOrders(orders);
+            if (status === 'ready') setReadyOrders(orders);
+          }
+        } catch (error) {
+          console.error(`[POS] Error fetching ${status} orders:`, error);
+        }
+      }
+    } finally {
+      setLoadingOrders(false);
+    }
+  };
+
+  // Cargar órdenes en progreso al montar
+  useEffect(() => {
+    if (token) {
+      fetchOrdersInProgress();
+      // Recargar cada 10 segundos
+      const interval = setInterval(fetchOrdersInProgress, 10000);
+      return () => clearInterval(interval);
+    }
   }, [token]);
 
   const addToCart = (product: Product) => {
@@ -315,6 +389,60 @@ export default function PuntoVentaPage() {
     setCart([]);
   };
 
+  const handleUpdateOrderStatus = async (orderId: number, newStatus: string) => {
+    if (!token) return;
+    try {
+      setUpdatingOrderId(orderId);
+      console.log('[POS] Updating order status:', { orderId, newStatus });
+      await ordersApi.updateOrderStatus(companyId, orderId, newStatus, token);
+      
+      // Actualizar lista local
+      setAcceptedOrders(acceptedOrders.map(order =>
+        order.id === orderId ? { ...order, status: newStatus } : order
+      ));
+      
+      // Si se completó, remover de la lista
+      if (newStatus === 'completed') {
+        setAcceptedOrders(acceptedOrders.filter(order => order.id !== orderId));
+      }
+      
+      toast({
+        title: 'Éxito',
+        description: `Orden #${orderId} actualizada a ${newStatus}`,
+        variant: 'default'
+      });
+    } catch (error) {
+      console.error('[POS] Error updating order status:', error);
+      toast({
+        title: 'Error',
+        description: 'No se pudo actualizar la orden',
+        variant: 'destructive'
+      });
+    } finally {
+      setUpdatingOrderId(null);
+    }
+  };
+
+  const getStatusColor = (status: string): string => {
+    const colors: Record<string, string> = {
+      accepted: 'bg-blue-100 text-blue-800',
+      preparing: 'bg-purple-100 text-purple-800',
+      ready: 'bg-green-100 text-green-800',
+      completed: 'bg-emerald-100 text-emerald-800',
+    };
+    return colors[status] || 'bg-gray-100 text-gray-800';
+  };
+
+  const getStatusLabel = (status: string): string => {
+    const labels: Record<string, string> = {
+      accepted: 'Aceptada',
+      preparing: 'Preparando',
+      ready: 'Lista',
+      completed: 'Completada',
+    };
+    return labels[status] || status;
+  };
+
   return (
     <>
       <div className="space-y-6">
@@ -474,6 +602,177 @@ export default function PuntoVentaPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Órdenes en Progreso - Con Tabs */}
+        {(acceptedOrders.length > 0 || preparingOrders.length > 0 || readyOrders.length > 0) && (
+          <Card className="border-2 border-blue-200 bg-blue-50">
+            <CardHeader>
+              <CardTitle className="text-blue-900">Órdenes en Preparación</CardTitle>
+            </CardHeader>
+            
+            {/* Tabs */}
+            <div className="px-6 flex gap-2 border-b">
+              <button
+                onClick={() => setActiveOrderTab('accepted')}
+                className={`px-4 py-2 font-medium transition-colors ${
+                  activeOrderTab === 'accepted'
+                    ? 'text-blue-600 border-b-2 border-blue-600'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Aceptadas ({acceptedOrders.length})
+              </button>
+              <button
+                onClick={() => setActiveOrderTab('preparing')}
+                className={`px-4 py-2 font-medium transition-colors ${
+                  activeOrderTab === 'preparing'
+                    ? 'text-purple-600 border-b-2 border-purple-600'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Preparando ({preparingOrders.length})
+              </button>
+              <button
+                onClick={() => setActiveOrderTab('ready')}
+                className={`px-4 py-2 font-medium transition-colors ${
+                  activeOrderTab === 'ready'
+                    ? 'text-green-600 border-b-2 border-green-600'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Listas ({readyOrders.length})
+              </button>
+            </div>
+
+            <CardContent className="pt-6">
+              {activeOrderTab === 'accepted' && acceptedOrders.length === 0 && (
+                <div className="text-center py-8 text-slate-500">
+                  <p>No hay órdenes aceptadas</p>
+                </div>
+              )}
+              {activeOrderTab === 'preparing' && preparingOrders.length === 0 && (
+                <div className="text-center py-8 text-slate-500">
+                  <p>No hay órdenes en preparación</p>
+                </div>
+              )}
+              {activeOrderTab === 'ready' && readyOrders.length === 0 && (
+                <div className="text-center py-8 text-slate-500">
+                  <p>No hay órdenes listas</p>
+                </div>
+              )}
+              
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {(activeOrderTab === 'accepted' ? acceptedOrders : activeOrderTab === 'preparing' ? preparingOrders : readyOrders).map((order) => {
+                  const statusSteps = ['accepted', 'preparing', 'ready', 'completed'];
+                  const currentStepIndex = statusSteps.indexOf(order.status);
+                  const progressPercent = ((currentStepIndex + 1) / statusSteps.length) * 100;
+
+                  return (
+                    <div key={order.id} className="border rounded-lg p-4 bg-white shadow-sm hover:shadow-md transition-shadow">
+                      {/* Header */}
+                      <div className="mb-4">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <h3 className="font-bold text-lg">Orden #{order.id}</h3>
+                            <p className="text-xs text-slate-500">{new Date(order.created_at).toLocaleTimeString()}</p>
+                          </div>
+                          <span className={`px-2 py-1 rounded text-xs font-semibold ${getStatusColor(order.status)}`}>
+                            {getStatusLabel(order.status)}
+                          </span>
+                        </div>
+                        <p className="text-sm text-slate-600">Cliente: {order.user.name}</p>
+                      </div>
+
+                      {/* Items */}
+                      <div className="mb-4 pb-4 border-b">
+                        <p className="text-xs text-slate-500 mb-2 font-semibold">PRODUCTOS:</p>
+                        <div className="space-y-1">
+                          {order.items.map((item) => (
+                            <div key={item.id} className="text-sm flex justify-between">
+                              <span className="text-slate-700">{item.product.name}</span>
+                              <span className="text-slate-600">x{item.quantity}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Progress Bar */}
+                      <div className="mb-4">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-xs font-semibold text-slate-700">Progreso</span>
+                          <span className="text-xs text-slate-500">{Math.round(progressPercent)}%</span>
+                        </div>
+                        <div className="w-full bg-slate-200 rounded-full h-2">
+                          <div 
+                            className="bg-emerald-500 h-2 rounded-full transition-all duration-300"
+                            style={{ width: `${progressPercent}%` }}
+                          />
+                        </div>
+                        <div className="flex justify-between mt-2 text-xs text-slate-600">
+                          <span>Aceptada</span>
+                          <span>Preparando</span>
+                          <span>Lista</span>
+                          <span>Completada</span>
+                        </div>
+                      </div>
+
+                      {/* Total */}
+                      <div className="mb-4 pb-4 border-b">
+                        <div className="flex justify-between">
+                          <span className="text-sm font-semibold text-slate-700">Total:</span>
+                          <span className="text-sm font-bold text-emerald-600">${parseFloat(order.total).toFixed(2)}</span>
+                        </div>
+                      </div>
+
+                      {/* Status Buttons */}
+                      <div className="space-y-2">
+                        {order.status !== 'completed' && (
+                          <>
+                            {order.status === 'accepted' && (
+                              <Button
+                                onClick={() => handleUpdateOrderStatus(order.id, 'preparing')}
+                                disabled={updatingOrderId === order.id}
+                                className="w-full bg-purple-500 hover:bg-purple-600 text-white"
+                                size="sm"
+                              >
+                                {updatingOrderId === order.id ? 'Actualizando...' : 'Comenzar a Preparar'}
+                              </Button>
+                            )}
+                            {order.status === 'preparing' && (
+                              <Button
+                                onClick={() => handleUpdateOrderStatus(order.id, 'ready')}
+                                disabled={updatingOrderId === order.id}
+                                className="w-full bg-green-500 hover:bg-green-600 text-white"
+                                size="sm"
+                              >
+                                {updatingOrderId === order.id ? 'Actualizando...' : 'Marcar como Lista'}
+                              </Button>
+                            )}
+                            {order.status === 'ready' && (
+                              <Button
+                                onClick={() => handleUpdateOrderStatus(order.id, 'completed')}
+                                disabled={updatingOrderId === order.id}
+                                className="w-full bg-emerald-500 hover:bg-emerald-600 text-white"
+                                size="sm"
+                              >
+                                {updatingOrderId === order.id ? 'Completando...' : 'Completar Orden'}
+                              </Button>
+                            )}
+                          </>
+                        )}
+                        {order.status === 'completed' && (
+                          <div className="text-center py-2 bg-emerald-50 rounded text-emerald-700 text-sm font-semibold">
+                            ✓ Orden Completada
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Órdenes Pendientes */}
         {pendingOrders.length > 0 && (
