@@ -62,7 +62,7 @@ interface AcceptedOrder {
 
 export default function PuntoVentaPage() {
   const { toast } = useToast();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const authToken = token || ''; // Ensure token is always a string
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -73,7 +73,8 @@ export default function PuntoVentaPage() {
   const [pendingOrders, setPendingOrders] = useState<Order[]>([]);
   const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
   const [orderDescription, setOrderDescription] = useState('');
-  const companyId = '1'; // ID de la compañía como string
+  // Obtener el companyId real del usuario autenticado
+  const companyId = user?.company_id;
   const [locationId, setLocationId] = useState<string | number | null>(null);
   const [acceptedOrders, setAcceptedOrders] = useState<AcceptedOrder[]>([]);
   const [preparingOrders, setPreparingOrders] = useState<AcceptedOrder[]>([]);
@@ -94,6 +95,9 @@ export default function PuntoVentaPage() {
     const fetchProducts = async () => {
       try {
         setLoading(true);
+        if (!token || !companyId) {
+          return;
+        }
         const response = await api.products.getProducts(companyId, token || '', 1, 100);
         if (response?.data) {
           // Normalizar diferentes formas de respuesta para asegurar un array
@@ -118,10 +122,13 @@ export default function PuntoVentaPage() {
       }
     };
 
-    if (token) {
+    if (token && companyId) {
       fetchProducts();
+    } else {
+      // Evitar spinner infinito si aún no tenemos credenciales completas
+      setLoading(false);
     }
-  }, [token]);
+  }, [token, companyId]);
 
   // Cargar ubicación (location_id) por defecto
   useEffect(() => {
@@ -150,7 +157,7 @@ export default function PuntoVentaPage() {
 
   // Cargar órdenes en progreso (accepted, preparing, ready)
   const fetchOrdersInProgress = async () => {
-    if (!token) return;
+    if (!token || !companyId) return;
     try {
       setLoadingOrders(true);
       console.log('[POS] Fetching orders in progress');
@@ -184,13 +191,13 @@ export default function PuntoVentaPage() {
 
   // Cargar órdenes en progreso al montar
   useEffect(() => {
-    if (token) {
+    if (token && companyId) {
       fetchOrdersInProgress();
       // Recargar cada 10 segundos
       const interval = setInterval(fetchOrdersInProgress, 10000);
       return () => clearInterval(interval);
     }
-  }, [token]);
+  }, [token, companyId]);
 
   const addToCart = (product: Product) => {
     setCart(prevCart => {
@@ -390,7 +397,7 @@ export default function PuntoVentaPage() {
   };
 
   const handleUpdateOrderStatus = async (orderId: number, newStatus: string) => {
-    if (!token) return;
+    if (!token || !companyId) return;
     try {
       setUpdatingOrderId(orderId);
       console.log('[POS] Updating order status:', { orderId, newStatus });

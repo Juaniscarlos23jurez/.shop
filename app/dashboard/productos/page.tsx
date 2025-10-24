@@ -35,10 +35,9 @@ const ProductTypeBadge = ({ type }: { type: string }) => {
 };
 
 export default function ProductosPage() {
-  const { token } = useAuth();
-  // For now, we'll use a placeholder company ID
-  // In a real app, this would come from the user's auth context
-  const companyId = '1';
+  const { token, user } = useAuth();
+  // Obtener companyId real desde el contexto de autenticación
+  const companyId = user?.company_id;
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -106,6 +105,9 @@ export default function ProductosPage() {
   useEffect(() => {
     if (token && companyId) {
       fetchProducts(currentPage, productType !== 'all' ? productType : 'all');
+    } else {
+      // Evitar spinner infinito cuando no hay companyId/token aún
+      setLoading(false);
     }
   }, [token, companyId, currentPage, productType]);
 
