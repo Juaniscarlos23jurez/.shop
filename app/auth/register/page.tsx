@@ -1,6 +1,6 @@
 'use client';
 
-import { AuthForm } from "@/components/auth/auth-form";
+import { RegisterForm, RegisterFormValues } from "@/components/auth/register-form";
 import { registerUser } from "@/lib/api/auth";
 import { routes } from "@/lib/routes/web";
 import { useRouter } from "next/navigation";
@@ -8,9 +8,15 @@ import { useRouter } from "next/navigation";
 export default function RegisterPage() {
   const router = useRouter();
 
-  const handleRegister = async (email: string, password: string) => {
+  const handleRegister = async ({ name, email, password, password_confirmation, phone }: RegisterFormValues) => {
     try {
-      const { user, error } = await registerUser(email, password);
+      const { user, error } = await registerUser(
+        name,
+        email,
+        password,
+        password_confirmation,
+        phone
+      );
       if (error) {
         console.error('Error registering:', error);
         return;
@@ -23,11 +29,7 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center">
-      <AuthForm
-        onSubmit={handleRegister}
-        title="Register"
-        buttonText="Sign Up"
-      />
+      <RegisterForm onSubmit={handleRegister} />
     </div>
   );
 }

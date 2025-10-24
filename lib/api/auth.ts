@@ -1,4 +1,5 @@
 import { api } from './api';
+import type { ProfileApiUser } from '@/types/api';
 
 export interface User {
   id: string;
@@ -45,9 +46,21 @@ export const loginUser = async (email: string, password: string) => {
   }
 };
 
-export const registerUser = async (name: string, email: string, password: string, phone?: string) => {
+export const registerUser = async (
+  name: string,
+  email: string,
+  password: string,
+  password_confirmation: string,
+  phone?: string
+) => {
   try {
-    const response = await api.auth.register(name, email, password, phone);
+    const response = await api.auth.register(
+      name,
+      email,
+      password,
+      password_confirmation,
+      phone
+    );
     if (response.success && response.data) {
       return { 
         user: response.data.user, 
@@ -76,7 +89,7 @@ export const logoutUser = async (token: string) => {
   }
 };
 
-export const getCurrentUser = async (token: string): Promise<User | null> => {
+export const getCurrentUser = async (token: string): Promise<ProfileApiUser | null> => {
   try {
     const response = await api.auth.getProfile(token);
     return response.success ? response.data?.user || null : null;
