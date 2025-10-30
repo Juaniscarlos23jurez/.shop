@@ -3,7 +3,8 @@
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import Link from "next/link"
-import { Inter } from 'next/font/google'
+ import Image from "next/image"
+ import { Inter } from 'next/font/google'
 
 const inter = Inter({ subsets: ['latin'] })
 // Contact lead-gen links (override via NEXT_PUBLIC_* envs)
@@ -49,6 +50,15 @@ export default function HomePage() {
       title: "Analíticas",
       description: "Mide el rendimiento de tu programa de fidelización con estadísticas en tiempo real."
     }
+  ]
+
+  // Screenshots/Galería de la app (ubicadas en `public/`)
+  const appScreens = [
+    "/position1.png",
+    "/position2.png",
+    "/position3.png",
+    "/position4.png",
+    "/position5.png"
   ]
 
   return (
@@ -146,6 +156,39 @@ export default function HomePage() {
                 </div>
               </div>
             </div>
+          </div>
+          <div className="text-center mt-6 md:mt-8">
+              <h2 className="text-xl sm:text-2xl font-semibold text-gray-800">
+                Que tus clientes te sigan y reciban los cupones, puntos y premios
+              </h2>
+              <div className="mt-4">
+                <h3 className="text-lg font-medium text-gray-900">Dashboard de Fidelización</h3>
+                <p className="text-gray-500 text-sm">Panel de control intuitivo para gestionar tu programa de lealtad</p>
+              </div>
+            </div>
+          <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+            <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
+              <div className="w-full bg-gray-50">
+                <div className="relative w-full overflow-x-auto">
+                  <div className="flex gap-6 py-6 px-6 md:px-8 w-max mx-auto">
+                    {appScreens.map((src, idx) => (
+                      <div key={idx} className="relative h-[420px] w-[240px] md:h-[520px] md:w-[300px] flex-shrink-0 rounded-xl border border-gray-200 shadow-md overflow-hidden bg-white p-2">
+                        <Image
+                          src={src}
+                          alt={`Captura de la app ${idx + 1}`}
+                          fill
+                          sizes="(max-width: 768px) 240px, 300px"
+                          className="object-contain"
+                          priority={idx === 0}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+            {/* Captions below gallery */}
+             
           </div>
         </section>
 
