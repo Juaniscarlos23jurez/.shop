@@ -55,7 +55,7 @@ const adminSidebarItems = [
    { icon: ShoppingCart, label: "Punto de Venta", href: "/dashboard/pos" },
  
   // Payments
-  { icon: CreditCardIcon, label: "Stripe", href: "/dashboard/stripe" },
+  { icon: CreditCardIcon, label: "Metodos de cobro", href: "/dashboard/stripe" },
 
   { icon: Settings, label: "Configuración", href: "/dashboard/configuracion" },
 ];
