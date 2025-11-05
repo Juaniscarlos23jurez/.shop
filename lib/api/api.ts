@@ -1,4 +1,4 @@
-import { ApiResponse, UserProfile, ProfileApiUser, BusinessHour, Membership, Coupon, CouponCreateInput, CouponUpdateInput, CouponValidationRequest, CouponValidationResponse, CouponAssignmentRequest, CouponAssignByMembershipRequest } from '@/types/api';
+import { ApiResponse, UserProfile, ProfileApiUser, BusinessHour, Membership, Coupon, CouponCreateInput, CouponUpdateInput, CouponValidationRequest, CouponValidationResponse, CouponAssignmentRequest, CouponAssignByMembershipRequest, CompanyPaymentMethod, CompanyPaymentMethodCreateInput, CompanyPaymentMethodUpdateInput } from '@/types/api';
 import { Product, ProductListResponse, ProductResponse, ProductCreateInput, ProductUpdateInput } from '@/types/product';
 import { Category, CategoryCreateInput, CategoryUpdateInput, CategoryResponse, CategoryListResponse } from '@/types/category';
 import { ordersApi } from './orders';
@@ -882,6 +882,100 @@ export const api = {
         };
       }
     }
+  },
+
+  // Company Payment Methods API
+  companyPaymentMethods: {
+    /**
+     * Public: list active payment methods for a company
+     * GET /api/public/companies/{companyId}/payment-methods
+     */
+    async publicList(companyId: string | number): Promise<ApiResponse<CompanyPaymentMethod[]>> {
+      const url = `${BASE_URL}/api/public/companies/${companyId}/payment-methods`;
+      return fetch(url, {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' },
+      }).then(handleResponse);
+    },
+
+    /**
+     * Owner: list all payment methods (including inactive)
+     * GET /api/companies/{companyId}/payment-methods
+     */
+    async list(companyId: string | number, token: string): Promise<ApiResponse<CompanyPaymentMethod[]>> {
+      const url = `${BASE_URL}/api/companies/${companyId}/payment-methods`;
+      return fetch(url, {
+        method: 'GET',
+        headers: getAuthHeader(token),
+      }).then(handleResponse);
+    },
+
+    /**
+     * Owner: create a payment method
+     * POST /api/companies/{companyId}/payment-methods
+     */
+    async create(
+      companyId: string | number,
+      data: CompanyPaymentMethodCreateInput,
+      token: string
+    ): Promise<ApiResponse<{ method: CompanyPaymentMethod }>> {
+      const url = `${BASE_URL}/api/companies/${companyId}/payment-methods`;
+      return fetch(url, {
+        method: 'POST',
+        headers: getAuthHeader(token),
+        body: JSON.stringify(data),
+      }).then(handleResponse);
+    },
+
+    /**
+     * Owner: get a payment method
+     * GET /api/companies/{companyId}/payment-methods/{id}
+     */
+    async get(
+      companyId: string | number,
+      id: string | number,
+      token: string
+    ): Promise<ApiResponse<{ method: CompanyPaymentMethod }>> {
+      const url = `${BASE_URL}/api/companies/${companyId}/payment-methods/${id}`;
+      return fetch(url, {
+        method: 'GET',
+        headers: getAuthHeader(token),
+      }).then(handleResponse);
+    },
+
+    /**
+     * Owner: update a payment method
+     * PUT /api/companies/{companyId}/payment-methods/{id}
+     */
+    async update(
+      companyId: string | number,
+      id: string | number,
+      data: CompanyPaymentMethodUpdateInput,
+      token: string
+    ): Promise<ApiResponse<{ method: CompanyPaymentMethod }>> {
+      const url = `${BASE_URL}/api/companies/${companyId}/payment-methods/${id}`;
+      return fetch(url, {
+        method: 'PUT',
+        headers: getAuthHeader(token),
+        body: JSON.stringify(data),
+      }).then(handleResponse);
+    },
+
+    /**
+     * Owner: delete a payment method
+     * DELETE /api/companies/{companyId}/payment-methods/{id}
+     */
+    async delete(
+      companyId: string | number,
+      id: string | number,
+      token: string
+    ): Promise<ApiResponse<{ success: boolean }>> {
+      const url = `${BASE_URL}/api/companies/${companyId}/payment-methods/${id}`;
+      return fetch(url, {
+        method: 'DELETE',
+        headers: getAuthHeader(token),
+      }).then(handleResponse);
+    },
   },
 
   // Memberships API

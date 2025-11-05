@@ -36,6 +36,7 @@ export default function NuevoProductoPage() {
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newCategoryDescription, setNewCategoryDescription] = useState('');
+  const [isQuoted, setIsQuoted] = useState(false);
   
   // Fetch company, locations, and categories on component mount
   useEffect(() => {
@@ -230,17 +231,22 @@ export default function NuevoProductoPage() {
         }
       };
 
-      const productData = {
+      const productData: any = {
         name: formData.get('name') as string,
         description: formData.get('description') as string || '',
-        price: parseFloat(formData.get('price') as string),
+        price: productType === 'service' && isQuoted
+          ? 0
+          : parseFloat(formData.get('price') as string),
         product_type: productType as 'physical' | 'made_to_order' | 'service',
         sku: formData.get('sku') as string || undefined,
         category: formData.get('category') as string || 'otros',
         is_active: formData.get('is_active') === 'on',
         track_stock: productType === 'physical',
         image_url: uploadedUrl || undefined,
-        points: formData.get('points') ? parseInt(formData.get('points') as string, 10) : 0,
+        points: productType === 'service' && isQuoted
+          ? 0
+          : (formData.get('points') ? parseInt(formData.get('points') as string, 10) : 0),
+        ...(productType === 'service' ? { price_on_request: isQuoted } : {}),
         ...(productType === 'physical' && {
           stock: parseInt(formData.get('stock') as string, 10) || 0,
         }),
@@ -366,23 +372,35 @@ export default function NuevoProductoPage() {
                   </RadioGroup>
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-3">
-                  <div className="space-y-2">
-                    <Label htmlFor="price">Precio</Label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-2.5 text-slate-500">$</span>
-                      <Input
-                        id="price"
-                        name="price"
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        className="pl-8"
-                        placeholder="0.00"
-                        required
-                      />
+                {productType === 'service' && (
+                  <div className="flex items-center justify-between rounded-md border p-3 bg-slate-50">
+                    <div>
+                      <Label htmlFor="is_quoted" className="text-sm font-medium">Cotizar sin precio fijo</Label>
+                      <p className="text-xs text-muted-foreground">Oculta precio y puntos. El cliente solicitará cotización.</p>
                     </div>
+                    <Switch id="is_quoted" checked={isQuoted} onCheckedChange={setIsQuoted} />
                   </div>
+                )}
+
+                <div className="grid gap-4 md:grid-cols-3">
+                  {!(productType === 'service' && isQuoted) && (
+                    <div className="space-y-2">
+                      <Label htmlFor="price">Precio</Label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-2.5 text-slate-500">$</span>
+                        <Input
+                          id="price"
+                          name="price"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          className="pl-8"
+                          placeholder="0.00"
+                          required={!(productType === 'service' && isQuoted)}
+                        />
+                      </div>
+                    </div>
+                  )}
                   {productType === 'physical' && (
                     <div className="space-y-2">
                       <Label htmlFor="stock">Stock Inicial</Label>
@@ -409,10 +427,12 @@ export default function NuevoProductoPage() {
                   )}
                 </div>
                 
-                <div className="space-y-2">
-                  <Label htmlFor="points">Puntos</Label>
-                  <Input id="points" name="points" type="number" min="0" placeholder="0" />
-                </div>
+                {!(productType === 'service' && isQuoted) && (
+                  <div className="space-y-2">
+                    <Label htmlFor="points">Puntos</Label>
+                    <Input id="points" name="points" type="number" min="0" placeholder="0" />
+                  </div>
+                )}
                 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">

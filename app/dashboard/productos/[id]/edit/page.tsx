@@ -39,6 +39,7 @@ export default function EditarProductoPage() {
   const [newCategoryDescription, setNewCategoryDescription] = useState('');
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isQuoted, setIsQuoted] = useState(false);
   
   // Fetch product data, company and locations on component mount
   useEffect(() => {
@@ -72,6 +73,11 @@ export default function EditarProductoPage() {
           }
           setProduct(productData);
           setProductType(productData.product_type);
+          // Initialize quoted state if backend indicates price_on_request or no price for service
+          try {
+            const quoted = !!(productData.price_on_request || (productData.product_type === 'service' && (!productData.price || Number(productData.price) === 0)));
+            setIsQuoted(quoted);
+          } catch {}
           if (productData.locations && productData.locations.length > 0) {
             setSelectedLocations(productData.locations.map((loc: any) => loc.id));
           }
@@ -248,7 +254,9 @@ export default function EditarProductoPage() {
       const updateData: any = {
         name: formData.get('name') as string,
         description: formData.get('description') as string || '',
-        price: parseFloat(formData.get('price') as string) || 0,
+        price: productType === 'service' && isQuoted
+          ? 0
+          : (parseFloat(formData.get('price') as string) || 0),
         product_type: productType,
         sku: formData.get('sku') as string || undefined,
         ...(formData.get('category_id')
@@ -259,13 +267,16 @@ export default function EditarProductoPage() {
           : {}),
         is_active: formData.get('is_active') === 'on',
         image_url: uploadedUrl || product.image_url,
-        points: formData.get('points') ? parseInt(formData.get('points') as string) : 0,
+        points: productType === 'service' && isQuoted
+          ? 0
+          : (formData.get('points') ? parseInt(formData.get('points') as string) : 0),
         locations: selectedLocations.map(locId => ({
           id: locId,
           is_available: true,
           ...(productType === 'physical' ? { stock: stockData[locId] || 0 } : {}),
         })),
         ...(productType === 'made_to_order' ? { lead_time_days: computeLeadTimeDays(leadTimeValue, leadTimeUnit) } : {}),
+        ...(productType === 'service' ? { price_on_request: isQuoted } : {}),
       };
 
       // Debug logs
@@ -429,8 +440,18 @@ export default function EditarProductoPage() {
                     </div>
                   </RadioGroup>
                 </div>
+                {productType === 'service' && (
+                  <div className="flex items-center justify-between rounded-md border p-3 bg-slate-50">
+                    <div>
+                      <Label htmlFor="is_quoted" className="text-sm font-medium">Cotizar sin precio fijo</Label>
+                      <p className="text-xs text-muted-foreground">Oculta precio y puntos. El cliente solicitará cotización.</p>
+                    </div>
+                    <Switch id="is_quoted" checked={isQuoted} onCheckedChange={setIsQuoted} />
+                  </div>
+                )}
 
                 <div className="grid gap-4 md:grid-cols-3">
+                  {!(productType === 'service' && isQuoted) && (
                   <div className="space-y-2">
                     <Label htmlFor="price">Precio</Label>
                     <div className="relative">
@@ -444,22 +465,25 @@ export default function EditarProductoPage() {
                         className="pl-8"
                         placeholder="0.00"
                         defaultValue={product.price}
-                        required
+                        required={!(productType === 'service' && isQuoted)}
                       />
                     </div>
                   </div>
+                )}
                   
-                  <div className="space-y-2">
-                    <Label htmlFor="points">Puntos</Label>
-                    <Input 
-                      id="points" 
-                      name="points" 
-                      type="number" 
-                      min="0" 
-                      defaultValue={product.points || 0}
-                      placeholder="0" 
-                    />
-                  </div>
+                  {!(productType === 'service' && isQuoted) && (
+                    <div className="space-y-2">
+                      <Label htmlFor="points">Puntos</Label>
+                      <Input 
+                        id="points" 
+                        name="points" 
+                        type="number" 
+                        min="0" 
+                        defaultValue={product.points || 0}
+                        placeholder="0" 
+                      />
+                    </div>
+                  )}
                   
                   {productType === 'physical' && (
                     <div className="space-y-2">
@@ -469,7 +493,7 @@ export default function EditarProductoPage() {
                         name="stock" 
                         type="number" 
                         min="0" 
-                        defaultValue={product.stock || 0}
+                        defaultValue={(product as any).stock || 0}
                         placeholder="0" 
                         required 
                       />

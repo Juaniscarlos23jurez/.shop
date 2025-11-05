@@ -258,3 +258,35 @@ export interface SalesStatistics {
     cancelled: number;
   };
 }
+
+// Company Payment Methods
+export type CompanyPaymentMethodType = 'cash' | 'spei' | 'stripe' | string;
+
+export interface CompanyPaymentMethod {
+  id: number;
+  company_id: number;
+  type: CompanyPaymentMethodType;
+  display_name?: string | null;
+  account_holder?: string | null;
+  bank_name?: string | null;
+  account_number?: string | null;
+  clabe?: string | null;
+  swift?: string | null;
+  reference?: string | null;
+  instructions?: string | null;
+  qr_image_url?: string | null;
+  is_active: boolean;
+  sort_order?: number | null;
+  // cash-specific
+  cash_limit_amount?: number | null;
+  metadata?: Record<string, any> | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface CompanyPaymentMethodCreateInput extends Partial<Omit<CompanyPaymentMethod, 'id' | 'company_id'>> {
+  type: CompanyPaymentMethodType;
+  is_active?: boolean;
+}
+
+export type CompanyPaymentMethodUpdateInput = Partial<CompanyPaymentMethodCreateInput>;
