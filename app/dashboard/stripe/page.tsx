@@ -374,17 +374,7 @@ export default function PaymentMethodsPage() {
 
                 <Separator className="my-2" />
 
-                <div className="text-xs text-slate-500 space-y-2">
-                  <p>
-                    Implementación recomendada:
-                  </p>
-                  <ol className="list-decimal ml-4 space-y-1">
-                    <li>Crear endpoints por compañía: <code>POST /api/stripe/keys</code> (guardar/actualizar), <code>GET /api/stripe/keys</code> (leer).</li>
-                    <li>Identificar la compañía actual (ej. por <code>user.companyId</code> o subdominio).</li>
-                    <li>Guardar cifrado en BD/secret manager. Nunca devolver la Secret Key completa al cliente.</li>
-                    <li>Usar la Secret Key únicamente en el servidor para llamadas a Stripe y webhooks.</li>
-                  </ol>
-                </div>
+                
               </CardContent>
             </Card>
           </div>

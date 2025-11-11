@@ -24,6 +24,9 @@ export function AuthForm({
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const buttonColorClasses = isEmployeeLogin
+    ? 'bg-yellow-500 hover:bg-yellow-600 focus:ring-yellow-500'
+    : 'bg-green-600 hover:bg-green-700 focus:ring-green-500';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,7 +99,7 @@ export function AuthForm({
         <div>
           <Button
             type="submit"
-            className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-${primaryColor}-600 hover:bg-${primaryColor}-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-${primaryColor}-500 transition-colors duration-200`}
+            className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors duration-200 ${buttonColorClasses}`}
             disabled={isSubmitting || propIsLoading}
           >
             {isSubmitting || propIsLoading ? (

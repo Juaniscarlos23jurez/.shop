@@ -9,10 +9,19 @@ import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/api/api";
 import { ordersApi } from "@/lib/api/orders";
 import { PaymentModal } from "@/components/pos/PaymentModal";
-import { Product } from "@/types/api";
 import { useToast } from "@/hooks/use-toast";
 
-interface CartItem extends Product {
+// Tipo local de producto para POS (precio como string)
+type PosProduct = {
+  id: number;
+  name: string;
+  price: string; // API devuelve string
+  sku?: string;
+  image_url?: string;
+  [key: string]: any;
+};
+
+interface CartItem extends PosProduct {
   id: number;
   name: string;
   price: string;
@@ -64,7 +73,7 @@ export default function PuntoVentaPage() {
   const { toast } = useToast();
   const { token, user } = useAuth();
   const authToken = token || ''; // Ensure token is always a string
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<PosProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -82,6 +91,51 @@ export default function PuntoVentaPage() {
   const [loadingOrders, setLoadingOrders] = useState(false);
   const [updatingOrderId, setUpdatingOrderId] = useState<number | null>(null);
   const [activeOrderTab, setActiveOrderTab] = useState<'accepted' | 'preparing' | 'ready'>('accepted');
+  const [activePosTab, setActivePosTab] = useState<'venta' | 'historial'>('venta');
+  const [sales, setSales] = useState<any[]>([]);
+  const [salesLoading, setSalesLoading] = useState(false);
+  const [salesPage, setSalesPage] = useState(1);
+  const [salesTotal, setSalesTotal] = useState(0);
+  const salesPerPage = 15;
+
+  // Define fetchSalesHistory here
+  const fetchSalesHistory = async () => {
+    if (!token || !companyId || locationId === null) return;
+    try {
+      setSalesLoading(true);
+      console.log(`[POS] Fetching sales history for company ${companyId}, location ${locationId}, page ${salesPage}`);
+      const response = await api.sales.listSales(
+        {
+          location_id: locationId,
+          page: salesPage,
+          per_page: salesPerPage,
+        },
+        token
+      );
+
+      if (response.success && response.data) {
+        setSales(response.data.data);
+        setSalesTotal(response.data.total);
+      } else {
+        setSales([]);
+        setSalesTotal(0);
+        toast({
+          title: 'Error',
+          description: response.message || 'No se pudo cargar el historial de ventas',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('[POS] Error fetching sales history:', error);
+      toast({
+        title: 'Error',
+        description: 'Ocurrió un error al cargar el historial de ventas',
+        variant: 'destructive',
+      });
+    } finally {
+      setSalesLoading(false);
+    }
+  };
 
   // Cargar órdenes pendientes del localStorage
   useEffect(() => {
@@ -102,7 +156,7 @@ export default function PuntoVentaPage() {
         if (response?.data) {
           // Normalizar diferentes formas de respuesta para asegurar un array
           const root: any = response.data;
-          const normalized: Product[] = Array.isArray(root?.data)
+          const normalized: PosProduct[] = Array.isArray(root?.data)
             ? root.data
             : Array.isArray(root?.products)
               ? root.products
@@ -129,6 +183,13 @@ export default function PuntoVentaPage() {
       setLoading(false);
     }
   }, [token, companyId]);
+
+  // Cargar historial cuando el tab esté activo o cambie la página/ubicación
+  useEffect(() => {
+    if (activePosTab === 'historial') {
+      fetchSalesHistory();
+    }
+  }, [activePosTab, salesPage, locationId, token]);
 
   // Cargar ubicación (location_id) por defecto
   useEffect(() => {
@@ -199,7 +260,7 @@ export default function PuntoVentaPage() {
     }
   }, [token, companyId]);
 
-  const addToCart = (product: Product) => {
+  const addToCart = (product: PosProduct) => {
     setCart(prevCart => {
       const existingItem = prevCart.find(item => item.id === product.id);
       if (existingItem) {
@@ -456,7 +517,26 @@ export default function PuntoVentaPage() {
         <div className="flex items-center justify-between">
           <h2 className="text-3xl font-bold tracking-tight">Punto de Venta</h2>
         </div>
-        
+        <div className="mt-2 border-b flex gap-2">
+          <button
+            onClick={() => setActivePosTab('venta')}
+            className={`px-4 py-2 font-medium transition-colors ${
+              activePosTab === 'venta' ? 'text-primary border-b-2 border-primary' : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            Venta
+          </button>
+          <button
+            onClick={() => setActivePosTab('historial')}
+            className={`px-4 py-2 font-medium transition-colors ${
+              activePosTab === 'historial' ? 'text-primary border-b-2 border-primary' : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            Historial
+          </button>
+        </div>
+        {activePosTab === 'venta' && (
+        <>
         <div className="grid gap-4 md:grid-cols-3">
           {/* Productos */}
           <Card className="col-span-2">
@@ -836,6 +916,83 @@ export default function PuntoVentaPage() {
                   </div>
                 ))}
               </div>
+            </CardContent>
+          </Card>
+        )}
+        </>
+        )}
+
+        {activePosTab === 'historial' && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Historial de Ventas</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {salesLoading ? (
+                <div className="flex justify-center items-center h-40">
+                  <p>Cargando ventas...</p>
+                </div>
+              ) : sales.length === 0 ? (
+                <div className="flex justify-center items-center h-40">
+                  <p>No hay ventas registradas</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full text-sm">
+                      <thead>
+                        <tr className="text-left text-slate-600 border-b">
+                          <th className="py-2 pr-4">#</th>
+                          <th className="py-2 pr-4">Fecha</th>
+                          <th className="py-2 pr-4">Cliente</th>
+                          <th className="py-2 pr-4">Método</th>
+                          <th className="py-2 pr-4">Estado</th>
+                          <th className="py-2 pr-4">Total</th>
+                          <th className="py-2 pr-4">Items</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {sales.map((s: any) => (
+                          <tr key={s.id} className="border-b hover:bg-slate-50">
+                            <td className="py-2 pr-4 font-medium">{s.id}</td>
+                            <td className="py-2 pr-4 text-slate-600">{new Date(s.created_at).toLocaleString()}</td>
+                            <td className="py-2 pr-4">{s.user?.name || 'N/A'}</td>
+                            <td className="py-2 pr-4">{s.payment_method}</td>
+                            <td className="py-2 pr-4">
+                              <span className="px-2 py-0.5 rounded text-xs bg-emerald-100 text-emerald-700">
+                                {s.payment_status}
+                              </span>
+                            </td>
+                            <td className="py-2 pr-4 font-bold text-emerald-600">{`$${parseFloat(s.total || '0').toFixed(2)}`}</td>
+                            <td className="py-2 pr-4">{Array.isArray(s.items) ? s.items.length : 0}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="flex justify-between items-center pt-2">
+                    <div className="text-sm text-slate-600">Página {salesPage}</div>
+                    <div className="space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSalesPage((p) => Math.max(1, p - 1))}
+                        disabled={salesPage <= 1 || salesLoading}
+                      >
+                        Anterior
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSalesPage((p) => p + 1)}
+                        disabled={salesLoading || (salesPage * salesPerPage >= salesTotal && sales.length < salesPerPage)}
+                      >
+                        Siguiente
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}

@@ -1,154 +1,25 @@
-import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Employee } from "@/types/branch";
-import { Pencil, Trash2 } from "lucide-react";
-import { api } from '@/lib/api';
-import { useAuth } from '@/contexts/AuthContext';
-import { useParams } from 'next/navigation';
-import { toast } from '@/components/ui/use-toast';
+import { Employee, EMPLOYEE_ROLE_DISPLAY } from "@/types/branch";
 
 interface EmployeeListProps {
+  employees: Employee[];
   onAddEmployee: () => void;
   onEditEmployee: (employee: Employee) => void;
+  onManageAccount: (employee: Employee) => void;
+  onDeleteEmployee?: (employeeId: string) => void;
 }
 
 export function EmployeeList({ 
+  employees,
   onAddEmployee, 
-  onEditEmployee
+  onEditEmployee,
+  onManageAccount,
+  onDeleteEmployee
 }: EmployeeListProps) {
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [loading, setLoading] = useState(true);
-  const { token } = useAuth();
-  const { id: locationId } = useParams();
 
-  useEffect(() => {
-    const fetchEmployees = async () => {
-      if (!token || !locationId) return;
-      
-      try {
-        setLoading(true);
-        
-        // Get company ID first
-        const companyResponse = await api.userCompanies.get(token);
-        if (!companyResponse.success || !companyResponse.data?.data?.id) {
-          throw new Error('No se pudo obtener el ID de la compañía');
-        }
-        
-        const companyId = companyResponse.data.data.id;
-        
-        // Fetch employees for this location
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL || 'https://laravel-pkpass-backend-development-pfaawl.laravel.cloud'}/api/companies/${companyId}/locations/${locationId}/employees`,
-          {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Accept': 'application/json',
-              'Content-Type': 'application/json',
-            },
-          }
-        );
-        
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(
-            errorData.message || 
-            `Error al cargar los empleados: ${response.status} ${response.statusText}`
-          );
-        }
-
-        const responseData = await response.json();
-        console.log('Raw API response:', responseData); // Debug log
-        
-        // Handle both array and object with data property
-        const employeesData = Array.isArray(responseData) 
-          ? responseData 
-          : responseData.data || [];
-        
-        console.log('Employees data:', employeesData); // Debug log
-        
-        const formattedEmployees = employeesData.map((emp: any) => ({
-          id: emp.id?.toString() || `emp-${Math.random().toString(36).substr(2, 9)}`,
-          name: emp.full_name || `${emp.first_name || ''} ${emp.last_name || ''}`.trim() || 'Nombre no disponible',
-          email: emp.email || '',
-          role: 'employee' as const,
-          isActive: emp.is_active !== undefined ? emp.is_active : true,
-          lastActive: emp.last_active || new Date().toISOString(),
-          phone: emp.phone || '',
-          position: emp.position || 'Empleado',
-          avatar: emp.profile_picture || ''
-        }));
-        
-        console.log('Formatted employees:', formattedEmployees); // Debug log
-        setEmployees(formattedEmployees);
-      } catch (error) {
-        console.error('Error fetching employees:', error);
-        let errorMessage = 'No se pudieron cargar los empleados';
-        
-        if (error instanceof Error) {
-          errorMessage = error.message;
-        } else if (typeof error === 'string') {
-          errorMessage = error;
-        } else if (error && typeof error === 'object' && 'message' in error) {
-          errorMessage = String(error.message);
-        }
-        
-        toast({
-          title: 'Error',
-          description: errorMessage,
-          variant: 'destructive',
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchEmployees();
-  }, [token, locationId]);
-
-  const handleDeleteEmployee = async (employeeId: string) => {
-    if (!token || !locationId) return;
-    
-    const confirmDelete = window.confirm('¿Estás seguro de que deseas eliminar a este empleado?');
-    if (!confirmDelete) return;
-    
-    try {
-      // Get company ID first
-      const companyResponse = await api.userCompanies.get(token);
-      if (!companyResponse.success || !companyResponse.data?.data?.id) {
-        throw new Error('No se pudo obtener el ID de la compañía');
-      }
-      
-      const companyId = companyResponse.data.data.id;
-      
-      // Call your delete API here
-      // await api.userCompanies.removeEmployeeFromLocation(companyId, locationId, employeeId, token);
-      
-      // Remove from local state
-      setEmployees(prev => prev.filter(emp => emp.id !== employeeId));
-      
-      toast({
-        title: 'Éxito',
-        description: 'Empleado eliminado correctamente',
-      });
-    } catch (error) {
-      console.error('Error deleting employee:', error);
-      toast({
-        title: 'Error',
-        description: 'No se pudo eliminar al empleado',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-      </div>
-    );
-  }
+  // Presentational component: parent controls loading state if needed
 
   return (
     <div className="space-y-4">
@@ -172,8 +43,9 @@ export function EmployeeList({
             <TableHeader>
               <TableRow>
                 <TableHead>Nombre</TableHead>
-                <TableHead>Correo</TableHead>
-                <TableHead>Rol</TableHead>
+                <TableHead>Puesto</TableHead>
+                <TableHead>Cuenta de Acceso</TableHead>
+                <TableHead>Rol de Acceso</TableHead>
                 <TableHead>Estado</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
@@ -181,34 +53,67 @@ export function EmployeeList({
             <TableBody>
               {employees.map((employee) => (
                 <TableRow key={employee.id}>
-                  <TableCell className="font-medium">{employee.name}</TableCell>
-                  <TableCell>{employee.email}</TableCell>
                   <TableCell>
-                    <Badge variant="outline">
-                      {employee.role}
-                    </Badge>
+                    <div>
+                      <p className="font-medium">{employee.name}</p>
+                      <p className="text-sm text-muted-foreground">{employee.email}</p>
+                    </div>
+                  </TableCell>
+                  <TableCell>{employee.position || 'Empleado'}</TableCell>
+                  <TableCell>
+                    {employee.account ? (
+                      <div>
+                        <p className="text-sm font-medium">{employee.account.email}</p>
+                        <Badge 
+                          variant={employee.account.is_active ? 'default' : 'secondary'}
+                          className="mt-1"
+                        >
+                          {employee.account.is_active ? 'Activa' : 'Inactiva'}
+                        </Badge>
+                      </div>
+                    ) : (
+                      <span className="text-sm text-muted-foreground">Sin cuenta</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {employee.account ? (
+                      <Badge variant="outline">
+                        {EMPLOYEE_ROLE_DISPLAY[employee.account.role_type]}
+                      </Badge>
+                    ) : (
+                      <span className="text-sm text-muted-foreground">-</span>
+                    )}
                   </TableCell>
                   <TableCell>
                     <Badge variant={employee.isActive ? 'default' : 'secondary'}>
                       {employee.isActive ? 'Activo' : 'Inactivo'}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-right space-x-2">
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      onClick={() => onEditEmployee(employee)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      className="text-red-500 hover:text-red-600"
-                      onClick={() => handleDeleteEmployee(employee.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => onEditEmployee(employee)}
+                      >
+                        Editar
+                      </Button>
+                      <Button 
+                        variant={employee.account ? 'secondary' : 'default'}
+                        size="sm"
+                        onClick={() => onManageAccount(employee)}
+                      >
+                        {employee.account ? 'Gestionar cuenta' : 'Crear cuenta'}
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        className="text-red-500 hover:text-red-600"
+                        onClick={() => onDeleteEmployee?.(employee.id)}
+                      >
+                        Eliminar
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
