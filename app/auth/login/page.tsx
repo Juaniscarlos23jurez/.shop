@@ -104,20 +104,7 @@ export default function LoginPage() {
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
-            {/* Toggle de empleado */}
-            <div className="flex items-center justify-between rounded-md border border-gray-200 bg-white px-3 py-2">
-              <div>
-                <Label htmlFor="employee-login" className="text-sm font-medium text-gray-700">
-                  Soy empleado
-                </Label>
-                <p className="text-xs text-gray-500">Usa el acceso para empleados de sucursal</p>
-              </div>
-              <Switch
-                id="employee-login"
-                checked={isEmployee}
-                onCheckedChange={(v) => setIsEmployee(Boolean(v))}
-              />
-            </div>
+            
             <AuthForm 
               onSubmit={handleLogin} 
               title="Iniciar sesión" 
