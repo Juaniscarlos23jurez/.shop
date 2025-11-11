@@ -8,25 +8,38 @@ import { Button } from "@/components/ui/button";
 import { useState, useEffect } from 'react';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/contexts/AuthContext";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 export default function LoginPage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
-  const { login, loading, isAuthenticated } = useAuth();
+  const { login, loading, isAuthenticated, userRole } = useAuth();
+  const [isEmployee, setIsEmployee] = useState(false);
 
   useEffect(() => {
     // Redirect if already authenticated
     if (isAuthenticated) {
-      router.push(routes.dashboard);
+      if (userRole && userRole.startsWith('employee_')) {
+        router.push('/dashboard/pos');
+      } else {
+        router.push(routes.dashboard);
+      }
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, userRole, router]);
 
   const handleLogin = async (email: string, password: string) => {
     setError(null);
     
     try {
-      await login(email, password);
-      router.push(routes.dashboard);
+      // Always use general login; decide redirect by returned role
+      const result = await login(email, password, isEmployee);
+      const role = result && (result.user as any)?.role as string | undefined;
+      if (role && role.startsWith('employee_')) {
+        router.push('/dashboard/pos');
+      } else {
+        router.push(routes.dashboard);
+      }
       router.refresh();
     } catch (error) {
       console.error('Login error:', error);
@@ -91,11 +104,26 @@ export default function LoginPage() {
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
+            {/* Toggle de empleado */}
+            <div className="flex items-center justify-between rounded-md border border-gray-200 bg-white px-3 py-2">
+              <div>
+                <Label htmlFor="employee-login" className="text-sm font-medium text-gray-700">
+                  Soy empleado
+                </Label>
+                <p className="text-xs text-gray-500">Usa el acceso para empleados de sucursal</p>
+              </div>
+              <Switch
+                id="employee-login"
+                checked={isEmployee}
+                onCheckedChange={(v) => setIsEmployee(Boolean(v))}
+              />
+            </div>
             <AuthForm 
               onSubmit={handleLogin} 
               title="Iniciar sesión" 
               buttonText={loading ? 'Iniciando sesión...' : 'Iniciar sesión'} 
               isLoading={loading} 
+              isEmployeeLogin={isEmployee}
             />
 
             <div className="mt-6">

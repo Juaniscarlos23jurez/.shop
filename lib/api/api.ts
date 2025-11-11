@@ -60,7 +60,7 @@ export const api = {
       token_type: string;
       user: ProfileApiUser;
     }>> {
-      return fetch(`${BASE_URL}/api/auth/login`, {
+      return fetch(`/api/proxy/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -119,7 +119,7 @@ export const api = {
     },
 
     async getProfile(token: string): Promise<ApiResponse<{ user: ProfileApiUser; company_id?: string }>> {
-      return fetch(`${BASE_URL}/api/auth/profile`, {
+      return fetch(`/api/proxy/api/auth/profile`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Accept': 'application/json',
@@ -128,7 +128,7 @@ export const api = {
     },
 
     async logout(token: string): Promise<ApiResponse> {
-      return fetch(`${BASE_URL}/api/auth/logout`, {
+      return fetch(`/api/proxy/api/auth/logout`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -187,7 +187,7 @@ export const api = {
      * Get the authenticated user's company
      */
     async get(token: string): Promise<ApiResponse<any>> {
-      return fetch(`${BASE_URL}/api/auth/profile/company`, {
+      return fetch(`/api/proxy/api/auth/profile/company`, {
         headers: getAuthHeader(token),
       }).then(handleResponse);
     },
@@ -256,6 +256,8 @@ export const api = {
         country?: string;
         zip_code?: string;
         business_type_id?: number;
+        logo_url?: string;
+        banner_url?: string;
       },
       token: string
     ): Promise<ApiResponse<{ company: any }>> {
@@ -284,6 +286,8 @@ export const api = {
         country?: string;
         zip_code?: string;
         business_type_id?: number;
+        logo_url?: string;
+        banner_url?: string;
       },
       token: string
     ): Promise<ApiResponse<{ company: any }>> {
@@ -481,6 +485,145 @@ export const api = {
         body: JSON.stringify(data)
       }).then(handleResponse);
     },
+
+    /**
+     * Employee Accounts Management
+     */
+    
+    // List employee accounts for a company (supports filters)
+    async getEmployeeAccounts(
+      companyId: string,
+      token: string,
+      filters?: { employee_id?: string | number; email?: string }
+    ): Promise<ApiResponse<{ data: any[] }>> {
+      const search = new URLSearchParams();
+      if (filters?.employee_id !== undefined && filters?.employee_id !== null) {
+        search.set('employee_id', String(filters.employee_id));
+      }
+      if (filters?.email) {
+        search.set('email', filters.email);
+      }
+      const url = `${BASE_URL}/api/companies/${companyId}/employee-accounts${search.toString() ? `?${search.toString()}` : ''}`;
+      return fetch(url, {
+        headers: getAuthHeader(token),
+      }).then(handleResponse);
+    },
+
+    // Create employee account
+    async createEmployeeAccount(
+      companyId: string,
+      employeeId: string,
+      data: {
+        email: string;
+        password: string;
+        password_confirmation: string;
+        role_type: 'sales' | 'cashier' | 'supervisor' | 'manager';
+        location_id?: number;
+        name?: string;
+      },
+      token: string
+    ): Promise<ApiResponse<{ data: any }>> {
+      return fetch(
+        `${BASE_URL}/api/companies/${companyId}/employee-accounts/employees/${employeeId}`,
+        {
+          method: 'POST',
+          headers: {
+            ...getAuthHeader(token),
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data),
+        }
+      ).then(handleResponse);
+    },
+
+    // Get employee account details
+    async getEmployeeAccount(
+      companyId: string,
+      userId: string,
+      token: string
+    ): Promise<ApiResponse<{ data: any }>> {
+      return fetch(
+        `${BASE_URL}/api/companies/${companyId}/employee-accounts/${userId}`,
+        {
+          headers: getAuthHeader(token),
+        }
+      ).then(handleResponse);
+    },
+
+    // Update employee account
+    async updateEmployeeAccount(
+      companyId: string,
+      userId: string,
+      data: {
+        email?: string;
+        role_type?: 'sales' | 'cashier' | 'supervisor' | 'manager';
+        location_id?: number;
+        is_active?: boolean;
+      },
+      token: string
+    ): Promise<ApiResponse<{ data: any }>> {
+      return fetch(
+        `${BASE_URL}/api/companies/${companyId}/employee-accounts/${userId}`,
+        {
+          method: 'PUT',
+          headers: {
+            ...getAuthHeader(token),
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data),
+        }
+      ).then(handleResponse);
+    },
+
+    // Deactivate employee account
+    async deactivateEmployeeAccount(
+      companyId: string,
+      userId: string,
+      token: string
+    ): Promise<ApiResponse<{ message: string }>> {
+      return fetch(
+        `${BASE_URL}/api/companies/${companyId}/employee-accounts/${userId}`,
+        {
+          method: 'DELETE',
+          headers: getAuthHeader(token),
+        }
+      ).then(handleResponse);
+    },
+
+    // Reactivate employee account
+    async reactivateEmployeeAccount(
+      companyId: string,
+      userId: string,
+      token: string
+    ): Promise<ApiResponse<{ data: any }>> {
+      return fetch(
+        `${BASE_URL}/api/companies/${companyId}/employee-accounts/${userId}/reactivate`,
+        {
+          method: 'POST',
+          headers: getAuthHeader(token),
+        }
+      ).then(handleResponse);
+    },
+
+    // Change employee account password
+    async changeEmployeeAccountPassword(
+      companyId: string,
+      userId: string,
+      data: { password: string; password_confirmation: string },
+      token: string
+    ): Promise<ApiResponse<{ message?: string }>> {
+      return fetch(
+        `${BASE_URL}/api/companies/${companyId}/employee-accounts/${userId}/change-password`,
+        {
+          method: 'POST',
+          headers: {
+            ...getAuthHeader(token),
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data),
+        }
+      ).then(handleResponse);
+    },
   },
 
   // Companies API (admin/management)
@@ -619,8 +762,8 @@ export const api = {
 
     async getCompanyLocations(companyId: string, token: string): Promise<ApiResponse<{ locations: any[] }>> {
       try {
-        const response = await fetch(`${BASE_URL}/api/companies/${companyId}/locations`, {
-          headers: getAuthHeader(token)
+        const response = await fetch(`/api/proxy/api/companies/${companyId}/locations`, {
+          headers: getAuthHeader(token),
         });
         
         return handleResponse(response);

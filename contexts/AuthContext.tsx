@@ -7,12 +7,13 @@ import { ApiResponse, LoginResponse, UserProfile } from '@/types/api';
 interface AuthContextType {
   user: UserProfile | null;
   token: string | null;
-  login: (email: string, password: string, isEmployee?: boolean) => Promise<void>;
+  login: (email: string, password: string, isEmployee?: boolean) => Promise<{ user: any; access_token: string } | void>;
   register: (name: string, email: string, password: string, password_confirmation: string, phone?: string) => Promise<void>;
   logout: () => void;
   loading: boolean;
   isAuthenticated: boolean;
   isEmployee: boolean;
+  userRole?: string;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -27,6 +28,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
   const [loading, setLoading] = useState(true);
   const [isEmployee, setIsEmployee] = useState(false);
+  const [userRole, setUserRole] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -37,6 +39,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.log('getProfile response on load:', response); // Debug log
           if (response.success && response.data?.user) {
             const { user: profileUser, company_id: profileCompanyId } = response.data;
+            // Derive role and employee flag
+            const role = (profileUser as any)?.role as string | undefined;
+            setUserRole(role);
+            setIsEmployee(Boolean(role && role.startsWith('employee_')));
 
             let derivedCompanyId: number | string | undefined = profileCompanyId;
 
@@ -98,6 +104,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(access_token);
     
     if (userData) {
+      const role = userData?.role as string | undefined;
+      setUserRole(role);
+      setIsEmployee(Boolean(role && role.startsWith('employee_')));
       setUser({
         firebase_uid: userData.id.toString(),
         firebase_email: userData.email,
@@ -107,22 +116,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const login = async (email: string, password: string, isEmployeeLogin: boolean = false) => {
+  const login = async (email: string, password: string, _isEmployeeLogin: boolean = false) => {
     try {
-      let response: ApiResponse<LoginResponse>;
-      
-      if (isEmployeeLogin) {
-        response = await api.auth.employeeLogin(email, password);
-      } else {
-        response = await api.auth.login(email, password);
-      }
+      // Always use general login endpoint. Role is derived from response.
+      let response: ApiResponse<LoginResponse> = await api.auth.login(email, password);
       
       console.log('Login response:', response);
       
       if (response.success && response.data) {
         const { access_token, user } = response.data;
-        setIsEmployee(!!isEmployeeLogin);
         handleAuthSuccess(access_token, user);
+        return { user, access_token };
       } else {
         throw new Error(response.message || 'Failed to login');
       }
@@ -171,6 +175,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loading,
       isAuthenticated: !!token && !!user,
       isEmployee,
+      userRole,
     }}>
       {!loading && children}
     </AuthContext.Provider>

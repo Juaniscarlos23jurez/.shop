@@ -1,6 +1,6 @@
 import { ApiResponse } from '@/types/api';
 
-const BASE_URL = 'https://laravel-pkpass-backend-development-pfaawl.laravel.cloud';
+const PROXY_PREFIX = '/api/proxy';
 
 export const ordersApi = {
   async create(
@@ -20,7 +20,7 @@ export const ordersApi = {
     },
     token: string
   ): Promise<ApiResponse<{ order: any }>> {
-    const response = await fetch(`${BASE_URL}/api/companies/${companyId}/orders`, {
+    const response = await fetch(`${PROXY_PREFIX}/api/companies/${companyId}/orders`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -39,7 +39,7 @@ export const ordersApi = {
   },
 
   async getOrders(companyId: string, token: string): Promise<ApiResponse<{ orders: any[] }>> {
-    const response = await fetch(`${BASE_URL}/api/companies/${companyId}/orders`, {
+    const response = await fetch(`${PROXY_PREFIX}/api/companies/${companyId}/orders`, {
       headers: {
         'Accept': 'application/json',
         'Authorization': `Bearer ${token}`
@@ -70,7 +70,7 @@ export const ordersApi = {
     if (params?.payment_status) queryParams.append('payment_status', params.payment_status);
     if (params?.per_page) queryParams.append('per_page', String(params.per_page));
 
-    const url = `${BASE_URL}/api/companies/${companyId}/orders/pending${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    const url = `${PROXY_PREFIX}/api/companies/${companyId}/orders/pending${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
 
     const response = await fetch(url, {
       headers: {
@@ -96,7 +96,7 @@ export const ordersApi = {
     status: string,
     token: string
   ): Promise<ApiResponse<any>> {
-    const response = await fetch(`${BASE_URL}/api/companies/${companyId}/orders/${orderId}/status`, {
+    const response = await fetch(`${PROXY_PREFIX}/api/companies/${companyId}/orders/${orderId}/status`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
@@ -125,7 +125,7 @@ export const ordersApi = {
     payment_reference?: string,
     token?: string
   ): Promise<ApiResponse<any>> {
-    const response = await fetch(`${BASE_URL}/api/companies/${companyId}/orders/${orderId}/payment-status`, {
+    const response = await fetch(`${PROXY_PREFIX}/api/companies/${companyId}/orders/${orderId}/payment-status`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
@@ -173,7 +173,7 @@ export const ordersApi = {
     if (params?.to_date) queryParams.append('to_date', params.to_date);
     if (params?.per_page) queryParams.append('per_page', String(params.per_page));
 
-    const url = `${BASE_URL}/api/companies/${companyId}/orders${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    const url = `${PROXY_PREFIX}/api/companies/${companyId}/orders${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
 
     const response = await fetch(url, {
       headers: {
@@ -197,7 +197,7 @@ export const ordersApi = {
     companyId: string,
     token: string
   ): Promise<ApiResponse<any>> {
-    const response = await fetch(`${BASE_URL}/api/companies/${companyId}/orders/statistics`, {
+    const response = await fetch(`${PROXY_PREFIX}/api/companies/${companyId}/orders/statistics`, {
       headers: {
         'Accept': 'application/json',
         'Authorization': `Bearer ${token}`

@@ -23,11 +23,31 @@ import {
   QuickActions
 } from './components';
 import { EditBranchView } from './components/EditBranchView';
+import { AccountForm } from './components/AccountForm';
 
 export default function BranchDetailPage() {
   const { id } = useParams();
   const router = useRouter();
   const { token } = useAuth();
+  // Debug helper to standardize logs
+  const debugLog = (label: string, payload: any) => {
+    try {
+      // avoid huge console noise
+      // mask token if ever passed mistakenly
+      const safe = JSON.parse(JSON.stringify(payload));
+      if (safe && typeof safe === 'object') {
+        if ('token' in safe) safe.token = safe.token ? '***MASKED***' : undefined;
+        if ('Authorization' in safe) safe.Authorization = 'Bearer ***MASKED***';
+        if ('password' in safe) safe.password = '***MASKED***';
+        if ('password_confirmation' in safe) safe.password_confirmation = '***MASKED***';
+      }
+      // eslint-disable-next-line no-console
+      console.debug(`[BranchDetail] ${label}:`, safe);
+    } catch {
+      // eslint-disable-next-line no-console
+      console.debug(`[BranchDetail] ${label}`);
+    }
+  };
   
   // State
   const [branch, setBranch] = useState<Branch | null>(null);
@@ -38,6 +58,8 @@ export default function BranchDetailPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [showEmployeeForm, setShowEmployeeForm] = useState(false);
   const [currentEmployee, setCurrentEmployee] = useState<Employee | null>(null);
+  const [showAccountForm, setShowAccountForm] = useState(false);
+  const [companyId, setCompanyId] = useState<string | null>(null);
 
   // Fetch branch details and employees
   // Check URL for edit and tab query params on initial load
@@ -68,6 +90,8 @@ export default function BranchDetailPage() {
         }
         
         const companyId = companyResponse.data.data.id;
+        setCompanyId(companyId.toString());
+        debugLog('Company resolved', { companyId, routeLocationId: id });
         
         // Get all locations
         const locationsResponse = await api.userCompanies.getLocations(token);
@@ -144,13 +168,56 @@ export default function BranchDetailPage() {
                 position: emp.position || emp.job_title || 'Empleado',
                 avatar: emp.avatar || emp.profile_photo_url || ''
               }));
-              setEmployees(formattedEmployees);
+
+              // After employees, fetch accounts and merge by employee_id
+              try {
+                const accountsResp = await api.userCompanies.getEmployeeAccounts(companyId, token);
+                if (accountsResp.success) {
+                  const accountsArray: any[] = Array.isArray(accountsResp.data)
+                    ? accountsResp.data
+                    : (accountsResp.data && Array.isArray((accountsResp as any).data?.data))
+                      ? (accountsResp as any).data.data
+                      : [];
+
+                  const accountsByEmployee: Record<string, any> = {};
+                  for (const acc of accountsArray) {
+                    const empId = (acc.employee_id ?? acc.employee?.id)?.toString?.() || '';
+                    if (empId) accountsByEmployee[empId] = acc;
+                  }
+
+                  const merged = formattedEmployees.map(e => {
+                    const acc = accountsByEmployee[e.id];
+                    if (!acc) return e;
+                    return {
+                      ...e,
+                      account: {
+                        user_id: (acc.user_id ?? acc.id)?.toString?.() || '',
+                        employee_id: (acc.employee_id ?? acc.employee?.id)?.toString?.() || e.id,
+                        email: acc.email,
+                        role_type: acc.role_type,
+                        is_active: acc.is_active ?? true,
+                        location_id: acc.location_id ?? undefined,
+                      },
+                    } as any;
+                  });
+
+                  setEmployees(merged);
+                } else {
+                  setEmployees(formattedEmployees);
+                }
+              } catch {
+                setEmployees(formattedEmployees);
+              }
             } else {
               console.log('No employees found for this location');
               setEmployees([]);
             }
           } else {
-            console.error('Error in API response:', employeesResponse.message || 'Unknown error');
+            toast({
+              title: 'Error',
+              description: employeesResponse.message || 'No se pudieron cargar los empleados de la sucursal',
+              variant: 'destructive',
+            });
             setEmployees([]);
           }
         } catch (error) {
@@ -478,6 +545,151 @@ export default function BranchDetailPage() {
     }
   };
 
+  // Handle employee account management
+  const handleManageAccount = (employee: Employee) => {
+    // If account is missing, try to fetch and attach from accounts listing
+    if (!employee.account && companyId && token) {
+      (async () => {
+        try {
+          const resp = await api.userCompanies.getEmployeeAccounts(companyId, token, { employee_id: employee.id });
+          if (resp.success) {
+            const accountsArray: any[] = Array.isArray(resp.data)
+              ? resp.data
+              : (resp.data && Array.isArray((resp as any).data?.data))
+                ? (resp as any).data.data
+                : [];
+            const found = accountsArray.find((acc: any) => {
+              const empId = (acc.employee_id ?? acc.employee?.id)?.toString?.();
+              return empId === employee.id;
+            });
+            if (found) {
+              employee = {
+                ...employee,
+                account: {
+                  user_id: (found.user_id ?? found.id)?.toString?.() || '',
+                  employee_id: (found.employee_id ?? found.employee?.id)?.toString?.() || employee.id,
+                  email: found.email,
+                  role_type: found.role_type,
+                  is_active: found.is_active ?? true,
+                  location_id: found.location_id ?? undefined,
+                } as any,
+              } as Employee;
+            }
+          }
+        } catch {}
+        setCurrentEmployee(employee);
+        setShowAccountForm(true);
+      })();
+      return;
+    }
+    setCurrentEmployee(employee);
+    setShowAccountForm(true);
+  };
+
+  const handleSaveAccount = async (accountData: any) => {
+    if (!token || !currentEmployee || !companyId) return;
+    
+    try {
+      setLoading(true);
+      // sanitize payload for logs
+      const { password, password_confirmation, ...rest } = accountData || {};
+      debugLog('Account operation start', {
+        action: currentEmployee.account ? 'update' : 'create',
+        companyId,
+        employeeId: currentEmployee.id,
+        locationId: id,
+        payload: rest,
+        hasToken: !!token,
+      });
+      
+      if (currentEmployee.account) {
+        // Update existing account
+        const updateResponse = await api.userCompanies.updateEmployeeAccount(
+          companyId,
+          currentEmployee.account.user_id.toString(),
+          accountData,
+          token
+        );
+        
+        debugLog('Account update response', updateResponse);
+        if (!updateResponse.success) {
+          throw new Error(updateResponse.message || 'Error al actualizar la cuenta');
+        }
+        
+        toast({
+          title: '¡Éxito!',
+          description: 'La cuenta ha sido actualizada correctamente',
+        });
+      } else {
+        // Create new account
+        const createResponse = await api.userCompanies.createEmployeeAccount(
+          companyId,
+          currentEmployee.id,
+          accountData,
+          token
+        );
+        
+        debugLog('Account create response', createResponse);
+        if (!createResponse.success) {
+          throw new Error(createResponse.message || 'Error al crear la cuenta');
+        }
+        
+        toast({
+          title: '¡Éxito!',
+          description: 'La cuenta ha sido creada correctamente',
+        });
+      }
+      
+      // Refresh employees to get updated account info
+      const employeesResponse = await api.userCompanies.getLocationEmployees(
+        companyId,
+        id as string,
+        token
+      );
+      debugLog('Employees refresh after account op', employeesResponse);
+      if (employeesResponse.success) {
+        const employeesData = Array.isArray(employeesResponse.data) 
+          ? employeesResponse.data 
+          : (employeesResponse.data && Array.isArray(employeesResponse.data.data))
+            ? employeesResponse.data.data
+            : [];
+            
+        const formattedEmployees = employeesData.map((emp: any) => ({
+          id: emp.id?.toString() || `emp-${Math.random().toString(36).substr(2, 9)}`,
+          name: emp.name || emp.full_name || 'Nombre no disponible',
+          email: emp.email || '',
+          role: (emp.role && ['admin', 'manager', 'employee'].includes(emp.role.toLowerCase())) 
+            ? emp.role.toLowerCase() as 'admin' | 'manager' | 'employee'
+            : 'employee',
+          isActive: emp.status ? emp.status === 'active' : true,
+          lastActive: emp.last_active || emp.last_login || new Date().toISOString(),
+          phone: emp.phone || emp.phone_number || '',
+          position: emp.position || emp.job_title || 'Empleado',
+          avatar: emp.avatar || emp.profile_photo_url || '',
+          account: emp.account || emp.user_account || undefined
+        }));
+        setEmployees(formattedEmployees);
+      }
+      
+      setShowAccountForm(false);
+      setCurrentEmployee(null);
+    } catch (error) {
+      debugLog('Error managing account', {
+        message: error instanceof Error ? error.message : String(error),
+        companyId,
+        employeeId: currentEmployee?.id,
+        locationId: id,
+      });
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'No se pudo gestionar la cuenta',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -557,7 +769,19 @@ export default function BranchDetailPage() {
                   <TabsTrigger value="settings">Configuración</TabsTrigger>
                 </TabsList>
                 <TabsContent value="employees">
-                  {showEmployeeForm ? (
+                  {showAccountForm ? (
+                    <AccountForm
+                      account={currentEmployee?.account}
+                      employeeId={currentEmployee?.id || ''}
+                      employeeName={currentEmployee?.name || ''}
+                      locationId={id as string}
+                      onSave={handleSaveAccount}
+                      onCancel={() => {
+                        setShowAccountForm(false);
+                        setCurrentEmployee(null);
+                      }}
+                    />
+                  ) : showEmployeeForm ? (
                     <EmployeeForm
                       employee={currentEmployee}
                       locationId={id as string}
@@ -569,11 +793,14 @@ export default function BranchDetailPage() {
                     />
                   ) : (
                     <EmployeeList
+                      employees={employees}
                       onAddEmployee={() => setShowEmployeeForm(true)}
                       onEditEmployee={(emp) => {
                         setCurrentEmployee(emp);
                         setShowEmployeeForm(true);
                       }}
+                      onManageAccount={handleManageAccount}
+                      onDeleteEmployee={handleDeleteEmployee}
                     />
                   )}
                 </TabsContent>

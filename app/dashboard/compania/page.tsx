@@ -25,6 +25,7 @@ interface CompanyData {
   phone?: string;
   website?: string;
   logo_url?: string;
+  banner_url?: string;
   business_type?: string;
   business_type_id?: number | string;
   address?: string;
@@ -89,6 +90,9 @@ export default function CompaniaPage() {
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [selectedLogoFile, setSelectedLogoFile] = useState<File | null>(null);
   const logoInputRef = useRef<HTMLInputElement | null>(null);
+  const [bannerPreview, setBannerPreview] = useState<string | null>(null);
+  const [selectedBannerFile, setSelectedBannerFile] = useState<File | null>(null);
+  const bannerInputRef = useRef<HTMLInputElement | null>(null);
 
   // Fetch company data on mount
   useEffect(() => {
@@ -128,6 +132,10 @@ export default function CompaniaPage() {
     logoInputRef.current?.click();
   };
 
+  const handleOpenBannerDialog = () => {
+    bannerInputRef.current?.click();
+  };
+
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -158,11 +166,42 @@ export default function CompaniaPage() {
     }
   };
 
+  const handleBannerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    setBannerPreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return url;
+    });
+    setSelectedBannerFile(file);
+  };
+
+  const handleBannerDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleBannerDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const file = e.dataTransfer.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      const url = URL.createObjectURL(file);
+      setBannerPreview((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return url;
+      });
+      setSelectedBannerFile(file);
+    }
+  };
+
   useEffect(() => {
     return () => {
       if (logoPreview) URL.revokeObjectURL(logoPreview);
+      if (bannerPreview) URL.revokeObjectURL(bannerPreview);
     };
-  }, [logoPreview]);
+  }, [logoPreview, bannerPreview]);
 
   const uploadLogoIfNeeded = async (companyId: string): Promise<string | null> => {
     if (!selectedLogoFile) return null;
@@ -177,6 +216,25 @@ export default function CompaniaPage() {
       toast({
         title: 'Error al subir logo',
         description: 'Se continuará sin actualizar el logo.',
+        variant: 'destructive',
+      });
+      return null;
+    }
+  };
+
+  const uploadBannerIfNeeded = async (companyId: string): Promise<string | null> => {
+    if (!selectedBannerFile) return null;
+    try {
+      const path = `companies/${companyId}/banner/${Date.now()}_${selectedBannerFile.name}`;
+      const fileRef = storageRef(storage, path);
+      await uploadBytes(fileRef, selectedBannerFile);
+      const url = await getDownloadURL(fileRef);
+      return url;
+    } catch (err) {
+      console.error('Error uploading banner to Firebase:', err);
+      toast({
+        title: 'Error al subir banner',
+        description: 'Se continuará sin actualizar el banner.',
         variant: 'destructive',
       });
       return null;
@@ -240,6 +298,7 @@ export default function CompaniaPage() {
           phone: company.phone,
           website: company.website || undefined,
           logo_url: company.logo_url || undefined,
+          banner_url: company.banner_url || undefined,
           business_type: company.business_type || undefined,
           business_type_id: company.business_type_id || undefined,
           address: company.address,
@@ -462,6 +521,7 @@ export default function CompaniaPage() {
         currency: formData.currency || undefined,
         language: formData.language || undefined,
         logo_url: formData.logo_url || undefined,
+        banner_url: formData.banner_url || undefined,
         latitude: formData.latitude || undefined,
         longitude: formData.longitude || undefined,
               };
@@ -480,6 +540,14 @@ export default function CompaniaPage() {
         }
       }
 
+      // If a new banner file is selected, upload to Firebase and set banner_url
+      if (selectedBannerFile) {
+        const uploadedBannerUrl = await uploadBannerIfNeeded(resolvedCompanyId);
+        if (uploadedBannerUrl) {
+          data.banner_url = uploadedBannerUrl;
+        }
+      }
+
       // Create or update company
       const response = companyData?.id === 0 ?
         await api.userCompanies.create({
@@ -492,7 +560,9 @@ export default function CompaniaPage() {
           state: formData.state,
           country: formData.country || undefined,
           zip_code: formData.postal_code || undefined,
-          business_type_id: formData.business_type_id ? Number(formData.business_type_id) : undefined
+          business_type_id: formData.business_type_id ? Number(formData.business_type_id) : undefined,
+          logo_url: data.logo_url || formData.logo_url || undefined,
+          banner_url: data.banner_url || formData.banner_url || undefined
         }, token) :
         await api.companies.updateCompany(resolvedCompanyId, data, token);
       if (!response.success || !response.data) {
@@ -613,6 +683,57 @@ export default function CompaniaPage() {
                             accept="image/*"
                             className="hidden"
                             onChange={handleLogoChange}
+                          />
+                        </label>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-slate-700">Banner de la empresa</label>
+                      <div className="flex items-center justify-center w-full">
+                        <label
+                          onClick={handleOpenBannerDialog}
+                          onDragOver={handleBannerDragOver}
+                          onDrop={handleBannerDrop}
+                          className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-lg cursor-pointer bg-slate-50 hover:bg-slate-100"
+                        >
+                          <div className="flex flex-col items-center justify-center p-4 w-full">
+                            {bannerPreview || companyData?.banner_url ? (
+                              <img
+                                src={bannerPreview || (companyData?.banner_url as string)}
+                                alt="Banner de la empresa"
+                                className="w-full h-56 object-cover object-center mb-2 rounded-md"
+                              />
+                            ) : (
+                              <>
+                                <svg
+                                  className="w-8 h-8 mb-2 text-slate-500"
+                                  aria-hidden="true"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  fill="none"
+                                  viewBox="0 0 20 16"
+                                >
+                                  <path
+                                    stroke="currentColor"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth="2"
+                                    d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"
+                                  />
+                                </svg>
+                                <p className="text-sm text-slate-600">
+                                  <span className="font-medium">Haz clic para subir</span> o arrastra y suelta
+                                </p>
+                                <p className="text-xs text-slate-500">PNG, JPG o SVG (MAX. 5MB)</p>
+                              </>
+                            )}
+                          </div>
+                          <input
+                            ref={bannerInputRef}
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={handleBannerChange}
                           />
                         </label>
                       </div>

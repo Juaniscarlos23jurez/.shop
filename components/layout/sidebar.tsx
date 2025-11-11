@@ -66,12 +66,13 @@ const employeeSidebarItems = [
 ];
 
 export function Sidebar() {
-  const { user, logout, isEmployee } = useAuth();
+  const { user, logout, isEmployee, userRole } = useAuth();
   const router = useRouter();
   const pathname = usePathname() || '';
   
   // Use different sidebar items based on user role
-  const sidebarItems = isEmployee ? employeeSidebarItems : adminSidebarItems;
+  const isSales = userRole === 'employee_sales';
+  const sidebarItems = isSales ? employeeSidebarItems : adminSidebarItems;
   
   // Get user initials for avatar fallback
   const getUserInitials = (name?: string, email?: string) => {

@@ -43,7 +43,40 @@ export interface Employee {
     start_date: string | Date;
     location_id?: string;
   };
+  // Account information
+  account?: EmployeeAccount;
 }
+
+export interface EmployeeAccount {
+  id: number;
+  user_id: number;
+  employee_id: number;
+  email: string;
+  role: string; // 'employee_sales', 'employee_cashier', 'employee_supervisor', 'employee_manager'
+  role_type: EmployeeRoleType;
+  role_display: string;
+  is_active: boolean;
+  company_id: number;
+  location_id?: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export const EMPLOYEE_ROLE_TYPES = [
+  'sales',
+  'cashier',
+  'supervisor',
+  'manager'
+] as const;
+
+export type EmployeeRoleType = typeof EMPLOYEE_ROLE_TYPES[number];
+
+export const EMPLOYEE_ROLE_DISPLAY: Record<EmployeeRoleType, string> = {
+  sales: 'Ventas',
+  cashier: 'Cajero',
+  supervisor: 'Supervisor',
+  manager: 'Gerente'
+};
 
 export const ROLES = [
   'admin',
