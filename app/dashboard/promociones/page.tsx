@@ -30,6 +30,7 @@ export default function PromocionesPage() {
   const [endDate, setEndDate] = useState<string>("");
   const [isActive, setIsActive] = useState<boolean>(true);
   const [quantityLimit, setQuantityLimit] = useState<string>("");
+  const [perUserLimit, setPerUserLimit] = useState<string>("");
   const [promotions, setPromotions] = useState<any[]>([]);
   const [promosLoading, setPromosLoading] = useState<boolean>(false);
   const [filterProductId, setFilterProductId] = useState<string>("all");
@@ -131,6 +132,16 @@ export default function PromocionesPage() {
       }
       qty = parsed;
     }
+
+    // per_user_limit optional validation
+    let userQty: number | null = null;
+    if (perUserLimit.trim() !== "") {
+      const parsed = Number(perUserLimit);
+      if (!Number.isInteger(parsed) || parsed < 1) {
+        return setError("El límite por usuario debe ser un entero mayor o igual a 1");
+      }
+      userQty = parsed;
+    }
     // Rule: promotional price must not exceed current product price
     const currentPrice = Number(selectedProduct?.price);
     if (selectedProduct && Number.isFinite(currentPrice) && priceNum > currentPrice) {
@@ -158,6 +169,7 @@ export default function PromocionesPage() {
         end_at: endDate ? endDate : null,
         is_active: isActive,
         quantity_limit: qty,
+        per_user_limit: userQty,
       } as const;
       const res = await api.companies.createProductPromotion(String(companyId), token, payload as any);
       if (!res?.success) {
@@ -173,6 +185,7 @@ export default function PromocionesPage() {
       setEndDate("");
       setIsActive(true);
       setQuantityLimit(""); // Reset quantity_limit field
+      setPerUserLimit("");
 
       // Refresh promotions list
       fetchPromotions(1, perPage, filterProductId, filterLocationId);
@@ -307,6 +320,19 @@ export default function PromocionesPage() {
               />
               <p className="text-xs text-slate-500">Si se deja vacío, no hay límite de cantidad.</p>
             </div>
+
+            <div className="space-y-2">
+              <Label>Límite por usuario (opcional)</Label>
+              <Input
+                type="number"
+                min="1"
+                step="1"
+                value={perUserLimit}
+                onChange={(e) => setPerUserLimit(e.target.value)}
+                placeholder="Ej. 1"
+              />
+              <p className="text-xs text-slate-500">Si se deja vacío, no hay límite por usuario.</p>
+            </div>
           </div>
 
           <div className="flex justify-end">
@@ -375,6 +401,7 @@ export default function PromocionesPage() {
                   <th className="py-2 pr-4">Sucursal</th>
                   <th className="py-2 pr-4">Precio promo</th>
                   <th className="py-2 pr-4">Límite</th>
+                  <th className="py-2 pr-4">Límite x usuario</th>
                   <th className="py-2 pr-4">Inicio</th>
                   <th className="py-2 pr-4">Fin</th>
                 </tr>
@@ -389,6 +416,7 @@ export default function PromocionesPage() {
                       <td className="py-2 pr-4">{locationName}</td>
                       <td className="py-2 pr-4">${Number(promo.promo_price).toFixed(2)}</td>
                       <td className="py-2 pr-4">{promo.quantity_limit ?? '-'}</td>
+                      <td className="py-2 pr-4">{promo.per_user_limit ?? '-'}</td>
                       <td className="py-2 pr-4">{promo.start_at ? new Date(promo.start_at).toLocaleString() : '-'}</td>
                       <td className="py-2 pr-4">{promo.end_at ? new Date(promo.end_at).toLocaleString() : '-'}</td>
                     </tr>

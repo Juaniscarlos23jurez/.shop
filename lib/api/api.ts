@@ -850,6 +850,7 @@ export const api = {
         end_at?: string | null;
         is_active?: boolean;
         quantity_limit?: number | null;
+        per_user_limit?: number | null;
       }
     ): Promise<ApiResponse<any>> {
       const url = `${BASE_URL}/api/companies/${companyId}/product-promotions`;
