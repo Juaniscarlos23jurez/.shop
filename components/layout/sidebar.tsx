@@ -82,8 +82,7 @@ const adminSidebarItems = [
       { icon: Megaphone, label: "Anuncios", href: "/dashboard/anuncios" }, // Changed from MessageSquare
       { icon: Book, label: "Comentarios", href: "/dashboard/comentarios" }, // Changed from MessageSquare
       { icon: CreditCardIcon, label: "Metodos de cobro", href: "/dashboard/stripe" },
-        { icon: TicketIcon, label: "Promociones", href: "/dashboard/promociones" },
-
+ 
     ]
   },
   
@@ -95,7 +94,7 @@ const adminSidebarItems = [
     isCollapsible: true, 
     subItems: [
       { icon: BarChart3, label: "Analytics", href: "/dashboard/analytics" },
-      { icon: PieChart, label: "Reportes", href: "/dashboard/reportes" },
+      { icon: PieChart, label: "Ventas", href: "/dashboard/reportes" },
     ]
   },
   
@@ -106,7 +105,7 @@ const adminSidebarItems = [
     href: "#", 
     isCollapsible: true, 
     subItems: [
-      { icon: Building2, label: "Información de Compañía", href: "/dashboard/compania" }, // Renamed from "Compañía"
+      { icon: Building2, label: "Compañía", href: "/dashboard/compania" }, // Renamed from "Compañía"
       { icon: GitBranch, label: "Sucursales", href: "/dashboard/sucursales" },
     ]
   },

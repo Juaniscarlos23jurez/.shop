@@ -438,11 +438,7 @@ export default function AnunciosPage() {
                     <div className="text-slate-400 text-sm">Sin imagen</div>
                   )}
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="imageUrlInput">URL de imagen (para API)</Label>
-                  <Input id="imageUrlInput" value={imageUrlInput} onChange={(e) => setImageUrlInput(e.target.value)} placeholder="https://cdn.tu-dominio.com/banner.jpg" />
-                  <p className="text-xs text-slate-500">Para guardar por API, pega aquí una URL pública. La carga de archivos no está conectada aún.</p>
-                </div>
+                 
                 <p className="text-xs text-slate-500">Formatos soportados: JPG, PNG, WEBP. Tamaño recomendado 1600x900.</p>
               </div>
             </CardContent>
@@ -450,7 +446,7 @@ export default function AnunciosPage() {
 
           <div className="flex justify-end gap-3">
             <Button type="button" variant="outline" onClick={() => router.push('/dashboard')}>Cancelar</Button>
-            <Button type="submit" disabled={loading} className="bg-emerald-600 hover:bg-emerald-700">{token ? (loading ? 'Guardando…' : 'Guardar (API)') : 'Guardar (UI)'}</Button>
+            <Button type="submit" disabled={loading} className="bg-emerald-600 hover:bg-emerald-700">{token ? (loading ? 'Guardando…' : 'Guardar') : 'Guardar'}</Button>
           </div>
         </form>
 
