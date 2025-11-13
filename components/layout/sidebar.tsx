@@ -17,13 +17,15 @@ import {
   Crown as CrownIcon,
   ShoppingCart,
   Clock4,
-  CreditCard as CreditCardIcon
+  CreditCard as CreditCardIcon,
+  ChevronLeft // Import ChevronLeft icon
 } from 'lucide-react';
 import { LogOut as LogOutIcon } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter, usePathname } from 'next/navigation';
+import { useState, useLayoutEffect } from 'react'; // Import useState and useLayoutEffect
 
 // Admin sidebar items (shown for non-employee users)
 const adminSidebarItems = [
@@ -66,7 +68,7 @@ const employeeSidebarItems = [
   { icon: ShoppingCart, label: "Punto de Venta", href: "/dashboard/pos" }
 ];
 
-export function Sidebar() {
+export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean, setIsCollapsed: (collapsed: boolean) => void }) {
   const { user, logout, isEmployee, userRole } = useAuth();
   const router = useRouter();
   const pathname = usePathname() || '';
@@ -90,11 +92,26 @@ export function Sidebar() {
     }
     return 'US';
   };
+
+  useLayoutEffect(() => {
+    const updateSize = () => {
+      if (window.innerWidth < 768) { // Adjust breakpoint as needed
+        setIsCollapsed(true);
+      } else {
+        setIsCollapsed(false);
+      }
+    };
+
+    updateSize(); // Set initial state
+    window.addEventListener('resize', updateSize);
+    return () => window.removeEventListener('resize', updateSize);
+  }, [setIsCollapsed]);
+
   return (
-    <div className="w-64 h-screen bg-white border-r border-slate-200 flex flex-col">
-      {/* Logo */}
-      <div className="p-6 border-b border-slate-200">
-        <div className="flex items-center space-x-3">
+    <div className={`h-screen bg-white border-r border-slate-200 flex flex-col transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'}`}>
+      {/* Logo and Toggle Button */}
+      <div className={`p-6 border-b border-slate-200 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
+        <div className={`flex items-center space-x-3 ${isCollapsed ? 'hidden' : ''}`}>
           <div className="w-8 h-8 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-lg flex items-center justify-center">
             <Activity className="h-5 w-5 text-white" />
           </div>
@@ -103,6 +120,14 @@ export function Sidebar() {
             <p className="text-xs text-slate-500">Panel de control</p>
           </div>
         </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          className={`h-8 w-8 ${isCollapsed ? 'ml-0' : ''}`}
+          onClick={() => setIsCollapsed(!isCollapsed)}
+        >
+          <ChevronLeft className={`h-5 w-5 transition-transform duration-300 ${isCollapsed ? 'rotate-180' : ''}`} />
+        </Button>
       </div>
 
       {/* Navigation */}
@@ -114,30 +139,30 @@ export function Sidebar() {
             <Button
               key={index}
               variant={isActive ? "default" : "ghost"}
-              className={`w-full justify-start h-11 ${
+              className={`w-full justify-start h-11 ${isCollapsed ? 'px-2' : ''} ${ // Add px-2 for collapsed state
                 isActive 
                   ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/25 hover:bg-emerald-600" 
                   : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
               }`}
               onClick={() => router.push(item.href)}
             >
-              <item.icon className="h-5 w-5 mr-3" />
-              {item.label}
+              <item.icon className={`h-5 w-5 ${isCollapsed ? 'mr-0' : 'mr-3'}`} />
+              <span className={`${isCollapsed ? 'hidden' : ''}`}>{item.label}</span>
             </Button>
           );
         })}
       </nav>
 
       {/* User Profile */}
-      <div className="p-4 border-t border-slate-200 mt-auto">
-        <div className="flex items-center space-x-3">
+      <div className={`p-4 border-t border-slate-200 mt-auto ${isCollapsed ? 'text-center' : ''}`}>
+        <div className={`flex items-center space-x-3 ${isCollapsed ? 'justify-center' : ''}`}>
           <Avatar className="h-10 w-10">
             <AvatarImage src="/placeholder-user.jpg" alt={user?.firebase_name || 'User'} />
             <AvatarFallback className="bg-emerald-100 text-emerald-600">
               {getUserInitials(user?.firebase_name, user?.firebase_email)}
             </AvatarFallback>
           </Avatar>
-          <div className="flex-1 min-w-0">
+          <div className={`flex-1 min-w-0 ${isCollapsed ? 'hidden' : ''}`}>
             <p className="text-sm font-medium text-slate-900 truncate">
               {user?.firebase_name || 'Usuario'}
             </p>
@@ -149,14 +174,14 @@ export function Sidebar() {
         
         <Button 
           variant="ghost" 
-          className="w-full mt-4 justify-start text-red-600 hover:bg-red-50 hover:text-red-700"
+          className={`w-full mt-4 justify-start text-red-600 hover:bg-red-50 hover:text-red-700 ${isCollapsed ? 'justify-center' : ''}`}
           onClick={async () => {
             await logout();
             router.push('/auth/login');
           }}
         >
-          <LogOutIcon className="h-4 w-4 mr-2" />
-          Cerrar sesión
+          <LogOutIcon className={`h-4 w-4 ${isCollapsed ? 'mr-0' : 'mr-2'}`} />
+          <span className={`${isCollapsed ? 'hidden' : ''}`}>Cerrar sesión</span>
         </Button>
       </div>
     </div>
