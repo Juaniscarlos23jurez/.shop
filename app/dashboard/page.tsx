@@ -20,17 +20,9 @@ import { format } from 'date-fns';
 
 // Local state for API-driven data
 type SalesPoint = { month: string; sales: number; revenue: number };
+type AvgPurchaseMonthlyPoint = { month: string; avg: number; users: number };
 
 const defaultSalesData: SalesPoint[] = [];
-const defaultConversionData = [
-  { day: "Lun", conversions: 0 },
-  { day: "Mar", conversions: 0 },
-  { day: "Mié", conversions: 0 },
-  { day: "Jue", conversions: 0 },
-  { day: "Vie", conversions: 0 },
-  { day: "Sáb", conversions: 0 },
-  { day: "Dom", conversions: 0 },
-];
 
 export default function Dashboard() {
   const router = useRouter();
@@ -39,7 +31,7 @@ export default function Dashboard() {
   const [companyId, setCompanyId] = useState<string | undefined>(undefined);
   const [locations, setLocations] = useState<any[]>([]);
   const [salesData, setSalesData] = useState<SalesPoint[]>(defaultSalesData);
-  const [conversionData, setConversionData] = useState(defaultConversionData);
+  const [conversionData, setConversionData] = useState<AvgPurchaseMonthlyPoint[]>([]);
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [recentSales, setRecentSales] = useState<any[]>([]);
   const [metrics, setMetrics] = useState<Array<{
@@ -54,6 +46,7 @@ export default function Dashboard() {
   }>>([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [avgBadge, setAvgBadge] = useState<string>('-');
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -86,12 +79,15 @@ export default function Dashboard() {
         setCompanyId(String(cId));
 
         // Parallel fetches (tolerant)
-        const [locRes, salesStatsRes, orderStatsRes, followersRes, recentSalesRes] = await Promise.allSettled([
+        const currentYear = new Date().getFullYear();
+        const [locRes, salesStatsRes, orderStatsRes, followersRes, recentSalesRes, monthlyStatsRes, avgPerUserMonthlyRes] = await Promise.allSettled([
           api.userCompanies.getLocations(token),
           api.sales.getStatistics({}, token),
           api.orders.getOrderStatistics(String(cId), token),
           api.userCompanies.getFollowers(token),
-          api.sales.listSales({ per_page: 10, page: 1 }, token)
+          api.sales.listSales({ per_page: 10, page: 1 }, token),
+          api.sales.getMonthlyStatistics({ year: currentYear }, token),
+          api.sales.getAveragePurchasePerUserMonthly({ year: currentYear }, token)
         ]);
 
         // Locations shape as in reportes page
@@ -173,18 +169,39 @@ export default function Dashboard() {
           }
         ]);
 
-        // Build chart data from statistics if available
-        const monthly = (salesDataObj?.monthly || salesDataObj?.per_month || []) as Array<any>;
-        if (Array.isArray(monthly) && monthly.length) {
-          const monthNames = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-          const points: SalesPoint[] = monthly.map((m: any) => ({
-            month: m.month_name || monthNames[(Number(m.month) - 1 + 12) % 12] || String(m.month),
-            sales: Number(m.total_sales || m.count || 0),
-            revenue: Number(m.total_amount || m.revenue || 0)
-          }));
-          setSalesData(points);
+        // Build chart data from new monthly-statistics endpoint if available
+        if (monthlyStatsRes.status === 'fulfilled' && (monthlyStatsRes.value as any)?.success) {
+          const series = ((monthlyStatsRes.value as any)?.data || []) as Array<any>;
+          if (Array.isArray(series) && series.length) {
+            const monthNames = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+            const toLabel = (ym: string) => {
+              // ym expected 'YYYY-MM'
+              const m = Number(ym.split('-')[1] || '1');
+              return monthNames[(m - 1 + 12) % 12] || ym;
+            };
+            const points: SalesPoint[] = series.map((row: any) => ({
+              month: toLabel(String(row.month)),
+              sales: Number(row.total_sales ?? 0),
+              revenue: Number(row.total_revenue ?? 0),
+            }));
+            setSalesData(points);
+          } else {
+            setSalesData(defaultSalesData);
+          }
         } else {
-          setSalesData(defaultSalesData);
+          // Fallback to older shapes from getStatistics if present
+          const monthly = (salesDataObj?.monthly || salesDataObj?.per_month || []) as Array<any>;
+          if (Array.isArray(monthly) && monthly.length) {
+            const monthNames = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+            const points: SalesPoint[] = monthly.map((m: any) => ({
+              month: m.month_name || monthNames[(Number(m.month) - 1 + 12) % 12] || String(m.month),
+              sales: Number(m.total_sales || m.count || 0),
+              revenue: Number(m.total_amount || m.revenue || 0)
+            }));
+            setSalesData(points);
+          } else {
+            setSalesData(defaultSalesData);
+          }
         }
 
         // Activities placeholder – could be mapped from recent orders/sales if endpoints exist
@@ -196,6 +213,30 @@ export default function Dashboard() {
           setRecentSales(Array.isArray(list) ? list : []);
         } else {
           setRecentSales([]);
+        }
+
+        // Average purchase per user monthly (for ConversionChart)
+        if (avgPerUserMonthlyRes.status === 'fulfilled' && (avgPerUserMonthlyRes.value as any)?.success) {
+          const series = ((avgPerUserMonthlyRes.value as any)?.data || []) as Array<any>;
+          if (Array.isArray(series)) {
+            const monthNames = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+            const toLabel = (ym: string) => {
+              const m = Number((ym || '').toString().split('-')[1] || '1');
+              return monthNames[(m - 1 + 12) % 12] || ym;
+            };
+            const points: AvgPurchaseMonthlyPoint[] = series.map((row: any) => ({
+              month: toLabel(String(row.month)),
+              avg: Number(row.average_purchase_value ?? 0),
+              users: Number(row.total_users_with_purchases ?? 0),
+            }));
+            setConversionData(points);
+            const avgOverall = points.length
+              ? points.reduce((acc, p) => acc + (p.avg || 0), 0) / points.length
+              : 0;
+            const currency = (salesDataObj?.currency || 'MXN') as string;
+            const fmtCurrency = (n: number) => new Intl.NumberFormat('es-MX', { style: 'currency', currency }).format(Number(n || 0));
+            setAvgBadge(fmtCurrency(avgOverall));
+          }
         }
       } catch (e: any) {
         console.error('[Dashboard] load error', e);
@@ -225,12 +266,7 @@ export default function Dashboard() {
           title="Dashboard Principal" 
           description="Bienvenido de vuelta, aquí tienes un resumen de tu negocio"
         >
-          <button
-            type="button"
-            className="-m-2.5 p-2.5 rounded-md text-gray-700 lg:hidden"
-            onClick={() => setIsSidebarOpen(true)}
-          >
-          </button>
+          
         </Header>
 
         {/* Dashboard Content */}
@@ -269,16 +305,16 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
             <SalesChart 
               data={salesData}
-              title="Ventas Mensuales"
-              description="Evolución de ventas"
+              title="Ingresos Mensuales "
+              description="Suma de ingresos por mes"
               change=""
             />
 
             <ConversionChart 
               data={conversionData}
-              title="Conversiones Semanales"
-              description="Tasa de conversión (placeholder)"
-              average="-"
+              title="Ticket Promedio por Usuario"
+              description="Promedio mensual por usuario con compras"
+              average={avgBadge}
             />
           </div>
 

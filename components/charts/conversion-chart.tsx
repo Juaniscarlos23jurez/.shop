@@ -1,21 +1,23 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Line, LineChart, XAxis, YAxis, ResponsiveContainer } from 'recharts';
+import { Line, LineChart, XAxis, YAxis } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 
-interface ConversionData {
-  day: string;
-  conversions: number;
+interface AvgPurchaseMonthlyData {
+  month: string; // label (Ene, Feb, ...)
+  avg: number;   // average purchase value per user (MXN)
+  users: number; // users with purchases that month
 }
 
 interface ConversionChartProps {
-  data: ConversionData[];
+  data: AvgPurchaseMonthlyData[];
   title: string;
   description: string;
-  average: string;
+  average: string; // formatted average to show in badge
 }
 
 export function ConversionChart({ data, title, description, average }: ConversionChartProps) {
+  const currencyFmt = (n: number) => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(n || 0);
   return (
     <Card className="bg-white border-slate-100 shadow-sm rounded-2xl">
       <CardHeader className="pb-4">
@@ -36,8 +38,8 @@ export function ConversionChart({ data, title, description, average }: Conversio
       <CardContent>
         <ChartContainer
           config={{
-            conversions: {
-              label: "Conversiones",
+            avg: {
+              label: "Ticket Promedio (MXN)",
               color: "hsl(var(--chart-2))",
             },
           }}
@@ -45,16 +47,16 @@ export function ConversionChart({ data, title, description, average }: Conversio
         >
           <LineChart data={data}>
             <XAxis 
-              dataKey="day" 
+              dataKey="month" 
               axisLine={false}
               tickLine={false}
               tick={{ fontSize: 12, fill: '#64748b' }}
             />
-            <YAxis hide />
+            <YAxis width={60} tickFormatter={(v: number) => currencyFmt(Number(v))} tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} />
             <ChartTooltip content={<ChartTooltipContent />} />
             <Line
               type="monotone"
-              dataKey="conversions"
+              dataKey="avg"
               stroke="#3b82f6"
               strokeWidth={3}
               dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
