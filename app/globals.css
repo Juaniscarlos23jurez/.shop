@@ -60,6 +60,9 @@
 }
 
 @layer base {
+  html {
+    font-size: 80%; /* Reduce base font size by 20% */
+  }
   * {
     @apply border-border;
   }
