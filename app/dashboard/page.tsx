@@ -80,14 +80,15 @@ export default function Dashboard() {
 
         // Parallel fetches (tolerant)
         const currentYear = new Date().getFullYear();
-        const [locRes, salesStatsRes, orderStatsRes, followersRes, recentSalesRes, monthlyStatsRes, avgPerUserMonthlyRes] = await Promise.allSettled([
+        const [locRes, salesStatsRes, orderStatsRes, followersRes, recentSalesRes, monthlyStatsRes, avgPerUserMonthlyRes, recentActivityRes] = await Promise.allSettled([
           api.userCompanies.getLocations(token),
           api.sales.getStatistics({}, token),
           api.orders.getOrderStatistics(String(cId), token),
           api.userCompanies.getFollowers(token),
           api.sales.listSales({ per_page: 10, page: 1 }, token),
           api.sales.getMonthlyStatistics({ year: currentYear }, token),
-          api.sales.getAveragePurchasePerUserMonthly({ year: currentYear }, token)
+          api.sales.getAveragePurchasePerUserMonthly({ year: currentYear }, token),
+          api.activity.getRecentActivity({ limit: 5 }, token)
         ]);
 
         // Locations shape as in reportes page
@@ -204,8 +205,119 @@ export default function Dashboard() {
           }
         }
 
-        // Activities placeholder – could be mapped from recent orders/sales if endpoints exist
-        setActivities([]);
+        // Map recent activity into ActivityFeed items
+        if (recentActivityRes.status === 'fulfilled' && (recentActivityRes.value as any)?.success) {
+          const raw = (recentActivityRes.value as any).data || {};
+          const a = (raw && typeof raw === 'object' && 'data' in raw) ? (raw as any).data : raw;
+          const items: ActivityItem[] = [];
+          const pushItem = (it: Partial<ActivityItem> & { id?: number | string }) => {
+            const t = (it.type as any) || 'sale';
+            const baseId = String(it.id ?? items.length + 1);
+            const uniqueId = `${t}-${baseId}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+            items.push({
+              id: uniqueId,
+              type: t,
+              title: it.title || 'Actividad',
+              description: it.description || '',
+              time: it.time || '',
+              bgColor: it.bgColor || 'bg-slate-50',
+              iconColor: it.iconColor || 'text-slate-600',
+              user: it.user || 'Sistema',
+            });
+          };
+          // sales (if backend provides)
+          (a.sales || []).forEach((s: any) => pushItem({
+            id: s.id,
+            type: 'sale',
+            title: `Venta #${s.id}`,
+            description: `Total ${new Intl.NumberFormat('es-MX',{style:'currency',currency: s.currency || 'MXN'}).format(Number(s.total_amount || s.total || 0))}`,
+            time: s.created_at ? new Date(s.created_at).toLocaleString('es-MX') : '',
+            bgColor: 'bg-green-50',
+            iconColor: 'text-green-600',
+            user: s.user_name || s.customer_name || 'Cliente'
+          }));
+          // orders (if provided)
+          (a.orders || []).forEach((o: any) => pushItem({
+            id: o.id,
+            type: 'order',
+            title: `Orden #${o.id}`,
+            description: `Estado: ${o.status}`,
+            time: o.created_at ? new Date(o.created_at).toLocaleString('es-MX') : '',
+            bgColor: 'bg-blue-50',
+            iconColor: 'text-blue-600',
+            user: o.customer_name || 'Cliente'
+          }));
+          // users (if provided)
+          (a.users || []).forEach((u: any) => pushItem({
+            id: u.id,
+            type: 'user',
+            title: `Nuevo usuario: ${u.name || u.email}`,
+            description: u.email || '',
+            time: u.created_at ? new Date(u.created_at).toLocaleString('es-MX') : '',
+            bgColor: 'bg-purple-50',
+            iconColor: 'text-purple-600',
+            user: u.name || 'Usuario'
+          }));
+          // comments / feedback (if provided)
+          (a.comments || a.feedback || []).forEach((c: any) => pushItem({
+            id: c.id,
+            type: 'comment',
+            title: 'Nuevo comentario',
+            description: c.comment || c.content || '',
+            time: c.created_at ? new Date(c.created_at).toLocaleString('es-MX') : '',
+            bgColor: 'bg-yellow-50',
+            iconColor: 'text-yellow-600',
+            user: c.user_name || 'Usuario'
+          }));
+          // notifications
+          (a.notifications || []).forEach((n: any) => pushItem({
+            id: n.id,
+            type: 'comment',
+            title: n.title ? `Notificación: ${n.title}` : 'Notificación',
+            description: n.body || n.text || n.description || '',
+            time: n.created_at ? new Date(n.created_at).toLocaleString('es-MX') : '',
+            bgColor: 'bg-slate-50',
+            iconColor: 'text-slate-600',
+            user: n.user_name || n.sender || 'Sistema'
+          }));
+          // coupons
+          (a.coupons || []).forEach((c: any) => pushItem({
+            id: c.id,
+            type: 'sale',
+            title: `Cupón ${c.code}`,
+            description: c.name || c.description || `Tipo: ${c.type}`,
+            time: c.created_at ? new Date(c.created_at).toLocaleString('es-MX') : '',
+            bgColor: 'bg-green-50',
+            iconColor: 'text-green-600',
+            user: 'Marketing'
+          }));
+          // product promotions
+          (a.product_promotions || []).forEach((p: any) => pushItem({
+            id: p.id,
+            type: 'sale',
+            title: `Promoción: ${p.product?.name || `#${p.product_id}`}`,
+            description: `Precio promo ${new Intl.NumberFormat('es-MX',{style:'currency',currency:'MXN'}).format(Number(p.promo_price || 0))}`,
+            time: p.created_at ? new Date(p.created_at).toLocaleString('es-MX') : '',
+            bgColor: 'bg-emerald-50',
+            iconColor: 'text-emerald-600',
+            user: 'Sistema'
+          }));
+          // announcements
+          (a.announcements || []).forEach((an: any) => pushItem({
+            id: an.id,
+            type: 'comment',
+            title: `Anuncio: ${an.title}`,
+            description: an.text || an.subtitle || '',
+            time: an.created_at ? new Date(an.created_at).toLocaleString('es-MX') : '',
+            bgColor: 'bg-yellow-50',
+            iconColor: 'text-yellow-600',
+            user: 'Admin'
+          }));
+          // Keep latest first as backend returns latest-first
+          setActivities(items.slice(0, 15));
+        } else {
+          setActivities([]);
+        }
 
         // Recent sales list
         if (recentSalesRes.status === 'fulfilled' && (recentSalesRes.value as any)?.success) {

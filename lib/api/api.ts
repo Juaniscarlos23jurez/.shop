@@ -1446,6 +1446,26 @@ export const api = {
   // Orders API
   orders: ordersApi,
 
+  // Activity API
+  activity: {
+    /**
+     * Recent activity aggregated by category (sales, orders, users, comments, ...)
+     * GET /api/recent-activity?limit=<n>
+     */
+    async getRecentActivity(
+      params: { limit?: number } = {},
+      token: string
+    ): Promise<ApiResponse<any>> {
+      const search = new URLSearchParams();
+      if (params.limit !== undefined) search.set('limit', String(params.limit));
+      const url = `${BASE_URL}/api/recent-activity${search.toString() ? `?${search.toString()}` : ''}`;
+      return fetch(url, {
+        method: 'GET',
+        headers: getAuthHeader(token),
+      }).then(handleResponse);
+    },
+  },
+
   // Sales API
   sales: {
     /**
