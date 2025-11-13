@@ -23,7 +23,8 @@ import {
   Phone as PhoneIcon, // Rename Phone to PhoneIcon to avoid conflict
   Smartphone, // Import Smartphone icon
   Megaphone, // Import Megaphone icon
-  Book // Import Book icon
+  Book, // Import Book icon
+  Store, // Import Store icon
 } from 'lucide-react';
 import { LogOut as LogOutIcon } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -82,10 +83,12 @@ const adminSidebarItems = [
       { icon: Megaphone, label: "Anuncios", href: "/dashboard/anuncios" }, // Changed from MessageSquare
       { icon: Book, label: "Comentarios", href: "/dashboard/comentarios" }, // Changed from MessageSquare
       { icon: CreditCardIcon, label: "Metodos de cobro", href: "/dashboard/stripe" },
- 
     ]
   },
   
+  // Web Shop Store (new top-level item)
+  { icon: Store, label: "Web Shop Store", href: "/dashboard/web-shop-store" },
+
   // Reports Section
   { 
     icon: BarChart3, 
