@@ -20,6 +20,35 @@ export const api = {
       }).then(handleResponse);
     },
 
+    /**
+     * Product Promotions (Public): list active and valid promotions
+     * GET /api/public/companies/{companyId}/product-promotions
+     * Optional filters: product_id, location_id, per_page, page
+     * No auth required.
+     */
+    async listPublicProductPromotions(
+      companyId: string,
+      params: {
+        product_id?: number | string;
+        location_id?: number | string;
+        per_page?: number | string;
+        page?: number | string;
+      } = {}
+    ): Promise<ApiResponse<any>> {
+      const search = new URLSearchParams();
+      if (params.product_id !== undefined) search.set('product_id', String(params.product_id));
+      if (params.location_id !== undefined) search.set('location_id', String(params.location_id));
+      if (params.per_page !== undefined) search.set('per_page', String(params.per_page));
+      if (params.page !== undefined) search.set('page', String(params.page));
+      const url = `${BASE_URL}/api/public/companies/${companyId}/product-promotions${search.toString() ? `?${search.toString()}` : ''}`;
+      return fetch(url, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+        },
+      }).then(handleResponse);
+    },
+
     async getStates(country_id: number | string, active?: boolean): Promise<ApiResponse<any>> {
       const params = new URLSearchParams({ country_id: String(country_id) });
       if (typeof active === 'boolean') params.set('active', String(active));
@@ -775,6 +804,63 @@ export const api = {
           error: error instanceof Error ? error.message : String(error)
         };
       }
+    },
+
+    /**
+     * Product Promotions: list
+     * GET /api/companies/{companyId}/product-promotions
+     * Optional filters: product_id, location_id, active_only, per_page, page
+     */
+    async listProductPromotions(
+      companyId: string,
+      token: string,
+      params: {
+        product_id?: number | string;
+        location_id?: number | string;
+        active_only?: boolean | string;
+        per_page?: number | string;
+        page?: number | string;
+      } = {}
+    ): Promise<ApiResponse<any>> {
+      const search = new URLSearchParams();
+      if (params.product_id !== undefined) search.set('product_id', String(params.product_id));
+      if (params.location_id !== undefined) search.set('location_id', String(params.location_id));
+      if (params.active_only !== undefined) search.set('active_only', String(params.active_only));
+      if (params.per_page !== undefined) search.set('per_page', String(params.per_page));
+      if (params.page !== undefined) search.set('page', String(params.page));
+      const url = `${BASE_URL}/api/companies/${companyId}/product-promotions${search.toString() ? `?${search.toString()}` : ''}`;
+      return fetch(url, {
+        method: 'GET',
+        headers: getAuthHeader(token),
+      }).then(handleResponse);
+    },
+
+    /**
+     * Product Promotions: create
+     * POST /api/companies/{companyId}/product-promotions
+     */
+    async createProductPromotion(
+      companyId: string,
+      token: string,
+      data: {
+        product_id: number | string;
+        location_id: number | string;
+        promo_price: number;
+        start_at?: string | null;
+        end_at?: string | null;
+        is_active?: boolean;
+        quantity_limit?: number | null;
+      }
+    ): Promise<ApiResponse<any>> {
+      const url = `${BASE_URL}/api/companies/${companyId}/product-promotions`;
+      return fetch(url, {
+        method: 'POST',
+        headers: {
+          ...getAuthHeader(token),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      }).then(handleResponse);
     },
 
     /**

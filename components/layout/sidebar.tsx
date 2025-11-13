@@ -32,6 +32,7 @@ const adminSidebarItems = [
  
   // Core business
   { icon: Package, label: "Productos", href: "/dashboard/productos" },
+  { icon: TicketIcon, label: "Promociones", href: "/dashboard/promociones" },
   { icon: GiftIcon, label: "Puntos", href: "/dashboard/puntos" },
   { icon: Users, label: "Clientes", href: "/dashboard/clientes" },
   { icon: CrownIcon, label: "Membresías", href: "/dashboard/membresias" },

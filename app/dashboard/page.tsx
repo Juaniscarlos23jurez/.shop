@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { api } from '@/lib/api/api';
 
 // Components
 import { Sidebar } from "@/components/layout/sidebar";
@@ -13,139 +14,46 @@ import { SalesChart } from "@/components/charts/sales-chart";
 import { ConversionChart } from "@/components/charts/conversion-chart";
 import { ActivityFeed, type ActivityItem } from "@/components/activity/activity-feed";
 import { QuickStats } from "@/components/cards/quick-stats";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { format } from 'date-fns';
 
-// Data
-const salesData = [
-  { month: "Ene", sales: 4000, revenue: 2400 },
-  { month: "Feb", sales: 3000, revenue: 1398 },
-  { month: "Mar", sales: 2000, revenue: 9800 },
-  { month: "Abr", sales: 2780, revenue: 3908 },
-  { month: "May", sales: 1890, revenue: 4800 },
-  { month: "Jun", sales: 2390, revenue: 3800 },
-  { month: "Jul", sales: 3490, revenue: 4300 },
-  { month: "Ago", sales: 4000, revenue: 2400 },
-  { month: "Sep", sales: 3200, revenue: 3600 },
-  { month: "Oct", sales: 4100, revenue: 4800 },
-  { month: "Nov", sales: 3800, revenue: 4200 },
-  { month: "Dic", sales: 4500, revenue: 5000 },
-];
+// Local state for API-driven data
+type SalesPoint = { month: string; sales: number; revenue: number };
 
-const conversionData = [
-  { day: "Lun", conversions: 65 },
-  { day: "Mar", conversions: 78 },
-  { day: "Mié", conversions: 82 },
-  { day: "Jue", conversions: 74 },
-  { day: "Vie", conversions: 89 },
-  { day: "Sáb", conversions: 95 },
-  { day: "Dom", conversions: 71 },
-];
-
-const activities: ActivityItem[] = [
-  {
-    id: 1,
-    type: 'sale',
-    title: 'Nuevo pedido',
-    description: 'Pedido #1234 por $120.00',
-    time: 'Hace 2 min',
-    bgColor: 'bg-blue-50',
-    iconColor: 'text-blue-600',
-    user: 'Juan Pérez'
-  },
-  {
-    id: 2,
-    type: 'comment',
-    title: 'Nuevo comentario',
-    description: '¡Excelente servicio!',
-    time: 'Hace 15 min',
-    bgColor: 'bg-green-50',
-    iconColor: 'text-green-600',
-    user: 'María García'
-  },
-  {
-    id: 3,
-    type: 'user',
-    title: 'Nuevo usuario registrado',
-    description: 'Carlos López se unió',
-    time: 'Hace 1 hora',
-    bgColor: 'bg-purple-50',
-    iconColor: 'text-purple-600',
-    user: 'Carlos López'
-  },
-  {
-    id: 4,
-    type: 'order',
-    title: 'Pedido completado',
-    description: 'Pedido #1233 ha sido entregado',
-    time: 'Hace 2 horas',
-    bgColor: 'bg-yellow-50',
-    iconColor: 'text-yellow-600',
-    user: 'Ana Martínez'
-  },
-  {
-    id: 5,
-    type: 'sale',
-    title: 'Nuevo pedido',
-    description: 'Pedido #1235 por $85.00',
-    time: 'Hace 3 horas',
-    bgColor: 'bg-blue-50',
-    iconColor: 'text-blue-600',
-    user: 'Roberto Sánchez'
-  },
-];
-
-const metrics = [
-  {
-    title: "Ventas Totales",
-    value: "$45,231",
-    change: "+20.1%",
-    trend: "up" as const,
-    icon: 'dollar' as const,
-    bgColor: "bg-green-50",
-    iconColor: "text-green-600",
-    description: "vs mes anterior"
-  },
-  {
-    title: "Nuevos Usuarios",
-    value: "2,350",
-    change: "+15.3%",
-    trend: "up" as const,
-    icon: 'users' as const,
-    bgColor: "bg-blue-50",
-    iconColor: "text-blue-600",
-    description: "este mes"
-  },
-  {
-    title: "Pedidos",
-    value: "1,234",
-    change: "-2.4%",
-    trend: "down" as const,
-    icon: 'shopping-cart' as const,
-    bgColor: "bg-purple-50",
-    iconColor: "text-purple-600",
-    description: "últimos 30 días"
-  },
-  {
-    title: "Comentarios",
-    value: "573",
-    change: "+8.2%",
-    trend: "up" as const,
-    icon: 'message-square' as const,
-    bgColor: "bg-orange-50",
-    iconColor: "text-orange-600",
-    description: "promedio 4.8★"
-  }
-];
-
-const quickStats = [
-  { label: "Visitantes hoy", value: "1,234", percentage: 75, color: 'bg-emerald-500' },
-  { label: "Ventas hoy", value: "$2,847", percentage: 60, color: 'bg-blue-500' },
-  { label: "Conversión", value: "3.2%", percentage: 45, color: 'bg-purple-500' },
+const defaultSalesData: SalesPoint[] = [];
+const defaultConversionData = [
+  { day: "Lun", conversions: 0 },
+  { day: "Mar", conversions: 0 },
+  { day: "Mié", conversions: 0 },
+  { day: "Jue", conversions: 0 },
+  { day: "Vie", conversions: 0 },
+  { day: "Sáb", conversions: 0 },
+  { day: "Dom", conversions: 0 },
 ];
 
 export default function Dashboard() {
   const router = useRouter();
-  const { user, loading } = useAuth();
+  const { user, loading, token } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [companyId, setCompanyId] = useState<string | undefined>(undefined);
+  const [locations, setLocations] = useState<any[]>([]);
+  const [salesData, setSalesData] = useState<SalesPoint[]>(defaultSalesData);
+  const [conversionData, setConversionData] = useState(defaultConversionData);
+  const [activities, setActivities] = useState<ActivityItem[]>([]);
+  const [recentSales, setRecentSales] = useState<any[]>([]);
+  const [metrics, setMetrics] = useState<Array<{
+    title: string;
+    value: string;
+    change: string;
+    trend: 'up' | 'down';
+    icon: 'dollar' | 'users' | 'shopping-cart' | 'message-square';
+    bgColor: string;
+    iconColor: string;
+    description?: string;
+  }>>([]);
+  const [isLoadingData, setIsLoadingData] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -153,6 +61,151 @@ export default function Dashboard() {
       router.push('/auth/login');
     }
   }, [user, loading, router]);
+
+  // Load company, locations and dashboard stats
+  useEffect(() => {
+    const load = async () => {
+      if (loading) return;
+      if (!user || !token) return;
+      setIsLoadingData(true);
+      setError(null);
+
+      try {
+        // Determine company id
+        let cId = user.company_id;
+        if (!cId) {
+          const compRes = await api.userCompanies.get(token);
+          const cData: any = compRes.data;
+          if (cData) {
+            if (cData.data?.id !== undefined) cId = String(cData.data.id);
+            else if (cData.id !== undefined) cId = String(cData.id);
+            else if (cData.company?.id !== undefined) cId = String(cData.company.id);
+          }
+        }
+        if (!cId) throw new Error('No company ID asociado al usuario.');
+        setCompanyId(String(cId));
+
+        // Parallel fetches (tolerant)
+        const [locRes, salesStatsRes, orderStatsRes, followersRes, recentSalesRes] = await Promise.allSettled([
+          api.userCompanies.getLocations(token),
+          api.sales.getStatistics({}, token),
+          api.orders.getOrderStatistics(String(cId), token),
+          api.userCompanies.getFollowers(token),
+          api.sales.listSales({ per_page: 10, page: 1 }, token)
+        ]);
+
+        // Locations shape as in reportes page
+        if (locRes.status === 'fulfilled' && (locRes.value as any)?.success) {
+          const locs = (locRes.value as any)?.data?.locations ?? [];
+          setLocations(Array.isArray(locs) ? locs : []);
+        }
+
+        // Build metrics safely
+        const salesDataObj = salesStatsRes.status === 'fulfilled' ? (salesStatsRes.value as any)?.data : null;
+        // Support shapes like { total_revenue, total_sales, average_sale }
+        const totalSales = Number(
+          salesDataObj?.total_revenue ??
+          salesDataObj?.total_sales_amount ??
+          salesDataObj?.total_amount ??
+          salesDataObj?.summary?.total_amount ?? 0
+        );
+        const totalSalesCount = Number(salesDataObj?.total_sales ?? salesDataObj?.count ?? 0);
+        const averageSale = Number(salesDataObj?.average_sale ?? 0);
+
+        const orderStatsObj = orderStatsRes.status === 'fulfilled' ? (orderStatsRes.value as any)?.data : null;
+        const ordersCount = Number(orderStatsObj?.total_orders ?? orderStatsObj?.summary?.total ?? 0);
+        const readyCount = Number(orderStatsObj?.status_counts?.ready ?? 0);
+        const completedCount = Number(orderStatsObj?.status_counts?.completed ?? 0);
+
+        // Followers: shape like clientes page -> response.data (wrapper) -> .data.summary.total_followers
+        let followersCount = 0;
+        if (followersRes.status === 'fulfilled') {
+          const fw = followersRes.value as any;
+          const wrapper = fw?.data; // { status, data, message }
+          const summary = wrapper?.data?.summary || fw?.data?.summary; // try both shapes
+          followersCount = Number(summary?.total_followers ?? 0);
+        }
+
+        const currency = (salesDataObj?.currency || 'MXN') as string;
+        const fmtCurrency = (n: number) =>
+          new Intl.NumberFormat('es-MX', { style: 'currency', currency }).format(Number(n || 0));
+
+        setMetrics([
+          {
+            title: 'Ventas Totales',
+            value: fmtCurrency(totalSales),
+            change: '+0%',
+            trend: 'up',
+            icon: 'dollar',
+            bgColor: 'bg-green-50',
+            iconColor: 'text-green-600',
+            description: `ventas: ${totalSalesCount} • ticket prom: ${fmtCurrency(averageSale)}`
+          },
+          {
+            title: 'Usuarios (Seguidores)',
+            value: String(followersCount),
+            change: '+0%',
+            trend: 'up',
+            icon: 'users',
+            bgColor: 'bg-blue-50',
+            iconColor: 'text-blue-600',
+            description: 'total seguidores'
+          },
+          {
+            title: 'Pedidos',
+            value: String(ordersCount),
+            change: '+0%',
+            trend: 'up',
+            icon: 'shopping-cart',
+            bgColor: 'bg-purple-50',
+            iconColor: 'text-purple-600',
+            description: `listos: ${readyCount} • completados: ${completedCount}`
+          },
+          {
+            title: 'Sedes (Locations)',
+            value: String(locations?.length || 0),
+            change: '+0%',
+            trend: 'up',
+            icon: 'message-square',
+            bgColor: 'bg-orange-50',
+            iconColor: 'text-orange-600',
+            description: 'total de sucursales'
+          }
+        ]);
+
+        // Build chart data from statistics if available
+        const monthly = (salesDataObj?.monthly || salesDataObj?.per_month || []) as Array<any>;
+        if (Array.isArray(monthly) && monthly.length) {
+          const monthNames = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+          const points: SalesPoint[] = monthly.map((m: any) => ({
+            month: m.month_name || monthNames[(Number(m.month) - 1 + 12) % 12] || String(m.month),
+            sales: Number(m.total_sales || m.count || 0),
+            revenue: Number(m.total_amount || m.revenue || 0)
+          }));
+          setSalesData(points);
+        } else {
+          setSalesData(defaultSalesData);
+        }
+
+        // Activities placeholder – could be mapped from recent orders/sales if endpoints exist
+        setActivities([]);
+
+        // Recent sales list
+        if (recentSalesRes.status === 'fulfilled' && (recentSalesRes.value as any)?.success) {
+          const list = (recentSalesRes.value as any)?.data?.data || [];
+          setRecentSales(Array.isArray(list) ? list : []);
+        } else {
+          setRecentSales([]);
+        }
+      } catch (e: any) {
+        console.error('[Dashboard] load error', e);
+        setError(e?.message || 'Error al cargar el dashboard');
+      } finally {
+        setIsLoadingData(false);
+      }
+    };
+    load();
+  }, [loading, user, token]);
 
   if (loading || !user) {
     return (
@@ -182,6 +235,19 @@ export default function Dashboard() {
 
         {/* Dashboard Content */}
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-6">
+          {isLoadingData && (
+            <div className="mb-6 p-4 rounded-md bg-white border border-gray-200">
+              <div className="flex items-center gap-3 text-gray-600">
+                <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-emerald-500"></div>
+                <span>Cargando datos...</span>
+              </div>
+            </div>
+          )}
+          {error && (
+            <div className="mb-6 p-4 rounded-md bg-red-50 border border-red-200 text-red-700">
+              {error}
+            </div>
+          )}
           {/* Metrics Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
             {metrics.map((metric, index) => (
@@ -194,7 +260,7 @@ export default function Dashboard() {
                 icon={metric.icon}
                 bgColor={metric.bgColor}
                 iconColor={metric.iconColor}
-                description={metric.description}
+                description={metric.description || ''}
               />
             ))}
           </div>
@@ -204,26 +270,96 @@ export default function Dashboard() {
             <SalesChart 
               data={salesData}
               title="Ventas Mensuales"
-              description="Evolución de ventas en los últimos 12 meses"
-              change="+12.5%"
+              description="Evolución de ventas"
+              change=""
             />
 
             <ConversionChart 
               data={conversionData}
               title="Conversiones Semanales"
-              description="Tasa de conversión por día de la semana"
-              average="82%"
+              description="Tasa de conversión (placeholder)"
+              average="-"
             />
           </div>
+
+          {/* Recent Sales */}
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Ventas Recientes</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {recentSales.length === 0 ? (
+                <div className="text-sm text-gray-500">No hay ventas recientes.</div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="text-left border-b">
+                        <th className="py-2 px-3">#</th>
+                        <th className="py-2 px-3">Fecha</th>
+                        <th className="py-2 px-3">Sucursal</th>
+                        <th className="py-2 px-3 text-right">Total</th>
+                        <th className="py-2 px-3">Pago</th>
+                        <th className="py-2 px-3">Venta</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {recentSales.map((s, idx) => {
+                        const currency = (s.currency || 'MXN') as string;
+                        const total = Number(s.total_amount ?? s.total ?? s.amount ?? 0);
+                        const totalFmt = new Intl.NumberFormat('es-MX', { style: 'currency', currency }).format(total);
+                        const dateStr = s.created_at || s.date || s.createdAt || null;
+                        const dateFmt = dateStr ? format(new Date(dateStr), 'dd/MM/yyyy HH:mm') : '-';
+                        const locationName = s.location?.name || s.location_name || '-';
+                        const paymentStatus = (s.payment_status || '').toString();
+                        const saleStatus = (s.sale_status || '').toString();
+
+                        const paymentBadgeClass = paymentStatus === 'completed'
+                          ? 'bg-emerald-100 text-emerald-700'
+                          : paymentStatus === 'pending'
+                          ? 'bg-yellow-100 text-yellow-700'
+                          : paymentStatus === 'failed'
+                          ? 'bg-red-100 text-red-700'
+                          : 'bg-gray-100 text-gray-700';
+
+                        const saleBadgeClass = saleStatus === 'completed'
+                          ? 'bg-emerald-100 text-emerald-700'
+                          : saleStatus === 'cancelled'
+                          ? 'bg-red-100 text-red-700'
+                          : 'bg-blue-100 text-blue-700';
+
+                        return (
+                          <tr key={s.id ?? idx} className="border-b last:border-0">
+                            <td className="py-2 px-3">{s.id ?? idx + 1}</td>
+                            <td className="py-2 px-3">{dateFmt}</td>
+                            <td className="py-2 px-3">{locationName}</td>
+                            <td className="py-2 px-3 text-right font-medium">{totalFmt}</td>
+                            <td className="py-2 px-3">
+                              <span className={`inline-flex px-2 py-1 rounded text-xs font-medium ${paymentBadgeClass}`}>
+                                {paymentStatus || '—'}
+                              </span>
+                            </td>
+                            <td className="py-2 px-3">
+                              <span className={`inline-flex px-2 py-1 rounded text-xs font-medium ${saleBadgeClass}`}>
+                                {saleStatus || '—'}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           {/* Bottom Row */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2">
               <ActivityFeed activities={activities} />
             </div>
-            <div>
-              <QuickStats />
-            </div>
+            
           </div>
         </main>
       </div>
