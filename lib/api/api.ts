@@ -1550,6 +1550,50 @@ export const api = {
         headers: getAuthHeader(token),
       }).then(handleResponse);
     },
+
+    /**
+     * Monthly sales statistics
+     * GET /api/sales/monthly-statistics?location_id&year
+     * Returns array of { month: 'YYYY-MM', total_revenue, total_sales }
+     */
+    async getMonthlyStatistics(
+      params: {
+        location_id?: number | string;
+        year?: number | string;
+      } = {},
+      token: string
+    ): Promise<ApiResponse<any>> {
+      const search = new URLSearchParams();
+      if (params.location_id !== undefined) search.set('location_id', String(params.location_id));
+      if (params.year !== undefined) search.set('year', String(params.year));
+      const url = `${BASE_URL}/api/sales/monthly-statistics${search.toString() ? `?${search.toString()}` : ''}`;
+      return fetch(url, {
+        method: 'GET',
+        headers: getAuthHeader(token),
+      }).then(handleResponse);
+    },
+
+    /**
+     * Average purchase per user monthly
+     * GET /api/sales/average-purchase-per-user-monthly?location_id&year
+     * Returns array of { month: 'YYYY-MM', average_purchase_value, total_users_with_purchases }
+     */
+    async getAveragePurchasePerUserMonthly(
+      params: {
+        location_id?: number | string;
+        year?: number | string;
+      } = {},
+      token: string
+    ): Promise<ApiResponse<any>> {
+      const search = new URLSearchParams();
+      if (params.location_id !== undefined) search.set('location_id', String(params.location_id));
+      if (params.year !== undefined) search.set('year', String(params.year));
+      const url = `${BASE_URL}/api/sales/average-purchase-per-user-monthly${search.toString() ? `?${search.toString()}` : ''}`;
+      return fetch(url, {
+        method: 'GET',
+        headers: getAuthHeader(token),
+      }).then(handleResponse);
+    },
   },
 
   // Products API

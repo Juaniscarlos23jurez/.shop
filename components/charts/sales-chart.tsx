@@ -17,6 +17,7 @@ interface SalesChartProps {
 }
 
 export function SalesChart({ data, title, description, change }: SalesChartProps) {
+  const currencyFmt = (n: number) => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(n || 0);
   return (
     <Card className="bg-white border-slate-100 shadow-sm rounded-2xl">
       <CardHeader className="pb-4">
@@ -37,8 +38,8 @@ export function SalesChart({ data, title, description, change }: SalesChartProps
       <CardContent>
         <ChartContainer
           config={{
-            sales: {
-              label: "Ventas",
+            revenue: {
+              label: "Ingresos (MXN)",
               color: "hsl(var(--chart-1))",
             },
           }}
@@ -57,11 +58,11 @@ export function SalesChart({ data, title, description, change }: SalesChartProps
               tickLine={false}
               tick={{ fontSize: 12, fill: '#64748b' }}
             />
-            <YAxis hide />
+            <YAxis width={60} tickFormatter={(v: number) => currencyFmt(Number(v))} tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} />
             <ChartTooltip content={<ChartTooltipContent />} />
             <Area
               type="monotone"
-              dataKey="sales"
+              dataKey="revenue"
               stroke="#22c55e"
               strokeWidth={2}
               fill="url(#salesGradient)"
