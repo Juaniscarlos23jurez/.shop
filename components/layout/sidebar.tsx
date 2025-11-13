@@ -18,7 +18,12 @@ import {
   ShoppingCart,
   Clock4,
   CreditCard as CreditCardIcon,
-  ChevronLeft // Import ChevronLeft icon
+  ChevronLeft, // Import ChevronLeft icon
+  ChevronDown, // Import ChevronDown icon
+  Phone as PhoneIcon, // Rename Phone to PhoneIcon to avoid conflict
+  Smartphone, // Import Smartphone icon
+  Megaphone, // Import Megaphone icon
+  Book // Import Book icon
 } from 'lucide-react';
 import { LogOut as LogOutIcon } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -34,31 +39,77 @@ const adminSidebarItems = [
  
   // Core business
   { icon: Package, label: "Productos", href: "/dashboard/productos" },
-  { icon: TicketIcon, label: "Promociones", href: "/dashboard/promociones" },
-  { icon: GiftIcon, label: "Puntos", href: "/dashboard/puntos" },
-  { icon: Users, label: "Clientes", href: "/dashboard/clientes" },
-  { icon: CrownIcon, label: "Membresías", href: "/dashboard/membresias" },
-  { icon: TicketIcon, label: "Cupones", href: "/dashboard/cupones" },
-  
-  // Orders
+  { icon: ShoppingCart, label: "Punto de Venta", href: "/dashboard/pos" },
   { icon: Clock4, label: "Órdenes Pendientes", href: "/dashboard/ordenes-pendientes" },
  
-  // Communication & Feedback
-  { icon: MessageSquare, label: "Comentarios", href: "/dashboard/comentarios" },
-  { icon: BellIcon, label: "Notificaciones", href: "/dashboard/notificaciones" },
-  { icon: MessageSquare, label: "Anuncios", href: "/dashboard/anuncios" },
+  // Clientes Section
+  { 
+    icon: Users, 
+    label: "Clientes", 
+    href: "#", 
+    isCollapsible: true, 
+    subItems: [
+      { icon: Users, label: "Clientes", href: "/dashboard/clientes" },
+      { icon: TicketIcon, label: "Cupones", href: "/dashboard/cupones" },
+      { icon: CrownIcon, label: "Membresías", href: "/dashboard/membresias" },
+      { icon: GiftIcon, label: "Puntos", href: "/dashboard/puntos" },
+    ]
+  },
   
-  // Reports & Settings
-  { icon: BarChart3, label: "Analytics", href: "/dashboard/analytics" },
-  { icon: PieChart, label: "Reportes", href: "/dashboard/reportes" },
-  { icon: Building2, label: "Compañía", href: "/dashboard/compania" },
-  { icon: GitBranch, label: "Sucursales", href: "/dashboard/sucursales" },
-
-  // Empleados
-   { icon: ShoppingCart, label: "Punto de Venta", href: "/dashboard/pos" },
+  // Orders
  
-  // Payments
-  { icon: CreditCardIcon, label: "Metodos de cobro", href: "/dashboard/stripe" },
+  // Empleados Section
+  { 
+    icon: Users, 
+    label: "Empleados", 
+    href: "#", 
+    isCollapsible: true, 
+    subItems: [
+      { icon: Users, label: "Cuentas de Empleados", href: "/dashboard/empleados" }, // Renamed from "Empleados"
+      { icon: CreditCardIcon, label: "Nómina", href: "/dashboard/nomina" },
+    ]
+  },
+ 
+  // App Section (newly grouped)
+  { 
+    icon: Smartphone, // Changed from Phone
+    label: "App", 
+    href: "#", // Placeholder href, will not be navigated directly
+    isCollapsible: true, // Custom property to mark as collapsible
+    subItems: [
+      { icon: TicketIcon, label: "Promociones", href: "/dashboard/promociones" },
+      { icon: BellIcon, label: "Notificaciones", href: "/dashboard/notificaciones" },
+      { icon: Megaphone, label: "Anuncios", href: "/dashboard/anuncios" }, // Changed from MessageSquare
+      { icon: Book, label: "Comentarios", href: "/dashboard/comentarios" }, // Changed from MessageSquare
+      { icon: CreditCardIcon, label: "Metodos de cobro", href: "/dashboard/stripe" },
+        { icon: TicketIcon, label: "Promociones", href: "/dashboard/promociones" },
+
+    ]
+  },
+  
+  // Reports Section
+  { 
+    icon: BarChart3, 
+    label: "Reportes", 
+    href: "#", 
+    isCollapsible: true, 
+    subItems: [
+      { icon: BarChart3, label: "Analytics", href: "/dashboard/analytics" },
+      { icon: PieChart, label: "Reportes", href: "/dashboard/reportes" },
+    ]
+  },
+  
+  // Compañía Section
+  { 
+    icon: Building2, 
+    label: "Compañía", 
+    href: "#", 
+    isCollapsible: true, 
+    subItems: [
+      { icon: Building2, label: "Información de Compañía", href: "/dashboard/compania" }, // Renamed from "Compañía"
+      { icon: GitBranch, label: "Sucursales", href: "/dashboard/sucursales" },
+    ]
+  },
 
   { icon: Settings, label: "Configuración", href: "/dashboard/configuracion" },
 ];
@@ -76,7 +127,48 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
   // Use different sidebar items based on user role
   const isSales = userRole === 'employee_sales';
   const sidebarItems = isSales ? employeeSidebarItems : adminSidebarItems;
-  
+
+  // State for collapsible sections
+  const [isAppSectionExpanded, setIsAppSectionExpanded] = useState(() => {
+    const appSection = adminSidebarItems.find(item => item.label === 'App');
+    if (appSection && appSection.subItems) {
+      return appSection.subItems.some(subItem => pathname.startsWith(subItem.href));
+    }
+    return false;
+  });
+
+  const [isClientesSectionExpanded, setIsClientesSectionExpanded] = useState(() => {
+    const clientesSection = adminSidebarItems.find(item => item.label === 'Clientes');
+    if (clientesSection && clientesSection.subItems) {
+      return clientesSection.subItems.some(subItem => pathname.startsWith(subItem.href));
+    }
+    return false;
+  });
+
+  const [isEmpleadosSectionExpanded, setIsEmpleadosSectionExpanded] = useState(() => {
+    const empleadosSection = adminSidebarItems.find(item => item.label === 'Empleados');
+    if (empleadosSection && empleadosSection.subItems) {
+      return empleadosSection.subItems.some(subItem => pathname.startsWith(subItem.href));
+    }
+    return false;
+  });
+
+  const [isCompaniaSectionExpanded, setIsCompaniaSectionExpanded] = useState(() => {
+    const companiaSection = adminSidebarItems.find(item => item.label === 'Compañía');
+    if (companiaSection && companiaSection.subItems) {
+      return companiaSection.subItems.some(subItem => pathname.startsWith(subItem.href));
+    }
+    return false;
+  });
+
+  const [isReportesSectionExpanded, setIsReportesSectionExpanded] = useState(() => {
+    const reportesSection = adminSidebarItems.find(item => item.label === 'Reportes');
+    if (reportesSection && reportesSection.subItems) {
+      return reportesSection.subItems.some(subItem => pathname.startsWith(subItem.href));
+    }
+    return false;
+  });
+   
   // Get user initials for avatar fallback
   const getUserInitials = (name?: string, email?: string) => {
     if (name) {
@@ -135,6 +227,76 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
         {sidebarItems.map((item, index) => {
           const isActive = pathname === item.href || 
                          (pathname.startsWith(item.href) && item.href !== '/dashboard');
+
+          if (item.isCollapsible) {
+            const isAnySubItemActive = item.subItems?.some(subItem => pathname.startsWith(subItem.href));
+            return (
+              <div key={index} className="space-y-2">
+                <Button
+                  variant={isAnySubItemActive ? "default" : "ghost"}
+                  className={`w-full justify-start h-11 ${isCollapsed ? 'px-2' : ''} ${ 
+                    isAnySubItemActive
+                      ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/25 hover:bg-emerald-600"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                  }`}
+                  onClick={() => {
+                    if (item.label === 'App') {
+                      setIsAppSectionExpanded(!isAppSectionExpanded);
+                    } else if (item.label === 'Clientes') {
+                      setIsClientesSectionExpanded(!isClientesSectionExpanded);
+                    } else if (item.label === 'Empleados') {
+                      setIsEmpleadosSectionExpanded(!isEmpleadosSectionExpanded);
+                    } else if (item.label === 'Compañía') {
+                      setIsCompaniaSectionExpanded(!isCompaniaSectionExpanded);
+                    } else if (item.label === 'Reportes') {
+                      setIsReportesSectionExpanded(!isReportesSectionExpanded);
+                    }
+                  }}
+                >
+                  <item.icon className={`h-5 w-5 ${isCollapsed ? 'mr-0' : 'mr-3'}`} />
+                  <span className={`${isCollapsed ? 'hidden' : ''}`}>{item.label}</span>
+                  {!isCollapsed && (
+                    <ChevronDown className={`ml-auto h-4 w-4 transition-transform duration-200 ${ 
+                      (item.label === 'App' && isAppSectionExpanded) || 
+                      (item.label === 'Clientes' && isClientesSectionExpanded) ||
+                      (item.label === 'Empleados' && isEmpleadosSectionExpanded) ||
+                      (item.label === 'Compañía' && isCompaniaSectionExpanded) ||
+                      (item.label === 'Reportes' && isReportesSectionExpanded)
+                        ? 'rotate-180' : ''
+                    }`} />
+                  )}
+                </Button>
+                {!isCollapsed && 
+                 ((item.label === 'App' && isAppSectionExpanded) || 
+                  (item.label === 'Clientes' && isClientesSectionExpanded) ||
+                  (item.label === 'Empleados' && isEmpleadosSectionExpanded) ||
+                  (item.label === 'Compañía' && isCompaniaSectionExpanded) ||
+                  (item.label === 'Reportes' && isReportesSectionExpanded)) && (
+                  <div className="ml-6 space-y-2">
+                    {item.subItems?.map((subItem, subIndex) => {
+                      const isSubItemActive = pathname.startsWith(subItem.href);
+                      return (
+                        <Button
+                          key={subIndex}
+                          variant={isSubItemActive ? "default" : "ghost"}
+                          className={`w-full justify-start h-11 ${ 
+                            isSubItemActive
+                              ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/25 hover:bg-emerald-600"
+                              : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                          }`}
+                          onClick={() => router.push(subItem.href)}
+                        >
+                          <subItem.icon className="h-5 w-5 mr-3" />
+                          <span>{subItem.label}</span>
+                        </Button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          }
+
           return (
             <Button
               key={index}
