@@ -98,6 +98,17 @@ export default function HomePage() {
     }
   }
 
+  // Safety: if transitionend is missed (e.g., tab hidden), force-reset when hitting the cloned slide
+  useEffect(() => {
+    if (index >= displaySlides.length - 1) {
+      setIsAnimating(false)
+      setIndex(1)
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => setIsAnimating(true))
+      })
+    }
+  }, [index, displaySlides.length])
+
   // 3D/center-emphasis styles for each slide
   const getSlideStyle = (idx: number): CSSProperties => {
     const offset = idx - index // -1 => left, 0 => center, 1 => right
