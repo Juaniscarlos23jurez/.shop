@@ -21,7 +21,7 @@ export function FloatingCartButton({ onClick }: FloatingCartButtonProps) {
         touchAction: 'manipulation',
         // Ensure visibility on iOS devices with notch/safe area
         // Use inline style to override Tailwind bottom/right when needed
-        bottom: 'max(env(safe-area-inset-bottom, 0px), 16px)',
+        bottom: 'max(env(safe-area-inset-bottom, 0px), 80px)',
         right: 'max(env(safe-area-inset-right, 0px), 16px)'
       }}
     >
