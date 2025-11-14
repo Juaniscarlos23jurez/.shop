@@ -1,10 +1,12 @@
 "use client"
 
-import { createContext, useContext, useState, useCallback, ReactNode } from 'react'
+import { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react'
 
 import { Product } from './api/products'
 
 interface CartItem extends Omit<Product, 'description' | 'imageUrl' | 'category' | 'isAvailable' | 'createdAt' | 'updatedAt'> {
+  id: string
+  image_url?: string
   quantity: number
 }
 
@@ -22,6 +24,32 @@ const CartContext = createContext<CartContextType | undefined>(undefined)
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([])
+
+  // Hydrate from localStorage on mount
+  useEffect(() => {
+    try {
+      const stored = typeof window !== 'undefined' ? window.localStorage.getItem('cart_items') : null
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        if (Array.isArray(parsed)) {
+          setItems(parsed)
+        }
+      }
+    } catch (e) {
+      console.warn('[CartProvider] Failed to read cart from localStorage', e)
+    }
+  }, [])
+
+  // Persist to localStorage whenever items change
+  useEffect(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem('cart_items', JSON.stringify(items))
+      }
+    } catch (e) {
+      console.warn('[CartProvider] Failed to write cart to localStorage', e)
+    }
+  }, [items])
 
   const addItem = useCallback((product: Omit<CartItem, 'quantity'>) => {
     setItems(currentItems => {

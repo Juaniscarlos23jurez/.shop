@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { publicWebApiClient } from '@/lib/api/public-web';
 import { PublicItem, PublicCompanyLocation } from '@/types/api';
@@ -13,6 +13,19 @@ import { formatCurrency } from '@/lib/utils/currency';
 import { CartProvider, useCart } from '@/lib/cart-context';
 import { FloatingCartButton } from '@/components/cart/floating-cart-button';
 import { CartDrawer } from '@/components/cart/cart-drawer';
+
+type Announcement = {
+  id: number;
+  company_id: number;
+  title?: string;
+  subtitle?: string;
+  text?: string;
+  link_url?: string | null;
+  image_url?: string | null;
+  is_active?: boolean;
+  starts_at?: string | null;
+  ends_at?: string | null;
+};
 
 export default function PublicLocationProductsPage() {
   const params = useParams();
@@ -30,6 +43,9 @@ export default function PublicLocationProductsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [cartOpen, setCartOpen] = useState(false);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [currentAnnouncement, setCurrentAnnouncement] = useState(0);
+  const rotationRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     if (!locationId) return;
@@ -67,6 +83,31 @@ export default function PublicLocationProductsPage() {
           
           setLocation(loc as PublicCompanyLocation);
           setCompany(comp);
+
+          // Fetch announcements for the company if we have its ID
+          const companyId = (comp && (comp.id || comp.company_id)) || (loc && (loc.company_id || (loc.company && loc.company.id)));
+          if (companyId) {
+            try {
+              const url = `https://laravel-pkpass-backend-development-pfaawl.laravel.cloud/api/public/companies/${companyId}/announcements`;
+              const res = await fetch(url, { cache: 'no-store' });
+              if (res.ok) {
+                const json = await res.json();
+                const rawList = (json?.data?.data ?? json?.data ?? []) as any[];
+                const now = new Date();
+                const active = rawList.filter(a => {
+                  const isActive = a.is_active !== false;
+                  const startsOk = !a.starts_at || new Date(a.starts_at) <= now;
+                  const endsOk = !a.ends_at || new Date(a.ends_at) >= now;
+                  return isActive && startsOk && endsOk;
+                });
+                setAnnouncements(active);
+              } else {
+                console.warn('Announcements fetch failed', res.status);
+              }
+            } catch (e) {
+              console.warn('Announcements fetch error', e);
+            }
+          }
         } else {
           throw new Error(locationDetailsRes.error || 'Failed to fetch location details');
         }
@@ -126,6 +167,29 @@ export default function PublicLocationProductsPage() {
 
     fetchData();
   }, [companySlug, locationId]);
+
+  // Auto-rotate announcements
+  useEffect(() => {
+    // Reset index when announcements change
+    setCurrentAnnouncement(0);
+    if (!announcements || announcements.length <= 1) {
+      if (rotationRef.current) {
+        clearInterval(rotationRef.current);
+        rotationRef.current = null;
+      }
+      return;
+    }
+    if (rotationRef.current) clearInterval(rotationRef.current);
+    rotationRef.current = setInterval(() => {
+      setCurrentAnnouncement((idx) => (idx + 1) % announcements.length);
+    }, 5000);
+    return () => {
+      if (rotationRef.current) {
+        clearInterval(rotationRef.current);
+        rotationRef.current = null;
+      }
+    };
+  }, [announcements]);
 
   // Filter products based on search and category
   useEffect(() => {
@@ -241,6 +305,88 @@ export default function PublicLocationProductsPage() {
             </div>
           </div>
 
+          {/* Announcements Carousel */}
+          {announcements.length > 0 && (
+            <div className="mb-10">
+              <div className="relative overflow-hidden rounded-xl shadow-lg bg-gray-100">
+                {announcements[currentAnnouncement]?.image_url ? (
+                  <img
+                    src={announcements[currentAnnouncement].image_url as string}
+                    alt={announcements[currentAnnouncement]?.title || 'Anuncio'}
+                    className="w-full h-64 sm:h-80 md:h-96 lg:h-[28rem] object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-64 sm:h-80 md:h-96 lg:h-[28rem] flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
+                    <span className="text-gray-500">Anuncio</span>
+                  </div>
+                )}
+
+                {/* Overlay content */}
+                {(announcements[currentAnnouncement]?.title || announcements[currentAnnouncement]?.text) && (
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent p-4 sm:p-6 flex items-end">
+                    <div className="text-white max-w-2xl">
+                      {announcements[currentAnnouncement]?.title && (
+                        <h3 className="text-lg sm:text-2xl font-bold">
+                          {announcements[currentAnnouncement].title}
+                        </h3>
+                      )}
+                      {announcements[currentAnnouncement]?.subtitle && (
+                        <p className="text-sm sm:text-base opacity-90">{announcements[currentAnnouncement].subtitle}</p>
+                      )}
+                      {announcements[currentAnnouncement]?.text && (
+                        <p className="mt-1 text-xs sm:text-sm opacity-90 line-clamp-2">
+                          {announcements[currentAnnouncement].text}
+                        </p>
+                      )}
+                      {announcements[currentAnnouncement]?.link_url && (
+                        <a
+                          href={announcements[currentAnnouncement].link_url as string}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-block mt-3 text-xs sm:text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-md shadow"
+                        >
+                          Ver más
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Navigation controls */}
+                {announcements.length > 1 && (
+                  <>
+                    <button
+                      aria-label="Anterior"
+                      className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white rounded-full w-8 h-8 flex items-center justify-center"
+                      onClick={() => setCurrentAnnouncement((idx) => (idx - 1 + announcements.length) % announcements.length)}
+                    >
+                      ‹
+                    </button>
+                    <button
+                      aria-label="Siguiente"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white rounded-full w-8 h-8 flex items-center justify-center"
+                      onClick={() => setCurrentAnnouncement((idx) => (idx + 1) % announcements.length)}
+                    >
+                      ›
+                    </button>
+
+                    {/* Dots */}
+                    <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-2">
+                      {announcements.map((_, i) => (
+                        <button
+                          key={i}
+                          aria-label={`Ir al anuncio ${i + 1}`}
+                          className={`w-2.5 h-2.5 rounded-full ${i === currentAnnouncement ? 'bg-white' : 'bg-white/60 hover:bg-white'}`}
+                          onClick={() => setCurrentAnnouncement(i)}
+                        />
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Products Section */}
           <div className="pb-16">
             <Card>
@@ -326,7 +472,7 @@ export default function PublicLocationProductsPage() {
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {filteredItems.map((item) => (
-                      <CatalogCard key={item.id} item={item} locationId={Number(location.id)} onAdd={() => setCartOpen(true)} />
+                      <CatalogCard key={item.id} item={item} locationId={Number(location.id)} />
                     ))}
                   </div>
                 )}
@@ -336,13 +482,18 @@ export default function PublicLocationProductsPage() {
         </div>
 
         <FloatingCartButton onClick={() => setCartOpen(true)} />
-        <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} />
+        <CartDrawer 
+          open={cartOpen} 
+          onClose={() => setCartOpen(false)} 
+          locationPhone={(location as any)?.phone ?? company?.phone}
+          locationName={location?.name}
+        />
       </div>
     </CartProvider>
   );
 }
 
-function CatalogCard({ item, locationId, onAdd }: { item: PublicItem; locationId: number; onAdd: () => void }) {
+function CatalogCard({ item, locationId }: { item: PublicItem; locationId: number }) {
   const { addItem } = useCart();
 
   const handleAdd = () => {
@@ -365,7 +516,6 @@ function CatalogCard({ item, locationId, onAdd }: { item: PublicItem; locationId
       ],
     };
     addItem(product as any);
-    onAdd();
   };
 
   return (
@@ -411,4 +561,3 @@ function CatalogCard({ item, locationId, onAdd }: { item: PublicItem; locationId
     </Card>
   );
 }
-
