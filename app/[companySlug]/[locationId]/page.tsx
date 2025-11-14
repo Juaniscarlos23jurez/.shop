@@ -27,6 +27,19 @@ type Announcement = {
   ends_at?: string | null;
 };
 
+type PublicCoupon = {
+  id: number;
+  code: string;
+  name: string;
+  description?: string | null;
+  type: 'percentage' | 'fixed' | string;
+  discount_amount?: number | null;
+  discount_percentage?: number | null;
+  min_purchase_amount?: string | number | null;
+  expires_at?: string | null;
+  company?: { id: number; name: string; logo_url?: string } | null;
+};
+
 export default function PublicLocationProductsPage() {
   const params = useParams();
   const companySlug = params.companySlug as string;
@@ -46,6 +59,10 @@ export default function PublicLocationProductsPage() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [currentAnnouncement, setCurrentAnnouncement] = useState(0);
   const rotationRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [activeSection, setActiveSection] = useState<'home' | 'coupons'>('home');
+  const [coupons, setCoupons] = useState<PublicCoupon[]>([]);
+  const [couponsLoading, setCouponsLoading] = useState(false);
+  const [couponsError, setCouponsError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!locationId) return;
@@ -191,6 +208,36 @@ export default function PublicLocationProductsPage() {
     };
   }, [announcements]);
 
+  // Fetch coupons when Coupons section becomes active
+  useEffect(() => {
+    const shouldLoad = activeSection === 'coupons';
+    if (!shouldLoad) return;
+    // Derive companyId from company or location
+    const comp: any = company;
+    const loc: any = location;
+    const companyId = (comp && (comp.id || comp.company_id)) || (loc && (loc.company_id || (loc.company && loc.company.id)));
+    if (!companyId) return;
+    const loadCoupons = async () => {
+      try {
+        setCouponsError(null);
+        setCouponsLoading(true);
+        const url = `https://laravel-pkpass-backend-development-pfaawl.laravel.cloud/api/public/companies/${companyId}/coupons`;
+        const res = await fetch(url, { cache: 'no-store' });
+        if (!res.ok) {
+          throw new Error(`Error al cargar cupones (${res.status})`);
+        }
+        const json = await res.json();
+        const list = (json?.data ?? json ?? []) as any[];
+        setCoupons(Array.isArray(list) ? list : []);
+      } catch (e: any) {
+        setCouponsError(e?.message || 'No se pudieron cargar los cupones');
+      } finally {
+        setCouponsLoading(false);
+      }
+    };
+    loadCoupons();
+  }, [activeSection, company, location]);
+
   // Filter products based on search and category
   useEffect(() => {
     let filtered = items;
@@ -229,7 +276,7 @@ export default function PublicLocationProductsPage() {
 
   return (
     <CartProvider>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 pb-24">
         {/* Hero Section with Banner */}
         {company?.banner_url && (
           <div className="relative h-48 sm:h-64 md:h-80 w-full overflow-hidden">
@@ -305,180 +352,237 @@ export default function PublicLocationProductsPage() {
             </div>
           </div>
 
-          {/* Announcements Carousel */}
-          {announcements.length > 0 && (
-            <div className="mb-10">
-              <div className="relative overflow-hidden rounded-xl shadow-lg bg-gray-100">
-                {announcements[currentAnnouncement]?.image_url ? (
-                  <img
-                    src={announcements[currentAnnouncement].image_url as string}
-                    alt={announcements[currentAnnouncement]?.title || 'Anuncio'}
-                    className="w-full h-64 sm:h-80 md:h-96 lg:h-[28rem] object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-64 sm:h-80 md:h-96 lg:h-[28rem] flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
-                    <span className="text-gray-500">Anuncio</span>
-                  </div>
-                )}
+          {/* Spacer where top nav used to be */}
+          <div className="mb-2" />
 
-                {/* Overlay content */}
-                {(announcements[currentAnnouncement]?.title || announcements[currentAnnouncement]?.text) && (
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent p-4 sm:p-6 flex items-end">
-                    <div className="text-white max-w-2xl">
-                      {announcements[currentAnnouncement]?.title && (
-                        <h3 className="text-lg sm:text-2xl font-bold">
-                          {announcements[currentAnnouncement].title}
-                        </h3>
-                      )}
-                      {announcements[currentAnnouncement]?.subtitle && (
-                        <p className="text-sm sm:text-base opacity-90">{announcements[currentAnnouncement].subtitle}</p>
-                      )}
-                      {announcements[currentAnnouncement]?.text && (
-                        <p className="mt-1 text-xs sm:text-sm opacity-90 line-clamp-2">
-                          {announcements[currentAnnouncement].text}
-                        </p>
-                      )}
-                      {announcements[currentAnnouncement]?.link_url && (
-                        <a
-                          href={announcements[currentAnnouncement].link_url as string}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-block mt-3 text-xs sm:text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-md shadow"
-                        >
-                          Ver más
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                )}
+          {/* Sections */}
+          {activeSection === 'home' ? (
+            <>
+              {/* Announcements Carousel */}
+              {announcements.length > 0 && (
+                <div className="mb-10">
+                  <div className="relative overflow-hidden rounded-xl shadow-lg bg-gray-100">
+                    {announcements[currentAnnouncement]?.image_url ? (
+                      <img
+                        src={announcements[currentAnnouncement].image_url as string}
+                        alt={announcements[currentAnnouncement]?.title || 'Anuncio'}
+                        className="w-full h-64 sm:h-80 md:h-96 lg:h-[28rem] object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-64 sm:h-80 md:h-96 lg:h-[28rem] flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
+                        <span className="text-gray-500">Anuncio</span>
+                      </div>
+                    )}
 
-                {/* Navigation controls */}
-                {announcements.length > 1 && (
-                  <>
-                    <button
-                      aria-label="Anterior"
-                      className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white rounded-full w-8 h-8 flex items-center justify-center"
-                      onClick={() => setCurrentAnnouncement((idx) => (idx - 1 + announcements.length) % announcements.length)}
-                    >
-                      ‹
-                    </button>
-                    <button
-                      aria-label="Siguiente"
-                      className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white rounded-full w-8 h-8 flex items-center justify-center"
-                      onClick={() => setCurrentAnnouncement((idx) => (idx + 1) % announcements.length)}
-                    >
-                      ›
-                    </button>
+                    {(announcements[currentAnnouncement]?.title || announcements[currentAnnouncement]?.text) && (
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent p-4 sm:p-6 flex items-end">
+                        <div className="text-white max-w-2xl">
+                          {announcements[currentAnnouncement]?.title && (
+                            <h3 className="text-lg sm:text-2xl font-bold">
+                              {announcements[currentAnnouncement].title}
+                            </h3>
+                          )}
+                          {announcements[currentAnnouncement]?.subtitle && (
+                            <p className="text-sm sm:text-base opacity-90">{announcements[currentAnnouncement].subtitle}</p>
+                          )}
+                          {announcements[currentAnnouncement]?.text && (
+                            <p className="mt-1 text-xs sm:text-sm opacity-90 line-clamp-2">
+                              {announcements[currentAnnouncement].text}
+                            </p>
+                          )}
+                          {announcements[currentAnnouncement]?.link_url && (
+                            <a
+                              href={announcements[currentAnnouncement].link_url as string}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-block mt-3 text-xs sm:text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-md shadow"
+                            >
+                              Ver más
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    )}
 
-                    {/* Dots */}
-                    <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-2">
-                      {announcements.map((_, i) => (
+                    {announcements.length > 1 && (
+                      <>
                         <button
-                          key={i}
-                          aria-label={`Ir al anuncio ${i + 1}`}
-                          className={`w-2.5 h-2.5 rounded-full ${i === currentAnnouncement ? 'bg-white' : 'bg-white/60 hover:bg-white'}`}
-                          onClick={() => setCurrentAnnouncement(i)}
-                        />
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          )}
+                          aria-label="Anterior"
+                          className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white rounded-full w-8 h-8 flex items-center justify-center"
+                          onClick={() => setCurrentAnnouncement((idx) => (idx - 1 + announcements.length) % announcements.length)}
+                        >
+                          ‹
+                        </button>
+                        <button
+                          aria-label="Siguiente"
+                          className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white rounded-full w-8 h-8 flex items-center justify-center"
+                          onClick={() => setCurrentAnnouncement((idx) => (idx + 1) % announcements.length)}
+                        >
+                          ›
+                        </button>
 
-          {/* Products Section */}
-          <div className="pb-16">
-            <Card>
-              <CardHeader>
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-                  <div>
-                    <CardTitle className="flex items-center text-2xl">
-                      <Package className="mr-2 h-6 w-6" /> Nuestro Catálogo
-                    </CardTitle>
-                    <CardDescription className="text-base mt-1">
-                      {items.length} productos disponibles
-                    </CardDescription>
+                        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-2">
+                          {announcements.map((_, i) => (
+                            <button
+                              key={i}
+                              aria-label={`Ir al anuncio ${i + 1}`}
+                              className={`w-2.5 h-2.5 rounded-full ${i === currentAnnouncement ? 'bg-white' : 'bg-white/60 hover:bg-white'}`}
+                              onClick={() => setCurrentAnnouncement(i)}
+                            />
+                          ))}
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
+              )}
 
-                {/* Search Bar */}
-                <div className="relative mb-4">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  <Input
-                    type="text"
-                    placeholder="Buscar productos..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 pr-4 py-2 w-full"
-                  />
-                </div>
+              {/* Products Section */}
+              <div className="pb-16">
+                <Card>
+                  <CardHeader>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+                      <div>
+                        <CardTitle className="flex items-center text-2xl">
+                          <Package className="mr-2 h-6 w-6" /> Nuestro Catálogo
+                        </CardTitle>
+                        <CardDescription className="text-base mt-1">
+                          {items.length} productos disponibles
+                        </CardDescription>
+                      </div>
+                    </div>
 
-                {/* Category Filter */}
-                {categories.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    <Badge
-                      variant={selectedCategory === 'all' ? 'default' : 'outline'}
-                      className={`cursor-pointer transition-all ${
-                        selectedCategory === 'all'
-                          ? 'bg-emerald-600 hover:bg-emerald-700'
-                          : 'hover:bg-gray-100'
-                      }`}
-                      onClick={() => setSelectedCategory('all')}
-                    >
-                      Todos ({items.length})
-                    </Badge>
-                    {categories.map((category) => {
-                      const count = items.filter(item => item.category === category).length;
-                      return (
+                    {/* Search Bar */}
+                    <div className="relative mb-4">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                      <Input
+                        type="text"
+                        placeholder="Buscar productos..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-10 pr-4 py-2 w-full"
+                      />
+                    </div>
+
+                    {/* Category Filter */}
+                    {categories.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mb-4">
                         <Badge
-                          key={category}
-                          variant={selectedCategory === category ? 'default' : 'outline'}
+                          variant={selectedCategory === 'all' ? 'default' : 'outline'}
                           className={`cursor-pointer transition-all ${
-                            selectedCategory === category
+                            selectedCategory === 'all'
                               ? 'bg-emerald-600 hover:bg-emerald-700'
                               : 'hover:bg-gray-100'
                           }`}
-                          onClick={() => setSelectedCategory(category)}
+                          onClick={() => setSelectedCategory('all')}
                         >
-                          {category} ({count})
+                          Todos ({items.length})
                         </Badge>
-                      );
-                    })}
-                  </div>
-                )}
-              </CardHeader>
-              <CardContent>
-                {items.length === 0 ? (
-                  <div className="text-center py-12">
-                    <Store className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                    <p className="text-gray-500 text-lg">No hay productos disponibles en esta sucursal.</p>
-                  </div>
-                ) : filteredItems.length === 0 ? (
-                  <div className="text-center py-12">
-                    <Search className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                    <p className="text-gray-500 text-lg">No se encontraron productos con los filtros seleccionados.</p>
-                    <Button
-                      variant="outline"
-                      className="mt-4"
-                      onClick={() => {
-                        setSearchQuery('');
-                        setSelectedCategory('all');
-                      }}
-                    >
-                      Limpiar filtros
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {filteredItems.map((item) => (
-                      <CatalogCard key={item.id} item={item} locationId={Number(location.id)} />
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+                        {categories.map((category) => {
+                          const count = items.filter(item => item.category === category).length;
+                          return (
+                            <Badge
+                              key={category}
+                              variant={selectedCategory === category ? 'default' : 'outline'}
+                              className={`cursor-pointer transition-all ${
+                                selectedCategory === category
+                                  ? 'bg-emerald-600 hover:bg-emerald-700'
+                                  : 'hover:bg-gray-100'
+                              }`}
+                              onClick={() => setSelectedCategory(category)}
+                            >
+                              {category} ({count})
+                            </Badge>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </CardHeader>
+                  <CardContent>
+                    {items.length === 0 ? (
+                      <div className="text-center py-12">
+                        <Store className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                        <p className="text-gray-500 text-lg">No hay productos disponibles en esta sucursal.</p>
+                      </div>
+                    ) : filteredItems.length === 0 ? (
+                      <div className="text-center py-12">
+                        <Search className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                        <p className="text-gray-500 text-lg">No se encontraron productos con los filtros seleccionados.</p>
+                        <Button
+                          variant="outline"
+                          className="mt-4"
+                          onClick={() => {
+                            setSearchQuery('');
+                            setSelectedCategory('all');
+                          }}
+                        >
+                          Limpiar filtros
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        {filteredItems.map((item) => (
+                          <CatalogCard key={item.id} item={item} locationId={Number(location.id)} />
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            </>
+          ) : (
+            // Coupons section
+            <div className="pb-16">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center text-2xl">Cupones</CardTitle>
+                  <CardDescription className="text-base mt-1">
+                    {couponsLoading ? 'Cargando cupones...' : `${coupons.length} cupón(es) disponible(s)`}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {couponsError ? (
+                    <div className="text-red-500">{couponsError}</div>
+                  ) : couponsLoading ? (
+                    <div className="text-gray-600">Cargando...</div>
+                  ) : coupons.length === 0 ? (
+                    <div className="text-center py-12">
+                      <Store className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                      <p className="text-gray-500 text-lg">No hay cupones disponibles en este momento.</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {coupons.map((c) => {
+                        const isExpired = c.expires_at ? new Date(c.expires_at) < new Date() : false;
+                        return (
+                          <div key={c.id} className={`border rounded-lg p-4 shadow-sm ${isExpired ? 'opacity-60' : ''}`}>
+                            <div className="flex items-center gap-3 mb-3">
+                              {c.company?.logo_url && (
+                                <img src={c.company.logo_url} alt={c.company.name} className="w-10 h-10 rounded object-cover" />
+                              )}
+                              <div>
+                                <h3 className="font-bold text-lg">{c.name}</h3>
+                                <p className="text-xs text-gray-500">Código: <span className="font-mono font-semibold">{c.code}</span></p>
+                              </div>
+                            </div>
+                            {c.description && <p className="text-sm text-gray-700 mb-2">{c.description}</p>}
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-50 text-emerald-700">
+                                {c.type === 'percentage' ? `${c.discount_percentage ?? 0}%` : c.discount_amount ? formatCurrency(Number(c.discount_amount)) : 'Descuento'}
+                              </span>
+                              {c.expires_at && (
+                                <span className="text-gray-500">Expira: {new Date(c.expires_at).toLocaleDateString()}</span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </div>
 
         <FloatingCartButton onClick={() => setCartOpen(true)} />
@@ -488,6 +592,40 @@ export default function PublicLocationProductsPage() {
           locationPhone={(location as any)?.phone ?? company?.phone}
           locationName={location?.name}
         />
+
+        {/* Floating Bottom Navigation Dock */}
+        <div className="fixed bottom-0 left-0 right-0 z-30 pointer-events-none">
+          <div className="mx-auto max-w-md px-4 pb-4 safe-bottom">
+            <div className="pointer-events-auto bg-white/90 backdrop-blur-xl border border-gray-200/50 rounded-2xl shadow-2xl p-2">
+              <div className="flex items-center justify-around gap-2">
+                <button
+                  className={`flex flex-col items-center justify-center gap-1 px-6 py-3 rounded-xl text-xs font-medium transition-all duration-200 ${
+                    activeSection === 'home' 
+                      ? 'text-white bg-gradient-to-b from-emerald-500 to-emerald-600 shadow-lg scale-105' 
+                      : 'text-gray-600 hover:bg-gray-100 hover:scale-105'
+                  }`}
+                  onClick={() => setActiveSection('home')}
+                >
+                  <Store className={`h-6 w-6 ${activeSection === 'home' ? 'stroke-[2.5]' : 'stroke-2'}`} />
+                  <span className="font-semibold">Inicio</span>
+                </button>
+                <button
+                  className={`flex flex-col items-center justify-center gap-1 px-6 py-3 rounded-xl text-xs font-medium transition-all duration-200 ${
+                    activeSection === 'coupons' 
+                      ? 'text-white bg-gradient-to-b from-emerald-500 to-emerald-600 shadow-lg scale-105' 
+                      : 'text-gray-600 hover:bg-gray-100 hover:scale-105'
+                  }`}
+                  onClick={() => setActiveSection('coupons')}
+                >
+                  <Package className={`h-6 w-6 ${activeSection === 'coupons' ? 'stroke-[2.5]' : 'stroke-2'}`} />
+                  <span className="font-semibold">Cupones</span>
+                </button>
+              </div>
+            </div>
+            {/* Safe area inset support */}
+            <div className="h-[env(safe-area-inset-bottom)]" />
+          </div>
+        </div>
       </div>
     </CartProvider>
   );
