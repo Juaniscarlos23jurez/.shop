@@ -40,6 +40,32 @@ type PublicCoupon = {
   company?: { id: number; name: string; logo_url?: string } | null;
 };
 
+// Simple localStorage cache helpers with TTL
+function getCache<T = any>(key: string): { data: T; ts: number } | null {
+  try {
+    const raw = typeof window !== 'undefined' ? window.localStorage.getItem(key) : null;
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+function setCache<T = any>(key: string, data: T) {
+  try {
+    if (typeof window === 'undefined') return;
+    const payload = JSON.stringify({ data, ts: Date.now() });
+    window.localStorage.setItem(key, payload);
+  } catch {
+    // ignore
+  }
+}
+
+function isFresh(entry: { ts: number } | null, ttlMs: number) {
+  if (!entry) return false;
+  return Date.now() - entry.ts < ttlMs;
+}
+
 export default function PublicLocationProductsPage() {
   const params = useParams();
   const companySlug = params.companySlug as string;
@@ -64,9 +90,50 @@ export default function PublicLocationProductsPage() {
   const [couponsLoading, setCouponsLoading] = useState(false);
   const [couponsError, setCouponsError] = useState<string | null>(null);
 
+  // Cache key builder and TTLs
+  const baseKey = `plp:${companySlug}:${locationId}`;
+  const COMPANY_TTL = 24 * 60 * 60 * 1000; // 24h
+  const LOCATION_TTL = 24 * 60 * 60 * 1000; // 24h
+  const ITEMS_TTL = 60 * 60 * 1000; // 1h
+  const ANN_TTL = 30 * 60 * 1000; // 30m
+
   useEffect(() => {
     if (!locationId) return;
 
+    // 1) Try to hydrate from cache immediately
+    const cachedCompany = getCache<any>(`${baseKey}:company`);
+    const cachedLocation = getCache<PublicCompanyLocation>(`${baseKey}:location`);
+    const cachedItems = getCache<PublicItem[]>(`${baseKey}:items`);
+    const cachedAnns = getCache<Announcement[]>(`${baseKey}:announcements`);
+
+    let hydrated = false;
+    if (isFresh(cachedCompany, COMPANY_TTL) && cachedCompany?.data) {
+      setCompany(cachedCompany.data);
+      hydrated = true;
+    }
+    if (isFresh(cachedLocation, LOCATION_TTL) && cachedLocation?.data) {
+      setLocation(cachedLocation.data as PublicCompanyLocation);
+      hydrated = true;
+    }
+    if (isFresh(cachedItems, ITEMS_TTL) && Array.isArray(cachedItems?.data)) {
+      const normalized = cachedItems.data as PublicItem[];
+      setItems(normalized);
+      setFilteredItems(normalized);
+      const uniqueCategories = Array.from(new Set(
+        normalized.map(i => i.category).filter(Boolean)
+      )) as string[];
+      setCategories(uniqueCategories);
+      hydrated = true;
+    }
+    if (isFresh(cachedAnns, ANN_TTL) && Array.isArray(cachedAnns?.data)) {
+      setAnnouncements(cachedAnns.data as Announcement[]);
+      hydrated = true;
+    }
+    if (hydrated) {
+      setLoading(false);
+    }
+
+    // 2) Fetch in background and update cache
     const fetchData = async () => {
       setLoading(true);
       setError(null);
@@ -100,6 +167,8 @@ export default function PublicLocationProductsPage() {
           
           setLocation(loc as PublicCompanyLocation);
           setCompany(comp);
+          setCache(`${baseKey}:location`, loc as PublicCompanyLocation);
+          setCache(`${baseKey}:company`, comp);
 
           // Fetch announcements for the company if we have its ID
           const companyId = (comp && (comp.id || comp.company_id)) || (loc && (loc.company_id || (loc.company && loc.company.id)));
@@ -118,6 +187,7 @@ export default function PublicLocationProductsPage() {
                   return isActive && startsOk && endsOk;
                 });
                 setAnnouncements(active);
+                setCache(`${baseKey}:announcements`, active);
               } else {
                 console.warn('Announcements fetch failed', res.status);
               }
@@ -164,12 +234,14 @@ export default function PublicLocationProductsPage() {
               normalized.map(item => item.category).filter(Boolean)
             )) as string[];
             setCategories(uniqueCategories);
+            setCache(`${baseKey}:items`, normalized);
             
             console.log('Products loaded:', normalized.length);
           } else {
             console.warn('No products found or unexpected format:', itemsRes.data);
             setItems([]);
             setFilteredItems([]);
+            setCache(`${baseKey}:items`, [] as PublicItem[]);
           }
         } else {
           throw new Error(itemsRes.error || 'Failed to fetch products for location');
