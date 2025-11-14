@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card"
 import Link from "next/link"
  import Image from "next/image"
  import { Inter } from 'next/font/google'
+ import { useEffect, useState } from "react"
 
 const inter = Inter({ subsets: ['latin'] })
 // Contact lead-gen links (override via NEXT_PUBLIC_* envs)
@@ -60,6 +61,41 @@ export default function HomePage() {
     "/position4.png",
     "/position5.png"
   ]
+
+  // Carousel (slide) state: seamless infinite loop
+  const displaySlides = [appScreens[appScreens.length - 1], ...appScreens, appScreens[0]]
+  const [index, setIndex] = useState(1) // starts at first real slide
+  const [isAnimating, setIsAnimating] = useState(true)
+  const [slideWidth, setSlideWidth] = useState(240)
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setIndex((i) => i + 1)
+    }, 2500)
+    return () => clearInterval(id)
+  }, [])
+
+  // Responsive slide width (matches Tailwind md breakpoint widths)
+  useEffect(() => {
+    const update = () => {
+      const w = typeof window !== 'undefined' ? window.innerWidth : 0
+      setSlideWidth(w >= 768 ? 300 : 240)
+    }
+    update()
+    window.addEventListener('resize', update)
+    return () => window.removeEventListener('resize', update)
+  }, [])
+
+  const handleTransitionEnd = () => {
+    // If we reached the clone of the first slide at the end, jump back to the first real slide
+    if (index === displaySlides.length - 1) {
+      setIsAnimating(false)
+      setIndex(1)
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => setIsAnimating(true))
+      })
+    }
+  }
 
   return (
     <div className={`min-h-screen bg-[#f8fafc] ${inter.className} antialiased`}>
@@ -169,20 +205,35 @@ export default function HomePage() {
           <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
             <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
               <div className="w-full bg-gray-50">
-                <div className="relative w-full overflow-x-auto">
-                  <div className="flex gap-6 py-6 px-6 md:px-8 w-max mx-auto">
-                    {appScreens.map((src, idx) => (
-                      <div key={idx} className="relative h-[420px] w-[240px] md:h-[520px] md:w-[300px] flex-shrink-0 rounded-xl border border-gray-200 shadow-md overflow-hidden bg-white p-2">
-                        <Image
-                          src={src}
-                          alt={`Captura de la app ${idx + 1}`}
-                          fill
-                          sizes="(max-width: 768px) 240px, 300px"
-                          className="object-contain"
-                          priority={idx === 0}
-                        />
-                      </div>
-                    ))}
+                <div className="relative py-6 px-6 md:px-8 flex items-center justify-center">
+                  {/* Viewport for 3 slides (prev, current, next) */}
+                  <div
+                    className="relative overflow-hidden"
+                    style={{ width: slideWidth * 3, height: undefined }}
+                  >
+                    <div
+                      className="flex items-stretch"
+                      style={{
+                        transform: `translateX(-${(index - 1) * slideWidth}px)`,
+                        transition: isAnimating ? 'transform 700ms ease-in-out' : 'none',
+                      }}
+                      onTransitionEnd={handleTransitionEnd}
+                    >
+                      {displaySlides.map((src, idx) => (
+                        <div key={idx} className="flex-none px-2" style={{ width: slideWidth }}>
+                          <div className="relative h-[420px] md:h-[520px] w-full rounded-xl border border-gray-200 shadow-md bg-white overflow-hidden">
+                            <Image
+                              src={src}
+                              alt={`Captura de la app ${idx}`}
+                              fill
+                              sizes="(max-width: 768px) 240px, 300px"
+                              className="object-contain"
+                              priority={idx === 1}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
