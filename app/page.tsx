@@ -6,6 +6,7 @@ import Link from "next/link"
  import Image from "next/image"
  import { Inter } from 'next/font/google'
  import { useEffect, useState } from "react"
+ import type { CSSProperties } from 'react'
 
 const inter = Inter({ subsets: ['latin'] })
 // Contact lead-gen links (override via NEXT_PUBLIC_* envs)
@@ -94,6 +95,26 @@ export default function HomePage() {
       requestAnimationFrame(() => {
         requestAnimationFrame(() => setIsAnimating(true))
       })
+    }
+  }
+
+  // 3D/center-emphasis styles for each slide
+  const getSlideStyle = (idx: number): CSSProperties => {
+    const offset = idx - index // -1 => left, 0 => center, 1 => right
+    const abs = Math.abs(offset)
+    const isCenter = offset === 0
+    const rotateY = Math.max(-1, Math.min(1, offset)) * -12 // tilt sides slightly toward center
+    const scale = isCenter ? 1.08 : 0.92
+    const opacity = isCenter ? 1 : 0.85
+    const zIndex = isCenter ? 30 : 10 - abs
+    const blur = isCenter ? 0 : 1.2
+    return {
+      transform: `translateZ(${isCenter ? 60 : 0}px) rotateY(${rotateY}deg) scale(${scale})`,
+      opacity,
+      filter: `blur(${blur}px)`,
+      transition: 'transform 700ms ease, filter 700ms ease, opacity 700ms ease',
+      zIndex,
+      willChange: 'transform',
     }
   }
 
@@ -208,8 +229,8 @@ export default function HomePage() {
                 <div className="relative py-6 px-6 md:px-8 flex items-center justify-center">
                   {/* Viewport for 3 slides (prev, current, next) */}
                   <div
-                    className="relative overflow-hidden"
-                    style={{ width: slideWidth * 3, height: undefined }}
+                    className="relative overflow-visible"
+                    style={{ width: slideWidth * 3, height: undefined, perspective: '1000px' }}
                   >
                     <div
                       className="flex items-stretch"
@@ -220,7 +241,11 @@ export default function HomePage() {
                       onTransitionEnd={handleTransitionEnd}
                     >
                       {displaySlides.map((src, idx) => (
-                        <div key={idx} className="flex-none px-2" style={{ width: slideWidth }}>
+                        <div
+                          key={idx}
+                          className="flex-none px-2"
+                          style={{ width: slideWidth, ...getSlideStyle(idx) }}
+                        >
                           <div className="relative h-[420px] md:h-[520px] w-full rounded-xl border border-gray-200 shadow-md bg-white overflow-hidden">
                             <Image
                               src={src}
@@ -228,7 +253,7 @@ export default function HomePage() {
                               fill
                               sizes="(max-width: 768px) 240px, 300px"
                               className="object-contain"
-                              priority={idx === 1}
+                              priority={idx === index}
                             />
                           </div>
                         </div>
