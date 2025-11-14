@@ -12,7 +12,7 @@ const inter = Inter({ subsets: ['latin'] })
 // Contact lead-gen links (override via NEXT_PUBLIC_* envs)
 const WHATSAPP_URL = process.env.NEXT_PUBLIC_WHATSAPP_URL || 'https://wa.me/521234567890'
 const SALES_EMAIL = process.env.NEXT_PUBLIC_SALES_EMAIL || 'ventas@tudominio.com'
-const CALENDLY_URL = process.env.NEXT_PUBLIC_CALENDLY_URL || 'https://calendly.com/tus-ventas/demo-30min'
+const CALENDLY_URL = process.env.NEXT_PUBLIC_CALENDLY_URL || 'https://calendly.com/juancarlosjuarez26/30min'
 
 export default function HomePage() {
   const features = [
