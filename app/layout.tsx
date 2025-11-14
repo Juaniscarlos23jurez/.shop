@@ -3,6 +3,7 @@ import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
 import { AuthProvider } from '@/contexts/AuthContext'
 import './globals.css'
+import Script from 'next/script'
 
 export const metadata: Metadata = {
   title: 'Fideliza',
@@ -25,6 +26,20 @@ html {
   --font-mono: ${GeistMono.variable};
 }
         `}</style>
+        {/* Google tag (gtag.js) */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-0BFVK699R7"
+          strategy="afterInteractive"
+        />
+        <Script id="ga-gtag" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+
+            gtag('config', 'G-0BFVK699R7');
+          `}
+        </Script>
       </head>
       <body>
         <AuthProvider>
