@@ -290,3 +290,84 @@ export interface CompanyPaymentMethodCreateInput extends Partial<Omit<CompanyPay
 }
 
 export type CompanyPaymentMethodUpdateInput = Partial<CompanyPaymentMethodCreateInput>;
+
+export interface Announcement {
+  id: number;
+  company_id: string;
+  title: string;
+  subtitle?: string;
+  text?: string;
+  link_url?: string;
+  image_url?: string;
+  is_active: boolean;
+  starts_at: string;
+  ends_at?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PublicItem {
+  id: string;
+  name: string;
+  description?: string;
+  price: number;
+  image_url?: string;
+  category?: string;
+  location?: {
+    id: string;
+    name: string;
+  };
+  company?: {
+    id: string;
+    name: string;
+    logo_url?: string;
+  };
+}
+
+export interface PublicCompanyLocation {
+  id: string;
+  company_id: string;
+  name: string;
+  address: string;
+  city: string;
+  state: string;
+  country: string;
+}
+
+export interface PointRule {
+  id: number;
+  company_id: string;
+  spend_amount: number;
+  points: number;
+  is_active: boolean;
+  starts_at: string;
+  ends_at: string | null;
+}
+
+export interface BusinessType {
+  id: number;
+  name: string;
+  slug: string;
+}
+
+export interface PublicCompany {
+  id: string;
+  name: string;
+  description?: string;
+  email?: string;
+  phone?: string;
+  website?: string;
+  logo_url?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  postal_code?: string;
+  locations_count?: number;
+  memberships_count?: number;
+  locations?: PublicCompanyLocation[];
+  point_rules?: PointRule[];
+  business_type?: BusinessType;
+  created_at: string;
+  updated_at: string;
+}
