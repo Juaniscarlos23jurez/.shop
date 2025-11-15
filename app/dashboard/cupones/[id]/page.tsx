@@ -129,20 +129,42 @@ export default function EditCouponPage() {
       try {
         setIsLoading(true);
         
-        // Get company ID
-        const companyResponse = await api.userCompanies.get(token);
-        if (!companyResponse.success || !companyResponse.data?.data?.id) {
-          throw new Error('Error al obtener datos de la compañía');
+        // Get company ID (robust extraction for different response shapes)
+        let companyId: string | undefined = resolvedCompanyId;
+        if (!companyId) {
+          const companyResponse = await api.userCompanies.get(token);
+          if (!companyResponse.success || !companyResponse.data) {
+            throw new Error('Error al obtener datos de la compañía');
+          }
+          const d: any = companyResponse.data;
+          companyId = String(
+            d?.data?.id ??
+            d?.id ??
+            d?.company_id ??
+            d?.company?.id ??
+            ''
+          );
+          if (!companyId) {
+            throw new Error('No se pudo resolver el ID de la compañía');
+          }
+          setResolvedCompanyId(companyId);
         }
-        const companyId = companyResponse.data.data.id;
-        setResolvedCompanyId(companyId);
 
         // Fetch coupon
         const response = await api.coupons.getCoupon(companyId, id as string, token);
         console.log('[EditCoupon] Coupon response:', response);
         
-        if (!response.success || !response.data?.coupon) {
+        if (!response.success) {
+          if (response.status === 403) {
+            throw new Error('No tienes permisos para ver este cupón (403)');
+          }
+          if (response.status === 404) {
+            throw new Error('El cupón no existe o fue eliminado (404)');
+          }
           throw new Error('Error al obtener el cupón');
+        }
+        if (!response.data?.coupon) {
+          throw new Error('No se encontró información del cupón en la respuesta');
         }
 
         const coupon = response.data.coupon;

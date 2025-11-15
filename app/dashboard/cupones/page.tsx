@@ -4,12 +4,13 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Search, Filter } from 'lucide-react';
+import { Plus, Search, Filter, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api/api';
 import { Coupon } from '@/types/api';
+import { toast } from '@/hooks/use-toast';
 
 interface ExtendedCoupon extends Coupon {
   used?: number;
@@ -23,6 +24,8 @@ export default function CuponesPage() {
   const [coupons, setCoupons] = useState<ExtendedCoupon[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [companyId, setCompanyId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -38,6 +41,7 @@ export default function CuponesPage() {
 
         // Then fetch coupons with the company ID
         const companyId = companyResponse.data.data.id;
+        setCompanyId(companyId);
         console.log('Fetching coupons for company ID:', companyId);
         
         try {
@@ -125,6 +129,23 @@ export default function CuponesPage() {
     return 'Descuento';
   };
 
+  const handleDeleteCoupon = async (id: string) => {
+    if (!token || !companyId) return;
+    const confirmed = window.confirm('¿Seguro que deseas eliminar este cupón? Esta acción no se puede deshacer.');
+    if (!confirmed) return;
+    try {
+      setDeletingId(id);
+      await api.coupons.deleteCoupon(companyId, id, token);
+      setCoupons((prev) => prev.filter((c) => String(c.id) !== id));
+      toast({ title: 'Cupón eliminado', description: 'El cupón se eliminó correctamente.' });
+    } catch (e) {
+      console.error('Error deleting coupon', e);
+      toast({ title: 'Error', description: 'No se pudo eliminar el cupón.', variant: 'destructive' });
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between">
@@ -208,6 +229,15 @@ export default function CuponesPage() {
                         </Button>
                         <Button variant="outline" size="sm">
                           Copiar
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleDeleteCoupon(String(coupon.id))}
+                          disabled={deletingId === String(coupon.id)}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          {deletingId === String(coupon.id) ? 'Eliminando...' : 'Eliminar'}
                         </Button>
                       </div>
                     </div>
