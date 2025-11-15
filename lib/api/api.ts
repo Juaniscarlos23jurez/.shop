@@ -1305,7 +1305,7 @@ export const api = {
         total: number;
       }
     }>> {
-      return fetch(`${BASE_URL}/api/companies/${companyId}/coupons`, {
+      return fetch(`/api/proxy/api/companies/${companyId}/coupons`, {
         headers: getAuthHeader(token),
       }).then(handleResponse);
     },
@@ -1318,7 +1318,7 @@ export const api = {
       data: CouponCreateInput,
       token: string
     ): Promise<ApiResponse<{ coupon: Coupon }>> {
-      return fetch(`${BASE_URL}/api/companies/${companyId}/coupons`, {
+      return fetch(`/api/proxy/api/companies/${companyId}/coupons`, {
         method: 'POST',
         headers: getAuthHeader(token),
         body: JSON.stringify(data)
@@ -1333,7 +1333,7 @@ export const api = {
       couponId: string,
       token: string
     ): Promise<ApiResponse<{ coupon: Coupon }>> {
-      return fetch(`${BASE_URL}/api/companies/${companyId}/coupons/${couponId}`, {
+      return fetch(`/api/proxy/api/companies/${companyId}/coupons/${couponId}`, {
         headers: getAuthHeader(token),
       }).then(handleResponse);
     },
@@ -1347,7 +1347,7 @@ export const api = {
       data: CouponUpdateInput,
       token: string
     ): Promise<ApiResponse<{ coupon: Coupon }>> {
-      return fetch(`${BASE_URL}/api/companies/${companyId}/coupons/${couponId}`, {
+      return fetch(`/api/proxy/api/companies/${companyId}/coupons/${couponId}`, {
         method: 'PUT',
         headers: getAuthHeader(token),
         body: JSON.stringify(data)
@@ -1362,7 +1362,7 @@ export const api = {
       couponId: string,
       token: string
     ): Promise<ApiResponse> {
-      return fetch(`${BASE_URL}/api/companies/${companyId}/coupons/${couponId}`, {
+      return fetch(`/api/proxy/api/companies/${companyId}/coupons/${couponId}`, {
         method: 'DELETE',
         headers: getAuthHeader(token),
       }).then(handleResponse);
@@ -1376,7 +1376,7 @@ export const api = {
       data: CouponValidationRequest,
       token: string
     ): Promise<ApiResponse<CouponValidationResponse>> {
-      return fetch(`${BASE_URL}/api/companies/${companyId}/coupons/validate`, {
+      return fetch(`/api/proxy/api/companies/${companyId}/coupons/validate`, {
         method: 'POST',
         headers: getAuthHeader(token),
         body: JSON.stringify(data)
@@ -1392,7 +1392,7 @@ export const api = {
       data: CouponAssignmentRequest,
       token: string
     ): Promise<ApiResponse<any>> {
-      return fetch(`${BASE_URL}/api/companies/${companyId}/coupons/${couponId}/assign-users`, {
+      return fetch(`/api/proxy/api/companies/${companyId}/coupons/${couponId}/assign-users`, {
         method: 'POST',
         headers: getAuthHeader(token),
         body: JSON.stringify(data)
@@ -1408,7 +1408,7 @@ export const api = {
       data: CouponAssignByMembershipRequest,
       token: string
     ): Promise<ApiResponse<any>> {
-      return fetch(`${BASE_URL}/api/companies/${companyId}/coupons/${couponId}/assign-by-membership`, {
+      return fetch(`/api/proxy/api/companies/${companyId}/coupons/${couponId}/assign-by-membership`, {
         method: 'POST',
         headers: getAuthHeader(token),
         body: JSON.stringify(data)
@@ -1423,7 +1423,7 @@ export const api = {
       userId: string,
       token: string
     ): Promise<ApiResponse<{ coupons: Coupon[] }>> {
-      return fetch(`${BASE_URL}/api/companies/${companyId}/users/${userId}/coupons`, {
+      return fetch(`/api/proxy/api/companies/${companyId}/users/${userId}/coupons`, {
         headers: getAuthHeader(token),
       }).then(handleResponse);
     },
@@ -1437,7 +1437,7 @@ export const api = {
       userId: string,
       token: string
     ): Promise<ApiResponse> {
-      return fetch(`${BASE_URL}/api/companies/${companyId}/coupons/${couponId}/users/${userId}`, {
+      return fetch(`/api/proxy/api/companies/${companyId}/coupons/${couponId}/users/${userId}`, {
         method: 'DELETE',
         headers: getAuthHeader(token),
       }).then(handleResponse);

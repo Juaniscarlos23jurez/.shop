@@ -60,7 +60,16 @@ export default function EditCouponPage() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [originalCoupon, setOriginalCoupon] = useState<Coupon | null>(null);
+  type CouponWithAssignments = Coupon & {
+    user_assignments?: Array<{
+      custom_user_id?: number;
+      user_id?: number;
+      user?: { id: number; name?: string; email?: string };
+    }>;
+  };
+
+  const [originalCoupon, setOriginalCoupon] = useState<CouponWithAssignments | null>(null);
+  const [assignedUsers, setAssignedUsers] = useState<Array<{ id: number; name: string; email: string }>>([]);
   const [formData, setFormData] = useState<FormData>({
     code: '',
     name: '',
@@ -167,7 +176,7 @@ export default function EditCouponPage() {
           throw new Error('No se encontró información del cupón en la respuesta');
         }
 
-        const coupon = response.data.coupon;
+        const coupon = response.data.coupon as CouponWithAssignments;
         setOriginalCoupon(coupon);
 
         // Populate form
@@ -195,9 +204,21 @@ export default function EditCouponPage() {
         });
 
         // Load assigned users if not public
-        if (!coupon.is_public && coupon.user_assignments) {
-          const assignedIds = coupon.user_assignments.map((ua: any) => ua.customer_id || ua.user_id);
+        if (!coupon.is_public && Array.isArray(coupon.user_assignments)) {
+          // Prefer backend's custom_user_id; fallback to nested user.id
+          const assignedIds: number[] = coupon.user_assignments
+            .map((ua: any) => ua.custom_user_id ?? ua.user_id ?? ua?.user?.id)
+            .filter((v: any) => v !== null && v !== undefined)
+            .map((v: any) => Number(v))
+            .filter((n: number) => !Number.isNaN(n));
           setSelectedRecipients(assignedIds);
+
+          // Keep a lightweight list to display in UI
+          const assignedList = coupon.user_assignments
+            .map((ua: any) => ua?.user)
+            .filter((u: any) => u && (u.email || u.name))
+            .map((u: any) => ({ id: Number(u.id), name: String(u.name || ''), email: String(u.email || '') }));
+          setAssignedUsers(assignedList);
         }
       } catch (error) {
         console.error('Error fetching coupon:', error);
@@ -214,6 +235,27 @@ export default function EditCouponPage() {
 
     fetchCoupon();
   }, [id, token, router, toast]);
+
+  // Reconcile selected recipients with followers once followers are loaded using email match
+  useEffect(() => {
+    if (!originalCoupon || !Array.isArray(originalCoupon.user_assignments)) return;
+    if (!Array.isArray(followers) || followers.length === 0) return;
+    if (formData.is_public) return;
+
+    const emails = originalCoupon.user_assignments
+      .map((ua: any) => ua?.user?.email)
+      .filter((e: any) => typeof e === 'string' && e.length > 0);
+    if (emails.length === 0) return;
+
+    const followerIds = followers
+      .filter((f: any) => emails.includes(f.customer_email))
+      .map((f: any) => Number(f.customer_id))
+      .filter((n: number) => !Number.isNaN(n));
+
+    if (followerIds.length > 0) {
+      setSelectedRecipients((prev) => Array.from(new Set([...prev, ...followerIds])));
+    }
+  }, [followers, originalCoupon, formData.is_public]);
 
   // Load followers on component mount
   useEffect(() => {
@@ -416,10 +458,7 @@ export default function EditCouponPage() {
         payload.item_id = formData.item_id;
       }
 
-      // Add user_ids if there are selected recipients
-      if (!formData.is_public && selectedRecipients.length > 0) {
-        payload.user_ids = selectedRecipients;
-      }
+      // Note: No enviar user_ids en el payload de actualización para evitar 422.
 
       console.log('[EditCoupon] Payload to send:', JSON.stringify(payload, null, 2));
 
@@ -434,6 +473,26 @@ export default function EditCouponPage() {
 
       if (!response.success) {
         throw new Error(response.error || 'Error al actualizar el cupón');
+      }
+
+      // Después de actualizar el cupón, si es privado, asignar usuarios vía endpoint dedicado
+      if (!formData.is_public) {
+        const sanitizedIds = selectedRecipients
+          .filter((v) => v !== null && v !== undefined)
+          .map((v) => Number(v))
+          .filter((n) => !Number.isNaN(n));
+
+        if (sanitizedIds.length > 0) {
+          const assignRes = await api.coupons.assignToUsers(
+            companyId,
+            id as string,
+            { user_ids: sanitizedIds },
+            token
+          );
+          if (!assignRes.success) {
+            throw new Error(assignRes.error || 'Error al asignar usuarios al cupón');
+          }
+        }
       }
 
       toast({
@@ -512,7 +571,18 @@ export default function EditCouponPage() {
             <CardContent className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="code">Código del cupón</Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="code">Código del cupón</Label>
+                    <Button 
+                      type="button" 
+                      variant="ghost" 
+                      size="sm" 
+                      className="text-xs"
+                      onClick={generateRandomCode}
+                    >
+                      Generar código
+                    </Button>
+                  </div>
                   <div className="relative">
                     <Input
                       id="code"
@@ -535,55 +605,113 @@ export default function EditCouponPage() {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="discountType">Tipo de descuento</Label>
+                  <Label htmlFor="type">Tipo de descuento</Label>
                   <select
-                    id="discountType"
-                    name="discountType"
+                    id="type"
+                    name="type"
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    value={formData.discountType}
+                    value={formData.type}
                     onChange={handleInputChange}
                   >
                     <option value="percentage">Porcentaje de descuento</option>
-                    <option value="fixed">Monto fijo</option>
+                    <option value="fixed_amount">Monto fijo</option>
                     <option value="free_shipping">Envío gratuito</option>
+                    <option value="buy_x_get_y">Compra X Lleva Y</option>
+                    <option value="free_item">Producto gratis</option>
                   </select>
                 </div>
 
-                {formData.discountType !== 'free_shipping' && (
+                {(formData.type === 'percentage' || formData.type === 'fixed_amount') && (
                   <div className="space-y-2">
                     <Label htmlFor="discount">
-                      {formData.discountType === 'percentage' ? 'Porcentaje de descuento' : 'Monto de descuento'}
+                      {formData.type === 'percentage' ? 'Porcentaje de descuento' : 'Monto de descuento'}
                     </Label>
                     <div className="relative">
                       <Input
                         id="discount"
-                        name="discount"
+                        name={formData.type === 'percentage' ? 'discount_percentage' : 'discount_amount'}
                         type="number"
                         min="0"
-                        max={formData.discountType === 'percentage' ? '100' : undefined}
-                        step={formData.discountType === 'percentage' ? '1' : '0.01'}
-                        value={formData.discount}
+                        max={formData.type === 'percentage' ? '100' : undefined}
+                        step={formData.type === 'percentage' ? '1' : '0.01'}
+                        value={formData.type === 'percentage' ? formData.discount_percentage : formData.discount_amount}
                         onChange={handleInputChange}
                         required
                         className="pl-8"
                       />
                       <span className="absolute left-3 top-2.5 text-muted-foreground">
-                        {formData.discountType === 'percentage' ? '%' : '$'}
+                        {formData.type === 'percentage' ? '%' : '$'}
                       </span>
                     </div>
                   </div>
                 )}
 
+                {formData.type === 'buy_x_get_y' && (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="buy_quantity">Cantidad a comprar</Label>
+                      <Input
+                        id="buy_quantity"
+                        name="buy_quantity"
+                        type="number"
+                        min="1"
+                        value={formData.buy_quantity}
+                        onChange={handleInputChange}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="get_quantity">Cantidad a llevar</Label>
+                      <Input
+                        id="get_quantity"
+                        name="get_quantity"
+                        type="number"
+                        min="1"
+                        value={formData.get_quantity}
+                        onChange={handleInputChange}
+                        required
+                      />
+                    </div>
+                  </>
+                )}
+
+                {formData.type === 'free_item' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="item_id">Producto gratis</Label>
+                    <Select
+                      value={formData.item_id}
+                      onValueChange={(val) => setFormData(prev => ({ ...prev, item_id: val }))}
+                      disabled={productsLoading}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={productsLoading ? 'Cargando productos...' : 'Selecciona un producto'} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {products.length > 0 ? (
+                          products.map((p) => (
+                            <SelectItem key={p.id} value={String(p.id)}>
+                              {p.name} {p.price ? `- $${parseFloat(String(p.price)).toFixed(2)}` : ''}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <div className="p-2 text-sm text-muted-foreground">No hay productos disponibles</div>
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">Selecciona el producto que será gratuito con esta promoción.</p>
+                  </div>
+                )}
+
                 <div className="space-y-2">
-                  <Label htmlFor="minPurchase">Compra mínima (opcional)</Label>
+                  <Label htmlFor="min_purchase_amount">Compra mínima (opcional)</Label>
                   <div className="relative">
                     <Input
-                      id="minPurchase"
-                      name="minPurchase"
+                      id="min_purchase_amount"
+                      name="min_purchase_amount"
                       type="number"
                       min="0"
                       step="0.01"
-                      value={formData.minPurchase || ''}
+                      value={formData.min_purchase_amount}
                       onChange={handleInputChange}
                       className="pl-8"
                     />
@@ -592,31 +720,29 @@ export default function EditCouponPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="maxUses">Límite de usos (opcional)</Label>
+                  <Label htmlFor="usage_limit">Límite de usos (opcional)</Label>
                   <Input
-                    id="maxUses"
-                    name="maxUses"
+                    id="usage_limit"
+                    name="usage_limit"
                     type="number"
                     min="1"
-                    value={formData.maxUses || ''}
+                    value={formData.usage_limit}
                     onChange={handleInputChange}
                     placeholder="Ilimitado si se deja en blanco"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Usos actuales</Label>
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 bg-gray-100 rounded-full h-2.5 dark:bg-gray-700">
-                      <div 
-                        className="bg-primary h-2.5 rounded-full" 
-                        style={{ width: `${(formData.maxUses ? (127 / formData.maxUses * 100) : 0)}%` }}
-                      ></div>
-                    </div>
-                    <span className="text-sm text-muted-foreground">
-                      {127}{formData.maxUses > 0 ? `/${formData.maxUses}` : ''}
-                    </span>
-                  </div>
+                  <Label htmlFor="usage_limit_per_user">Límite por usuario (opcional)</Label>
+                  <Input
+                    id="usage_limit_per_user"
+                    name="usage_limit_per_user"
+                    type="number"
+                    min="1"
+                    value={formData.usage_limit_per_user}
+                    onChange={handleInputChange}
+                    placeholder="Ilimitado si se deja en blanco"
+                  />
                 </div>
               </div>
 
@@ -706,22 +832,164 @@ export default function EditCouponPage() {
                 />
               </div>
 
-              <div className="flex items-center justify-between pt-2">
-                <div className="space-y-0.5">
-                  <Label>Estado</Label>
-                  <p className="text-sm text-muted-foreground">
-                    {formData.isActive ? 'Activo' : 'Inactivo'}
-                  </p>
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Estado</Label>
+                    <p className="text-sm text-muted-foreground">
+                      {formData.is_active ? 'Activo' : 'Inactivo'}
+                    </p>
+                  </div>
+                  <Switch
+                    checked={formData.is_active}
+                    onCheckedChange={(checked) => 
+                      setFormData(prev => ({ ...prev, is_active: checked }))
+                    }
+                  />
                 </div>
-                <Switch
-                  checked={formData.isActive}
-                  onCheckedChange={(checked) => 
-                    setFormData(prev => ({ ...prev, isActive: checked }))
-                  }
-                />
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Cupón público</Label>
+                    <p className="text-sm text-muted-foreground">
+                      {formData.is_public ? 'Visible para todos' : 'Solo para usuarios seleccionados'}
+                    </p>
+                  </div>
+                  <Switch
+                    checked={formData.is_public}
+                    onCheckedChange={(checked) => 
+                      setFormData(prev => ({ ...prev, is_public: checked }))
+                    }
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Un solo uso por usuario</Label>
+                    <p className="text-sm text-muted-foreground">
+                      {formData.is_single_use ? 'Sí' : 'No'}
+                    </p>
+                  </div>
+                  <Switch
+                    checked={formData.is_single_use}
+                    onCheckedChange={(checked) => 
+                      setFormData(prev => ({ ...prev, is_single_use: checked }))
+                    }
+                  />
+                </div>
               </div>
             </CardContent>
           </Card>
+          {/* User Segmentation Card - Only show for non-public coupons */}
+          {!formData.is_public && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Segmentación de Usuarios</CardTitle>
+                <CardDescription>
+                  Selecciona los usuarios que podrán usar este cupón privado
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Currently assigned users summary */}
+                {assignedUsers.length > 0 && (
+                  <div className="rounded-md border p-3 bg-muted/40">
+                    <p className="text-sm font-medium mb-2">Usuarios asignados actualmente ({assignedUsers.length}):</p>
+                    <ul className="text-sm list-disc pl-5 space-y-1">
+                      {assignedUsers.map((u) => (
+                        <li key={u.id} className="text-muted-foreground">
+                          {u.name || 'Usuario'} — {u.email}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {/* Filter */}
+                <div className="space-y-2">
+                  <Label>Filtrar usuarios</Label>
+                  <Select value={filterMode} onValueChange={(value: any) => setFilterMode(value)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos los usuarios</SelectItem>
+                      <SelectItem value="membership_only">Solo con membresía</SelectItem>
+                      <SelectItem value="no_membership">Sin membresía</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Selection controls */}
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-muted-foreground">
+                    {selectedRecipients.length} de {filteredFollowers.length} seleccionados
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={selectAll}
+                      disabled={followersLoading}
+                    >
+                      Seleccionar todos
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={deselectAll}
+                      disabled={followersLoading}
+                    >
+                      Deseleccionar
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Users list */}
+                {followersLoading ? (
+                  <div className="text-center py-8">
+                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-primary border-t-transparent"></div>
+                    <p className="text-sm text-muted-foreground mt-2">Cargando usuarios...</p>
+                  </div>
+                ) : filteredFollowers.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <p>No hay usuarios disponibles</p>
+                  </div>
+                ) : (
+                  <div className="border rounded-lg max-h-96 overflow-y-auto">
+                    {filteredFollowers.map((follower) => (
+                      <div
+                        key={follower.customer_id}
+                        className="flex items-center space-x-3 p-3 hover:bg-muted/50 border-b last:border-b-0"
+                      >
+                        <Checkbox
+                          id={`follower-${follower.customer_id}`}
+                          checked={selectedRecipients.includes(follower.customer_id)}
+                          onCheckedChange={() => toggleRecipient(follower.customer_id)}
+                        />
+                        <label
+                          htmlFor={`follower-${follower.customer_id}`}
+                          className="flex-1 cursor-pointer"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="font-medium">{follower.customer_name}</p>
+                              <p className="text-sm text-muted-foreground">{follower.customer_email}</p>
+                            </div>
+                            {follower.has_active_membership === 1 && (
+                              <div className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
+                                {follower.membership_plan_name || 'Membresía'}
+                              </div>
+                            )}
+                          </div>
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
           <div className="flex justify-between items-center">
             <div className="text-sm text-muted-foreground">
