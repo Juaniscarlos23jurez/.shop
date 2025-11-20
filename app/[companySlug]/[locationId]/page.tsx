@@ -348,7 +348,7 @@ export default function PublicLocationProductsPage() {
 
   return (
     <CartProvider>
-      <div className="min-h-screen bg-gray-50 pb-24">
+      <div className="min-h-screen bg-gray-50 pb-32">
         {/* Hero Section with Banner */}
         {company?.banner_url && (
           <div className="relative h-48 sm:h-64 md:h-80 w-full overflow-hidden">
@@ -666,9 +666,9 @@ export default function PublicLocationProductsPage() {
         />
 
         {/* Floating Bottom Navigation Dock */}
-        <div className="fixed bottom-0 left-0 right-0 z-30 pointer-events-none">
-          <div className="mx-auto max-w-md px-4 pb-4 safe-bottom">
-            <div className="pointer-events-auto bg-white/90 backdrop-blur-xl border border-gray-200/50 rounded-2xl shadow-2xl p-2">
+        <div className="fixed bottom-0 left-0 right-0 z-30 pointer-events-none pb-safe">
+          <div className="mx-auto max-w-md px-4 pb-6">
+            <div className="pointer-events-auto bg-white/95 backdrop-blur-xl border border-gray-200/50 rounded-2xl shadow-2xl p-2">
               <div className="flex items-center justify-around gap-2">
                 <button
                   className={`flex flex-col items-center justify-center gap-1 px-6 py-3 rounded-xl text-xs font-medium transition-all duration-200 ${
@@ -694,8 +694,6 @@ export default function PublicLocationProductsPage() {
                 </button>
               </div>
             </div>
-            {/* Safe area inset support */}
-            <div className="h-[env(safe-area-inset-bottom)]" />
           </div>
         </div>
       </div>
