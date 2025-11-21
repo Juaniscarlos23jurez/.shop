@@ -6,7 +6,8 @@ import Link from 'next/link';
 import { publicWebApiClient } from '@/lib/api/public-web';
 import { PublicItem, PublicCompanyLocation } from '@/types/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { MapPin, Package, Phone, Mail, Clock, Store, Search, User } from 'lucide-react';
+import * as Lucide from 'lucide-react';
+const { MapPin, Package, Phone, Mail, Clock, Store, Search, User } = Lucide as any;
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +17,9 @@ import { FloatingCartButton } from '@/components/cart/floating-cart-button';
 import { CartDrawer } from '@/components/cart/cart-drawer';
 import { clientAuthApi } from '@/lib/api/client-auth';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { BottomNav } from '@/components/shop/BottomNav';
+import { PointsSection } from '@/components/shop/PointsSection';
+import { PromotionsSection } from '@/components/shop/PromotionsSection';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -96,7 +100,7 @@ export default function PublicLocationProductsPage() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [currentAnnouncement, setCurrentAnnouncement] = useState(0);
   const rotationRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const [activeSection, setActiveSection] = useState<'home' | 'coupons'>('home');
+  const [activeSection, setActiveSection] = useState<'home' | 'promotions' | 'points' | 'coupons'>('home');
   const [coupons, setCoupons] = useState<PublicCoupon[]>([]);
   const [couponsLoading, setCouponsLoading] = useState(false);
   const [couponsError, setCouponsError] = useState<string | null>(null);
@@ -400,26 +404,22 @@ export default function PublicLocationProductsPage() {
   console.log('Rendering with company:', company);
   console.log('Rendering with location:', location);
 
-
-
-
-
   return (
     <CartProvider>
       <div className="min-h-screen bg-gray-50 pb-32 relative">
         {/* Floating Login/User Button */}
-        <div className="fixed top-4 right-4 z-50">
+        <div className="fixed top-6 right-6 z-50">
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button className="gap-2 shadow-lg bg-white text-emerald-600 hover:bg-gray-50 hover:text-emerald-700 border-emerald-100 rounded-full pl-2 pr-4 h-12">
-                  <Avatar className="h-8 w-8 border border-emerald-100">
+                <Button className="gap-3 shadow-xl bg-white text-emerald-600 hover:bg-gray-50 hover:text-emerald-700 border-2 border-emerald-100 rounded-full pl-3 pr-6 h-16 text-lg">
+                  <Avatar className="h-11 w-11 border-2 border-emerald-200">
                     <AvatarImage src={user.profile_photo_path || user.avatar_url || user.photo_url} />
                     <AvatarFallback className="bg-emerald-100 text-emerald-700">
                       {user.name ? user.name.substring(0, 2).toUpperCase() : 'US'}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="font-medium max-w-[100px] truncate">{user.name}</span>
+                  <span className="font-semibold max-w-[140px] truncate text-base">{user.name}</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
@@ -439,8 +439,8 @@ export default function PublicLocationProductsPage() {
             </DropdownMenu>
           ) : (
             <Link href={`/${companySlug}/${locationId}/auth/login`}>
-              <Button className="gap-2 shadow-lg bg-white text-emerald-600 hover:bg-gray-50 hover:text-emerald-700 border-emerald-100">
-                <User className="h-4 w-4" />
+              <Button className="gap-3 shadow-xl bg-white text-emerald-600 hover:bg-gray-50 hover:text-emerald-700 border-2 border-emerald-100 rounded-full h-16 px-6 text-lg font-semibold">
+                <User className="h-6 w-6" />
                 <span>Iniciar Sesión</span>
               </Button>
             </Link>
@@ -528,7 +528,7 @@ export default function PublicLocationProductsPage() {
           <div className="mb-2" />
 
           {/* Sections */}
-          {activeSection === 'home' ? (
+          {activeSection === 'home' && (
             <>
               {/* Announcements Carousel */}
               {announcements.length > 0 && (
@@ -700,7 +700,13 @@ export default function PublicLocationProductsPage() {
                 </Card>
               </div>
             </>
-          ) : (
+          )}
+
+          {activeSection === 'promotions' && <PromotionsSection />}
+
+          {activeSection === 'points' && <PointsSection />}
+
+          {activeSection === 'coupons' && (
             // Coupons section
             <div className="pb-16">
               <Card>
@@ -755,7 +761,7 @@ export default function PublicLocationProductsPage() {
           )}
         </div>
 
-        <FloatingCartButton onClick={() => setCartOpen(true)} />
+        <FloatingCartButton onClick={() => setCartOpen(true)} isHidden={cartOpen} />
         <CartDrawer
           open={cartOpen}
           onClose={() => setCartOpen(false)}
@@ -763,35 +769,7 @@ export default function PublicLocationProductsPage() {
           locationName={location?.name}
         />
 
-        {/* Floating Bottom Navigation Dock */}
-        <div className="fixed bottom-0 left-0 right-0 z-30 pointer-events-none pb-safe">
-          <div className="mx-auto max-w-md px-4 pb-6">
-            <div className="pointer-events-auto bg-white/95 backdrop-blur-xl border border-gray-200/50 rounded-2xl shadow-2xl p-2">
-              <div className="flex items-center justify-around gap-2">
-                <button
-                  className={`flex flex-col items-center justify-center gap-1 px-6 py-3 rounded-xl text-xs font-medium transition-all duration-200 ${activeSection === 'home'
-                    ? 'text-white bg-gradient-to-b from-emerald-500 to-emerald-600 shadow-lg scale-105'
-                    : 'text-gray-600 hover:bg-gray-100 hover:scale-105'
-                    }`}
-                  onClick={() => setActiveSection('home')}
-                >
-                  <Store className={`h-6 w-6 ${activeSection === 'home' ? 'stroke-[2.5]' : 'stroke-2'}`} />
-                  <span className="font-semibold">Inicio</span>
-                </button>
-                <button
-                  className={`flex flex-col items-center justify-center gap-1 px-6 py-3 rounded-xl text-xs font-medium transition-all duration-200 ${activeSection === 'coupons'
-                    ? 'text-white bg-gradient-to-b from-emerald-500 to-emerald-600 shadow-lg scale-105'
-                    : 'text-gray-600 hover:bg-gray-100 hover:scale-105'
-                    }`}
-                  onClick={() => setActiveSection('coupons')}
-                >
-                  <Package className={`h-6 w-6 ${activeSection === 'coupons' ? 'stroke-[2.5]' : 'stroke-2'}`} />
-                  <span className="font-semibold">Cupones</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <BottomNav activeSection={activeSection} onSectionChange={setActiveSection} />
       </div >
     </CartProvider >
   );

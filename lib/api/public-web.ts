@@ -13,7 +13,7 @@ export const publicWebApiClient = {
       headers: {
         'Accept': 'application/json',
       },
-    }).then(handleResponse);
+    }).then(res => handleResponse<PublicCompany[]>(res));
   },
 
   /**
@@ -27,7 +27,7 @@ export const publicWebApiClient = {
       headers: {
         'Accept': 'application/json',
       },
-    }).then(handleResponse);
+    }).then(res => handleResponse<PublicCompany>(res));
   },
 
   /**
@@ -41,7 +41,7 @@ export const publicWebApiClient = {
       headers: {
         'Accept': 'application/json',
       },
-    }).then(handleResponse);
+    }).then(res => handleResponse<PublicCompanyLocation[]>(res));
   },
 
   /**
@@ -55,7 +55,7 @@ export const publicWebApiClient = {
       headers: {
         'Accept': 'application/json',
       },
-    }).then(handleResponse);
+    }).then(res => handleResponse<{ data: Announcement[] }>(res));
   },
 
   /**
@@ -69,7 +69,7 @@ export const publicWebApiClient = {
       headers: {
         'Accept': 'application/json',
       },
-    }).then(handleResponse);
+    }).then(res => handleResponse<PublicItem[]>(res));
   },
 
   /**
@@ -83,7 +83,7 @@ export const publicWebApiClient = {
       headers: {
         'Accept': 'application/json',
       },
-    }).then(handleResponse);
+    }).then(res => handleResponse<PublicCompanyLocation>(res));
   },
 };
 

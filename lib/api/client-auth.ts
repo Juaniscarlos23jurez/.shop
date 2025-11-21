@@ -42,7 +42,7 @@ export const clientAuthApi = {
                 'Accept': 'application/json',
             },
             body: JSON.stringify(data),
-        }).then(handleResponse);
+        }).then(res => handleResponse<ClientAuthResponse>(res));
     },
 
     /**
@@ -58,7 +58,7 @@ export const clientAuthApi = {
                 'Accept': 'application/json',
             },
             body: JSON.stringify(data),
-        }).then(handleResponse);
+        }).then(res => handleResponse<ClientAuthResponse>(res));
     },
 
     /**
@@ -74,7 +74,7 @@ export const clientAuthApi = {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json',
             },
-        }).then(handleResponse);
+        }).then(res => handleResponse<ClientAuthResponse>(res));
     },
 };
 
