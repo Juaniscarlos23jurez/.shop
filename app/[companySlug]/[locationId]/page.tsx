@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
+import Link from 'next/link';
 import { publicWebApiClient } from '@/lib/api/public-web';
 import { PublicItem, PublicCompanyLocation } from '@/types/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { MapPin, Package, Phone, Mail, Clock, Store, Search } from 'lucide-react';
+import { MapPin, Package, Phone, Mail, Clock, Store, Search, User } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +14,16 @@ import { formatCurrency } from '@/lib/utils/currency';
 import { CartProvider, useCart } from '@/lib/cart-context';
 import { FloatingCartButton } from '@/components/cart/floating-cart-button';
 import { CartDrawer } from '@/components/cart/cart-drawer';
+import { clientAuthApi } from '@/lib/api/client-auth';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 type Announcement = {
   id: number;
@@ -90,6 +101,49 @@ export default function PublicLocationProductsPage() {
   const [couponsLoading, setCouponsLoading] = useState(false);
   const [couponsError, setCouponsError] = useState<string | null>(null);
 
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const token = localStorage.getItem('customer_token');
+      if (token) {
+        try {
+          // Try to get stored info first for speed
+          const storedInfo = localStorage.getItem('customer_info');
+          if (storedInfo) {
+            setUser(JSON.parse(storedInfo));
+          }
+
+          // Validate/Refresh with API
+          const res = await clientAuthApi.getProfile(token);
+          if (res.success && res.data) {
+            setUser(res.data); // Adjust based on actual response structure
+            // If response structure is { data: { ...user } } or just { ...user }
+            // The user provided snippet suggests: responseData['data'] is the user
+            const userData = (res.data as any).data || res.data;
+            setUser(userData);
+            localStorage.setItem('customer_info', JSON.stringify(userData));
+          } else {
+            // Token invalid
+            localStorage.removeItem('customer_token');
+            localStorage.removeItem('customer_info');
+            setUser(null);
+          }
+        } catch (e) {
+          console.error("Auth check failed", e);
+        }
+      }
+    };
+    checkAuth();
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('customer_token');
+    localStorage.removeItem('customer_info');
+    setUser(null);
+    window.location.reload();
+  };
+
   // Cache key builder and TTLs
   const baseKey = `plp:${companySlug}:${locationId}`;
   const COMPANY_TTL = 24 * 60 * 60 * 1000; // 24h
@@ -144,11 +198,11 @@ export default function PublicLocationProductsPage() {
           // locationDetailsRes.data is the full response: { success: true, data: { location: {...}, company: {...}, menu: {...} } }
           const responseData = locationDetailsRes.data as any;
           console.log('Location API response:', responseData);
-          
+
           // Extract from nested structure
           let loc: any = null;
           let comp: any = null;
-          
+
           if (responseData.data) {
             // Response has nested data property
             loc = responseData.data.location;
@@ -161,10 +215,10 @@ export default function PublicLocationProductsPage() {
             // Fallback: use responseData as location
             loc = responseData;
           }
-          
+
           console.log('Extracted location:', loc);
           console.log('Extracted company:', comp);
-          
+
           setLocation(loc as PublicCompanyLocation);
           setCompany(comp);
           setCache(`${baseKey}:location`, loc as PublicCompanyLocation);
@@ -204,7 +258,7 @@ export default function PublicLocationProductsPage() {
           // API returns wrapped: ApiResponse<{ status: 'success', data: { products: [...] } }>
           // So itemsRes.data is { status: 'success', data: { products: [...] } }
           let products: any[] = [];
-          
+
           if ((itemsRes.data as any).data?.products) {
             // Nested structure: { data: { products: [...] } }
             products = (itemsRes.data as any).data.products;
@@ -228,14 +282,14 @@ export default function PublicLocationProductsPage() {
             } as PublicItem));
             setItems(normalized);
             setFilteredItems(normalized);
-            
+
             // Extract unique categories
             const uniqueCategories = Array.from(new Set(
               normalized.map(item => item.category).filter(Boolean)
             )) as string[];
             setCategories(uniqueCategories);
             setCache(`${baseKey}:items`, normalized);
-            
+
             console.log('Products loaded:', normalized.length);
           } else {
             console.warn('No products found or unexpected format:', itemsRes.data);
@@ -346,20 +400,66 @@ export default function PublicLocationProductsPage() {
   console.log('Rendering with company:', company);
   console.log('Rendering with location:', location);
 
+
+
+
+
   return (
     <CartProvider>
-      <div className="min-h-screen bg-gray-50 pb-32">
+      <div className="min-h-screen bg-gray-50 pb-32 relative">
+        {/* Floating Login/User Button */}
+        <div className="fixed top-4 right-4 z-50">
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button className="gap-2 shadow-lg bg-white text-emerald-600 hover:bg-gray-50 hover:text-emerald-700 border-emerald-100 rounded-full pl-2 pr-4 h-12">
+                  <Avatar className="h-8 w-8 border border-emerald-100">
+                    <AvatarImage src={user.profile_photo_path || user.avatar_url || user.photo_url} />
+                    <AvatarFallback className="bg-emerald-100 text-emerald-700">
+                      {user.name ? user.name.substring(0, 2).toUpperCase() : 'US'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="font-medium max-w-[100px] truncate">{user.name}</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>Mi Cuenta</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => alert("Perfil en desarrollo")}>
+                  Perfil
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => alert("Mis Pedidos en desarrollo")}>
+                  Mis Pedidos
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout} className="text-red-600">
+                  Cerrar Sesión
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Link href={`/${companySlug}/${locationId}/auth/login`}>
+              <Button className="gap-2 shadow-lg bg-white text-emerald-600 hover:bg-gray-50 hover:text-emerald-700 border-emerald-100">
+                <User className="h-4 w-4" />
+                <span>Iniciar Sesión</span>
+              </Button>
+            </Link>
+          )}
+        </div>
+
         {/* Hero Section with Banner */}
-        {company?.banner_url && (
-          <div className="relative h-48 sm:h-64 md:h-80 w-full overflow-hidden">
-            <img
-              src={company.banner_url}
-              alt={company.name || 'Banner'}
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-          </div>
-        )}
+        {
+          company?.banner_url && (
+            <div className="relative h-48 sm:h-64 md:h-80 w-full overflow-hidden">
+              <img
+                src={company.banner_url}
+                alt={company.name || 'Banner'}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+            </div>
+          )
+        }
 
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           {/* Location Header */}
@@ -541,11 +641,10 @@ export default function PublicLocationProductsPage() {
                       <div className="flex flex-wrap gap-2 mb-4">
                         <Badge
                           variant={selectedCategory === 'all' ? 'default' : 'outline'}
-                          className={`cursor-pointer transition-all ${
-                            selectedCategory === 'all'
-                              ? 'bg-emerald-600 hover:bg-emerald-700'
-                              : 'hover:bg-gray-100'
-                          }`}
+                          className={`cursor-pointer transition-all ${selectedCategory === 'all'
+                            ? 'bg-emerald-600 hover:bg-emerald-700'
+                            : 'hover:bg-gray-100'
+                            }`}
                           onClick={() => setSelectedCategory('all')}
                         >
                           Todos ({items.length})
@@ -556,11 +655,10 @@ export default function PublicLocationProductsPage() {
                             <Badge
                               key={category}
                               variant={selectedCategory === category ? 'default' : 'outline'}
-                              className={`cursor-pointer transition-all ${
-                                selectedCategory === category
-                                  ? 'bg-emerald-600 hover:bg-emerald-700'
-                                  : 'hover:bg-gray-100'
-                              }`}
+                              className={`cursor-pointer transition-all ${selectedCategory === category
+                                ? 'bg-emerald-600 hover:bg-emerald-700'
+                                : 'hover:bg-gray-100'
+                                }`}
                               onClick={() => setSelectedCategory(category)}
                             >
                               {category} ({count})
@@ -658,9 +756,9 @@ export default function PublicLocationProductsPage() {
         </div>
 
         <FloatingCartButton onClick={() => setCartOpen(true)} />
-        <CartDrawer 
-          open={cartOpen} 
-          onClose={() => setCartOpen(false)} 
+        <CartDrawer
+          open={cartOpen}
+          onClose={() => setCartOpen(false)}
           locationPhone={(location as any)?.phone ?? company?.phone}
           locationName={location?.name}
         />
@@ -671,22 +769,20 @@ export default function PublicLocationProductsPage() {
             <div className="pointer-events-auto bg-white/95 backdrop-blur-xl border border-gray-200/50 rounded-2xl shadow-2xl p-2">
               <div className="flex items-center justify-around gap-2">
                 <button
-                  className={`flex flex-col items-center justify-center gap-1 px-6 py-3 rounded-xl text-xs font-medium transition-all duration-200 ${
-                    activeSection === 'home' 
-                      ? 'text-white bg-gradient-to-b from-emerald-500 to-emerald-600 shadow-lg scale-105' 
-                      : 'text-gray-600 hover:bg-gray-100 hover:scale-105'
-                  }`}
+                  className={`flex flex-col items-center justify-center gap-1 px-6 py-3 rounded-xl text-xs font-medium transition-all duration-200 ${activeSection === 'home'
+                    ? 'text-white bg-gradient-to-b from-emerald-500 to-emerald-600 shadow-lg scale-105'
+                    : 'text-gray-600 hover:bg-gray-100 hover:scale-105'
+                    }`}
                   onClick={() => setActiveSection('home')}
                 >
                   <Store className={`h-6 w-6 ${activeSection === 'home' ? 'stroke-[2.5]' : 'stroke-2'}`} />
                   <span className="font-semibold">Inicio</span>
                 </button>
                 <button
-                  className={`flex flex-col items-center justify-center gap-1 px-6 py-3 rounded-xl text-xs font-medium transition-all duration-200 ${
-                    activeSection === 'coupons' 
-                      ? 'text-white bg-gradient-to-b from-emerald-500 to-emerald-600 shadow-lg scale-105' 
-                      : 'text-gray-600 hover:bg-gray-100 hover:scale-105'
-                  }`}
+                  className={`flex flex-col items-center justify-center gap-1 px-6 py-3 rounded-xl text-xs font-medium transition-all duration-200 ${activeSection === 'coupons'
+                    ? 'text-white bg-gradient-to-b from-emerald-500 to-emerald-600 shadow-lg scale-105'
+                    : 'text-gray-600 hover:bg-gray-100 hover:scale-105'
+                    }`}
                   onClick={() => setActiveSection('coupons')}
                 >
                   <Package className={`h-6 w-6 ${activeSection === 'coupons' ? 'stroke-[2.5]' : 'stroke-2'}`} />
@@ -696,8 +792,8 @@ export default function PublicLocationProductsPage() {
             </div>
           </div>
         </div>
-      </div>
-    </CartProvider>
+      </div >
+    </CartProvider >
   );
 }
 
@@ -757,9 +853,9 @@ function CatalogCard({ item, locationId }: { item: PublicItem; locationId: numbe
               {formatCurrency(typeof item.price === 'number' ? item.price : 0)}
             </span>
           </div>
-          <Button 
-            size="lg" 
-            className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-semibold shadow-md hover:shadow-lg transition-all" 
+          <Button
+            size="lg"
+            className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-semibold shadow-md hover:shadow-lg transition-all"
             onClick={handleAdd}
           >
             Agregar al carrito
