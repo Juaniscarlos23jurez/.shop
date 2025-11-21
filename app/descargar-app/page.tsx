@@ -9,7 +9,7 @@ const IOS_URL =
 
 const ANDROID_URL =
   process.env.NEXT_PUBLIC_ANDROID_URL ||
-  "https://play.google.com/store"
+  "https://play.google.com/store/apps/details?id=com.fynlink.BoostYou"
 
 export default function DescargarAppPage() {
   return (
