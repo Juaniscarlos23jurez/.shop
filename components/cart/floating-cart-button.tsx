@@ -7,10 +7,13 @@ import { formatCurrency } from '@/lib/utils/currency'
 
 interface FloatingCartButtonProps {
   onClick: () => void
+  isHidden?: boolean
 }
 
-export function FloatingCartButton({ onClick }: FloatingCartButtonProps) {
+export function FloatingCartButton({ onClick, isHidden = false }: FloatingCartButtonProps) {
   const { itemCount, total } = useCart()
+
+  if (isHidden) return null
 
   return (
     <Button
