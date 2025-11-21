@@ -34,21 +34,29 @@ export function EditBranchView({ branch, onSave, onCancel }: EditBranchViewProps
   };
 
   return (
-    <div className="bg-white rounded-lg shadow p-6 mb-6">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">Editar sucursal</h2>
+    <div>
+      <div className="mb-6">
         <Button 
-          variant="outline" 
+          type="button"
+          variant="ghost" 
           onClick={handleCancel}
+          className="flex items-center"
         >
-          Cancelar
+          <span className="mr-2">←</span>
+          Volver a información de sucursal
         </Button>
       </div>
-      <BranchForm 
-        branch={branch}
-        onSave={handleSave}
-        onCancel={handleCancel}
-      />
+      
+      <div className="bg-white rounded-lg shadow p-6 mb-6">
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold">Editar sucursal</h2>
+        </div>
+        <BranchForm 
+          branch={branch}
+          onSave={handleSave}
+          onCancel={handleCancel}
+        />
+      </div>
     </div>
   );
 }

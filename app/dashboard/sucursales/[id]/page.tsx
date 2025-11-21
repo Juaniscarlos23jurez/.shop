@@ -23,6 +23,7 @@ import {
   QuickActions
 } from './components';
 import { EditBranchView } from './components/EditBranchView';
+import { BranchShowView } from './components/BranchShowView';
 import { AccountForm } from './components/AccountForm';
 
 export default function BranchDetailPage() {
@@ -121,7 +122,7 @@ export default function BranchDetailPage() {
           city: currentBranch.city || '',
           state: currentBranch.state || '',
           country: currentBranch.country || 'México',
-          zipCode: currentBranch.zip_code || '',
+          zipCode: currentBranch.postal_code || currentBranch.zip_code || '',
           isActive: currentBranch.is_active !== undefined ? currentBranch.is_active : true,
           createdAt: currentBranch.created_at || new Date().toISOString(),
           updatedAt: currentBranch.updated_at || new Date().toISOString(),
@@ -252,6 +253,10 @@ export default function BranchDetailPage() {
     try {
       setLoading(true);
       
+      console.log('[BranchDetail] handleSaveBranch - Received updatedBranch:', updatedBranch);
+      console.log('[BranchDetail] handleSaveBranch - postal_code from updatedBranch:', (updatedBranch as any).postal_code);
+      console.log('[BranchDetail] handleSaveBranch - zipCode from updatedBranch:', updatedBranch.zipCode);
+      
       // Format data for API - include IDs and coordinates as per backend requirements
       const updateData: any = {
         name: updatedBranch.name,
@@ -262,9 +267,11 @@ export default function BranchDetailPage() {
         city: updatedBranch.city,
         state: updatedBranch.state,
         country: updatedBranch.country,
-        zip_code: updatedBranch.zipCode,
+        postal_code: (updatedBranch as any).postal_code || updatedBranch.zipCode,
         is_active: updatedBranch.isActive
       };
+      
+      console.log('[BranchDetail] handleSaveBranch - updateData being sent to API:', updateData);
       
       // Include optional geo IDs if present
       if ((updatedBranch as any).country_id) {
@@ -717,118 +724,47 @@ export default function BranchDetailPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-6">
-        <Button variant="ghost" asChild>
-          <Link href="/dashboard/sucursales" className="flex items-center">
-            <span className="mr-2">←</span>
-            Volver a sucursales
-          </Link>
-        </Button>
-      </div>
-
       {isEditing ? (
         <EditBranchView 
           branch={branch}
           onSave={handleSaveBranch}
           onCancel={() => {
             setIsEditing(false);
-            // Update URL when editing is cancelled
             router.replace(`/dashboard/sucursales/${id}`, { scroll: false });
           }}
         />
       ) : (
-        <>
-          <BranchInfo 
-            branch={branch} 
-            onEditClick={() => {
-              setIsEditing(true);
-              // Update URL when editing starts
-              router.push(`/dashboard/sucursales/${id}?edit=true`, { scroll: false });
-            }}
-          />
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
-            <div className="lg:col-span-2 space-y-6">
-              <Tabs 
-                value={activeTab} 
-                onValueChange={(value) => {
-                  setActiveTab(value);
-                  // Update URL without edit param when switching tabs
-                  if (isEditing) {
-                    router.replace(`/dashboard/sucursales/${id}?tab=${value}`, { scroll: false });
-                  } else {
-                    // Just update the tab in URL if not in edit mode
-                    const newUrl = new URL(window.location.href);
-                    newUrl.searchParams.set('tab', value);
-                    window.history.replaceState({}, '', newUrl.toString());
-                  }
-                }} 
-                className="space-y-4"
-              >
-                <TabsList className="mb-6">
-                  <TabsTrigger value="employees">Empleados</TabsTrigger>
-                  <TabsTrigger value="settings">Configuración</TabsTrigger>
-                </TabsList>
-                <TabsContent value="employees">
-                  {showAccountForm ? (
-                    <AccountForm
-                      account={currentEmployee?.account}
-                      employeeId={currentEmployee?.id || ''}
-                      employeeName={currentEmployee?.name || ''}
-                      locationId={id as string}
-                      onSave={handleSaveAccount}
-                      onCancel={() => {
-                        setShowAccountForm(false);
-                        setCurrentEmployee(null);
-                      }}
-                    />
-                  ) : showEmployeeForm ? (
-                    <EmployeeForm
-                      employee={currentEmployee}
-                      locationId={id as string}
-                      onSave={currentEmployee ? handleUpdateEmployee : handleAddEmployee}
-                      onCancel={() => {
-                        setShowEmployeeForm(false);
-                        setCurrentEmployee(null);
-                      }}
-                    />
-                  ) : (
-                    <EmployeeList
-                      employees={employees}
-                      onAddEmployee={() => setShowEmployeeForm(true)}
-                      onEditEmployee={(emp) => {
-                        setCurrentEmployee(emp);
-                        setShowEmployeeForm(true);
-                      }}
-                      onManageAccount={handleManageAccount}
-                      onDeleteEmployee={handleDeleteEmployee}
-                    />
-                  )}
-                </TabsContent>
-
-                <TabsContent value="settings">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Configuración de la sucursal</CardTitle>
-                      <CardDescription>
-                        Configura las opciones avanzadas de esta sucursal.
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-muted-foreground">
-                        Configuración avanzada de la sucursal.
-                      </p>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-              </Tabs>
-            </div>
-
-            <div className="space-y-6">
-              <QuickActions />
-              <BranchStats branch={branch} employees={employees} />
-            </div>
-          </div>
-        </>
+        <BranchShowView
+          branch={branch}
+          employees={employees}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          onEditClick={() => {
+            setIsEditing(true);
+            router.push(`/dashboard/sucursales/${id}?edit=true`, { scroll: false });
+          }}
+          onAddEmployee={() => setShowEmployeeForm(true)}
+          onEditEmployee={(emp) => {
+            setCurrentEmployee(emp);
+            setShowEmployeeForm(true);
+          }}
+          onManageAccount={handleManageAccount}
+          onDeleteEmployee={handleDeleteEmployee}
+          showEmployeeForm={showEmployeeForm}
+          showAccountForm={showAccountForm}
+          currentEmployee={currentEmployee}
+          onSaveEmployee={currentEmployee ? handleUpdateEmployee : handleAddEmployee}
+          onSaveAccount={handleSaveAccount}
+          onCancelEmployeeForm={() => {
+            setShowEmployeeForm(false);
+            setCurrentEmployee(null);
+          }}
+          onCancelAccountForm={() => {
+            setShowAccountForm(false);
+            setCurrentEmployee(null);
+          }}
+          locationId={id as string}
+        />
       )}
     </div>
   );

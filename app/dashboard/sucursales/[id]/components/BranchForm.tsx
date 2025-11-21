@@ -27,7 +27,7 @@ type BranchFormValues = z.infer<typeof branchFormSchema>;
 
 interface BranchFormProps {
   branch: Branch;
-  onSave: (data: Branch) => void;
+  onSave: (data: Branch & { postal_code?: string }) => void;
   onCancel: () => void;
 }
 
@@ -43,7 +43,7 @@ export function BranchForm({ branch, onSave, onCancel }: BranchFormProps) {
       city: branch.city,
       state: branch.state,
       country: branch.country,
-      zipCode: branch.zipCode,
+      zipCode: (branch as any).postal_code || (branch as any).zipCode || '',
       isActive: branch.isActive
     }
   });
@@ -199,9 +199,11 @@ export function BranchForm({ branch, onSave, onCancel }: BranchFormProps) {
   }, [cities, branch, cityId]);
 
   const onSubmit = (data: BranchFormValues) => {
-    onSave({
+    const payload = {
       ...branch,
       ...data,
+      // Map frontend field to backend expected key
+      postal_code: data.zipCode,
       // Send IDs and coordinates as per backend requirements
       country_id: countryId ? Number(countryId) : undefined,
       state_id: stateId ? Number(stateId) : undefined,
@@ -209,7 +211,9 @@ export function BranchForm({ branch, onSave, onCancel }: BranchFormProps) {
       latitude: markerPos?.lat,
       longitude: markerPos?.lng,
       updatedAt: new Date().toISOString()
-    });
+    };
+     
+    onSave(payload);
   };
 
   return (
