@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { publicWebApiClient } from '@/lib/api/public-web';
 import { PublicItem, PublicCompanyLocation } from '@/types/api';
@@ -83,6 +83,7 @@ function isFresh(entry: { ts: number } | null, ttlMs: number) {
 
 export default function PublicLocationProductsPage() {
   const params = useParams();
+  const router = useRouter();
   const companySlug = params.companySlug as string;
   const locationId = params.locationId as string;
 
@@ -489,7 +490,7 @@ export default function PublicLocationProductsPage() {
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel>Mi Cuenta</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => alert("Perfil en desarrollo")}>
+                <DropdownMenuItem onClick={() => router.push(`/${companySlug}/${locationId}/profile`)}>
                   Perfil
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => alert("Mis Pedidos en desarrollo")}>
