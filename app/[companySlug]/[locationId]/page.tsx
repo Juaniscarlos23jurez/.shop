@@ -512,12 +512,7 @@ export default function PublicLocationProductsPage() {
                         </a>
                       </div>
                     )}
-                    {(location as any).timezone && (
-                      <div className="flex items-center gap-2">
-                        <Clock className="h-5 w-5 text-emerald-600 flex-shrink-0" />
-                        <span className="text-gray-700">Zona horaria: {(location as any).timezone}</span>
-                      </div>
-                    )}
+
                   </div>
                 </div>
               </div>
@@ -702,7 +697,7 @@ export default function PublicLocationProductsPage() {
             </>
           )}
 
-          {activeSection === 'promotions' && <PromotionsSection />}
+          {activeSection === 'promotions' && <PromotionsSection companyId={company?.id} />}
 
           {activeSection === 'points' && <PointsSection />}
 

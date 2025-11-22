@@ -76,6 +76,70 @@ export const clientAuthApi = {
             },
         }).then(res => handleResponse<ClientAuthResponse>(res));
     },
+
+    /**
+     * Get product promotions.
+     * GET /api/client/auth/product-promotions
+     */
+    async getProductPromotions(token: string, params: { company_id?: string; city_id?: string; page?: number; per_page?: number }): Promise<ApiResponse<any>> {
+        const query = new URLSearchParams({
+            per_page: (params.per_page || 15).toString(),
+            page: (params.page || 1).toString(),
+        });
+        if (params.company_id) query.append('company_id', params.company_id);
+        if (params.city_id) query.append('city_id', params.city_id);
+
+        const url = `${BASE_URL}/api/client/auth/product-promotions?${query.toString()}`;
+        return fetch(url, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/json',
+            },
+        }).then(async (res) => {
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                return {
+                    success: false,
+                    error: errorData.message || `Error ${res.status}`,
+                    raw: errorData,
+                    status: res.status,
+                };
+            }
+            const body = await res.json();
+
+            // Flexible parsing logic similar to Dart code
+            let list: any[] = [];
+            let pagination: any = {};
+            let categories: any[] = [];
+
+            if (body.data && Array.isArray(body.data.data)) {
+                // { data: { data: [...], meta: {...} } }
+                list = body.data.data;
+                pagination = body.data.meta || body.meta || {};
+                if (Array.isArray(body.categories)) categories = body.categories;
+            } else if (body.data && Array.isArray(body.data)) {
+                // { data: [...], meta: {...} }
+                list = body.data;
+                pagination = body.meta || {};
+                if (Array.isArray(body.categories)) categories = body.categories;
+            } else if (Array.isArray(body)) {
+                // [...]
+                list = body;
+            }
+
+            return {
+                success: true,
+                data: {
+                    items: list,
+                    pagination,
+                    categories,
+                    raw: body
+                },
+                status: res.status
+            };
+        });
+    },
 };
 
 async function handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
