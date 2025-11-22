@@ -446,8 +446,8 @@ export default function PublicLocationProductsPage() {
           <div className="fixed top-6 left-6 z-50">
             <Button
               className={`group gap-2 shadow-xl border-2 h-16 px-6 text-lg font-semibold rounded-full transition-all ${isFollowing
-                  ? 'bg-white text-emerald-600 border-emerald-100 hover:bg-red-50 hover:text-red-600 hover:border-red-100'
-                  : 'bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700'
+                ? 'bg-white text-emerald-600 border-emerald-100 hover:bg-red-50 hover:text-red-600 hover:border-red-100'
+                : 'bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700'
                 }`}
               onClick={() => {
                 if (isFollowing) {
@@ -763,7 +763,7 @@ export default function PublicLocationProductsPage() {
 
           {activeSection === 'promotions' && <PromotionsSection companyId={company?.id} />}
 
-          {activeSection === 'points' && <PointsSection />}
+          {activeSection === 'points' && <PointsSection companyId={company?.id} />}
 
           {activeSection === 'coupons' && (
             // Coupons section
