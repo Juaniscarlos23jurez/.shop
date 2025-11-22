@@ -142,7 +142,7 @@ export interface CouponCreateInput {
   metadata?: any;
 }
 
-export interface CouponUpdateInput extends Partial<CouponCreateInput> {}
+export interface CouponUpdateInput extends Partial<CouponCreateInput> { }
 
 export interface CouponValidationRequest {
   code: string;
@@ -313,6 +313,7 @@ export interface PublicItem {
   price: number;
   image_url?: string;
   category?: string;
+  product_type?: string;
   location?: {
     id: string;
     name: string;

@@ -12,6 +12,36 @@ const { User, Calendar, Heart, MapPin, ArrowLeft, Store, Gift, Loader2, Phone } 
 import { clientAuthApi } from '@/lib/api/client-auth';
 import Link from 'next/link';
 
+// Simple localStorage cache helpers with TTL
+function getCache<T = any>(key: string): { data: T; ts: number } | null {
+    try {
+        const raw = typeof window !== 'undefined' ? window.localStorage.getItem(key) : null;
+        if (!raw) return null;
+        return JSON.parse(raw);
+    } catch {
+        return null;
+    }
+}
+
+function setCache<T = any>(key: string, data: T) {
+    try {
+        if (typeof window === 'undefined') return;
+        const payload = JSON.stringify({ data, ts: Date.now() });
+        window.localStorage.setItem(key, payload);
+    } catch {
+        // ignore
+    }
+}
+
+function isFresh(entry: { ts: number } | null, ttlMs: number) {
+    if (!entry) return false;
+    return Date.now() - entry.ts < ttlMs;
+}
+
+const PROFILE_TTL = 15 * 60 * 1000; // 15 minutes
+const FOLLOWED_TTL = 15 * 60 * 1000; // 15 minutes
+
+
 export default function UserProfilePage() {
     const params = useParams();
     const router = useRouter();
@@ -33,18 +63,34 @@ export default function UserProfilePage() {
 
             try {
                 // 1. Get Profile
-                const profileRes = await clientAuthApi.getProfile(token);
-                if (profileRes.success && profileRes.data) {
-                    const userData = (profileRes.data as any).data || profileRes.data;
+                const cachedProfile = getCache('user_profile_full');
+                let userData = null;
+
+                if (isFresh(cachedProfile, PROFILE_TTL) && cachedProfile?.data) {
+                    userData = cachedProfile.data;
                     setUser(userData);
-                    // Pre-fill birthday if available (assuming it might be in the user object)
                     if (userData.birthday) setBirthday(userData.birthday);
+                } else {
+                    const profileRes = await clientAuthApi.getProfile(token);
+                    if (profileRes.success && profileRes.data) {
+                        userData = (profileRes.data as any).data || profileRes.data;
+                        setUser(userData);
+                        setCache('user_profile_full', userData);
+                        // Pre-fill birthday if available (assuming it might be in the user object)
+                        if (userData.birthday) setBirthday(userData.birthday);
+                    }
                 }
 
                 // 2. Get Followed Companies
-                const followedRes = await clientAuthApi.getFollowedCompanies(token);
-                if (followedRes.success && Array.isArray(followedRes.data)) {
-                    setFollowedCompanies(followedRes.data);
+                const cachedFollowed = getCache('followed_companies_list');
+                if (isFresh(cachedFollowed, FOLLOWED_TTL) && Array.isArray(cachedFollowed?.data)) {
+                    setFollowedCompanies(cachedFollowed.data);
+                } else {
+                    const followedRes = await clientAuthApi.getFollowedCompanies(token);
+                    if (followedRes.success && Array.isArray(followedRes.data)) {
+                        setFollowedCompanies(followedRes.data);
+                        setCache('followed_companies_list', followedRes.data);
+                    }
                 }
             } catch (e) {
                 console.error("Error fetching profile data", e);
