@@ -140,6 +140,46 @@ export const clientAuthApi = {
             };
         });
     },
+
+    /**
+     * Get companies the current user is a member of/follows.
+     * GET /api/client/auth/followed-companies
+     */
+    async getFollowedCompanies(token: string): Promise<ApiResponse<any[]>> {
+        const url = `${BASE_URL}/api/client/auth/followed-companies`;
+        return fetch(url, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/json',
+            },
+        }).then(async (res) => {
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                return {
+                    success: false,
+                    error: errorData.message || `Error ${res.status}`,
+                    raw: errorData,
+                    status: res.status,
+                };
+            }
+            const body = await res.json();
+            // The API returns { status: 'success', data: [...] } or similar
+            // We want to return the list of companies
+            let companies: any[] = [];
+            if (body.data && Array.isArray(body.data)) {
+                companies = body.data;
+            } else if (Array.isArray(body)) {
+                companies = body;
+            }
+
+            return {
+                success: true,
+                data: companies,
+                status: res.status
+            };
+        });
+    },
 };
 
 async function handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
