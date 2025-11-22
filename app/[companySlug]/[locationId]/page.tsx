@@ -106,6 +106,7 @@ export default function PublicLocationProductsPage() {
   const [couponsError, setCouponsError] = useState<string | null>(null);
 
   const [user, setUser] = useState<any>(null);
+  const [isFollowing, setIsFollowing] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -121,12 +122,25 @@ export default function PublicLocationProductsPage() {
           // Validate/Refresh with API
           const res = await clientAuthApi.getProfile(token);
           if (res.success && res.data) {
-            setUser(res.data); // Adjust based on actual response structure
-            // If response structure is { data: { ...user } } or just { ...user }
-            // The user provided snippet suggests: responseData['data'] is the user
             const userData = (res.data as any).data || res.data;
             setUser(userData);
             localStorage.setItem('customer_info', JSON.stringify(userData));
+
+            // Check if following
+            try {
+              const followedRes = await clientAuthApi.getFollowedCompanies(token);
+              if (followedRes.success && Array.isArray(followedRes.data)) {
+                // Check if current company ID is in the list
+                // We need to wait for company to be loaded, or check against companySlug if possible,
+                // but the API returns company objects.
+                // We'll store the list and check in a separate effect or here if company is ready.
+                // For now, let's just store it in a temp variable or state if needed,
+                // but better to check when company is available.
+                // Let's trigger a check when company is set.
+              }
+            } catch (e) {
+              console.warn("Failed to fetch followed companies", e);
+            }
           } else {
             // Token invalid
             localStorage.removeItem('customer_token');
@@ -140,6 +154,26 @@ export default function PublicLocationProductsPage() {
     };
     checkAuth();
   }, []);
+
+  // Check follow status when user and company are available
+  useEffect(() => {
+    const checkFollow = async () => {
+      if (!user || !company) return;
+      const token = localStorage.getItem('customer_token');
+      if (!token) return;
+
+      try {
+        const res = await clientAuthApi.getFollowedCompanies(token);
+        if (res.success && Array.isArray(res.data)) {
+          const isFollowed = res.data.some((c: any) => String(c.id) === String(company.id));
+          setIsFollowing(isFollowed);
+        }
+      } catch (e) {
+        console.error("Error checking follow status", e);
+      }
+    };
+    checkFollow();
+  }, [user, company]);
 
   const handleLogout = () => {
     localStorage.removeItem('customer_token');
@@ -407,7 +441,37 @@ export default function PublicLocationProductsPage() {
   return (
     <CartProvider>
       <div className="min-h-screen bg-gray-50 pb-32 relative">
-        {/* Floating Login/User Button */}
+        {/* Follow Button (Left Side) */}
+        {user && company && (
+          <div className="fixed top-6 left-6 z-50">
+            <Button
+              className={`group gap-2 shadow-xl border-2 h-16 px-6 text-lg font-semibold rounded-full transition-all ${isFollowing
+                  ? 'bg-white text-emerald-600 border-emerald-100 hover:bg-red-50 hover:text-red-600 hover:border-red-100'
+                  : 'bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700'
+                }`}
+              onClick={() => {
+                if (isFollowing) {
+                  setIsFollowing(false);
+                } else {
+                  setIsFollowing(true);
+                }
+              }}
+            >
+              {isFollowing ? (
+                <>
+                  <span className="group-hover:hidden">Siguiendo</span>
+                  <span className="hidden group-hover:inline">Dejar de seguir</span>
+                </>
+              ) : (
+                <>
+                  <span>Seguir</span>
+                </>
+              )}
+            </Button>
+          </div>
+        )}
+
+        {/* Login/User Button (Right Side) */}
         <div className="fixed top-6 right-6 z-50">
           {user ? (
             <DropdownMenu>
