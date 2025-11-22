@@ -690,8 +690,8 @@ export default function PublicLocationProductsPage() {
 
               {/* Products Section */}
               <div className="pb-16">
-                <Card>
-                  <CardHeader>
+                <Card className="flex flex-col md:block" style={{ height: 'calc(100vh - 10rem)' }}>
+                  <CardHeader className="flex-shrink-0 md:static">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
                       <div>
                         <CardTitle className="flex items-center text-2xl">
@@ -720,7 +720,7 @@ export default function PublicLocationProductsPage() {
                       <div className="flex flex-wrap gap-2 mb-4">
                         <Badge
                           variant={selectedCategory === 'all' ? 'default' : 'outline'}
-                          className={`cursor-pointer transition-all ${selectedCategory === 'all'
+                          className={`cursor-pointer transition-all px-3 py-1.5 text-sm sm:text-base ${selectedCategory === 'all'
                             ? 'bg-emerald-600 hover:bg-emerald-700'
                             : 'hover:bg-gray-100'
                             }`}
@@ -734,7 +734,7 @@ export default function PublicLocationProductsPage() {
                             <Badge
                               key={category}
                               variant={selectedCategory === category ? 'default' : 'outline'}
-                              className={`cursor-pointer transition-all ${selectedCategory === category
+                              className={`cursor-pointer transition-all px-3 py-1.5 text-sm sm:text-base ${selectedCategory === category
                                 ? 'bg-emerald-600 hover:bg-emerald-700'
                                 : 'hover:bg-gray-100'
                                 }`}
@@ -747,7 +747,7 @@ export default function PublicLocationProductsPage() {
                       </div>
                     )}
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="flex-1 overflow-y-auto md:overflow-visible md:flex-none">
                     {items.length === 0 ? (
                       <div className="text-center py-12">
                         <Store className="h-16 w-16 text-gray-300 mx-auto mb-4" />
@@ -959,7 +959,7 @@ function CatalogCard({ item, locationId, phone }: { item: PublicItem; locationId
                   disabled={!phone}
                 >
                   <Phone className="h-5 w-5" />
-                  Contactar por WhatsApp
+                  WhatsApp
                 </Button>
               ) : (
                 <Button
@@ -1056,7 +1056,7 @@ function CatalogCard({ item, locationId, phone }: { item: PublicItem; locationId
                       disabled={!phone}
                     >
                       <Phone className="h-5 w-5" />
-                      Contactar por WhatsApp
+                      WhatsApp
                     </Button>
                   ) : (
                     <Button
