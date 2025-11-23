@@ -728,13 +728,13 @@ export default function PublicLocationProductsPage() {
 
                     {/* Search Bar */}
                     <div className="relative mb-4">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                      <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-6 w-6 text-gray-400" />
                       <Input
                         type="text"
                         placeholder="Buscar productos..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-10 pr-4 py-2 w-full"
+                        className="pl-12 pr-4 py-3 h-12 text-base sm:text-lg w-full"
                       />
                     </div>
 
