@@ -1,8 +1,8 @@
 import * as Lucide from 'lucide-react';
 
-const { Store, Package, Gift, Award } = Lucide as any;
+const { Store, Package, Gift, Award, WalletCards } = Lucide as any;
 
-type Section = 'home' | 'promotions' | 'points' | 'coupons';
+type Section = 'home' | 'promotions' | 'points' | 'coupons' | 'wallet';
 
 interface BottomNavProps {
     activeSection: Section;
@@ -14,6 +14,7 @@ export function BottomNav({ activeSection, onSectionChange }: BottomNavProps) {
         { id: 'home', label: 'Inicio', icon: Store },
         { id: 'promotions', label: 'Promos', icon: Gift },
         { id: 'points', label: 'Puntos', icon: Award },
+        { id: 'wallet', label: 'Wallet', icon: WalletCards },
         { id: 'coupons', label: 'Cupones', icon: Package },
     ] as const;
 

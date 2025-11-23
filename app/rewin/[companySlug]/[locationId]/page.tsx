@@ -21,6 +21,7 @@ import { BottomNav } from '@/components/shop/BottomNav';
 import { PointsSection } from '@/components/shop/PointsSection';
 import { PromotionsSection } from '@/components/shop/PromotionsSection';
 import { CatalogCard } from '@/components/shop/CatalogCard';
+import { WalletSection } from '@/components/shop/WalletSection';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -109,7 +110,7 @@ export default function PublicLocationProductsPage() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [currentAnnouncement, setCurrentAnnouncement] = useState(0);
   const rotationRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const [activeSection, setActiveSection] = useState<'home' | 'promotions' | 'points' | 'coupons'>('home');
+  const [activeSection, setActiveSection] = useState<'home' | 'promotions' | 'points' | 'wallet' | 'coupons'>('home');
   const [coupons, setCoupons] = useState<PublicCoupon[]>([]);
   const [couponsLoading, setCouponsLoading] = useState(false);
   const [couponsError, setCouponsError] = useState<string | null>(null);
@@ -811,7 +812,48 @@ export default function PublicLocationProductsPage() {
 
           {activeSection === 'promotions' && <PromotionsSection companyId={company?.id} />}
 
-          {activeSection === 'points' && <PointsSection companyId={company?.id} />}
+          {activeSection === 'points' && (
+            user ? (
+              <PointsSection companyId={company?.id} />
+            ) : (
+              <div className="pb-16">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-2xl">Tus puntos</CardTitle>
+                    <CardDescription className="text-base mt-1">
+                      Inicia sesión o descarga la app para ver y acumular tus puntos.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <p className="text-gray-700 text-sm sm:text-base">
+                        Crea una cuenta o inicia sesión para que podamos registrar tus compras y mostrarte tus puntos disponibles.
+                      </p>
+                      <div className="flex flex-col sm:flex-row gap-3">
+                        <Link href={`/${companySlug}/${locationId}/auth/login`} className="sm:w-auto w-full">
+                          <Button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold">
+                            Iniciar sesión
+                          </Button>
+                        </Link>
+                        <Link href="/descargar-app" className="sm:w-auto w-full">
+                          <Button
+                            variant="outline"
+                            className="w-full sm:w-auto"
+                          >
+                            Descargar app
+                          </Button>
+                        </Link>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )
+          )}
+
+          {activeSection === 'wallet' && (
+            <WalletSection companyName={company?.name} />
+          )}
 
           {activeSection === 'coupons' && (
             // Coupons section

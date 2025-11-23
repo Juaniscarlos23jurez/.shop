@@ -180,6 +180,24 @@ export const clientAuthApi = {
             };
         });
     },
+
+    /**
+     * Get customer membership pass (.pkpass).
+     * GET /api/customer-memberships/{membershipId}/pass
+     *
+     * Nota: por ahora el membershipId está hardcodeado en "123".
+     * La respuesta es binaria (application/vnd.apple.pkpass), no JSON.
+     */
+    async getMembershipPkpass(token: string, membershipId: string = '123'): Promise<Response> {
+        const url = `${BASE_URL}/api/customer-memberships/${membershipId}/pass`;
+        return fetch(url, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/vnd.apple.pkpass',
+            },
+        });
+    },
 };
 
 async function handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
