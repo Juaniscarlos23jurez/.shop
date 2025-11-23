@@ -740,10 +740,10 @@ export default function PublicLocationProductsPage() {
 
                     {/* Category Filter */}
                     {categories.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mb-4">
+                      <div className="flex flex-wrap gap-3 mb-4">
                         <Badge
                           variant={selectedCategory === 'all' ? 'default' : 'outline'}
-                          className={`cursor-pointer transition-all px-3 py-1.5 text-sm sm:text-base ${selectedCategory === 'all'
+                          className={`cursor-pointer transition-all px-5 py-2.5 text-base sm:text-lg rounded-full ${selectedCategory === 'all'
                             ? 'bg-emerald-600 hover:bg-emerald-700'
                             : 'hover:bg-gray-100'
                             }`}
@@ -757,7 +757,7 @@ export default function PublicLocationProductsPage() {
                             <Badge
                               key={category}
                               variant={selectedCategory === category ? 'default' : 'outline'}
-                              className={`cursor-pointer transition-all px-3 py-1.5 text-sm sm:text-base ${selectedCategory === category
+                              className={`cursor-pointer transition-all px-5 py-2.5 text-base sm:text-lg rounded-full ${selectedCategory === category
                                 ? 'bg-emerald-600 hover:bg-emerald-700'
                                 : 'hover:bg-gray-100'
                                 }`}
