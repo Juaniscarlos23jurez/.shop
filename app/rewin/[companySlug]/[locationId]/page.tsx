@@ -20,6 +20,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { BottomNav } from '@/components/shop/BottomNav';
 import { PointsSection } from '@/components/shop/PointsSection';
 import { PromotionsSection } from '@/components/shop/PromotionsSection';
+import { CatalogCard } from '@/components/shop/CatalogCard';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -554,7 +555,7 @@ export default function PublicLocationProductsPage() {
           {/* Location Header */}
           <div className="-mt-16 sm:-mt-20 relative z-10 mb-8">
             <div className="bg-white rounded-lg shadow-lg p-6">
-              <div className="flex flex-col sm:flex-row gap-6">
+              <div className="flex flex-row items-center sm:items-start gap-4 sm:gap-6">
                 {/* Logo */}
                 {company?.logo_url && (
                   <div className="flex-shrink-0">
@@ -578,12 +579,27 @@ export default function PublicLocationProductsPage() {
                   {/* Contact Info Grid */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                     {location.address && (
-                      <div className="flex items-start gap-2">
+                      <button
+                        type="button"
+                        className="flex items-start gap-2 text-left hover:text-emerald-700"
+                        onClick={() => {
+                          const lat = (location as any).latitude;
+                          const lng = (location as any).longitude;
+                          let url = '';
+                          if (lat && lng) {
+                            url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${lat},${lng}`)}`;
+                          } else {
+                            const addr = `${location.address}, ${location.city}, ${location.state}, ${location.country}`;
+                            url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr)}`;
+                          }
+                          window.open(url, '_blank');
+                        }}
+                      >
                         <MapPin className="h-5 w-5 text-emerald-600 flex-shrink-0 mt-0.5" />
-                        <span className="text-gray-700">
+                        <span className="text-gray-700 underline">
                           {location.address}, {location.city}, {location.state}, {location.country}
                         </span>
-                      </div>
+                      </button>
                     )}
                     {(location as any).phone && (
                       <div className="flex items-center gap-2">
@@ -695,7 +711,9 @@ export default function PublicLocationProductsPage() {
 
               {/* Products Section */}
               <div className="pb-16">
-                <Card className="flex flex-col md:block" style={{ height: 'calc(100vh - 10rem)' }}>
+                {/* En móvil dejamos que el contenido crezca y use el scroll de toda la página.
+                    La idea de panel alto tipo app se mantiene más para pantallas grandes. */}
+                <Card className="flex flex-col md:block">
                   <CardHeader className="flex-shrink-0 md:static">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
                       <div>
@@ -752,7 +770,7 @@ export default function PublicLocationProductsPage() {
                       </div>
                     )}
                   </CardHeader>
-                  <CardContent className="flex-1 overflow-y-auto md:overflow-visible md:flex-none">
+                  <CardContent>
                     {items.length === 0 ? (
                       <div className="text-center py-12">
                         <Store className="h-16 w-16 text-gray-300 mx-auto mb-4" />
@@ -859,236 +877,7 @@ export default function PublicLocationProductsPage() {
         />
 
         <BottomNav activeSection={activeSection} onSectionChange={setActiveSection} />
-      </div >
-    </CartProvider >
-  );
-}
-
-function CatalogCard({ item, locationId, phone }: { item: PublicItem; locationId: number; phone?: string }) {
-  const { addItem } = useCart();
-  const isService = item.product_type === 'service';
-  const [isModalOpen, setIsModalOpen] = useState(false);
-
-  const handleAdd = () => {
-    // Map public item to the cart's expected Product shape
-    const product = {
-      id: String(item.id),
-      name: item.name,
-      description: item.description || '',
-      price: typeof item.price === 'number' ? item.price : 0,
-      product_type: 'made_to_order' as const,
-      is_active: true,
-      category: item.category || '',
-      image_url: item.image_url,
-      locations: [
-        {
-          id: locationId,
-          is_available: true,
-          stock: undefined,
-        },
-      ],
-    };
-    addItem(product as any);
-    setIsModalOpen(false);
-  };
-
-  const handleContact = () => {
-    if (!phone) return;
-    // Clean phone number (remove non-digits)
-    const cleanPhone = phone.replace(/\D/g, '');
-    const message = encodeURIComponent(`Hola, me interesa el servicio: ${item.name}`);
-    window.open(`https://wa.me/${cleanPhone}?text=${message}`, '_blank');
-  };
-
-  return (
-    <>
-      <Card 
-        className="overflow-hidden group hover:shadow-xl transition-all duration-300 cursor-pointer"
-        onClick={() => setIsModalOpen(true)}
-      >
-        <div className="flex flex-row h-full">
-          {/* Imagen a la izquierda */}
-          <div className="relative w-48 md:w-56 flex-shrink-0 bg-gray-100 flex items-center justify-center p-3">
-            {item.image_url ? (
-              <img
-                src={item.image_url}
-                alt={item.name}
-                className="w-full h-auto object-contain transition-transform duration-300 group-hover:scale-105 rounded-lg"
-                style={{ maxHeight: '200px' }}
-              />
-            ) : (
-              <div className="w-full h-48 flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg">
-                <Package className="h-16 w-16 text-gray-300" />
-              </div>
-            )}
-            {item.category && (
-              <div className="absolute top-2 left-2 bg-emerald-600 text-white text-xs font-medium px-2.5 py-1 rounded-full shadow-lg z-10">
-                {item.category}
-              </div>
-            )}
-          </div>
-
-          {/* Información a la derecha */}
-          <div className="p-5 flex flex-col flex-1 justify-between min-w-0">
-            {/* Nombre y Precio */}
-            <div className="flex-1">
-              <h3 className="font-bold text-lg md:text-xl mb-2 text-gray-900 line-clamp-2">{item.name}</h3>
-              
-              {/* Precio */}
-              {!isService && (
-                <div className="mb-3">
-                  <span className="text-2xl md:text-3xl font-bold text-emerald-600">
-                    {formatCurrency(typeof item.price === 'number' ? item.price : 0)}
-                  </span>
-                </div>
-              )}
-              
-              {/* Descripción con puntos suspensivos */}
-              {item.description && (
-                <p className="text-sm md:text-base text-gray-600 leading-relaxed line-clamp-3">
-                  {item.description}
-                </p>
-              )}
-            </div>
-
-            {/* Botón abajo */}
-            <div className="mt-4 pt-3">
-              {isService ? (
-                <Button
-                  size="lg"
-                  className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold shadow-md hover:shadow-lg transition-all gap-2"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleContact();
-                  }}
-                  disabled={!phone}
-                >
-                  <Phone className="h-5 w-5" />
-                  WhatsApp
-                </Button>
-              ) : (
-                <Button
-                  size="lg"
-                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-md hover:shadow-lg transition-all"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleAdd();
-                  }}
-                >
-                  Agregar al carrito
-                </Button>
-              )}
-            </div>
-          </div>
-        </div>
-      </Card>
-
-      {/* Modal estilo iOS Sheet - Desliza desde abajo */}
-      {isModalOpen && (
-        <>
-          {/* Overlay oscuro */}
-          <div 
-            className="fixed inset-0 bg-black/50 z-50 animate-in fade-in duration-300"
-            onClick={() => setIsModalOpen(false)}
-          />
-          
-          {/* Sheet que desliza desde abajo */}
-          <div className="fixed inset-x-0 bottom-0 z-50 animate-in slide-in-from-bottom duration-500">
-            <div className="bg-white rounded-t-3xl shadow-2xl max-h-[90vh] overflow-hidden flex flex-col">
-              {/* Handle bar para indicar que se puede deslizar */}
-              <div className="flex justify-center pt-3 pb-2">
-                <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
-              </div>
-
-              {/* Contenido scrolleable */}
-              <div className="overflow-y-auto px-6 pb-6">
-                {/* Header */}
-                <div className="sticky top-0 bg-white pt-2 pb-4 mb-4 border-b">
-                  <h2 className="text-2xl font-bold text-gray-900">{item.name}</h2>
-                  {item.category && (
-                    <Badge className="w-fit bg-emerald-600 mt-2">
-                      {item.category}
-                    </Badge>
-                  )}
-                </div>
-
-                {/* Imagen grande */}
-                {item.image_url ? (
-                  <div className="w-full flex items-center justify-center bg-gray-50 rounded-2xl p-6 mb-6">
-                    <img
-                      src={item.image_url}
-                      alt={item.name}
-                      className="max-w-full h-auto object-contain rounded-xl"
-                      style={{ maxHeight: '350px' }}
-                    />
-                  </div>
-                ) : (
-                  <div className="w-full h-64 flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl mb-6">
-                    <Package className="h-24 w-24 text-gray-300" />
-                  </div>
-                )}
-
-                {/* Precio */}
-                {!isService && (
-                  <div className="text-center py-5 bg-emerald-50 rounded-2xl mb-6">
-                    <p className="text-sm text-gray-600 mb-1 font-medium">Precio</p>
-                    <p className="text-4xl font-bold text-emerald-600">
-                      {formatCurrency(typeof item.price === 'number' ? item.price : 0)}
-                    </p>
-                  </div>
-                )}
-
-                {/* Descripción completa */}
-                {item.description && (
-                  <div className="mb-6">
-                    <h4 className="font-semibold text-lg mb-3 text-gray-900">Descripción</h4>
-                    <p className="text-base text-gray-700 leading-relaxed whitespace-pre-line">
-                      {item.description}
-                    </p>
-                  </div>
-                )}
-
-                {/* Botones de acción */}
-                <div className="flex flex-col gap-3 pt-4 pb-2">
-                  {isService ? (
-                    <Button
-                      size="lg"
-                      className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all gap-2 h-14 text-lg rounded-xl"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleContact();
-                      }}
-                      disabled={!phone}
-                    >
-                      <Phone className="h-5 w-5" />
-                      WhatsApp
-                    </Button>
-                  ) : (
-                    <Button
-                      size="lg"
-                      className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all h-14 text-lg rounded-xl"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleAdd();
-                      }}
-                    >
-                      Agregar al carrito
-                    </Button>
-                  )}
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    onClick={() => setIsModalOpen(false)}
-                    className="w-full h-12 text-base rounded-xl border-2"
-                  >
-                    Cerrar
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
-    </>
+      </div>
+    </CartProvider>
   );
 }
