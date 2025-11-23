@@ -59,6 +59,20 @@ export const publicWebApiClient = {
   },
 
   /**
+   * Get public business hours for a company by ID.
+   * GET /api/public/companies/{companyId}/business-hours
+   */
+  async getCompanyBusinessHoursById(companyId: string): Promise<ApiResponse<BusinessHour[]>> {
+    const url = `${BASE_URL}/api/public/companies/${companyId}/business-hours`;
+    return fetch(url, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+      },
+    }).then(res => handleResponse<BusinessHour[]>(res));
+  },
+
+  /**
    * Get public items (products) for a specific location by ID.
    * GET /api/public/locations/{locationId}/products
    */
@@ -84,6 +98,20 @@ export const publicWebApiClient = {
         'Accept': 'application/json',
       },
     }).then(res => handleResponse<PublicCompanyLocation>(res));
+  },
+
+  /**
+   * Get public company details by name or slug (case-insensitive).
+   * GET /api/companies/by-name/{name}
+   */
+  async getCompanyByName(name: string): Promise<ApiResponse<PublicCompany>> {
+    const url = `${BASE_URL}/api/companies/by-name/${encodeURIComponent(name)}`;
+    return fetch(url, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+      },
+    }).then(res => handleResponse<PublicCompany>(res));
   },
 };
 
