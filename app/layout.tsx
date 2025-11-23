@@ -4,6 +4,7 @@ import { GeistMono } from 'geist/font/mono'
 import { AuthProvider } from '@/contexts/AuthContext'
 import './globals.css'
 import Script from 'next/script'
+import { GA4PageViewTracker } from '@/components/analytics/GA4PageViewTracker'
 
 export const metadata: Metadata = {
   title: 'Fideliza',
@@ -43,6 +44,7 @@ html {
       </head>
       <body>
         <AuthProvider>
+          <GA4PageViewTracker />
           {children}
         </AuthProvider>
       </body>
