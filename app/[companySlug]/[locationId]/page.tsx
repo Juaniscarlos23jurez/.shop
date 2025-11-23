@@ -449,6 +449,11 @@ export default function PublicLocationProductsPage() {
     return <div className="flex justify-center items-center h-screen text-lg">Cargando productos de la sucursal...</div>;
   }
 
+ 
+  if (error && typeof error === 'string' && error.toLowerCase().includes('location not found')) {
+    return <div className="flex justify-center items-center h-screen text-lg">Sucursal no encontrada.</div>;
+  }
+
   if (error) {
     return <div className="flex justify-center items-center h-screen text-red-500 text-lg">Error: {error}</div>;
   }

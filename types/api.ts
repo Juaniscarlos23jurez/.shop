@@ -359,6 +359,7 @@ export interface PublicCompany {
   phone?: string;
   website?: string;
   logo_url?: string;
+  banner_url?: string;
   address?: string;
   city?: string;
   state?: string;
