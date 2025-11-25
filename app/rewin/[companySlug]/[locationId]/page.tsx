@@ -22,6 +22,12 @@ import { PointsSection } from '@/components/shop/PointsSection';
 import { PromotionsSection } from '@/components/shop/PromotionsSection';
 import { CatalogCard } from '@/components/shop/CatalogCard';
 import { WalletSection } from '@/components/shop/WalletSection';
+
+declare global {
+  interface Window {
+    gtag?: (...args: any[]) => void;
+  }
+}
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -117,6 +123,16 @@ export default function PublicLocationProductsPage() {
 
   const [user, setUser] = useState<any>(null);
   const [isFollowing, setIsFollowing] = useState(false);
+  const [lastAnalyticsPayload, setLastAnalyticsPayload] = useState<any | null>(null);
+
+  const trackAnalyticsEvent = (eventName: string, params: Record<string, any>) => {
+    if (typeof window === 'undefined' || !window.gtag) {
+      console.log('[Analytics Debug] gtag not available, event not sent:', eventName, params);
+      return;
+    }
+    console.log('[Analytics Debug] Sending GA event:', eventName, params);
+    window.gtag('event', eventName, params);
+  };
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -164,6 +180,57 @@ export default function PublicLocationProductsPage() {
     };
     checkAuth();
   }, []);
+
+  // Analytics: track detailed view of this location
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (!company || !location) return;
+
+    const nav = window.navigator || ({} as Navigator);
+    const screenInfo = typeof window !== 'undefined' ? window.screen : undefined;
+
+    const deviceInfo = {
+      user_agent: nav.userAgent,
+      language: nav.language,
+      languages: (nav as any).languages,
+      platform: nav.platform,
+      screen_width: screenInfo?.width,
+      screen_height: screenInfo?.height,
+      viewport_width: window.innerWidth,
+      viewport_height: window.innerHeight,
+      connection_type: (nav as any).connection?.effectiveType,
+    };
+
+    const locationInfo = {
+      company_slug: companySlug,
+      location_id: locationId,
+      company_id: (company as any)?.id,
+      company_name: (company as any)?.name,
+      city: (location as any)?.city,
+      state: (location as any)?.state,
+      country: (location as any)?.country,
+      timezone: (company as any)?.timezone || (location as any)?.timezone,
+    };
+
+    const userInfo = {
+      user_id: user?.id,
+      user_email: user?.email,
+      user_name: user?.name,
+    };
+
+    const payload = {
+      ...deviceInfo,
+      ...locationInfo,
+      ...userInfo,
+      page_path: `/rewin/${companySlug}/${locationId}`,
+      page_location: typeof window !== 'undefined' ? window.location.href : undefined,
+      event_time: new Date().toISOString(),
+    };
+
+    console.log('[Analytics Debug] View rewin location payload:', payload);
+    setLastAnalyticsPayload(payload);
+    trackAnalyticsEvent('view_rewin_location', payload);
+  }, [company, location, user, companySlug, locationId]);
 
   // Check follow status when user and company are available
   useEffect(() => {

@@ -48,14 +48,17 @@ export default function WalletPassBuilderPage() {
     showLogoText: true,
     showPassTitle: true,
     showSubtitle: true,
+    showPointsLabel: true,
+    showPointsValue: true,
+    showTierLabel: true,
+    showTierValue: true,
     showDescription: true,
     showExtraLine1: true,
     showExtraLine2: true,
     showQrSection: true,
     showTerms: true,
   });
-
-  const handleChange = (field: keyof typeof form, value: string) => {
+const handleChange = (field: keyof typeof form, value: string | boolean) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -108,79 +111,137 @@ export default function WalletPassBuilderPage() {
               <CardContent className="pt-6 space-y-5">
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="programName" className="text-sm font-medium flex items-center gap-2">
-                      Nombre del programa
-                    </Label>
-                    <Input
-                      id="programName"
-                      value={form.programName}
-                      onChange={(e) => handleChange("programName", e.target.value)}
-                      placeholder="Ej. Club Rewin Rewards"
-                      className="border-slate-200"
-                    />
-                    <div className="flex items-center gap-2">
-                      <Label htmlFor="programNameColor" className="text-xs text-slate-500">Color</Label>
-                      <Input
-                        id="programNameColor"
-                        type="color"
-                        value={form.programNameColor}
-                        onChange={(e) => handleChange("programNameColor", e.target.value)}
-                        className="h-8 w-16 p-1 cursor-pointer border-slate-200"
-                      />
+                    <div className="flex items-center justify-between gap-2">
+                      <Label htmlFor="programName" className="text-sm font-medium flex items-center gap-2">
+                        Nombre del programa
+                      </Label>
+                      <div className="flex items-center gap-2 text-xs text-slate-500">
+                        <span>Mostrar</span>
+                        <Switch
+                          checked={form.showProgramName}
+                          onCheckedChange={(checked) =>
+                            setForm((prev) => ({ ...prev, showProgramName: Boolean(checked) }))
+                          }
+                        />
+                      </div>
                     </div>
+                    {form.showProgramName && (
+                      <>
+                        <Input
+                          id="programName"
+                          value={form.programName}
+                          onChange={(e) => handleChange("programName", e.target.value)}
+                          placeholder="Ej. Club Rewin Rewards"
+                          className="border-slate-200"
+                        />
+                        <div className="flex items-center gap-2">
+                          <Label htmlFor="programNameColor" className="text-xs text-slate-500">Color</Label>
+                          <Input
+                            id="programNameColor"
+                            type="color"
+                            value={form.programNameColor}
+                            onChange={(e) => handleChange("programNameColor", e.target.value)}
+                            className="h-8 w-16 p-1 cursor-pointer border-slate-200"
+                          />
+                        </div>
+                      </>
+                    )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="logoText" className="text-sm font-medium">Texto del logo</Label>
-                    <Input
-                      id="logoText"
-                      value={form.logoText}
-                      onChange={(e) => handleChange("logoText", e.target.value)}
-                      placeholder="Nombre corto de la marca"
-                      className="border-slate-200"
-                    />
+                    <div className="flex items-center justify-between gap-2">
+                      <Label htmlFor="logoText" className="text-sm font-medium">Texto del logo</Label>
+                      <div className="flex items-center gap-2 text-xs text-slate-500">
+                        <span>Mostrar</span>
+                        <Switch
+                          checked={form.showLogoText}
+                          onCheckedChange={(checked) =>
+                            setForm((prev) => ({ ...prev, showLogoText: Boolean(checked) }))
+                          }
+                        />
+                      </div>
+                    </div>
+                    {form.showLogoText && (
+                      <Input
+                        id="logoText"
+                        value={form.logoText}
+                        onChange={(e) => handleChange("logoText", e.target.value)}
+                        placeholder="Nombre corto de la marca"
+                        className="border-slate-200"
+                      />
+                    )}
                   </div>
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="passTitle" className="text-sm font-medium">Título principal</Label>
-                    <Input
-                      id="passTitle"
-                      value={form.passTitle}
-                      onChange={(e) => handleChange("passTitle", e.target.value)}
-                      placeholder="Ej. Tarjeta de cliente frecuente"
-                      className="border-slate-200"
-                    />
-                    <div className="flex items-center gap-2">
-                      <Label htmlFor="passTitleColor" className="text-xs text-slate-500">Color</Label>
-                      <Input
-                        id="passTitleColor"
-                        type="color"
-                        value={form.passTitleColor}
-                        onChange={(e) => handleChange("passTitleColor", e.target.value)}
-                        className="h-8 w-16 p-1 cursor-pointer border-slate-200"
-                      />
+                    <div className="flex items-center justify-between gap-2">
+                      <Label htmlFor="passTitle" className="text-sm font-medium">Título principal</Label>
+                      <div className="flex items-center gap-2 text-xs text-slate-500">
+                        <span>Mostrar</span>
+                        <Switch
+                          checked={form.showPassTitle}
+                          onCheckedChange={(checked) =>
+                            setForm((prev) => ({ ...prev, showPassTitle: Boolean(checked) }))
+                          }
+                        />
+                      </div>
                     </div>
+                    {form.showPassTitle && (
+                      <>
+                        <Input
+                          id="passTitle"
+                          value={form.passTitle}
+                          onChange={(e) => handleChange("passTitle", e.target.value)}
+                          placeholder="Ej. Tarjeta de cliente frecuente"
+                          className="border-slate-200"
+                        />
+                        <div className="flex items-center gap-2">
+                          <Label htmlFor="passTitleColor" className="text-xs text-slate-500">Color</Label>
+                          <Input
+                            id="passTitleColor"
+                            type="color"
+                            value={form.passTitleColor}
+                            onChange={(e) => handleChange("passTitleColor", e.target.value)}
+                            className="h-8 w-16 p-1 cursor-pointer border-slate-200"
+                          />
+                        </div>
+                      </>
+                    )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="subtitle" className="text-sm font-medium">Subtítulo</Label>
-                    <Input
-                      id="subtitle"
-                      value={form.subtitle}
-                      onChange={(e) => handleChange("subtitle", e.target.value)}
-                      placeholder="Ej. Gana puntos en cada compra"
-                      className="border-slate-200"
-                    />
-                    <div className="flex items-center gap-2">
-                      <Label htmlFor="subtitleColor" className="text-xs text-slate-500">Color</Label>
-                      <Input
-                        id="subtitleColor"
-                        type="color"
-                        value={form.subtitleColor}
-                        onChange={(e) => handleChange("subtitleColor", e.target.value)}
-                        className="h-8 w-16 p-1 cursor-pointer border-slate-200"
-                      />
+                    <div className="flex items-center justify-between gap-2">
+                      <Label htmlFor="subtitle" className="text-sm font-medium">Subtítulo</Label>
+                      <div className="flex items-center gap-2 text-xs text-slate-500">
+                        <span>Mostrar</span>
+                        <Switch
+                          checked={form.showSubtitle}
+                          onCheckedChange={(checked) =>
+                            setForm((prev) => ({ ...prev, showSubtitle: Boolean(checked) }))
+                          }
+                        />
+                      </div>
                     </div>
+                    {form.showSubtitle && (
+                      <>
+                        <Input
+                          id="subtitle"
+                          value={form.subtitle}
+                          onChange={(e) => handleChange("subtitle", e.target.value)}
+                          placeholder="Ej. Gana puntos en cada compra"
+                          className="border-slate-200"
+                        />
+                        <div className="flex items-center gap-2">
+                          <Label htmlFor="subtitleColor" className="text-xs text-slate-500">Color</Label>
+                          <Input
+                            id="subtitleColor"
+                            type="color"
+                            value={form.subtitleColor}
+                            onChange={(e) => handleChange("subtitleColor", e.target.value)}
+                            className="h-8 w-16 p-1 cursor-pointer border-slate-200"
+                          />
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
 
@@ -311,83 +372,143 @@ export default function WalletPassBuilderPage() {
               <CardContent className="pt-6 space-y-5">
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="pointsLabel" className="text-sm font-medium">Etiqueta de puntos</Label>
-                    <Input
-                      id="pointsLabel"
-                      value={form.pointsLabel}
-                      onChange={(e) => handleChange("pointsLabel", e.target.value)}
-                      className="border-slate-200"
-                    />
-                    <div className="flex items-center gap-2">
-                      <Label htmlFor="pointsLabelColor" className="text-xs text-slate-500">Color</Label>
-                      <Input
-                        id="pointsLabelColor"
-                        type="color"
-                        value={form.pointsLabelColor}
-                        onChange={(e) => handleChange("pointsLabelColor", e.target.value)}
-                        className="h-8 w-16 p-1 cursor-pointer border-slate-200"
-                      />
+                    <div className="flex items-center justify-between gap-2">
+                      <Label htmlFor="pointsLabel" className="text-sm font-medium">Etiqueta de puntos</Label>
+                      <div className="flex items-center gap-2 text-xs text-slate-500">
+                        <span>Mostrar</span>
+                        <Switch
+                          checked={form.showPointsLabel}
+                          onCheckedChange={(checked) =>
+                            setForm((prev) => ({ ...prev, showPointsLabel: Boolean(checked) }))
+                          }
+                        />
+                      </div>
                     </div>
+                    {form.showPointsLabel && (
+                      <>
+                        <Input
+                          id="pointsLabel"
+                          value={form.pointsLabel}
+                          onChange={(e) => handleChange("pointsLabel", e.target.value)}
+                          className="border-slate-200"
+                        />
+                        <div className="flex items-center gap-2">
+                          <Label htmlFor="pointsLabelColor" className="text-xs text-slate-500">Color</Label>
+                          <Input
+                            id="pointsLabelColor"
+                            type="color"
+                            value={form.pointsLabelColor}
+                            onChange={(e) => handleChange("pointsLabelColor", e.target.value)}
+                            className="h-8 w-16 p-1 cursor-pointer border-slate-200"
+                          />
+                        </div>
+                      </>
+                    )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="pointsValue" className="text-sm font-medium">Valor de puntos</Label>
-                    <Input
-                      id="pointsValue"
-                      value={form.pointsValue}
-                      onChange={(e) => handleChange("pointsValue", e.target.value)}
-                      className="border-slate-200"
-                    />
-                    <div className="flex items-center gap-2">
-                      <Label htmlFor="pointsValueColor" className="text-xs text-slate-500">Color</Label>
-                      <Input
-                        id="pointsValueColor"
-                        type="color"
-                        value={form.pointsValueColor}
-                        onChange={(e) => handleChange("pointsValueColor", e.target.value)}
-                        className="h-8 w-16 p-1 cursor-pointer border-slate-200"
-                      />
+                    <div className="flex items-center justify-between gap-2">
+                      <Label htmlFor="pointsValue" className="text-sm font-medium">Valor de puntos</Label>
+                      <div className="flex items-center gap-2 text-xs text-slate-500">
+                        <span>Mostrar</span>
+                        <Switch
+                          checked={form.showPointsValue}
+                          onCheckedChange={(checked) =>
+                            setForm((prev) => ({ ...prev, showPointsValue: Boolean(checked) }))
+                          }
+                        />
+                      </div>
                     </div>
+                    {form.showPointsValue && (
+                      <>
+                        <Input
+                          id="pointsValue"
+                          value={form.pointsValue}
+                          onChange={(e) => handleChange("pointsValue", e.target.value)}
+                          className="border-slate-200"
+                        />
+                        <div className="flex items-center gap-2">
+                          <Label htmlFor="pointsValueColor" className="text-xs text-slate-500">Color</Label>
+                          <Input
+                            id="pointsValueColor"
+                            type="color"
+                            value={form.pointsValueColor}
+                            onChange={(e) => handleChange("pointsValueColor", e.target.value)}
+                            className="h-8 w-16 p-1 cursor-pointer border-slate-200"
+                          />
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="tierLabel" className="text-sm font-medium">Etiqueta de nivel</Label>
-                    <Input
-                      id="tierLabel"
-                      value={form.tierLabel}
-                      onChange={(e) => handleChange("tierLabel", e.target.value)}
-                      className="border-slate-200"
-                    />
-                    <div className="flex items-center gap-2">
-                      <Label htmlFor="tierLabelColor" className="text-xs text-slate-500">Color</Label>
-                      <Input
-                        id="tierLabelColor"
-                        type="color"
-                        value={form.tierLabelColor}
-                        onChange={(e) => handleChange("tierLabelColor", e.target.value)}
-                        className="h-8 w-16 p-1 cursor-pointer border-slate-200"
-                      />
+                    <div className="flex items-center justify-between gap-2">
+                      <Label htmlFor="tierLabel" className="text-sm font-medium">Etiqueta de nivel</Label>
+                      <div className="flex items-center gap-2 text-xs text-slate-500">
+                        <span>Mostrar</span>
+                        <Switch
+                          checked={form.showTierLabel}
+                          onCheckedChange={(checked) =>
+                            setForm((prev) => ({ ...prev, showTierLabel: Boolean(checked) }))
+                          }
+                        />
+                      </div>
                     </div>
+                    {form.showTierLabel && (
+                      <>
+                        <Input
+                          id="tierLabel"
+                          value={form.tierLabel}
+                          onChange={(e) => handleChange("tierLabel", e.target.value)}
+                          className="border-slate-200"
+                        />
+                        <div className="flex items-center gap-2">
+                          <Label htmlFor="tierLabelColor" className="text-xs text-slate-500">Color</Label>
+                          <Input
+                            id="tierLabelColor"
+                            type="color"
+                            value={form.tierLabelColor}
+                            onChange={(e) => handleChange("tierLabelColor", e.target.value)}
+                            className="h-8 w-16 p-1 cursor-pointer border-slate-200"
+                          />
+                        </div>
+                      </>
+                    )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="tierValue" className="text-sm font-medium">Valor de nivel</Label>
-                    <Input
-                      id="tierValue"
-                      value={form.tierValue}
-                      onChange={(e) => handleChange("tierValue", e.target.value)}
-                      className="border-slate-200"
-                    />
-                    <div className="flex items-center gap-2">
-                      <Label htmlFor="tierValueColor" className="text-xs text-slate-500">Color</Label>
-                      <Input
-                        id="tierValueColor"
-                        type="color"
-                        value={form.tierValueColor}
-                        onChange={(e) => handleChange("tierValueColor", e.target.value)}
-                        className="h-8 w-16 p-1 cursor-pointer border-slate-200"
-                      />
+                    <div className="flex items-center justify-between gap-2">
+                      <Label htmlFor="tierValue" className="text-sm font-medium">Valor de nivel</Label>
+                      <div className="flex items-center gap-2 text-xs text-slate-500">
+                        <span>Mostrar</span>
+                        <Switch
+                          checked={form.showTierValue}
+                          onCheckedChange={(checked) =>
+                            setForm((prev) => ({ ...prev, showTierValue: Boolean(checked) }))
+                          }
+                        />
+                      </div>
                     </div>
+                    {form.showTierValue && (
+                      <>
+                        <Input
+                          id="tierValue"
+                          value={form.tierValue}
+                          onChange={(e) => handleChange("tierValue", e.target.value)}
+                          className="border-slate-200"
+                        />
+                        <div className="flex items-center gap-2">
+                          <Label htmlFor="tierValueColor" className="text-xs text-slate-500">Color</Label>
+                          <Input
+                            id="tierValueColor"
+                            type="color"
+                            value={form.tierValueColor}
+                            onChange={(e) => handleChange("tierValueColor", e.target.value)}
+                            className="h-8 w-16 p-1 cursor-pointer border-slate-200"
+                          />
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               </CardContent>
@@ -656,11 +777,15 @@ export default function WalletPassBuilderPage() {
                         }}
                       >
                         <div className="px-6 pt-6 pb-4 flex items-center justify-between">
-                          <div 
-                            className="text-xs font-semibold uppercase tracking-[0.18em]"
-                            style={{ color: form.programNameColor }}
-                          >
-                            {form.programName}
+                          <div>
+                            {form.showProgramName && (
+                              <div 
+                                className="text-xs font-semibold uppercase tracking-[0.18em]"
+                                style={{ color: form.programNameColor }}
+                              >
+                                {form.programName}
+                              </div>
+                            )}
                           </div>
                           <div className="flex items-center gap-2.5">
                             {form.companyLogoUrl && (
@@ -672,25 +797,31 @@ export default function WalletPassBuilderPage() {
                                 />
                               </div>
                             )}
-                            <div className="px-3 py-1.5 rounded-full bg-black/20 backdrop-blur-sm text-xs font-bold text-white/95 max-w-[100px] truncate text-right shadow-sm">
-                              {form.logoText}
-                            </div>
+                            {form.showLogoText && (
+                              <div className="px-3 py-1.5 rounded-full bg-black/20 backdrop-blur-sm text-xs font-bold text-white/95 max-w-[100px] truncate text-right shadow-sm">
+                                {form.logoText}
+                              </div>
+                            )}
                           </div>
                         </div>
                         
                         <div className="px-6 pb-5">
-                          <div 
-                            className="text-lg font-bold"
-                            style={{ color: form.passTitleColor }}
-                          >
-                            {form.passTitle}
-                          </div>
-                          <div 
-                            className="text-xs mt-2"
-                            style={{ color: form.subtitleColor }}
-                          >
-                            {form.subtitle}
-                          </div>
+                          {form.showPassTitle && (
+                            <div 
+                              className="text-lg font-bold"
+                              style={{ color: form.passTitleColor }}
+                            >
+                              {form.passTitle}
+                            </div>
+                          )}
+                          {form.showSubtitle && (
+                            <div 
+                              className="text-xs mt-2"
+                              style={{ color: form.subtitleColor }}
+                            >
+                              {form.subtitle}
+                            </div>
+                          )}
                           
                           <div className="mt-4 text-[11px] flex flex-col gap-1">
                             {form.showExtraLine1 && form.extraLine1 && (
@@ -703,35 +834,43 @@ export default function WalletPassBuilderPage() {
                           
                           <div className="mt-5 flex items-end justify-between gap-6">
                             <div>
-                              <div 
-                                className="text-[11px] uppercase tracking-[0.18em] font-medium"
-                                style={{ color: form.pointsLabelColor }}
-                              >
-                                {form.pointsLabel}
-                              </div>
-                              <div 
-                                className="text-[28px] leading-none font-bold mt-1.5"
-                                style={{ color: form.pointsValueColor }}
-                              >
-                                {form.pointsValue}
-                              </div>
+                              {form.showPointsLabel && (
+                                <div 
+                                  className="text-[11px] uppercase tracking-[0.18em] font-medium"
+                                  style={{ color: form.pointsLabelColor }}
+                                >
+                                  {form.pointsLabel}
+                                </div>
+                              )}
+                              {form.showPointsValue && (
+                                <div 
+                                  className="text-[28px] leading-none font-bold mt-1.5"
+                                  style={{ color: form.pointsValueColor }}
+                                >
+                                  {form.pointsValue}
+                                </div>
+                              )}
                             </div>
                             <div className="text-right">
-                              <div 
-                                className="text-[11px] uppercase tracking-[0.18em] font-medium"
-                                style={{ color: form.tierLabelColor }}
-                              >
-                                {form.tierLabel}
-                              </div>
-                              <div className="mt-1.5 inline-flex items-center gap-1.5 rounded-full bg-black/25 backdrop-blur-sm px-3 py-1.5 shadow-sm">
-                                <span className="h-2 w-2 rounded-full bg-amber-400 shadow-sm" />
-                                <span 
-                                  className="text-xs font-semibold"
-                                  style={{ color: form.tierValueColor }}
+                              {form.showTierLabel && (
+                                <div 
+                                  className="text-[11px] uppercase tracking-[0.18em] font-medium"
+                                  style={{ color: form.tierLabelColor }}
                                 >
-                                  {form.tierValue}
-                                </span>
-                              </div>
+                                  {form.tierLabel}
+                                </div>
+                              )}
+                              {form.showTierValue && (
+                                <div className="mt-1.5 inline-flex items-center gap-1.5 rounded-full bg-black/25 backdrop-blur-sm px-3 py-1.5 shadow-sm">
+                                  <span className="h-2 w-2 rounded-full bg-amber-400 shadow-sm" />
+                                  <span 
+                                    className="text-xs font-semibold"
+                                    style={{ color: form.tierValueColor }}
+                                  >
+                                    {form.tierValue}
+                                  </span>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -824,11 +963,15 @@ export default function WalletPassBuilderPage() {
                         }}
                       >
                         <div className="px-6 pt-5 pb-4 flex items-center justify-between">
-                          <div 
-                            className="text-xs font-semibold uppercase tracking-[0.18em]"
-                            style={{ color: form.programNameColor }}
-                          >
-                            {form.programName}
+                          <div>
+                            {form.showProgramName && (
+                              <div 
+                                className="text-xs font-semibold uppercase tracking-[0.18em]"
+                                style={{ color: form.programNameColor }}
+                              >
+                                {form.programName}
+                              </div>
+                            )}
                           </div>
                           <div className="flex items-center gap-2.5">
                             {form.companyLogoUrl && (
@@ -840,9 +983,11 @@ export default function WalletPassBuilderPage() {
                                 />
                               </div>
                             )}
-                            <div className="h-10 w-10 rounded-2xl bg-black/15 backdrop-blur-sm flex items-center justify-center text-xs font-bold text-white uppercase shadow-sm">
-                              {form.logoText.substring(0, 3)}
-                            </div>
+                            {form.showLogoText && (
+                              <div className="h-10 w-10 rounded-2xl bg-black/15 backdrop-blur-sm flex items-center justify-center text-xs font-bold text-white uppercase shadow-sm">
+                                {form.logoText.substring(0, 3)}
+                              </div>
+                            )}
                           </div>
                         </div>
                         
@@ -871,26 +1016,37 @@ export default function WalletPassBuilderPage() {
                           
                           <div className="mt-5 grid grid-cols-2 gap-4">
                             <div>
-                              <div 
-                                className="text-[11px] uppercase tracking-[0.18em] font-medium"
-                                style={{ color: form.pointsLabelColor }}
-                              >
-                                {form.pointsLabel}
-                              </div>
-                              <div 
-                                className="text-[26px] leading-none font-bold mt-1.5"
-                                style={{ color: form.pointsValueColor }}
-                              >
-                                {form.pointsValue}
-                              </div>
+                              {form.showPointsLabel && (
+                                <div 
+                                  className="text-[11px] uppercase tracking-[0.18em] font-medium"
+                                  style={{ color: form.pointsLabelColor }}
+                                >
+                                  {form.pointsLabel}
+                                </div>
+                              )}
+                              {form.showPointsValue && (
+                                <div 
+                                  className="text-[26px] leading-none font-bold mt-1.5"
+                                  style={{ color: form.pointsValueColor }}
+                                >
+                                  {form.pointsValue}
+                                </div>
+                              )}
                             </div>
                             <div>
-                              <div 
-                                className="text-[11px] uppercase tracking-[0.18em] font-medium"
-                                style={{ color: form.tierLabelColor }}
-                              >
-                                Beneficio
-                              </div>
+                              {form.showTierLabel && (
+                                <div 
+                                  className="text-[11px] uppercase tracking-[0.18em] font-medium"
+                                  style={{ color: form.tierLabelColor }}
+                                >
+                                  {form.tierLabel}
+                                </div>
+                              )}
+                              {form.showTierValue && (
+                                <div className="mt-1.5 inline-flex items-center rounded-full bg-black/25 backdrop-blur-sm px-3 py-1.5 text-xs font-semibold text-white shadow-sm">
+                                  {form.tierValue}
+                                </div>
+                              )}
                               <div className="mt-1.5 inline-flex items-center rounded-full bg-black/25 backdrop-blur-sm px-3 py-1.5 text-xs font-semibold text-white shadow-sm">
                                 10% OFF
                               </div>
