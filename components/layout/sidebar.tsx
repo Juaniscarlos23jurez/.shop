@@ -54,7 +54,7 @@ const adminSidebarItems = [
       { icon: TicketIcon, label: "Cupones", href: "/dashboard/cupones" },
       { icon: CrownIcon, label: "Membresías", href: "/dashboard/membresias" },
       { icon: GiftIcon, label: "Puntos", href: "/dashboard/puntos" },
-      { icon: CreditCardIcon, label: "Wallet / Pass", href: "/dashboard/wallet-pass" },
+    //  { icon: CreditCardIcon, label: "Wallet / Pass", href: "/dashboard/wallet-pass" },
     ]
   },
   

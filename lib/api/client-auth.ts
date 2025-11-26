@@ -183,13 +183,14 @@ export const clientAuthApi = {
 
     /**
      * Get customer membership pass (.pkpass).
-     * GET /api/customer-memberships/{membershipId}/pass
+     * GET /api/customer-memberships/{membership}/pass/{company}
      *
-     * Nota: por ahora el membershipId está hardcodeado en "123".
+     * membership: UUID del cliente (por ejemplo, profile.data.uuid)
+     * companyId: ID de la compañía para la cual se genera el pase.
      * La respuesta es binaria (application/vnd.apple.pkpass), no JSON.
      */
-    async getMembershipPkpass(token: string, membershipId: string = '123'): Promise<Response> {
-        const url = `${BASE_URL}/api/customer-memberships/${membershipId}/pass`;
+    async getMembershipPkpass(token: string, membershipId: string, companyId: string | number): Promise<Response> {
+        const url = `${BASE_URL}/api/customer-memberships/${membershipId}/pass/${companyId}`;
         return fetch(url, {
             method: 'GET',
             headers: {

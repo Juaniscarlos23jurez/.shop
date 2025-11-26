@@ -26,7 +26,26 @@ export function WalletSection({ companyName }: WalletSectionProps) {
         return;
       }
 
-      const res = await clientAuthApi.getMembershipPkpass(token);
+      // Primero obtenemos el perfil para recuperar el UUID del cliente
+      const profileResp = await clientAuthApi.getProfile(token);
+
+      if (!profileResp.success || !profileResp.data || !(profileResp.data as any).data) {
+        setError("No se pudo obtener tu perfil para generar el pase.");
+        return;
+      }
+
+      const profileData = (profileResp.data as any).data;
+      const membershipId = profileData.uuid as string | undefined;
+
+      if (!membershipId) {
+        setError("Tu cuenta no tiene un identificador de membresía válido.");
+        return;
+      }
+
+      // Por ahora usamos un companyId fijo (1). Ajusta este valor según la compañía real.
+      const companyId = 1;
+
+      const res = await clientAuthApi.getMembershipPkpass(token, membershipId, companyId);
       if (!res.ok) {
         setError("No se pudo descargar el pase. Intenta de nuevo más tarde.");
         return;
