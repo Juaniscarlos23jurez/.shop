@@ -565,43 +565,87 @@ export default function PublicLocationProductsPage() {
           </div>
         )}
 
-        {/* Login/User Button (Right Side) */}
-        <div className="fixed top-6 right-6 z-50">
+        {/* Login/User Button (Right Side) + Descargar app */}
+        <div className="fixed top-6 right-6 z-50 flex items-center gap-3">
           {user ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button className="gap-3 shadow-xl bg-white text-emerald-600 hover:bg-gray-50 hover:text-emerald-700 border-2 border-emerald-100 rounded-full pl-3 pr-6 h-16 text-lg">
-                  <Avatar className="h-11 w-11 border-2 border-emerald-200">
-                    <AvatarImage src={user.profile_photo_path || user.avatar_url || user.photo_url} />
-                    <AvatarFallback className="bg-emerald-100 text-emerald-700">
-                      {user.name ? user.name.substring(0, 2).toUpperCase() : 'US'}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="font-semibold max-w-[140px] truncate text-base">{user.name}</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>Mi Cuenta</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => router.push(`/${companySlug}/${locationId}/profile`)}>
-                  Perfil
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => alert("Mis Pedidos en desarrollo")}>
-                  Mis Pedidos
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout} className="text-red-600">
-                  Cerrar Sesión
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
-            <Link href={`/${companySlug}/${locationId}/auth/login`}>
-              <Button className="gap-3 shadow-xl bg-white text-emerald-600 hover:bg-gray-50 hover:text-emerald-700 border-2 border-emerald-100 rounded-full h-16 px-6 text-lg font-semibold">
-                <User className="h-6 w-6" />
-                <span>Iniciar Sesión</span>
+            <>
+              <Button
+                className="gap-2 shadow-xl bg-emerald-600 text-white hover:bg-emerald-700 rounded-full h-12 px-5 text-sm font-semibold hidden sm:inline-flex"
+                onClick={() => {
+                  if (typeof window === 'undefined') return;
+
+                  const IOS_URL = 'https://apps.apple.com/us/app/rewin-reward/id6748548104';
+                  const ANDROID_URL = process.env.NEXT_PUBLIC_ANDROID_URL ||
+                    'https://play.google.com/store/apps/details?id=com.fynlink.BoostYou';
+
+                  const userAgent = window.navigator.userAgent || '';
+                  const isIOS = /iPhone|iPad|iPod/i.test(userAgent);
+                  const isAndroid = /Android/i.test(userAgent);
+
+                  const targetUrl = isIOS ? IOS_URL : ANDROID_URL;
+                  window.location.href = targetUrl;
+                }}
+              >
+                <span>Descargar app</span>
               </Button>
-            </Link>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button className="gap-3 shadow-xl bg-white text-emerald-600 hover:bg-gray-50 hover:text-emerald-700 border-2 border-emerald-100 rounded-full pl-3 pr-6 h-16 text-lg">
+                    <Avatar className="h-11 w-11 border-2 border-emerald-200">
+                      <AvatarImage src={user.profile_photo_path || user.avatar_url || user.photo_url} />
+                      <AvatarFallback className="bg-emerald-100 text-emerald-700">
+                        {user.name ? user.name.substring(0, 2).toUpperCase() : 'US'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="font-semibold max-w-[140px] truncate text-base">{user.name}</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>Mi Cuenta</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => router.push(`/${companySlug}/${locationId}/profile`)}>
+                    Perfil
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => alert("Mis Pedidos en desarrollo")}>
+                    Mis Pedidos
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout} className="text-red-600">
+                    Cerrar Sesión
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
+          ) : (
+            <>
+              <Button
+                className="gap-2 shadow-xl bg-emerald-600 text-white hover:bg-emerald-700 rounded-full h-12 px-5 text-sm font-semibold hidden sm:inline-flex"
+                onClick={() => {
+                  if (typeof window === 'undefined') return;
+
+                  const IOS_URL = 'https://apps.apple.com/us/app/rewin-reward/id6748548104';
+                  const ANDROID_URL = process.env.NEXT_PUBLIC_ANDROID_URL ||
+                    'https://play.google.com/store/apps/details?id=com.fynlink.BoostYou';
+
+                  const userAgent = window.navigator.userAgent || '';
+                  const isIOS = /iPhone|iPad|iPod/i.test(userAgent);
+                  const isAndroid = /Android/i.test(userAgent);
+
+                  const targetUrl = isIOS ? IOS_URL : ANDROID_URL;
+                  window.location.href = targetUrl;
+                }}
+              >
+                <span>Descargar app</span>
+              </Button>
+
+              <Link href={`/${companySlug}/${locationId}/auth/login`}>
+                <Button className="gap-3 shadow-xl bg-white text-emerald-600 hover:bg-gray-50 hover:text-emerald-700 border-2 border-emerald-100 rounded-full h-16 px-6 text-lg font-semibold">
+                  <User className="h-6 w-6" />
+                  <span>Iniciar Sesión</span>
+                </Button>
+              </Link>
+            </>
           )}
         </div>
 
