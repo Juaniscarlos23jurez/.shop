@@ -570,6 +570,13 @@ export default function PublicLocationProductsPage() {
                 onClick={() => {
                   if (typeof window === 'undefined') return;
 
+                  trackAnalyticsEvent('download_app_click', {
+                    location: 'follow_button_mobile',
+                    company_slug: companySlug,
+                    location_id: locationId,
+                    user_logged_in: !!user,
+                  });
+
                   const IOS_URL = 'https://apps.apple.com/us/app/rewin-reward/id6748548104';
                   const ANDROID_URL = process.env.NEXT_PUBLIC_ANDROID_URL ||
                     'https://play.google.com/store/apps/details?id=com.fynlink.BoostYou';
@@ -597,6 +604,13 @@ export default function PublicLocationProductsPage() {
                 className="gap-2 shadow-xl bg-emerald-600 text-white hover:bg-emerald-700 rounded-full h-12 px-5 text-sm font-semibold hidden sm:inline-flex"
                 onClick={() => {
                   if (typeof window === 'undefined') return;
+
+                  trackAnalyticsEvent('download_app_click', {
+                    location: 'top_right_logged_in',
+                    company_slug: companySlug,
+                    location_id: locationId,
+                    user_logged_in: !!user,
+                  });
 
                   const IOS_URL = 'https://apps.apple.com/us/app/rewin-reward/id6748548104';
                   const ANDROID_URL = process.env.NEXT_PUBLIC_ANDROID_URL ||
@@ -648,6 +662,13 @@ export default function PublicLocationProductsPage() {
                 className="gap-2 shadow-xl bg-emerald-600 text-white hover:bg-emerald-700 rounded-full h-12 px-5 text-sm font-semibold hidden sm:inline-flex"
                 onClick={() => {
                   if (typeof window === 'undefined') return;
+
+                  trackAnalyticsEvent('download_app_click', {
+                    location: 'top_right_guest',
+                    company_slug: companySlug,
+                    location_id: locationId,
+                    user_logged_in: !!user,
+                  });
 
                   const IOS_URL = 'https://apps.apple.com/us/app/rewin-reward/id6748548104';
                   const ANDROID_URL = process.env.NEXT_PUBLIC_ANDROID_URL ||
@@ -975,6 +996,14 @@ export default function PublicLocationProductsPage() {
                           <Button
                             variant="outline"
                             className="w-full sm:w-auto flex items-center gap-2"
+                            onClick={() => {
+                              trackAnalyticsEvent('download_app_click', {
+                                location: 'points_section_cta',
+                                company_slug: companySlug,
+                                location_id: locationId,
+                                user_logged_in: !!user,
+                              });
+                            }}
                           >
                             <Download className="h-4 w-4" />
                             <span>Descargar app</span>

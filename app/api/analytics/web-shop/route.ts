@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { BetaAnalyticsDataClient } from "@google-analytics/data";
 import * as fs from "fs";
 import * as path from "path";
+import { eachDayOfInterval, parseISO, format } from 'date-fns';
 
 // Inicializar el cliente de GA4 Data API
 let analyticsDataClient: BetaAnalyticsDataClient | null = null;
@@ -129,8 +130,42 @@ export async function GET(req: NextRequest) {
       orderBys: [{ dimension: { dimensionName: "date" }, desc: false }],
     });
 
-    const pageMetrics =
-      timeSeriesResponse.rows?.map((row) => {
+    // Procesar la respuesta para llenar los días faltantes con ceros
+    const dataMap = new Map();
+    timeSeriesResponse.rows?.forEach((row) => {
+      const dateStr = row.dimensionValues?.[0]?.value || "";
+      // GA4 devuelve YYYYMMDD
+      const formattedDate = `${dateStr.substring(0, 4)}-${dateStr.substring(4, 6)}-${dateStr.substring(6, 8)}`;
+
+      dataMap.set(formattedDate, {
+        views: parseInt(row.metricValues?.[0]?.value || "0"),
+        users: parseInt(row.metricValues?.[1]?.value || "0"),
+        events: parseInt(row.metricValues?.[2]?.value || "0"),
+      });
+    });
+
+    let pageMetrics = [];
+
+    try {
+      // Generar todos los días en el rango
+      const allDates = eachDayOfInterval({
+        start: parseISO(startDate),
+        end: parseISO(endDate)
+      });
+
+      pageMetrics = allDates.map((dateObj) => {
+        const date = format(dateObj, 'yyyy-MM-dd');
+        const metrics = dataMap.get(date) || { views: 0, users: 0, events: 0 };
+
+        return {
+          date,
+          ...metrics
+        };
+      });
+    } catch (e) {
+      console.error("Error generating date range:", e);
+      // Fallback a los datos crudos si falla la generación de fechas
+      pageMetrics = timeSeriesResponse.rows?.map((row) => {
         const dateStr = row.dimensionValues?.[0]?.value || "";
         const year = dateStr.substring(0, 4);
         const month = dateStr.substring(4, 6);
@@ -143,6 +178,7 @@ export async function GET(req: NextRequest) {
           events: parseInt(row.metricValues?.[2]?.value || "0"),
         };
       }) || [];
+    }
 
     // 3. Obtener ubicaciones (ciudades)
     const [locationsResponse] = await client.runReport({
@@ -200,7 +236,7 @@ export async function GET(req: NextRequest) {
     devicesResponse.rows?.forEach((row) => {
       const device = row.dimensionValues?.[0]?.value?.toLowerCase() || "";
       const users = parseInt(row.metricValues?.[0]?.value || "0");
-      
+
       if (device === "desktop") deviceBreakdown.desktop = users;
       else if (device === "mobile") deviceBreakdown.mobile = users;
       else if (device === "tablet") deviceBreakdown.tablet = users;
@@ -298,6 +334,32 @@ export async function GET(req: NextRequest) {
           percent: Math.round((count / totalEvents) * 100),
         };
       }) || [];
+
+    // Asegurar que el evento de checkout esté en la lista si tiene datos
+    if (checkoutWhatsappCount > 0) {
+      const checkoutIndex = allEvents.findIndex(e => e.name === 'click_proceder_pago_whatsapp');
+
+      if (checkoutIndex === -1) {
+        // Si no está, lo agregamos
+        allEvents.push({
+          name: 'click_proceder_pago_whatsapp',
+          count: checkoutWhatsappCount,
+          percent: 0 // Se recalculará abajo
+        });
+      } else {
+        // Si está, nos aseguramos que tenga el count correcto (el mayor de los dos)
+        allEvents[checkoutIndex].count = Math.max(allEvents[checkoutIndex].count, checkoutWhatsappCount);
+      }
+
+      // Reordenar por count descendente
+      allEvents.sort((a, b) => b.count - a.count);
+
+      // Recalcular porcentajes con el nuevo total
+      const newTotalEvents = allEvents.reduce((sum, e) => sum + e.count, 0);
+      allEvents.forEach(e => {
+        e.percent = Math.round((e.count / newTotalEvents) * 100);
+      });
+    }
 
     console.log('[Analytics Debug] All Events:', JSON.stringify(allEvents, null, 2));
 

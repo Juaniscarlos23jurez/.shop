@@ -410,6 +410,47 @@ export default function WebShopStorePage() {
               </Card>
             </div>
 
+            {/* Dispositivos */}
+            <Card className="mb-8 shadow-sm border border-slate-200">
+              <CardHeader className="border-b bg-slate-50/60">
+                <CardTitle className="flex items-center gap-2 text-xl">
+                  <Monitor className="h-6 w-6 text-blue-600" />
+                  Dispositivos
+                </CardTitle>
+                <CardDescription>Distribución de usuarios por tipo de dispositivo</CardDescription>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div className="p-6 rounded-xl border-2 border-blue-200 bg-blue-50">
+                    <div className="flex items-center justify-between mb-3">
+                      <Monitor className="h-8 w-8 text-blue-600" />
+                      <Badge className="bg-blue-600 text-white">Desktop</Badge>
+                    </div>
+                    <div className="text-4xl font-bold text-blue-900 mb-1">{deviceBreakdown.desktop}</div>
+                    <p className="text-sm text-blue-700">usuarios</p>
+                  </div>
+
+                  <div className="p-6 rounded-xl border-2 border-green-200 bg-green-50">
+                    <div className="flex items-center justify-between mb-3">
+                      <Smartphone className="h-8 w-8 text-green-600" />
+                      <Badge className="bg-green-600 text-white">Mobile</Badge>
+                    </div>
+                    <div className="text-4xl font-bold text-green-900 mb-1">{deviceBreakdown.mobile}</div>
+                    <p className="text-sm text-green-700">usuarios</p>
+                  </div>
+
+                  <div className="p-6 rounded-xl border-2 border-orange-200 bg-orange-50">
+                    <div className="flex items-center justify-between mb-3">
+                      <Tablet className="h-8 w-8 text-orange-600" />
+                      <Badge className="bg-orange-600 text-white">Tablet</Badge>
+                    </div>
+                    <div className="text-4xl font-bold text-orange-900 mb-1">{deviceBreakdown.tablet}</div>
+                    <p className="text-sm text-orange-700">usuarios</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Gráfica de serie temporal */}
             {pageMetrics.length > 0 && (
               <Card className="mb-8 shadow-sm border border-slate-200">
@@ -634,49 +675,6 @@ export default function WebShopStorePage() {
                     </div>
                   </div>
                 ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Dispositivos */}
-        {!loading && !error && totalMetrics && (
-          <Card className="mb-8 shadow-sm border border-slate-200">
-            <CardHeader className="border-b bg-slate-50/60">
-              <CardTitle className="flex items-center gap-2 text-xl">
-                <Monitor className="h-6 w-6 text-blue-600" />
-                Dispositivos
-              </CardTitle>
-              <CardDescription>Distribución de usuarios por tipo de dispositivo</CardDescription>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <div className="grid gap-4 md:grid-cols-3">
-                <div className="p-6 rounded-xl border-2 border-blue-200 bg-blue-50">
-                  <div className="flex items-center justify-between mb-3">
-                    <Monitor className="h-8 w-8 text-blue-600" />
-                    <Badge className="bg-blue-600 text-white">Desktop</Badge>
-                  </div>
-                  <div className="text-4xl font-bold text-blue-900 mb-1">{deviceBreakdown.desktop}</div>
-                  <p className="text-sm text-blue-700">usuarios</p>
-                </div>
-
-                <div className="p-6 rounded-xl border-2 border-green-200 bg-green-50">
-                  <div className="flex items-center justify-between mb-3">
-                    <Smartphone className="h-8 w-8 text-green-600" />
-                    <Badge className="bg-green-600 text-white">Mobile</Badge>
-                  </div>
-                  <div className="text-4xl font-bold text-green-900 mb-1">{deviceBreakdown.mobile}</div>
-                  <p className="text-sm text-green-700">usuarios</p>
-                </div>
-
-                <div className="p-6 rounded-xl border-2 border-orange-200 bg-orange-50">
-                  <div className="flex items-center justify-between mb-3">
-                    <Tablet className="h-8 w-8 text-orange-600" />
-                    <Badge className="bg-orange-600 text-white">Tablet</Badge>
-                  </div>
-                  <div className="text-4xl font-bold text-orange-900 mb-1">{deviceBreakdown.tablet}</div>
-                  <p className="text-sm text-orange-700">usuarios</p>
-                </div>
               </div>
             </CardContent>
           </Card>
