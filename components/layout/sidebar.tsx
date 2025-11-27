@@ -97,8 +97,7 @@ const adminSidebarItems = [
     href: "#", 
     isCollapsible: true, 
     subItems: [
-      { icon: BarChart3, label: "Analytics", href: "/dashboard/analytics" },
-      { icon: PieChart, label: "Ventas", href: "/dashboard/reportes" },
+       { icon: PieChart, label: "Ventas", href: "/dashboard/reportes" },
     ]
   },
   

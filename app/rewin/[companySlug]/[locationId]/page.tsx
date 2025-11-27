@@ -7,7 +7,7 @@ import { publicWebApiClient } from '@/lib/api/public-web';
 import { PublicItem, PublicCompanyLocation } from '@/types/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import * as Lucide from 'lucide-react';
-const { MapPin, Package, Phone, Mail, Clock, Store, Search, User } = Lucide as any;
+const { MapPin, Package, Phone, Mail, Clock, Store, Search, User, Download } = Lucide as any;
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -582,6 +582,7 @@ export default function PublicLocationProductsPage() {
                   window.location.href = targetUrl;
                 }}
               >
+                <Download className="h-4 w-4" />
                 <span>Descargar app</span>
               </Button>
             </div>
@@ -609,6 +610,7 @@ export default function PublicLocationProductsPage() {
                   window.location.href = targetUrl;
                 }}
               >
+                <Download className="h-4 w-4" />
                 <span>Descargar app</span>
               </Button>
 
@@ -972,9 +974,10 @@ export default function PublicLocationProductsPage() {
                         <Link href="/descargar-app" className="sm:w-auto w-full">
                           <Button
                             variant="outline"
-                            className="w-full sm:w-auto"
+                            className="w-full sm:w-auto flex items-center gap-2"
                           >
-                            Descargar app
+                            <Download className="h-4 w-4" />
+                            <span>Descargar app</span>
                           </Button>
                         </Link>
                       </div>

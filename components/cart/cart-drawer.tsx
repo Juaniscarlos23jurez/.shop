@@ -175,7 +175,16 @@ export function CartDrawer({ open, onClose, locationPhone, locationName }: CartD
               <div className="space-y-2">
                 <Button 
                   className="w-full bg-emerald-500 hover:bg-emerald-600 text-white" 
-                  onClick={handleCheckout}
+                  onClick={() => {
+                    if (typeof window !== 'undefined' && (window as any).gtag) {
+                      (window as any).gtag('event', 'click_proceder_pago_whatsapp', {
+                        event_category: 'checkout',
+                        event_label: 'Proceder al Pago por WhatsApp',
+                        value: total,
+                      })
+                    }
+                    handleCheckout()
+                  }}
                 >
                   Proceder al Pago por WhatsApp
                 </Button>
