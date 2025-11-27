@@ -562,6 +562,29 @@ export default function PublicLocationProductsPage() {
                 </>
               )}
             </Button>
+
+            {/* Botón Descargar app solo en móvil, debajo del botón Seguir */}
+            <div className="mt-3 sm:hidden">
+              <Button
+                className="w-full gap-2 shadow-xl bg-emerald-600 text-white hover:bg-emerald-700 rounded-full h-12 px-4 text-sm font-semibold"
+                onClick={() => {
+                  if (typeof window === 'undefined') return;
+
+                  const IOS_URL = 'https://apps.apple.com/us/app/rewin-reward/id6748548104';
+                  const ANDROID_URL = process.env.NEXT_PUBLIC_ANDROID_URL ||
+                    'https://play.google.com/store/apps/details?id=com.fynlink.BoostYou';
+
+                  const userAgent = window.navigator.userAgent || '';
+                  const isIOS = /iPhone|iPad|iPod/i.test(userAgent);
+                  const isAndroid = /Android/i.test(userAgent);
+
+                  const targetUrl = isIOS ? IOS_URL : ANDROID_URL;
+                  window.location.href = targetUrl;
+                }}
+              >
+                <span>Descargar app</span>
+              </Button>
+            </div>
           </div>
         )}
 
