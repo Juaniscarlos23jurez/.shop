@@ -22,6 +22,18 @@ export function generateMetadata({ params }: RewinLocationLayoutParams): Metadat
 
   return {
     title: `${readableName} | Fideliza`,
+    description: `Descubre promociones, productos y recompensas de ${readableName} en Rewin.`,
+    openGraph: {
+      title: `${readableName} | Fideliza`,
+      description: `Descubre promociones, productos y recompensas de ${readableName} en Rewin.`,
+      type: 'website',
+      url: undefined,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${readableName} | Fideliza`,
+      description: `Descubre promociones, productos y recompensas de ${readableName} en Rewin.`,
+    },
   }
 }
 

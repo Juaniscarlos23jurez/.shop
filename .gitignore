@@ -40,3 +40,4 @@ credentials/
 !package-lock.json
 !tsconfig.json
 !next.config.json
+.env

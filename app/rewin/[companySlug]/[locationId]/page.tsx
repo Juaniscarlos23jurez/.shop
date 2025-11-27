@@ -7,7 +7,7 @@ import { publicWebApiClient } from '@/lib/api/public-web';
 import { PublicItem, PublicCompanyLocation } from '@/types/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import * as Lucide from 'lucide-react';
-const { MapPin, Package, Phone, Mail, Clock, Store, Search, User, Download } = Lucide as any;
+const { MapPin, Package, Phone, Mail, Clock, Store, Search, User, Download, Share2 } = Lucide as any;
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -120,6 +120,7 @@ export default function PublicLocationProductsPage() {
   const [coupons, setCoupons] = useState<PublicCoupon[]>([]);
   const [couponsLoading, setCouponsLoading] = useState(false);
   const [couponsError, setCouponsError] = useState<string | null>(null);
+  const [shareUrl, setShareUrl] = useState('');
 
   const [user, setUser] = useState<any>(null);
   const [isFollowing, setIsFollowing] = useState(false);
@@ -179,6 +180,11 @@ export default function PublicLocationProductsPage() {
       }
     };
     checkAuth();
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    setShareUrl(window.location.href);
   }, []);
 
   // Analytics: track detailed view of this location
@@ -775,7 +781,24 @@ export default function PublicLocationProductsPage() {
                         </a>
                       </div>
                     )}
-
+                    <div className="flex items-center gap-2 mt-2 sm:mt-0">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="flex items-center gap-2 text-xs sm:text-sm"
+                        onClick={() => {
+                          if (typeof window === 'undefined') return;
+                          const baseText = `${company?.name || location.name} - ${company?.description || 'Mira esta sucursal en Rewin'}`;
+                          const url = shareUrl || window.location.href;
+                          const waUrl = `https://wa.me/?text=${encodeURIComponent(`${baseText} ${url}`)}`;
+                          window.open(waUrl, '_blank');
+                        }}
+                      >
+                        <Share2 className="h-4 w-4" />
+                        <span>Compartir</span>
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>

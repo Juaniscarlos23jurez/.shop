@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { BetaAnalyticsDataClient } from "@google-analytics/data";
-import * as fs from "fs";
-import * as path from "path";
 import { eachDayOfInterval, parseISO, format } from 'date-fns';
 
 // Inicializar el cliente de GA4 Data API
@@ -9,22 +7,21 @@ let analyticsDataClient: BetaAnalyticsDataClient | null = null;
 
 function getAnalyticsClient() {
   if (!analyticsDataClient) {
-    const credentialsPath = process.env.GA4_CREDENTIALS_PATH;
-    if (!credentialsPath) {
-      throw new Error("GA4_CREDENTIALS_PATH no está configurado en .env");
+    const clientEmail = process.env.GA4_CLIENT_EMAIL;
+    const privateKeyRaw = process.env.GA4_PRIVATE_KEY;
+
+    if (!clientEmail || !privateKeyRaw) {
+      throw new Error(
+        "Credenciales de GA4 no configuradas. Define GA4_CLIENT_EMAIL y GA4_PRIVATE_KEY en .env"
+      );
     }
 
-    const absolutePath = path.resolve(process.cwd(), credentialsPath);
-    if (!fs.existsSync(absolutePath)) {
-      throw new Error(`Archivo de credenciales no encontrado: ${absolutePath}`);
-    }
-
-    const credentials = JSON.parse(fs.readFileSync(absolutePath, "utf8"));
+    const privateKey = privateKeyRaw.replace(/\\n/g, "\n");
 
     analyticsDataClient = new BetaAnalyticsDataClient({
       credentials: {
-        client_email: credentials.client_email,
-        private_key: credentials.private_key,
+        client_email: clientEmail,
+        private_key: privateKey,
       },
     });
   }
