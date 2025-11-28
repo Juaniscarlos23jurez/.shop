@@ -144,12 +144,24 @@ export function CatalogCard({ item, locationId, phone }: CatalogCardProps) {
                       }
                       parts.push(productUrl);
                       const text = parts.join(" ");
-                      const waUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
-                      window.open(waUrl, "_blank");
+
+                      if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(text).catch(() => {
+                          const textarea = document.createElement("textarea");
+                          textarea.value = text;
+                          document.body.appendChild(textarea);
+                          textarea.select();
+                          try {
+                            document.execCommand("copy");
+                          } finally {
+                            document.body.removeChild(textarea);
+                          }
+                        });
+                      }
                     }}
                   >
                     <Share2 className="h-5 w-5" />
-                    <span>Compartir</span>
+                    <span>Copiar link</span>
                   </Button>
                 </div>
               ) : (
