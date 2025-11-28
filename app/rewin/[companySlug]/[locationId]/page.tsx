@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { publicWebApiClient } from '@/lib/api/public-web';
+import { api } from '@/lib/api/api';
 import { PublicItem, PublicCompanyLocation } from '@/types/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import * as Lucide from 'lucide-react';
@@ -125,6 +126,8 @@ export default function PublicLocationProductsPage() {
   const [user, setUser] = useState<any>(null);
   const [isFollowing, setIsFollowing] = useState(false);
   const [lastAnalyticsPayload, setLastAnalyticsPayload] = useState<any | null>(null);
+  const [uiSettings, setUiSettings] = useState<any>(null);
+  const [popupOpen, setPopupOpen] = useState(false);
 
   const trackAnalyticsEvent = (eventName: string, params: Record<string, any>) => {
     if (typeof window === 'undefined' || !window.gtag) {
@@ -499,6 +502,45 @@ export default function PublicLocationProductsPage() {
     loadCoupons();
   }, [activeSection, company, location]);
 
+  // Load UI Settings (banner + popup)
+  useEffect(() => {
+    if (!company && !location) return;
+    
+    const comp: any = company;
+    const loc: any = location;
+    const companyId = (comp && (comp.id || comp.company_id)) || (loc && (loc.company_id || (loc.company && loc.company.id)));
+    
+    if (!companyId) return;
+
+    const loadUiSettings = async () => {
+      try {
+        console.log('[UI Settings] Loading for company:', companyId, 'location:', locationId);
+        const res = await api.uiSettings.getPublic({
+          company_id: companyId,
+          location_id: locationId,
+          context: 'public_store_home',
+        });
+        
+        console.log('[UI Settings] Response:', res);
+        
+        if (res.success && res.data) {
+          const settings = res.data.data || res.data;
+          setUiSettings(settings);
+          console.log('[UI Settings] Loaded:', settings);
+          
+          // Auto-open popup if enabled and not dismissed
+          if (settings?.popup_enabled && !sessionStorage.getItem('popup_dismissed')) {
+            setPopupOpen(true);
+          }
+        }
+      } catch (e) {
+        console.error('[UI Settings] Error loading:', e);
+      }
+    };
+
+    loadUiSettings();
+  }, [company, location, locationId]);
+
   // Filter products based on search and category
   useEffect(() => {
     let filtered = items;
@@ -541,6 +583,28 @@ export default function PublicLocationProductsPage() {
   return (
     <CartProvider>
       <div className="min-h-screen bg-gray-50 pb-32 relative">
+        {/* Banner from UI Settings */}
+        {uiSettings?.banner_enabled && uiSettings.banner_text && (
+          <div 
+            className="w-full py-3 px-4 text-center text-white font-medium shadow-md"
+            style={{ backgroundColor: uiSettings.banner_color || '#059669' }}
+          >
+            <div className="max-w-7xl mx-auto flex items-center justify-center gap-3 flex-wrap">
+              <span>{uiSettings.banner_text}</span>
+              {uiSettings.banner_button_label && uiSettings.banner_button_url && (
+                <a
+                  href={uiSettings.banner_button_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center px-4 py-1.5 bg-white/20 hover:bg-white/30 rounded-full text-sm font-semibold transition-colors"
+                >
+                  {uiSettings.banner_button_label}
+                </a>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Follow Button (Left Side) */}
         {user && company && (
           <div className="fixed top-6 left-6 z-50">
@@ -1109,6 +1173,47 @@ export default function PublicLocationProductsPage() {
 
         <BottomNav activeSection={activeSection} onSectionChange={setActiveSection} />
       </div>
+
+      {/* Popup Modal from UI Settings */}
+      <Dialog open={popupOpen} onOpenChange={(open) => {
+        setPopupOpen(open);
+        if (!open) {
+          sessionStorage.setItem('popup_dismissed', 'true');
+        }
+      }}>
+        <DialogContent className="sm:max-w-md">
+          {uiSettings?.popup_image_url && (
+            <div className="w-full h-48 rounded-lg overflow-hidden mb-4">
+              <img 
+                src={uiSettings.popup_image_url} 
+                alt={uiSettings.popup_title || 'Popup'} 
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
+          <DialogHeader>
+            {uiSettings?.popup_title && (
+              <DialogTitle className="text-xl font-bold">{uiSettings.popup_title}</DialogTitle>
+            )}
+            {uiSettings?.popup_description && (
+              <DialogDescription className="text-base mt-2">
+                {uiSettings.popup_description}
+              </DialogDescription>
+            )}
+          </DialogHeader>
+          <div className="flex justify-end mt-4">
+            <Button 
+              onClick={() => {
+                setPopupOpen(false);
+                sessionStorage.setItem('popup_dismissed', 'true');
+              }}
+              className="bg-emerald-600 hover:bg-emerald-700"
+            >
+              Entendido
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </CartProvider>
   );
 }

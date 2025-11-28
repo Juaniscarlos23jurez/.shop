@@ -718,6 +718,34 @@ export const api = {
         body: JSON.stringify(data),
       }).then(handleResponse);
     },
+
+    /**
+     * Get UI settings publicly (no auth required).
+     * Backend route: GET /api/public/ui-settings
+     * Example: /api/public/ui-settings?company_id=1&location_id=1&context=public_store_home
+     */
+    async getPublic(params: {
+      company_id?: number | string;
+      location_id?: number | string;
+      context: string;
+    }): Promise<ApiResponse<any>> {
+      const search = new URLSearchParams();
+      if (params.company_id !== undefined && params.company_id !== null) {
+        search.set('company_id', String(params.company_id));
+      }
+      if (params.location_id !== undefined && params.location_id !== null) {
+        search.set('location_id', String(params.location_id));
+      }
+      search.set('context', params.context);
+
+      const url = `${BASE_URL}/api/public/ui-settings${search.toString() ? `?${search.toString()}` : ''}`;
+      return fetch(url, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+        },
+      }).then(handleResponse);
+    },
   },
 
   // Companies API (admin/management)
