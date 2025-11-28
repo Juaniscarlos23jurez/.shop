@@ -527,9 +527,9 @@ export default function PublicLocationProductsPage() {
           const settings = res.data.data || res.data;
           setUiSettings(settings);
           console.log('[UI Settings] Loaded:', settings);
-          
-          // Auto-open popup if enabled and not dismissed
-          if (settings?.popup_enabled && !sessionStorage.getItem('popup_dismissed')) {
+
+          // Auto-open popup every time if enabled
+          if (settings?.popup_enabled) {
             setPopupOpen(true);
           }
         }
@@ -1177,9 +1177,6 @@ export default function PublicLocationProductsPage() {
       {/* Popup Modal from UI Settings */}
       <Dialog open={popupOpen} onOpenChange={(open) => {
         setPopupOpen(open);
-        if (!open) {
-          sessionStorage.setItem('popup_dismissed', 'true');
-        }
       }}>
         <DialogContent className="w-[90%] sm:max-w-md rounded-2xl p-0">
           {uiSettings?.popup_image_url && (
@@ -1201,17 +1198,7 @@ export default function PublicLocationProductsPage() {
               </DialogDescription>
             )}
           </DialogHeader>
-          <div className="flex justify-end mt-4">
-            <Button 
-              onClick={() => {
-                setPopupOpen(false);
-                sessionStorage.setItem('popup_dismissed', 'true');
-              }}
-              className="bg-emerald-600 hover:bg-emerald-700"
-            >
-              Entendido
-            </Button>
-          </div>
+           
         </DialogContent>
       </Dialog>
     </CartProvider>
