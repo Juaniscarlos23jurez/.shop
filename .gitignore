@@ -41,3 +41,4 @@ credentials/
 !tsconfig.json
 !next.config.json
 .env
+.env
