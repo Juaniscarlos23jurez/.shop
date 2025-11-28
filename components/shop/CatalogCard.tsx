@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import * as Lucide from "lucide-react";
-const { Package, Phone } = Lucide as any;
+const { Package, Phone, Share2 } = Lucide as any;
 import { formatCurrency } from "@/lib/utils/currency";
 import { useCart } from "@/lib/cart-context";
 import { PublicItem } from "@/types/api";
@@ -114,16 +114,44 @@ export function CatalogCard({ item, locationId, phone }: CatalogCardProps) {
                   WhatsApp
                 </Button>
               ) : quantity <= 0 ? (
-                <Button
-                  size="lg"
-                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-md hover:shadow-lg transition-all"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleAdd();
-                  }}
-                >
-                  Agregar al carrito
-                </Button>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Button
+                    size="lg"
+                    className="w-full sm:flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-md hover:shadow-lg transition-all"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleAdd();
+                    }}
+                  >
+                    Agregar al carrito
+                  </Button>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="w-full sm:w-auto flex items-center justify-center gap-2"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (typeof window === "undefined") return;
+                      const baseUrl = window.location.href.split("#")[0];
+                      const productUrl = `${baseUrl}?product=${encodeURIComponent(String(item.id))}`;
+                      const parts: string[] = [];
+                      parts.push(item.name);
+                      if (item.description) {
+                        parts.push(`- ${item.description}`);
+                      }
+                      if (item.image_url) {
+                        parts.push(`Imagen: ${item.image_url}`);
+                      }
+                      parts.push(productUrl);
+                      const text = parts.join(" ");
+                      const waUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
+                      window.open(waUrl, "_blank");
+                    }}
+                  >
+                    <Share2 className="h-5 w-5" />
+                    <span>Compartir</span>
+                  </Button>
+                </div>
               ) : (
                 <div className="flex items-center justify-between gap-3">
                   <Button
