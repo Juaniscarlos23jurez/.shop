@@ -139,13 +139,32 @@ export function CatalogCard({ item, locationId, phone }: CatalogCardProps) {
                       if (item.description) {
                         parts.push(`- ${item.description}`);
                       }
-                      if (item.image_url) {
-                        parts.push(`Imagen: ${item.image_url}`);
-                      }
                       parts.push(productUrl);
                       const text = parts.join(" ");
 
-                      if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
+                      const shareData: ShareData = {
+                        title: item.name,
+                        text,
+                        url: productUrl,
+                      };
+
+                      if (navigator && (navigator as any).share) {
+                        (navigator as any).share(shareData).catch(() => {
+                          if (navigator.clipboard && navigator.clipboard.writeText) {
+                            navigator.clipboard.writeText(text).catch(() => {
+                              const textarea = document.createElement("textarea");
+                              textarea.value = text;
+                              document.body.appendChild(textarea);
+                              textarea.select();
+                              try {
+                                document.execCommand("copy");
+                              } finally {
+                                document.body.removeChild(textarea);
+                              }
+                            });
+                          }
+                        });
+                      } else if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
                         navigator.clipboard.writeText(text).catch(() => {
                           const textarea = document.createElement("textarea");
                           textarea.value = text;
@@ -161,7 +180,7 @@ export function CatalogCard({ item, locationId, phone }: CatalogCardProps) {
                     }}
                   >
                     <Share2 className="h-5 w-5" />
-                    <span>Copiar link</span>
+                    <span>Compartir Tienda</span>
                   </Button>
                 </div>
               ) : (
@@ -280,6 +299,63 @@ export function CatalogCard({ item, locationId, phone }: CatalogCardProps) {
                       Agregar al carrito
                     </Button>
                   )}
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="w-full h-12 text-base rounded-xl border-2 flex items-center justify-center gap-2"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (typeof window === "undefined") return;
+                      const baseUrl = window.location.href.split("#")[0];
+                      const productUrl = `${baseUrl}?product=${encodeURIComponent(String(item.id))}`;
+                      const parts: string[] = [];
+                      parts.push(item.name);
+                      if (item.description) {
+                        parts.push(`- ${item.description}`);
+                      }
+                      parts.push(productUrl);
+                      const text = parts.join(" ");
+
+                      const shareData: ShareData = {
+                        title: item.name,
+                        text,
+                        url: productUrl,
+                      };
+
+                      if (navigator && (navigator as any).share) {
+                        (navigator as any).share(shareData).catch(() => {
+                          if (navigator.clipboard && navigator.clipboard.writeText) {
+                            navigator.clipboard.writeText(text).catch(() => {
+                              const textarea = document.createElement("textarea");
+                              textarea.value = text;
+                              document.body.appendChild(textarea);
+                              textarea.select();
+                              try {
+                                document.execCommand("copy");
+                              } finally {
+                                document.body.removeChild(textarea);
+                              }
+                            });
+                          }
+                        });
+                      } else if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(text).catch(() => {
+                          const textarea = document.createElement("textarea");
+                          textarea.value = text;
+                          document.body.appendChild(textarea);
+                          textarea.select();
+                          try {
+                            document.execCommand("copy");
+                          } finally {
+                            document.body.removeChild(textarea);
+                          }
+                        });
+                      }
+                    }}
+                  >
+                    <Share2 className="h-5 w-5" />
+                    <span>Compartir Tienda</span>
+                  </Button>
                   <Button
                     size="lg"
                     variant="outline"
