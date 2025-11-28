@@ -86,6 +86,9 @@ const adminSidebarItems = [
       { icon: CreditCardIcon, label: "Metodos de cobro", href: "/dashboard/stripe" },
     ]
   },
+
+  // Componentes playground
+  { icon: PieChart, label: "Componentes", href: "/dashboard/componentes"},
   
   // Web Shop Store (new top-level item)
   { icon: Store, label: "Web Shop Store", href: "/dashboard/web-shop-store" },

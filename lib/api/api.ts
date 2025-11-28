@@ -655,6 +655,71 @@ export const api = {
     },
   },
 
+  // UI Components Settings (banner + popup per company/location/context)
+  uiSettings: {
+    /**
+     * Get UI settings for a given context (company/location/context).
+     * Backend route: GET /api/ui-settings (auth:sanctum)
+     * Example: /api/ui-settings?company_id=1&location_id=1&context=public_store_home
+     */
+    async get(
+      params: {
+        company_id?: number | string;
+        location_id?: number | string;
+        context: string;
+      },
+      token: string
+    ): Promise<ApiResponse<any>> {
+      const search = new URLSearchParams();
+      if (params.company_id !== undefined && params.company_id !== null) {
+        search.set('company_id', String(params.company_id));
+      }
+      if (params.location_id !== undefined && params.location_id !== null) {
+        search.set('location_id', String(params.location_id));
+      }
+      search.set('context', params.context);
+
+      const url = `${BASE_URL}/api/ui-settings${search.toString() ? `?${search.toString()}` : ''}`;
+      return fetch(url, {
+        method: 'GET',
+        headers: getAuthHeader(token),
+      }).then(handleResponse);
+    },
+
+    /**
+     * Upsert UI settings for a given context.
+     * Backend route: PUT /api/ui-settings (auth:sanctum)
+     * Body matches the Laravel controller expectation.
+     */
+    async upsert(
+      data: {
+        company_id?: number | string;
+        location_id?: number | string;
+        context: string;
+        banner_enabled?: boolean;
+        banner_text?: string;
+        banner_button_label?: string;
+        banner_button_url?: string;
+        banner_color?: string;
+        popup_enabled?: boolean;
+        popup_image_url?: string;
+        popup_title?: string;
+        popup_description?: string;
+      },
+      token: string
+    ): Promise<ApiResponse<any>> {
+      const url = `${BASE_URL}/api/ui-settings`;
+      return fetch(url, {
+        method: 'PUT',
+        headers: {
+          ...getAuthHeader(token),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      }).then(handleResponse);
+    },
+  },
+
   // Companies API (admin/management)
   companies: {
     /**
