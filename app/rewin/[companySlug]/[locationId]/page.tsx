@@ -405,6 +405,13 @@ function PublicLocationProductsPageContent() {
               loc = responseData;
             }
 
+            console.log('🏢 Company data received:', {
+              company: comp,
+              logo_url: comp?.logo_url,
+              logo_url_type: typeof comp?.logo_url,
+              banner_url: comp?.banner_url
+            });
+
             setLocation(loc as PublicCompanyLocation);
             setCompany(comp);
             setCache(`${baseKey}:location`, loc as PublicCompanyLocation);
@@ -842,6 +849,7 @@ function PublicLocationProductsPageContent() {
                     src={company.logo_url}
                     alt={company.name}
                     className="w-24 h-24 sm:w-32 sm:h-32 object-contain rounded-lg border-4 border-white shadow-md bg-white"
+                    crossOrigin="anonymous"
                     onLoad={() => {
                       console.log('✅ Company logo loaded successfully:', company.logo_url);
                     }}
@@ -849,9 +857,17 @@ function PublicLocationProductsPageContent() {
                       console.error('❌ Error loading company logo:', {
                         url: company.logo_url,
                         companyName: company.name,
+                        rawUrl: JSON.stringify(company.logo_url),
                         error: e
                       });
-                      (e.target as HTMLImageElement).style.display = 'none';
+                      // Intentar con la URL limpia
+                      const cleanUrl = company.logo_url.replace(/\\/g, '');
+                      if (cleanUrl !== company.logo_url) {
+                        console.log('🔄 Retrying with clean URL:', cleanUrl);
+                        (e.target as HTMLImageElement).src = cleanUrl;
+                      } else {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }
                     }}
                   />
                 </div>

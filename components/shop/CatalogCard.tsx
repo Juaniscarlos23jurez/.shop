@@ -22,6 +22,18 @@ export function CatalogCard({ item, locationId, phone, initialOpen = false }: Ca
   const isService = item.product_type === "service";
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  // Debug: Log item data on mount
+  useEffect(() => {
+    console.log('🔍 CatalogCard mounted:', {
+      id: item.id,
+      name: item.name,
+      image_url: item.image_url,
+      image_url_type: typeof item.image_url,
+      image_url_length: item.image_url?.length,
+      has_image: !!item.image_url
+    });
+  }, []);
+
   useEffect(() => {
     if (initialOpen) {
       setIsModalOpen(true);
@@ -74,6 +86,26 @@ export function CatalogCard({ item, locationId, phone, initialOpen = false }: Ca
                 alt={item.name}
                 className="w-full h-auto object-contain transition-transform duration-300 group-hover:scale-105 rounded-lg"
                 style={{ maxHeight: "200px" }}
+                crossOrigin="anonymous"
+                onLoad={() => {
+                  console.log('✅ Card image loaded:', item.image_url);
+                }}
+                onError={(e) => {
+                  console.error('❌ Card image failed:', {
+                    url: item.image_url,
+                    productId: item.id,
+                    productName: item.name,
+                    rawUrl: JSON.stringify(item.image_url)
+                  });
+                  // Intentar con la URL limpia
+                  const cleanUrl = (item.image_url || '').replace(/\\/g, '');
+                  if (cleanUrl !== item.image_url) {
+                    console.log('🔄 Retrying card image with clean URL:', cleanUrl);
+                    (e.target as HTMLImageElement).src = cleanUrl;
+                  } else {
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }
+                }}
               />
             ) : (
               <div className="w-full h-48 flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg">
@@ -208,6 +240,7 @@ export function CatalogCard({ item, locationId, phone, initialOpen = false }: Ca
                       alt={item.name}
                       className="max-w-full h-auto object-contain rounded-xl"
                       style={{ maxHeight: "350px" }}
+                      crossOrigin="anonymous"
                       onLoad={() => {
                         console.log('✅ Product image loaded successfully:', item.image_url);
                       }}
@@ -216,12 +249,20 @@ export function CatalogCard({ item, locationId, phone, initialOpen = false }: Ca
                           url: item.image_url,
                           productId: item.id,
                           productName: item.name,
+                          rawUrl: JSON.stringify(item.image_url),
                           error: e
                         });
-                        (e.target as HTMLImageElement).style.display = 'none';
-                        const parent = (e.target as HTMLImageElement).parentElement;
-                        if (parent) {
-                          parent.innerHTML = '<div class="w-full h-64 flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl"><svg class="h-24 w-24 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg></div>';
+                        // Intentar con la URL limpia
+                        const cleanUrl = (item.image_url || '').replace(/\\/g, '');
+                        if (cleanUrl !== item.image_url) {
+                          console.log('🔄 Retrying modal image with clean URL:', cleanUrl);
+                          (e.target as HTMLImageElement).src = cleanUrl;
+                        } else {
+                          (e.target as HTMLImageElement).style.display = 'none';
+                          const parent = (e.target as HTMLImageElement).parentElement;
+                          if (parent) {
+                            parent.innerHTML = '<div class="w-full h-64 flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl"><svg class="h-24 w-24 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg></div>';
+                          }
                         }
                       }}
                     />
@@ -330,7 +371,7 @@ export function CatalogCard({ item, locationId, phone, initialOpen = false }: Ca
                     }}
                   >
                     <Share2 className="h-5 w-5" />
-                    <span>Compartir Tienda</span>
+                    <span>Compartir Producto</span>
                   </Button>
                   <Button
                     size="lg"
