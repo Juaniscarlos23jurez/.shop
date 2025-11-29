@@ -128,6 +128,7 @@ export default function PublicLocationProductsPage() {
   const [lastAnalyticsPayload, setLastAnalyticsPayload] = useState<any | null>(null);
   const [uiSettings, setUiSettings] = useState<any>(null);
   const [popupOpen, setPopupOpen] = useState(false);
+  const [initialProductId, setInitialProductId] = useState<string | null>(null);
 
   const trackAnalyticsEvent = (eventName: string, params: Record<string, any>) => {
     if (typeof window === 'undefined' || !window.gtag) {
@@ -183,6 +184,20 @@ export default function PublicLocationProductsPage() {
       }
     };
     checkAuth();
+  }, []);
+
+  // Read product from query string to open product modal directly when shared
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const url = new URL(window.location.href);
+      const productId = url.searchParams.get('product');
+      if (productId) {
+        setInitialProductId(productId);
+      }
+    } catch (e) {
+      console.warn('Error reading product from URL', e);
+    }
   }, []);
 
   useEffect(() => {
@@ -1044,6 +1059,7 @@ export default function PublicLocationProductsPage() {
                             item={item}
                             locationId={Number(location.id)}
                             phone={(location as any)?.phone ?? company?.phone}
+                            initialOpen={initialProductId === String(item.id)}
                           />
                         ))}
                       </div>

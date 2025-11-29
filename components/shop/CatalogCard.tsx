@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,12 +14,19 @@ interface CatalogCardProps {
   item: PublicItem;
   locationId: number;
   phone?: string;
+  initialOpen?: boolean;
 }
 
-export function CatalogCard({ item, locationId, phone }: CatalogCardProps) {
+export function CatalogCard({ item, locationId, phone, initialOpen = false }: CatalogCardProps) {
   const { items, addItem, updateQuantity } = useCart();
   const isService = item.product_type === "service";
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (initialOpen) {
+      setIsModalOpen(true);
+    }
+  }, [initialOpen]);
 
   const currentCartItem = items.find((cartItem) => cartItem.id === String(item.id));
   const quantity = currentCartItem?.quantity ?? 0;
