@@ -139,14 +139,13 @@ export function CatalogCard({ item, locationId, phone, initialOpen = false }: Ca
                     onClick={(e) => {
                       e.stopPropagation();
                       if (typeof window === "undefined") return;
-                      const baseUrl = window.location.href.split("#")[0];
+                      const baseUrl = window.location.href.split("#")[0].split("?")[0];
                       const productUrl = `${baseUrl}?product=${encodeURIComponent(String(item.id))}`;
                       const parts: string[] = [];
                       parts.push(item.name);
                       if (item.description) {
                         parts.push(`- ${item.description}`);
                       }
-                      parts.push(productUrl);
                       const text = parts.join(" ");
 
                       const shareData: ShareData = {
@@ -313,14 +312,13 @@ export function CatalogCard({ item, locationId, phone, initialOpen = false }: Ca
                     onClick={(e) => {
                       e.stopPropagation();
                       if (typeof window === "undefined") return;
-                      const baseUrl = window.location.href.split("#")[0];
+                      const baseUrl = window.location.href.split("#")[0].split("?")[0];
                       const productUrl = `${baseUrl}?product=${encodeURIComponent(String(item.id))}`;
                       const parts: string[] = [];
                       parts.push(item.name);
                       if (item.description) {
                         parts.push(`- ${item.description}`);
                       }
-                      parts.push(productUrl);
                       const text = parts.join(" ");
 
                       const shareData: ShareData = {
