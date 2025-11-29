@@ -198,7 +198,7 @@ export default function CustomerLoginPage() {
                 </Card>
 
                 <div className="mt-6 text-center">
-                    <Link href={`/${companySlug}/${locationId}`} className="flex items-center justify-center text-sm font-medium text-emerald-600 hover:text-emerald-500">
+                    <Link href={`/rewin/${companySlug}/${locationId}`} className="flex items-center justify-center text-sm font-medium text-emerald-600 hover:text-emerald-500">
                         <ArrowLeft className="mr-1 h-4 w-4" />
                         Volver a la tienda
                     </Link>

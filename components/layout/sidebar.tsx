@@ -31,7 +31,8 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter, usePathname } from 'next/navigation';
-import { useState, useLayoutEffect } from 'react'; // Import useState and useLayoutEffect
+import { useState, useLayoutEffect, useEffect } from 'react'; // Import useState, useLayoutEffect and useEffect
+import { ordersApi } from "@/lib/api/orders";
 
 // Admin sidebar items (shown for non-employee users)
 const adminSidebarItems = [
@@ -42,7 +43,8 @@ const adminSidebarItems = [
   { icon: Package, label: "Productos", href: "/dashboard/productos" },
   { icon: ShoppingCart, label: "Punto de Venta", href: "/dashboard/pos" },
   { icon: Clock4, label: "Órdenes Pendientes", href: "/dashboard/ordenes-pendientes" },
- 
+  { icon: CreditCardIcon, label: "Metodos de cobro", href: "/dashboard/stripe" },
+
   // Clientes Section
   { 
     icon: Users, 
@@ -83,8 +85,7 @@ const adminSidebarItems = [
       { icon: BellIcon, label: "Notificaciones", href: "/dashboard/notificaciones" },
       { icon: Megaphone, label: "Anuncios", href: "/dashboard/anuncios" }, // Changed from MessageSquare
       { icon: Book, label: "Comentarios", href: "/dashboard/comentarios" }, // Changed from MessageSquare
-      { icon: CreditCardIcon, label: "Metodos de cobro", href: "/dashboard/stripe" },
-    ]
+     ]
   },
 
   // Componentes playground
@@ -125,7 +126,7 @@ const employeeSidebarItems = [
 ];
 
 export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean, setIsCollapsed: (collapsed: boolean) => void }) {
-  const { user, logout, isEmployee, userRole } = useAuth();
+  const { user, token, logout, isEmployee, userRole } = useAuth();
   const router = useRouter();
   const pathname = usePathname() || '';
   
@@ -173,6 +174,35 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
     }
     return false;
   });
+
+  const [pendingOrdersCount, setPendingOrdersCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    const fetchPendingOrdersCount = async () => {
+      try {
+        if (!user?.company_id || !token) return;
+
+        const response = await ordersApi.getAllOrders(String(user.company_id), token, {
+          status: 'pending',
+          per_page: 50,
+        });
+
+        if (response.success && response.data) {
+          const pagination = (response.data as any).data || response.data;
+          const total = typeof pagination.total === 'number'
+            ? pagination.total
+            : Array.isArray(pagination)
+            ? pagination.length
+            : 0;
+          setPendingOrdersCount(total);
+        }
+      } catch (error) {
+        console.error('[Sidebar] Error fetching pending orders count', error);
+      }
+    };
+
+    fetchPendingOrdersCount();
+  }, [user?.company_id, token]);
    
   // Get user initials for avatar fallback
   const getUserInitials = (name?: string, email?: string) => {
@@ -315,6 +345,11 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
             >
               <item.icon className={`h-5 w-5 ${isCollapsed ? 'mr-0' : 'mr-3'}`} />
               <span className={`${isCollapsed ? 'hidden' : ''}`}>{item.label}</span>
+              {!isCollapsed && item.href === '/dashboard/ordenes-pendientes' && pendingOrdersCount !== null && (
+                <span className="ml-auto inline-flex items-center justify-center rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                  {pendingOrdersCount}
+                </span>
+              )}
             </Button>
           );
         })}

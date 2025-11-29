@@ -767,7 +767,7 @@ function PublicLocationProductsPageContent() {
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel>Mi Cuenta</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => router.push(`/${companySlug}/${locationId}/profile`)}>
+                <DropdownMenuItem onClick={() => router.push(`/rewin/${companySlug}/${locationId}/profile`)}>
                   Perfil
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => alert("Mis Pedidos en desarrollo")}>
@@ -809,7 +809,7 @@ function PublicLocationProductsPageContent() {
               <span>Descargar app</span>
             </Button>
 
-            <Link href={`/${companySlug}/${locationId}/auth/login`}>
+            <Link href={`/rewin/${companySlug}/${locationId}/auth/login`}>
               <Button className="gap-3 shadow-xl bg-white text-emerald-600 hover:bg-gray-50 hover:text-emerald-700 border-2 border-emerald-100 rounded-full h-16 px-6 text-lg font-semibold">
                 <User className="h-6 w-6" />
                 <span>Iniciar Sesión</span>

@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, ShoppingCart } from 'lucide-react';
 import { getProducts } from '@/lib/api/products';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 // Importing getProducts directly from products.ts
 import { Product, ProductListResponse } from '@/types/product';
@@ -36,6 +37,7 @@ const ProductTypeBadge = ({ type }: { type: string }) => {
 
 export default function ProductosPage() {
   const { token, user } = useAuth();
+  const router = useRouter();
   // Obtener companyId real desde el contexto de autenticación
   const companyId = user?.company_id;
   const [products, setProducts] = useState<Product[]>([]);
@@ -170,7 +172,8 @@ export default function ProductosPage() {
         <CardContent>
           <div className="rounded-md border overflow-hidden">
             <div className="grid grid-cols-12 items-center gap-2 p-3 font-medium text-slate-600 border-b bg-slate-50 text-sm">
-              <div className="col-span-4 pl-2">Producto</div>
+              <div className="col-span-3 pl-2">Producto</div>
+              <div className="col-span-1 text-center">Categoría</div>
               <div className="col-span-1 text-right pr-2">Precio</div>
               <div className="col-span-1 text-center">Puntos</div>
               <div className="col-span-1 text-center">Stock</div>
@@ -207,9 +210,10 @@ export default function ProductosPage() {
                 {(Array.isArray(products) ? products : []).map((product) => (
                   <div 
                     key={product.id}
-                    className="grid grid-cols-12 items-start gap-2 p-2 border-b hover:bg-slate-50 transition-colors text-sm h-16"
+                    className="grid grid-cols-12 items-start gap-2 p-2 border-b hover:bg-slate-50 transition-colors text-sm h-16 cursor-pointer"
+                    onClick={() => router.push(`/dashboard/productos/${product.id}`)}
                   >
-                    <div className="col-span-4 flex items-start pl-2 h-full">
+                    <div className="col-span-3 flex items-start pl-2 h-full">
                       <div className="flex-shrink-0 mt-1">
                         {product.image_url ? (
                           <img 
@@ -236,6 +240,11 @@ export default function ProductosPage() {
                           <p className="text-xs text-slate-500 truncate leading-tight">{product.category}</p>
                         )}
                       </div>
+                    </div>
+                    <div className="col-span-1 text-center flex items-center h-full justify-center">
+                      <span className="text-xs text-slate-700 truncate max-w-[120px]">
+                        {product.category || '-'}
+                      </span>
                     </div>
                     <div className="col-span-1 text-right pr-2 flex items-center h-full">
                       <span className="font-medium text-sm">{formatCurrency(Number(product.price))}</span>
@@ -295,12 +304,18 @@ export default function ProductosPage() {
                       </Badge>
                     </div>
                     <div className="col-span-1 flex items-center justify-end h-full">
-                      <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
-                        <Link href={`/dashboard/productos/${product.id}`}>
-                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevron-right">
-                            <path d="m9 18 6-6-6-6"/>
-                          </svg>
-                        </Link>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          router.push(`/dashboard/productos/${product.id}`);
+                        }}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevron-right">
+                          <path d="m9 18 6-6-6-6"/>
+                        </svg>
                       </Button>
                     </div>
                   </div>

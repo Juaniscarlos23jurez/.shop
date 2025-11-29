@@ -53,6 +53,12 @@ export default function UserProfilePage() {
     const [loading, setLoading] = useState(true);
     const [birthday, setBirthday] = useState('');
 
+    const handleOpenCompany = (company: any) => {
+        const targetSlug = company?.slug || company?.slug_url || company?.company_slug || companySlug;
+        // Navegar solo por slug, sin el segmento de locationId
+        router.push(`/rewin/${targetSlug}`);
+    };
+
     useEffect(() => {
         const fetchData = async () => {
             const token = localStorage.getItem('customer_token');
@@ -117,7 +123,7 @@ export default function UserProfilePage() {
             {/* Header */}
             <div className="bg-white shadow-sm sticky top-0 z-10">
                 <div className="max-w-3xl mx-auto px-4 h-16 flex items-center gap-4">
-                    <Link href={`/${companySlug}/${locationId}`}>
+                    <Link href={`/rewin/${companySlug}/${locationId}`}>
                         <Button variant="ghost" size="icon" className="rounded-full">
                             <ArrowLeft className="h-5 w-5" />
                         </Button>
@@ -200,7 +206,7 @@ export default function UserProfilePage() {
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2 text-lg">
                                 <Calendar className="h-5 w-5 text-purple-500" />
-                                Fechas Importantes
+                                Fecha Importante
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
@@ -231,9 +237,13 @@ export default function UserProfilePage() {
                     </h3>
 
                     {followedCompanies.length > 0 ? (
-                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                             {followedCompanies.map((company) => (
-                                <Card key={company.id} className="overflow-hidden hover:shadow-lg transition-all duration-300 group cursor-pointer border-emerald-100/50">
+                                <Card
+                                    key={company.id}
+                                    className="overflow-hidden hover:shadow-lg transition-all duration-300 group cursor-pointer border-emerald-100/50"
+                                    onClick={() => handleOpenCompany(company)}
+                                >
                                     <div className="h-24 bg-gray-100 relative">
                                         {company.banner_url ? (
                                             <img src={company.banner_url} alt="Banner" className="w-full h-full object-cover" />
@@ -272,7 +282,11 @@ export default function UserProfilePage() {
                                             <span className="text-xs text-gray-400">
                                                 Miembro desde {new Date(company.following_since || Date.now()).getFullYear()}
                                             </span>
-                                            <Button size="sm" variant="secondary" className="h-7 text-xs">
+                                            <Button
+                                                size="sm"
+                                                variant="secondary"
+                                                className="h-7 text-xs"
+                                            >
                                                 Ver Tienda
                                             </Button>
                                         </div>

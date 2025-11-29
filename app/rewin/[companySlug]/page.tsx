@@ -276,7 +276,7 @@ export default function PublicCompanyPage() {
                         className="w-full justify-center text-sm md:text-base"
                         asChild
                       >
-                        <a href={`/${companySlug}/${location.id}`}>
+                        <a href={`/rewin/${companySlug}/${location.id}`}>
                           Ver productos de esta sucursal
                         </a>
                       </Button>

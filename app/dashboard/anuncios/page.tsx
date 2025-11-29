@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Plus, Edit, Trash2, X, Check, Megaphone, Calendar, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -40,16 +41,17 @@ export default function AnunciosPage() {
   const { toast } = useToast();
   const { token, user } = useAuth();
 
-  const [title, setTitle] = useState('Gran Promoción');
-  const [subtitle, setSubtitle] = useState('Sólo por tiempo limitado');
-  const [text, setText] = useState('Aprovecha descuentos exclusivos en tu próxima compra.');
-  const [link, setLink] = useState('https://tu-sitio.com/promo');
+  const [title, setTitle] = useState('');
+  const [subtitle, setSubtitle] = useState('');
+  const [text, setText] = useState('');
+  const [link, setLink] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [imageUrlInput, setImageUrlInput] = useState<string>('');
   const [isActive, setIsActive] = useState<boolean>(true);
   const [startsAt, setStartsAt] = useState<string>(''); // datetime-local
   const [endsAt, setEndsAt] = useState<string>('');
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   type UiAd = {
     id: string;
@@ -64,6 +66,21 @@ export default function AnunciosPage() {
     updatedAt: string;
   };
   const [items, setItems] = useState<UiAd[]>([]);
+
+  // Función para verificar si un anuncio está caducado
+  const isExpired = (endsAt: string | null) => {
+    if (!endsAt) return false;
+    return new Date(endsAt) < new Date();
+  };
+
+  // Ordenar items por fecha de actualización (más reciente primero)
+  const sortedItems = useMemo(() => {
+    return [...items].sort((a, b) => {
+      const dateA = new Date(a.updatedAt).getTime();
+      const dateB = new Date(b.updatedAt).getTime();
+      return dateB - dateA; // Descendente (más reciente primero)
+    });
+  }, [items]);
   const [loading, setLoading] = useState(false);
   const [resolvedCompanyId, setResolvedCompanyId] = useState<string | undefined>(user?.company_id ? String(user.company_id) : undefined);
 
@@ -130,9 +147,58 @@ export default function AnunciosPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
+  const clearForm = () => {
+    setTitle('');
+    setSubtitle('');
+    setText('');
+    setLink('');
+    setImageFile(null);
+    setImageUrl(null);
+    setImageUrlInput('');
+    setIsActive(true);
+    setStartsAt('');
+    setEndsAt('');
+    setEditingId(null);
+  };
+
+  const handleEdit = (item: UiAd) => {
+    setEditingId(item.id);
+    setTitle(item.title);
+    setSubtitle(item.subtitle);
+    setText(item.text);
+    setLink(item.link);
+    setImageFile(null);
+    setImageUrl(item.imageUrl);
+    setImageUrlInput(item.imageUrl || '');
+    setIsActive(item.isActive ?? true);
+    setStartsAt(item.startsAt ? new Date(item.startsAt).toISOString().slice(0, 16) : '');
+    setEndsAt(item.endsAt ? new Date(item.endsAt).toISOString().slice(0, 16) : '');
+    // Scroll to form
+    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+  };
+
+  const refreshList = async (cid: string) => {
+    const list = await api.companies.listAnnouncements(cid, token!, { per_page: 50 });
+    const raw = (list.data as any)?.data ?? list.data ?? [];
+    const arr: any[] = Array.isArray(raw) ? raw : Array.isArray(raw?.data) ? raw.data : [];
+    const mapped: UiAd[] = arr.map((a: any) => ({
+      id: String(a.id ?? cryptoRandomId()),
+      title: a.title ?? '',
+      subtitle: a.subtitle ?? '',
+      text: a.text ?? '',
+      link: a.link_url ?? '',
+      imageUrl: a.image_url ?? null,
+      isActive: Boolean(a.is_active ?? true),
+      startsAt: a.starts_at ?? null,
+      endsAt: a.ends_at ?? null,
+      updatedAt: a.updated_at ?? new Date().toISOString(),
+    }));
+    setItems(mapped);
+  };
+
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // If API context is available, try to create via API
+    
     if (token) {
       try {
         setLoading(true);
@@ -149,7 +215,7 @@ export default function AnunciosPage() {
 
         const toIso = (v: string) => (v ? new Date(v).toISOString() : null);
 
-        // 1) Subir imagen a Firebase Storage si el usuario seleccionó un archivo
+        // Subir imagen a Firebase Storage si el usuario seleccionó un archivo
         let imageUrlToUse: string | null = imageUrlInput.trim() || null;
         if (imageFile) {
           const safeName = imageFile.name?.replace(/[^a-zA-Z0-9_.-]/g, '_') || 'banner.jpg';
@@ -170,67 +236,86 @@ export default function AnunciosPage() {
           starts_at: toIso(startsAt),
           ends_at: toIso(endsAt)
         };
-        const res = await api.companies.createAnnouncement(cid, payload, token);
-        if (!res.success) throw new Error(res.message || 'Error creando anuncio');
 
-        toast({ title: 'Anuncio creado', description: 'Se creó correctamente.' });
-        // refresh list
-        const list = await api.companies.listAnnouncements(cid, token, { per_page: 50 });
-        const raw = (list.data as any)?.data ?? list.data ?? [];
-        const arr: any[] = Array.isArray(raw) ? raw : Array.isArray(raw?.data) ? raw.data : [];
-        const mapped: UiAd[] = arr.map((a: any) => ({
-          id: String(a.id ?? cryptoRandomId()),
-          title: a.title ?? '',
-          subtitle: a.subtitle ?? '',
-          text: a.text ?? '',
-          link: a.link_url ?? '',
-          imageUrl: a.image_url ?? null,
-          isActive: Boolean(a.is_active ?? true),
-          startsAt: a.starts_at ?? null,
-          endsAt: a.ends_at ?? null,
-          updatedAt: a.updated_at ?? new Date().toISOString(),
-        }));
-        setItems(mapped);
+        if (editingId) {
+          // MODO EDICIÓN
+          const res = await api.companies.updateAnnouncement(cid, editingId, payload, token);
+          if (!res.success) throw new Error(res.message || 'Error actualizando anuncio');
+          toast({ 
+            title: 'Anuncio actualizado', 
+            description: 'Los cambios se guardaron correctamente.',
+            variant: 'default'
+          });
+        } else {
+          // MODO CREACIÓN
+          const res = await api.companies.createAnnouncement(cid, payload, token);
+          if (!res.success) throw new Error(res.message || 'Error creando anuncio');
+          toast({ 
+            title: 'Anuncio creado', 
+            description: 'Se creó correctamente.',
+            variant: 'default'
+          });
+        }
+
+        // Refresh list
+        await refreshList(cid);
+        clearForm();
       } catch (err) {
         console.error(err);
-        toast({ title: 'Error', description: (err as Error).message });
+        toast({ 
+          title: 'Error', 
+          description: (err as Error).message,
+          variant: 'destructive'
+        });
       } finally {
         setLoading(false);
       }
     } else {
       // UI-only fallback
-      const id = cryptoRandomId();
       const now = new Date().toISOString();
       const persistedImageUrl = imageUrlInput || (imageFile ? URL.createObjectURL(imageFile) : imageUrl);
-      setItems((prev) => [
-        {
-          id,
-          title: title.trim(),
-          subtitle: subtitle.trim(),
-          text: text.trim(),
-          link: link.trim(),
-          imageUrl: persistedImageUrl || null,
-          isActive,
-          startsAt: startsAt || null,
-          endsAt: endsAt || null,
-          updatedAt: now,
-        },
-        ...prev,
-      ]);
-      toast({ title: 'Anuncio agregado (UI)', description: 'Se añadió a la tabla local.' });
+      
+      if (editingId) {
+        // Update existing
+        setItems((prev) => prev.map((item) => 
+          item.id === editingId 
+            ? {
+                ...item,
+                title: title.trim(),
+                subtitle: subtitle.trim(),
+                text: text.trim(),
+                link: link.trim(),
+                imageUrl: persistedImageUrl || null,
+                isActive,
+                startsAt: startsAt || null,
+                endsAt: endsAt || null,
+                updatedAt: now,
+              }
+            : item
+        ));
+        toast({ title: 'Anuncio actualizado', description: 'Cambios guardados localmente.' });
+      } else {
+        // Create new
+        const id = cryptoRandomId();
+        setItems((prev) => [
+          {
+            id,
+            title: title.trim(),
+            subtitle: subtitle.trim(),
+            text: text.trim(),
+            link: link.trim(),
+            imageUrl: persistedImageUrl || null,
+            isActive,
+            startsAt: startsAt || null,
+            endsAt: endsAt || null,
+            updatedAt: now,
+          },
+          ...prev,
+        ]);
+        toast({ title: 'Anuncio creado', description: 'Se añadió a la tabla local.' });
+      }
+      clearForm();
     }
-
-    // Clear form after either path
-    setTitle('');
-    setSubtitle('');
-    setText('');
-    setLink('');
-    setImageFile(null);
-    setImageUrl(null);
-    setImageUrlInput('');
-    setIsActive(true);
-    setStartsAt('');
-    setEndsAt('');
   };
 
   return (
@@ -249,7 +334,7 @@ export default function AnunciosPage() {
             <div>
               <CardTitle>Anuncios</CardTitle>
               <CardDescription>
-                {token ? 'Listado desde API (si hay permisos)' : 'Listado en memoria, sin persistencia'}
+                {token ? 'Listado' : 'Listado'}
               </CardDescription>
             </div>
             <span className="text-xs text-slate-500">{loading ? 'Cargando…' : `${items.length} total`}</span>
@@ -257,7 +342,11 @@ export default function AnunciosPage() {
         </CardHeader>
         <CardContent>
           {items.length === 0 ? (
-            <div className="text-sm text-slate-500 py-6 text-center">Aún no hay anuncios. Crea uno con el formulario.</div>
+            <div className="text-center py-12">
+              <Megaphone className="w-12 h-12 mx-auto text-slate-300 mb-3" />
+              <p className="text-slate-600 font-medium mb-1">Aún no hay anuncios</p>
+              <p className="text-sm text-slate-500">Crea tu primer banner usando el formulario abajo</p>
+            </div>
           ) : (
             <div className="overflow-hidden border rounded-lg">
               <Table>
@@ -274,8 +363,13 @@ export default function AnunciosPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {items.map((it) => (
-                    <TableRow key={it.id} className="hover:bg-slate-50">
+                  {sortedItems.map((it) => (
+                    <TableRow 
+                      key={it.id} 
+                      className={`hover:bg-slate-50 transition-colors ${
+                        editingId === it.id ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
+                      }`}
+                    >
                       <TableCell>
                         <div className="w-[100px] h-[56px] overflow-hidden rounded border bg-slate-100">
                           {it.imageUrl ? (
@@ -289,16 +383,43 @@ export default function AnunciosPage() {
                       <TableCell className="font-medium">{it.title || '-'}</TableCell>
                       <TableCell className="text-slate-600">{it.subtitle || '-'}</TableCell>
                       <TableCell className="hidden md:table-cell">
-                        {it.isActive ? (
-                          <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">Activo</span>
-                        ) : (
-                          <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600">Inactivo</span>
-                        )}
+                        <div className="flex flex-col gap-1">
+                          {it.isActive ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700 w-fit">
+                              <CheckCircle className="w-3 h-3" />
+                              Activo
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 w-fit">
+                              <XCircle className="w-3 h-3" />
+                              Inactivo
+                            </span>
+                          )}
+                          {isExpired(it.endsAt) && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700 w-fit">
+                              <AlertCircle className="w-3 h-3" />
+                              Caducado
+                            </span>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell className="hidden md:table-cell text-slate-600 truncate max-w-[220px]">{it.link || '-'}</TableCell>
                       <TableCell className="hidden lg:table-cell text-slate-600 text-xs">
                         {(it.startsAt || it.endsAt) ? (
-                          <span>{it.startsAt ? new Date(it.startsAt).toLocaleString() : '—'} → {it.endsAt ? new Date(it.endsAt).toLocaleString() : '—'}</span>
+                          <div className="flex flex-col gap-1">
+                            {it.startsAt && (
+                              <span className="flex items-center gap-1">
+                                <Calendar className="w-3 h-3" />
+                                Inicio: {new Date(it.startsAt).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}
+                              </span>
+                            )}
+                            {it.endsAt && (
+                              <span className={`flex items-center gap-1 ${isExpired(it.endsAt) ? 'text-red-600 font-medium' : ''}`}>
+                                <Calendar className="w-3 h-3" />
+                                Fin: {new Date(it.endsAt).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}
+                              </span>
+                            )}
+                          </div>
                         ) : '—'}
                       </TableCell>
                       <TableCell className="hidden md:table-cell text-slate-500 text-xs">
@@ -310,38 +431,56 @@ export default function AnunciosPage() {
                             type="button"
                             variant="outline"
                             size="sm"
-                            onClick={() => {
-                              // Rellena el formulario para "editar" (UI)
-                              setTitle(it.title);
-                              setSubtitle(it.subtitle);
-                              setText(it.text);
-                              setLink(it.link);
-                              setImageFile(null);
-                              setImageUrl(it.imageUrl);
-                            }}
+                            onClick={() => handleEdit(it)}
+                            className={editingId === it.id ? 'border-blue-500 bg-blue-50' : ''}
                           >
-                            Editar (UI)
+                            <Edit className="w-4 h-4 mr-1" />
+                            {editingId === it.id ? 'Editando...' : 'Editar'}
                           </Button>
                           <Button
                             type="button"
                             variant="destructive"
                             size="sm"
                             onClick={async () => {
+                              if (!confirm(`¿Estás seguro de eliminar el anuncio "${it.title}"?`)) {
+                                return;
+                              }
+                              
                               if (token && resolvedCompanyId) {
                                 try {
                                   setLoading(true);
                                   await api.companies.deleteAnnouncement(resolvedCompanyId, it.id, token);
                                   setItems((prev) => prev.filter((x) => x.id !== it.id));
+                                  toast({ 
+                                    title: 'Anuncio eliminado', 
+                                    description: 'El anuncio se eliminó correctamente.' 
+                                  });
+                                  // Si estábamos editando este anuncio, limpiar el formulario
+                                  if (editingId === it.id) {
+                                    clearForm();
+                                  }
                                 } catch (e) {
-                                  toast({ title: 'Error', description: 'No se pudo eliminar' });
+                                  toast({ 
+                                    title: 'Error', 
+                                    description: 'No se pudo eliminar el anuncio',
+                                    variant: 'destructive'
+                                  });
                                 } finally {
                                   setLoading(false);
                                 }
                               } else {
                                 setItems((prev) => prev.filter((x) => x.id !== it.id));
+                                if (editingId === it.id) {
+                                  clearForm();
+                                }
+                                toast({ 
+                                  title: 'Anuncio eliminado', 
+                                  description: 'Removido de la lista local.' 
+                                });
                               }
                             }}
                           >
+                            <Trash2 className="w-4 h-4 mr-1" />
                             Eliminar
                           </Button>
                         </div>
@@ -357,10 +496,42 @@ export default function AnunciosPage() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <form onSubmit={onSubmit} className="space-y-6">
-          <Card>
+          <Card className={editingId ? 'border-2 border-blue-500 shadow-lg' : ''}>
             <CardHeader>
-              <CardTitle>Contenido del anuncio</CardTitle>
-              <CardDescription>Define los textos y el enlace del banner</CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    {editingId ? (
+                      <>
+                        <Edit className="w-5 h-5" />
+                        Editar anuncio
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="w-5 h-5" />
+                        Crear nuevo anuncio
+                      </>
+                    )}
+                  </CardTitle>
+                  <CardDescription>
+                    {editingId 
+                      ? 'Modifica los datos y guarda los cambios' 
+                      : 'Define los textos y el enlace del banner'}
+                  </CardDescription>
+                </div>
+                {editingId && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearForm}
+                    className="text-slate-600 hover:text-slate-900"
+                  >
+                    <X className="w-4 h-4 mr-1" />
+                    Cancelar edición
+                  </Button>
+                )}
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between border rounded-lg p-3">
@@ -445,8 +616,35 @@ export default function AnunciosPage() {
           </Card>
 
           <div className="flex justify-end gap-3">
-            <Button type="button" variant="outline" onClick={() => router.push('/dashboard')}>Cancelar</Button>
-            <Button type="submit" disabled={loading} className="bg-emerald-600 hover:bg-emerald-700">{token ? (loading ? 'Guardando…' : 'Guardar') : 'Guardar'}</Button>
+            {editingId && (
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={clearForm}
+                disabled={loading}
+              >
+                Cancelar edición
+              </Button>
+            )}
+            <Button 
+              type="submit" 
+              disabled={loading || !title.trim()} 
+              className={editingId ? 'bg-blue-600 hover:bg-blue-700' : 'bg-emerald-600 hover:bg-emerald-700'}
+            >
+              {loading ? (
+                'Guardando…'
+              ) : editingId ? (
+                <>
+                  <Check className="w-4 h-4 mr-2" />
+                  Actualizar anuncio
+                </>
+              ) : (
+                <>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Crear anuncio
+                </>
+              )}
+            </Button>
           </div>
         </form>
 

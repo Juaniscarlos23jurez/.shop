@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { api } from "@/lib/api/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { storage } from "@/lib/firebase";
@@ -39,6 +40,14 @@ export default function ComponentesPlaygroundPage() {
   const [popupButtonLabel, setPopupButtonLabel] = useState("Ir a la promo");
   const [popupButtonUrl, setPopupButtonUrl] = useState("https://tutienda.com/promo");
   const [popupButtonColor, setPopupButtonColor] = useState("#059669");
+
+  // Ticket preview state (solo visual, sin guardar aún)
+  const [ticketBusinessName, setTicketBusinessName] = useState("Mi Negocio");
+  const [ticketBusinessAddress, setTicketBusinessAddress] = useState("Calle 123, Colonia, Ciudad");
+  const [ticketBusinessPhone, setTicketBusinessPhone] = useState("55 1234 5678");
+  const [ticketFooterMessage, setTicketFooterMessage] = useState("Gracias por tu compra");
+  const [ticketAccentColor, setTicketAccentColor] = useState("#000000");
+  const [ticketLogoUrl, setTicketLogoUrl] = useState<string | null>(null);
 
   // Loading / saving state
   const [loadingSettings, setLoadingSettings] = useState(false);
@@ -89,6 +98,31 @@ export default function ComponentesPlaygroundPage() {
 
     loadSettings();
   }, [token, user?.company_id]);
+
+  // Load company data for ticket
+  useEffect(() => {
+    const loadCompany = async () => {
+      if (!token) return;
+      try {
+        const res = await api.userCompanies.get(token);
+        const payload: any = res && (res as any).data ? (res as any).data : res;
+        // Soportar forma { status: 'success', data: { ...company } } o directa
+        const company: any = payload?.data || payload;
+
+        if (company) {
+          if (company.name) setTicketBusinessName(company.name);
+          const parts = [company.address, company.city, company.state].filter(Boolean);
+          if (parts.length) setTicketBusinessAddress(parts.join(", "));
+          if (company.phone) setTicketBusinessPhone(company.phone);
+          if (company.logo_url) setTicketLogoUrl(company.logo_url);
+        }
+      } catch (error) {
+        console.error("Error loading company for ticket preview", error);
+      }
+    };
+
+    loadCompany();
+  }, [token]);
 
   const handleSave = async () => {
     if (!token || !user?.company_id) return;
@@ -205,9 +239,16 @@ export default function ComponentesPlaygroundPage() {
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Banner demo + config */}
-        <Card className="border-dashed">
+      <Tabs defaultValue="componentes" className="mt-4">
+        <TabsList>
+          <TabsTrigger value="componentes">Componentes</TabsTrigger>
+          <TabsTrigger value="ticket">Diseño de ticket</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="componentes" className="mt-4">
+          <div className="grid gap-6 lg:grid-cols-2">
+            {/* Banner demo + config */}
+            <Card className="border-dashed">
           <CardHeader className="flex flex-row items-center justify-between gap-4">
             <div>
               <CardTitle className="flex items-center gap-2 text-lg">
@@ -307,10 +348,10 @@ export default function ComponentesPlaygroundPage() {
               </div>
             </div>
           </CardContent>
-        </Card>
+            </Card>
 
-        {/* Modal demo + config */}
-        <Card className="border-dashed">
+            {/* Modal demo + config */}
+            <Card className="border-dashed">
           <CardHeader className="flex flex-row items-center justify-between gap-4">
             <div>
               <CardTitle className="flex items-center gap-2 text-lg">
@@ -441,14 +482,7 @@ export default function ComponentesPlaygroundPage() {
                     <DialogTitle>{popupTitle}</DialogTitle>
                     <DialogDescription>{popupDescription}</DialogDescription>
                   </DialogHeader>
-                  <div className="space-y-3 text-sm text-muted-foreground mt-2">
-                    <p>
-                      Personaliza este contenido, agrega más textos o acciones según el tipo de pop-up que quieras mostrar.
-                    </p>
-                    <p>
-                      Más adelante podrás conectar esta configuración con tu backend o reglas de negocio.
-                    </p>
-                  </div>
+                 
                   {popupButtonLabel && popupButtonUrl && (
                     <div className="pt-2 flex justify-center">
                       <Button
@@ -469,8 +503,120 @@ export default function ComponentesPlaygroundPage() {
               </DialogContent>
             </Dialog>
           </CardContent>
-        </Card>
-      </div>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="ticket" className="mt-4">
+          <div className="grid gap-6 lg:grid-cols-2">
+            {/* Ticket design preview + config */}
+            <Card className="border-dashed">
+          <CardHeader className="flex flex-row items-center justify-between gap-4">
+            <div>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <LayoutTemplate className="h-5 w-5 text-zinc-700" />
+                Diseño de ticket
+              </CardTitle>
+              <CardDescription>
+                Vista previa del ticket que verán tus clientes cuando completes una venta.
+              </CardDescription>
+            </div>
+            <Badge variant="outline" className="text-xs font-normal">Solo vista previa</Badge>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Ticket preview + form en dos columnas */}
+            <div className="grid gap-6 lg:grid-cols-2 items-start">
+              <div
+                className="mx-auto w-full max-w-sm rounded-xl border bg-background px-4 py-4 shadow-sm text-xs font-mono"
+                style={{ borderColor: ticketAccentColor || "#e5e5e5" }}
+              >
+                <div className="text-center space-y-1 mb-3">
+                  {ticketLogoUrl && (
+                    <div className="flex justify-center mb-1">
+                      <img
+                        src={ticketLogoUrl}
+                        alt={ticketBusinessName}
+                        className="h-10 w-10 rounded-full object-cover border border-muted-foreground/30"
+                      />
+                    </div>
+                  )}
+                  <p
+                    className="font-semibold uppercase tracking-wide"
+                    style={{ color: ticketAccentColor || undefined }}
+                  >
+                    {ticketBusinessName}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground leading-snug">{ticketBusinessAddress}</p>
+                  <p className="text-[11px] text-muted-foreground">Tel. {ticketBusinessPhone}</p>
+                </div>
+                <div className="flex justify-between text-[11px] mb-1">
+                  <span>Ticket #1234</span>
+                  <span>29/11/2025 14:35</span>
+                </div>
+                <div className="border-t border-dashed my-1" />
+                <div className="space-y-1 mb-2">
+                  <div className="flex justify-between gap-2">
+                    <span>Producto demo 1</span>
+                    <span>$120.00</span>
+                  </div>
+                  <div className="flex justify-between gap-2">
+                    <span>Producto demo 2</span>
+                    <span>$80.00</span>
+                  </div>
+                </div>
+                <div className="border-t border-dashed my-1" />
+                <div className="flex justify-between text-[11px] font-semibold mb-2">
+                  <span style={{ color: ticketAccentColor || undefined }}>Total</span>
+                  <span style={{ color: ticketAccentColor || undefined }}>$200.00</span>
+                </div>
+                <div className="mt-3 pt-2 border-t text-center text-[11px] text-muted-foreground leading-snug">
+                  <p>{ticketFooterMessage}</p>
+                  <p>Conserva este comprobante.</p>
+                </div>
+              </div>
+
+              {/* Ticket config form */}
+              <div className="flex-1 space-y-3 text-sm">
+                <p className="text-xs text-muted-foreground">
+                  Ajusta los textos principales del ticket. Más adelante podrás conectar esta configuración con los
+                  datos reales de tus ventas.
+                </p>
+                <div className="space-y-1">
+                  <label className="font-medium text-xs uppercase tracking-wide text-muted-foreground">
+                    Mensaje de agradecimiento
+                  </label>
+                  <Textarea
+                    value={ticketFooterMessage}
+                    onChange={(e) => setTicketFooterMessage(e.target.value)}
+                    rows={2}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="font-medium text-xs uppercase tracking-wide text-muted-foreground">
+                    Color de acento del ticket
+                  </label>
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                    <input
+                      type="color"
+                      value={ticketAccentColor}
+                      onChange={(e) => setTicketAccentColor(e.target.value)}
+                      className="h-9 w-9 cursor-pointer rounded-md border border-input bg-background p-1"
+                    />
+                    <Input
+                      value={ticketAccentColor}
+                      onChange={(e) => setTicketAccentColor(e.target.value)}
+                      className="max-w-[140px] text-xs"
+                    />
+                    <span className="hidden sm:inline">Ejemplo: #000000</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
