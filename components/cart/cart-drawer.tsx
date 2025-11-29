@@ -3,7 +3,8 @@
 import React, { useState, useMemo } from 'react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
-import { Minus, Plus, Trash2 } from 'lucide-react'
+import * as Lucide from 'lucide-react'
+const { Minus, Plus, Trash2, Share2 } = Lucide as any
 import { useCart } from '@/lib/cart-context'
 import Image from 'next/image'
 import { Input } from '@/components/ui/input'
@@ -30,6 +31,40 @@ export function CartDrawer({ open, onClose, locationPhone, locationName }: CartD
     if (digits.startsWith('52')) return digits
     if (digits.startsWith('0')) return `52${digits.slice(1)}`
     return `52${digits}`
+  }
+
+  const handleShareCart = () => {
+    if (typeof window === 'undefined' || items.length === 0) return
+    
+    // Codificar items del carrito en la URL
+    const cartData = items.map(item => ({
+      id: item.id,
+      q: item.quantity, // quantity abreviado para URL más corta
+    }))
+    const cartParam = encodeURIComponent(JSON.stringify(cartData))
+    
+    // Obtener URL base sin query params
+    const baseUrl = window.location.href.split('#')[0].split('?')[0]
+    const shareUrl = `${baseUrl}?cart=${cartParam}`
+    
+    const shareText = `Mira mi carrito de compras en ${locationName || 'esta tienda'} - Total: $${totalFormatted}`
+    
+    const shareData: ShareData = {
+      title: `Carrito de ${locationName || 'Tienda'}`,
+      text: shareText,
+      url: shareUrl,
+    }
+    
+    if (navigator && (navigator as any).share) {
+      (navigator as any).share(shareData).catch(() => {
+        // Si falla el share nativo, copiar al portapapeles
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(`${shareText} ${shareUrl}`)
+        }
+      })
+    } else if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(`${shareText} ${shareUrl}`)
+    }
   }
 
   const handleCheckout = () => {
@@ -187,6 +222,14 @@ export function CartDrawer({ open, onClose, locationPhone, locationName }: CartD
                   }}
                 >
                   Proceder al Pago por WhatsApp
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full flex items-center justify-center gap-2"
+                  onClick={handleShareCart}
+                >
+                  <Share2 className="h-4 w-4" />
+                  Compartir Carrito
                 </Button>
                 <Button
                   variant="outline"

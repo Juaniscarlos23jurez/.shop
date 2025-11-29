@@ -97,11 +97,12 @@ function isFresh(entry: { ts: number } | null, ttlMs: number) {
   return Date.now() - entry.ts < ttlMs;
 }
 
-export default function PublicLocationProductsPage() {
+function PublicLocationProductsPageContent() {
   const params = useParams();
   const router = useRouter();
   const companySlug = params.companySlug as string;
   const locationId = params.locationId as string;
+  const { addItem } = useCart();
 
   const [location, setLocation] = useState<PublicCompanyLocation | null>(null);
   const [company, setCompany] = useState<any>(null);
@@ -199,6 +200,38 @@ export default function PublicLocationProductsPage() {
       console.warn('Error reading product from URL', e);
     }
   }, []);
+
+  // Read cart from query string to pre-fill cart when shared
+  useEffect(() => {
+    if (typeof window === 'undefined' || !items || items.length === 0) return;
+    
+    try {
+      const url = new URL(window.location.href);
+      const cartParam = url.searchParams.get('cart');
+      
+      if (cartParam) {
+        const cartData = JSON.parse(decodeURIComponent(cartParam)) as Array<{ id: string; q: number }>;
+        
+        // Agregar items al carrito
+        cartData.forEach(({ id, q }) => {
+          const product = items.find(item => String(item.id) === id);
+          if (product) {
+            // Agregar el producto q veces
+            for (let i = 0; i < q; i++) {
+              addItem(product as any);
+            }
+          }
+        });
+        
+        // Limpiar el query param después de cargar
+        const newUrl = new URL(window.location.href);
+        newUrl.searchParams.delete('cart');
+        window.history.replaceState({}, '', newUrl.toString());
+      }
+    } catch (e) {
+      console.warn('Error reading cart from URL', e);
+    }
+  }, [items, addItem]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -596,8 +629,7 @@ export default function PublicLocationProductsPage() {
 
 
   return (
-    <CartProvider>
-      <div className="min-h-screen bg-gray-50 pb-32 relative">
+    <div className="min-h-screen bg-gray-50 pb-32 relative">
         {/* Banner from UI Settings */}
         {uiSettings?.banner_enabled && uiSettings.banner_text && (
           <div 
@@ -1188,53 +1220,60 @@ export default function PublicLocationProductsPage() {
         />
 
         <BottomNav activeSection={activeSection} onSectionChange={setActiveSection} />
-      </div>
 
-      {/* Popup Modal from UI Settings */}
-      <Dialog open={popupOpen} onOpenChange={(open) => {
-        setPopupOpen(open);
-      }}>
-        <DialogContent className="w-[90%] sm:max-w-md rounded-2xl p-0 overflow-hidden">
-          {uiSettings?.popup_image_url && (
-            <div className="w-full h-64 sm:h-72 overflow-hidden">
-              <img 
-                src={uiSettings.popup_image_url} 
-                alt={uiSettings.popup_title || 'Popup'} 
-                className="w-full h-full object-cover"
-              />
-            </div>
-          )}
-          <div className="px-5 py-4 space-y-4">
-            <DialogHeader className="p-0">
-              {uiSettings?.popup_title && (
-                <DialogTitle className="text-xl font-bold">{uiSettings.popup_title}</DialogTitle>
-              )}
-              {uiSettings?.popup_description && (
-                <DialogDescription className="text-base mt-2">
-                  {uiSettings.popup_description}
-                </DialogDescription>
-              )}
-            </DialogHeader>
-
-            {uiSettings?.popup_button_label && uiSettings?.popup_button_url && (
-              <div className="pt-2 flex justify-center">
-                <Button
-                  className="w-[90%] max-w-xs text-sm font-semibold rounded-full"
-                  style={{
-                    backgroundColor: uiSettings.popup_button_color || '#059669',
-                    color: '#ffffff',
-                  }}
-                  onClick={() => {
-                    window.open(uiSettings.popup_button_url, '_blank');
-                  }}
-                >
-                  {uiSettings.popup_button_label}
-                </Button>
+        {/* Popup Modal from UI Settings */}
+        <Dialog open={popupOpen} onOpenChange={(open) => {
+          setPopupOpen(open);
+        }}>
+          <DialogContent className="w-[90%] sm:max-w-md rounded-2xl p-0 overflow-hidden">
+            {uiSettings?.popup_image_url && (
+              <div className="w-full h-64 sm:h-72 overflow-hidden">
+                <img 
+                  src={uiSettings.popup_image_url} 
+                  alt={uiSettings.popup_title || 'Popup'} 
+                  className="w-full h-full object-cover"
+                />
               </div>
             )}
-          </div>
-        </DialogContent>
-      </Dialog>
+            <div className="px-5 py-4 space-y-4">
+              <DialogHeader className="p-0">
+                {uiSettings?.popup_title && (
+                  <DialogTitle className="text-xl font-bold">{uiSettings.popup_title}</DialogTitle>
+                )}
+                {uiSettings?.popup_description && (
+                  <DialogDescription className="text-base mt-2">
+                    {uiSettings.popup_description}
+                  </DialogDescription>
+                )}
+              </DialogHeader>
+
+              {uiSettings?.popup_button_label && uiSettings?.popup_button_url && (
+                <div className="pt-2 flex justify-center">
+                  <Button
+                    className="w-[90%] max-w-xs text-sm font-semibold rounded-full"
+                    style={{
+                      backgroundColor: uiSettings.popup_button_color || '#059669',
+                      color: '#ffffff',
+                    }}
+                    onClick={() => {
+                      window.open(uiSettings.popup_button_url, '_blank');
+                    }}
+                  >
+                    {uiSettings.popup_button_label}
+                  </Button>
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+  );
+}
+
+export default function PublicLocationProductsPage() {
+  return (
+    <CartProvider>
+      <PublicLocationProductsPageContent />
     </CartProvider>
   );
 }
