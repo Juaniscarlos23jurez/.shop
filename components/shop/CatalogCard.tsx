@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import * as Lucide from "lucide-react";
-const { Package, Phone, Share2 } = Lucide as any;
+const { Package, Phone, Share2, X } = Lucide as any;
 import { formatCurrency } from "@/lib/utils/currency";
 import { useCart } from "@/lib/cart-context";
 import { PublicItem } from "@/types/api";
@@ -132,62 +132,7 @@ export function CatalogCard({ item, locationId, phone, initialOpen = false }: Ca
                   >
                     Agregar al carrito
                   </Button>
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    className="w-full sm:w-auto flex items-center justify-center gap-2"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (typeof window === "undefined") return;
-                      const baseUrl = window.location.href.split("#")[0].split("?")[0];
-                      const productUrl = `${baseUrl}?product=${encodeURIComponent(String(item.id))}`;
-                      const parts: string[] = [];
-                      parts.push(item.name);
-                      if (item.description) {
-                        parts.push(`- ${item.description}`);
-                      }
-                      const text = parts.join(" ");
 
-                      const shareData: ShareData = {
-                        title: item.name,
-                        text,
-                        url: productUrl,
-                      };
-
-                      if (navigator && (navigator as any).share) {
-                        (navigator as any).share(shareData).catch(() => {
-                          if (navigator.clipboard && navigator.clipboard.writeText) {
-                            navigator.clipboard.writeText(text).catch(() => {
-                              const textarea = document.createElement("textarea");
-                              textarea.value = text;
-                              document.body.appendChild(textarea);
-                              textarea.select();
-                              try {
-                                document.execCommand("copy");
-                              } finally {
-                                document.body.removeChild(textarea);
-                              }
-                            });
-                          }
-                        });
-                      } else if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
-                        navigator.clipboard.writeText(text).catch(() => {
-                          const textarea = document.createElement("textarea");
-                          textarea.value = text;
-                          document.body.appendChild(textarea);
-                          textarea.select();
-                          try {
-                            document.execCommand("copy");
-                          } finally {
-                            document.body.removeChild(textarea);
-                          }
-                        });
-                      }
-                    }}
-                  >
-                    <Share2 className="h-5 w-5" />
-                    <span>Compartir Tienda</span>
-                  </Button>
                 </div>
               ) : (
                 <div className="flex items-center justify-between gap-3">
@@ -237,13 +182,23 @@ export function CatalogCard({ item, locationId, phone, initialOpen = false }: Ca
               </div>
 
               <div className="overflow-y-auto px-6 pb-6">
-                <div className="sticky top-0 bg-white pt-2 pb-4 mb-4 border-b">
-                  <h2 className="text-2xl font-bold text-gray-900">{item.name}</h2>
-                  {item.category && (
-                    <Badge className="w-fit bg-emerald-600 mt-2">
-                      {item.category}
-                    </Badge>
-                  )}
+                <div className="sticky top-0 bg-white pt-2 pb-4 mb-4 border-b flex justify-between items-start">
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900">{item.name}</h2>
+                    {item.category && (
+                      <Badge className="w-fit bg-emerald-600 mt-2">
+                        {item.category}
+                      </Badge>
+                    )}
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setIsModalOpen(false)}
+                    className="-mr-2 -mt-2 rounded-full"
+                  >
+                    <X className="h-6 w-6" />
+                  </Button>
                 </div>
 
                 {item.image_url ? (
@@ -253,6 +208,22 @@ export function CatalogCard({ item, locationId, phone, initialOpen = false }: Ca
                       alt={item.name}
                       className="max-w-full h-auto object-contain rounded-xl"
                       style={{ maxHeight: "350px" }}
+                      onLoad={() => {
+                        console.log('✅ Product image loaded successfully:', item.image_url);
+                      }}
+                      onError={(e) => {
+                        console.error('❌ Error loading product image:', {
+                          url: item.image_url,
+                          productId: item.id,
+                          productName: item.name,
+                          error: e
+                        });
+                        (e.target as HTMLImageElement).style.display = 'none';
+                        const parent = (e.target as HTMLImageElement).parentElement;
+                        if (parent) {
+                          parent.innerHTML = '<div class="w-full h-64 flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl"><svg class="h-24 w-24 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg></div>';
+                        }
+                      }}
                     />
                   </div>
                 ) : (
