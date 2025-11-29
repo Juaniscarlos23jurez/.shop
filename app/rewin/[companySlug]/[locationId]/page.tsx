@@ -607,7 +607,7 @@ export default function PublicLocationProductsPage() {
 
         {/* Follow Button (Left Side) */}
         {user && company && (
-          <div className="fixed top-12 left-6 z-50">
+          <div className="fixed top-16 left-6 z-50">
             <Button
               className={`group gap-2 shadow-xl border-2 h-16 px-6 text-lg font-semibold rounded-full transition-all ${isFollowing
                 ? 'bg-white text-emerald-600 border-emerald-100 hover:bg-red-50 hover:text-red-600 hover:border-red-100'
@@ -667,7 +667,7 @@ export default function PublicLocationProductsPage() {
         )}
 
         {/* Login/User Button (Right Side) + Descargar app */}
-        <div className="fixed top-12 right-6 z-50 flex items-center gap-3">
+        <div className="fixed top-16 right-6 z-50 flex items-center gap-3">
           {user ? (
             <>
               <Button
@@ -1178,9 +1178,9 @@ export default function PublicLocationProductsPage() {
       <Dialog open={popupOpen} onOpenChange={(open) => {
         setPopupOpen(open);
       }}>
-        <DialogContent className="w-[90%] sm:max-w-md rounded-2xl p-0">
+        <DialogContent className="w-[90%] sm:max-w-md rounded-2xl p-0 overflow-hidden">
           {uiSettings?.popup_image_url && (
-            <div className="w-full h-48 rounded-lg overflow-hidden mb-4">
+            <div className="w-full h-64 sm:h-72 overflow-hidden">
               <img 
                 src={uiSettings.popup_image_url} 
                 alt={uiSettings.popup_title || 'Popup'} 
@@ -1188,17 +1188,35 @@ export default function PublicLocationProductsPage() {
               />
             </div>
           )}
-          <DialogHeader>
-            {uiSettings?.popup_title && (
-              <DialogTitle className="text-xl font-bold">{uiSettings.popup_title}</DialogTitle>
+          <div className="px-5 py-4 space-y-4">
+            <DialogHeader className="p-0">
+              {uiSettings?.popup_title && (
+                <DialogTitle className="text-xl font-bold">{uiSettings.popup_title}</DialogTitle>
+              )}
+              {uiSettings?.popup_description && (
+                <DialogDescription className="text-base mt-2">
+                  {uiSettings.popup_description}
+                </DialogDescription>
+              )}
+            </DialogHeader>
+
+            {uiSettings?.popup_button_label && uiSettings?.popup_button_url && (
+              <div className="pt-2 flex justify-center">
+                <Button
+                  className="w-[90%] max-w-xs text-sm font-semibold rounded-full"
+                  style={{
+                    backgroundColor: uiSettings.popup_button_color || '#059669',
+                    color: '#ffffff',
+                  }}
+                  onClick={() => {
+                    window.open(uiSettings.popup_button_url, '_blank');
+                  }}
+                >
+                  {uiSettings.popup_button_label}
+                </Button>
+              </div>
             )}
-            {uiSettings?.popup_description && (
-              <DialogDescription className="text-base mt-2">
-                {uiSettings.popup_description}
-              </DialogDescription>
-            )}
-          </DialogHeader>
-           
+          </div>
         </DialogContent>
       </Dialog>
     </CartProvider>

@@ -36,6 +36,9 @@ export default function ComponentesPlaygroundPage() {
   const [popupDescription, setPopupDescription] = useState(
     "Aquí puedes previsualizar cómo se vería un mensaje importante, un formulario o una promoción en un modal."
   );
+  const [popupButtonLabel, setPopupButtonLabel] = useState("Ir a la promo");
+  const [popupButtonUrl, setPopupButtonUrl] = useState("https://tutienda.com/promo");
+  const [popupButtonColor, setPopupButtonColor] = useState("#059669");
 
   // Loading / saving state
   const [loadingSettings, setLoadingSettings] = useState(false);
@@ -72,6 +75,9 @@ export default function ComponentesPlaygroundPage() {
             if (typeof settings.popup_image_url === "string") setPopupImageUrl(settings.popup_image_url);
             if (typeof settings.popup_title === "string") setPopupTitle(settings.popup_title);
             if (typeof settings.popup_description === "string") setPopupDescription(settings.popup_description);
+            if (typeof settings.popup_button_label === "string") setPopupButtonLabel(settings.popup_button_label);
+            if (typeof settings.popup_button_url === "string") setPopupButtonUrl(settings.popup_button_url);
+            if (typeof settings.popup_button_color === "string") setPopupButtonColor(settings.popup_button_color);
           }
         }
       } catch (e) {
@@ -145,6 +151,9 @@ export default function ComponentesPlaygroundPage() {
         popup_image_url: finalPopupImageUrl,
         popup_title: popupTitle,
         popup_description: popupDescription,
+        popup_button_label: popupButtonLabel,
+        popup_button_url: popupButtonUrl,
+        popup_button_color: popupButtonColor,
       };
 
       console.log("[UI Settings] Enviando payload a api.uiSettings.upsert", payload);
@@ -374,43 +383,88 @@ export default function ComponentesPlaygroundPage() {
                   rows={3}
                 />
               </div>
+              <div className="space-y-1">
+                <label className="font-medium text-xs uppercase tracking-wide text-muted-foreground">
+                  Texto del botón
+                </label>
+                <Input
+                  value={popupButtonLabel}
+                  onChange={(e) => setPopupButtonLabel(e.target.value)}
+                  placeholder="Ej: Ir al grupo de WhatsApp"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="font-medium text-xs uppercase tracking-wide text-muted-foreground">
+                  Link del botón
+                </label>
+                <Input
+                  value={popupButtonUrl}
+                  onChange={(e) => setPopupButtonUrl(e.target.value)}
+                  placeholder="https://..."
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="font-medium text-xs uppercase tracking-wide text-muted-foreground">
+                  Color del botón
+                </label>
+                <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                  <input
+                    type="color"
+                    value={popupButtonColor}
+                    onChange={(e) => setPopupButtonColor(e.target.value)}
+                    className="h-9 w-9 cursor-pointer rounded-md border border-input bg-background p-1"
+                  />
+                  <Input
+                    value={popupButtonColor}
+                    onChange={(e) => setPopupButtonColor(e.target.value)}
+                    className="max-w-[140px] text-xs"
+                  />
+                  <span className="hidden sm:inline">Ejemplo: #059669</span>
+                </div>
+              </div>
             </div>
 
             {/* Dialog preview */}
             <Dialog open={openDemoModal && popupEnabled} onOpenChange={setOpenDemoModal}>
-              <DialogContent className="max-w-md">
-                <DialogHeader>
-                  <DialogTitle>{popupTitle}</DialogTitle>
-                  <DialogDescription>{popupDescription}</DialogDescription>
-                </DialogHeader>
+              <DialogContent className="w-[90%] sm:max-w-md rounded-2xl p-0 overflow-hidden">
                 {popupImageUrl && (
-                  <div className="mt-3 overflow-hidden rounded-xl border bg-muted">
+                  <div className="w-full h-64 sm:h-72 overflow-hidden">
                     <img
                       src={popupImageUrl}
                       alt={popupTitle}
-                      className="h-48 w-full object-cover"
+                      className="h-full w-full object-cover"
                     />
                   </div>
                 )}
-                <div className="space-y-3 text-sm text-muted-foreground mt-3">
-                  <p>
-                    Personaliza este contenido, agrega más textos o acciones según el tipo de pop-up que quieras mostrar.
-                  </p>
-                  <p>
-                    Más adelante podrás conectar esta configuración con tu backend o reglas de negocio.
-                  </p>
-                </div>
-                <div className="mt-4 flex justify-end gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setOpenDemoModal(false)}
-                  >
-                    Cerrar
-                  </Button>
-                  <Button size="sm" onClick={() => setOpenDemoModal(false)}>
-                    Entendido
-                  </Button>
+                <div className="px-5 py-4 space-y-4">
+                  <DialogHeader className="p-0">
+                    <DialogTitle>{popupTitle}</DialogTitle>
+                    <DialogDescription>{popupDescription}</DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-3 text-sm text-muted-foreground mt-2">
+                    <p>
+                      Personaliza este contenido, agrega más textos o acciones según el tipo de pop-up que quieras mostrar.
+                    </p>
+                    <p>
+                      Más adelante podrás conectar esta configuración con tu backend o reglas de negocio.
+                    </p>
+                  </div>
+                  {popupButtonLabel && popupButtonUrl && (
+                    <div className="pt-2 flex justify-center">
+                      <Button
+                        className="w-[90%] max-w-xs text-sm font-semibold rounded-full"
+                        style={{
+                          backgroundColor: popupButtonColor || '#059669',
+                          color: '#ffffff',
+                        }}
+                        onClick={() => {
+                          window.open(popupButtonUrl, '_blank');
+                        }}
+                      >
+                        {popupButtonLabel}
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </DialogContent>
             </Dialog>
