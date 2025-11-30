@@ -662,30 +662,7 @@ function PublicLocationProductsPageContent() {
       {/* Follow Button (Left Side) */}
       {user && company && (
         <div className="fixed top-16 left-6 z-50">
-          <Button
-            className={`group gap-2 shadow-xl border-2 h-16 px-6 text-lg font-semibold rounded-full transition-all ${isFollowing
-              ? 'bg-white text-emerald-600 border-emerald-100 hover:bg-red-50 hover:text-red-600 hover:border-red-100'
-              : 'bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700'
-              }`}
-            onClick={() => {
-              if (isFollowing) {
-                setIsFollowing(false);
-              } else {
-                setIsFollowing(true);
-              }
-            }}
-          >
-            {isFollowing ? (
-              <>
-                <span className="group-hover:hidden">Siguiendo</span>
-                <span className="hidden group-hover:inline">Dejar de seguir</span>
-              </>
-            ) : (
-              <>
-                <span>Seguir</span>
-              </>
-            )}
-          </Button>
+         
 
           {/* Botón Descargar app solo en móvil, debajo del botón Seguir */}
           <div className="mt-3 sm:hidden">
@@ -844,7 +821,7 @@ function PublicLocationProductsPageContent() {
             <div className="flex flex-row items-center sm:items-start gap-4 sm:gap-6">
               {/* Logo */}
               {company?.logo_url && (
-                <div className="flex-shrink-0">
+                <div className="flex-shrink-0 flex flex-col items-center gap-3">
                   <img
                     src={company.logo_url}
                     alt={company.name}
@@ -863,6 +840,34 @@ function PublicLocationProductsPageContent() {
                       img.style.display = 'none';
                     }}
                   />
+                  
+                  {/* Follow Button */}
+                  {user && company && (
+                    <Button
+                      className={`group gap-2 shadow-lg border-2 h-12 px-4 text-sm font-semibold rounded-full transition-all ${isFollowing
+                        ? 'bg-white text-emerald-600 border-emerald-100 hover:bg-red-50 hover:text-red-600 hover:border-red-100'
+                        : 'bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700'
+                        }`}
+                      onClick={() => {
+                        if (isFollowing) {
+                          setIsFollowing(false);
+                        } else {
+                          setIsFollowing(true);
+                        }
+                      }}
+                    >
+                      {isFollowing ? (
+                        <>
+                          <span className="group-hover:hidden">Siguiendo</span>
+                          <span className="hidden group-hover:inline">Dejar de seguir</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>Seguir</span>
+                        </>
+                      )}
+                    </Button>
+                  )}
                 </div>
               )}
 
