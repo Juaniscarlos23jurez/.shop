@@ -74,8 +74,8 @@ export default function HomePage() {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
         </svg>
       ),
-      title: "Crea tu Sitio Web",
-      description: "Diseña tu sitio web con catálogo de productos, mapas y más. Sin código.",
+      title: "Tu Propio Sitio Web",
+      description: "Crea tu tienda en línea con catálogo, carrito y pagos en minutos.",
       visual: (
         <div className="relative w-full h-32 bg-purple-50/50 rounded-xl flex items-center justify-center overflow-hidden group-hover:bg-purple-50 transition-colors">
           <div className="bg-white border border-purple-100 rounded-lg shadow-sm w-44 overflow-hidden transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
@@ -90,6 +90,28 @@ export default function HomePage() {
                 <div className="h-8 bg-gray-50 rounded border border-gray-100"></div>
                 <div className="h-8 bg-gray-50 rounded border border-gray-100"></div>
               </div>
+            </div>
+          </div>
+        </div>
+      )
+    },
+    {
+      icon: (
+        <svg className="h-6 w-6 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+        </svg>
+      ),
+      title: "App Rewin Reward",
+      description: "Aparece en nuestra app y permite que nuevos clientes te descubran.",
+      visual: (
+        <div className="relative w-full h-32 bg-orange-50/50 rounded-xl flex items-center justify-center overflow-hidden group-hover:bg-orange-50 transition-colors">
+          <div className="bg-white border border-orange-100 rounded-xl shadow-sm w-20 h-28 transform rotate-12 group-hover:rotate-0 transition-transform duration-300 relative overflow-hidden">
+            <div className="absolute top-0 left-0 right-0 h-4 bg-gray-50 border-b border-gray-100 flex justify-center items-center">
+              <div className="w-8 h-1 bg-gray-200 rounded-full"></div>
+            </div>
+            <div className="p-2 mt-2 space-y-1">
+              <div className="w-full h-8 bg-orange-100 rounded-lg"></div>
+              <div className="w-full h-8 bg-gray-50 rounded-lg border border-gray-100"></div>
             </div>
           </div>
         </div>
@@ -219,6 +241,33 @@ export default function HomePage() {
                 </div>
                 <div className="text-[8px] font-mono text-gray-400">0</div>
               </div>
+            </div>
+          </div>
+        </div>
+      )
+    },
+    {
+      icon: (
+        <svg className="h-6 w-6 text-rose-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+        </svg>
+      ),
+      title: "Notificaciones & Email",
+      description: "Envía notificaciones push y correos automáticos para recuperar ventas.",
+      visual: (
+        <div className="relative w-full h-32 bg-rose-50/50 rounded-xl flex items-center justify-center overflow-hidden group-hover:bg-rose-50 transition-colors">
+          <div className="bg-white border border-rose-100 rounded-lg shadow-sm w-44 p-3 relative">
+            <div className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold animate-bounce">1</div>
+            <div className="flex items-start gap-3 mb-3">
+              <div className="w-8 h-8 rounded-full bg-gray-100 flex-shrink-0"></div>
+              <div className="space-y-1.5 w-full">
+                <div className="h-2 bg-gray-200 rounded w-3/4"></div>
+                <div className="h-2 bg-gray-100 rounded w-full"></div>
+                <div className="h-2 bg-gray-100 rounded w-1/2"></div>
+              </div>
+            </div>
+            <div className="w-full h-8 bg-rose-500 rounded text-white text-[10px] flex items-center justify-center font-medium">
+              Ver Oferta
             </div>
           </div>
         </div>
@@ -586,10 +635,10 @@ export default function HomePage() {
                         <video
                           src="/wallet.mp4"
                           className="h-full w-full object-cover"
-                          autoPlay
                           muted
                           loop
                           playsInline
+                          autoPlay
                           controls
                         />
                       </div>
@@ -678,10 +727,10 @@ export default function HomePage() {
                         <video
                           src="/movil.mp4"
                           className="h-full w-full object-cover"
-                          autoPlay
                           muted
                           loop
                           playsInline
+                          autoPlay
                           controls
                         />
                       </div>
