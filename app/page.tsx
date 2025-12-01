@@ -638,7 +638,6 @@ export default function HomePage() {
                           muted
                           loop
                           playsInline
-                          autoPlay
                           controls
                         />
                       </div>
@@ -730,7 +729,6 @@ export default function HomePage() {
                           muted
                           loop
                           playsInline
-                          autoPlay
                           controls
                         />
                       </div>
