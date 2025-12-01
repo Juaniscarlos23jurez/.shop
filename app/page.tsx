@@ -106,6 +106,7 @@ export default function HomePage() {
   const [index, setIndex] = useState(1) // starts at first real slide
   const [isAnimating, setIsAnimating] = useState(true)
   const [slideWidth, setSlideWidth] = useState(240)
+  const [activeDemo, setActiveDemo] = useState<'mobile' | 'web'>('mobile')
 
   useEffect(() => {
     const id = setInterval(() => {
@@ -319,25 +320,142 @@ export default function HomePage() {
 
         {/* Video Demo Section */}
         <section id="video-demo" className="py-16 bg-white">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <div className="mb-12">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="mb-16 text-center">
               <h2 className="text-4xl font-black text-[#0f172a] mb-4">
                 Descubre cómo funciona Fideliza+
               </h2>
               <p className="text-[#64748b] text-xl max-w-2xl mx-auto">
-                Mira nuestro video de 2 minutos y descubre cómo puedes aumentar las ventas recurrentes de tu negocio
+                Mira cómo se ve tu catálogo digital en móvil (app) y en la web
               </p>
             </div>
-            <div className="aspect-w-16 aspect-h-9 bg-gray-100 rounded-2xl overflow-hidden shadow-xl">
-              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50">
-                <button className="w-20 h-20 md:w-24 md:h-24 bg-white rounded-full flex items-center justify-center shadow-lg transform transition-transform hover:scale-105">
-                  <svg className="w-10 h-10 text-[#22c55e]" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
-                  </svg>
-                </button>
+
+            {/* Web Section */}
+            <div className="mb-24">
+              <h3 className="text-3xl font-bold text-[#0f172a] mb-8">Web</h3>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                {/* iPhone Mockup with wallet.mp4 */}
+                <div className="flex justify-center lg:justify-start">
+                  <div className="relative w-full max-w-sm">
+                    <div className="relative mx-auto h-[520px] w-[260px] sm:h-[600px] sm:w-[300px] rounded-[3rem] border border-gray-300 bg-black shadow-2xl overflow-hidden">
+                      {/* Notch */}
+                      <div className="absolute top-3 left-1/2 -translate-x-1/2 w-28 h-5 bg-black rounded-full flex items-center justify-center z-10">
+                        <div className="w-16 h-3 bg-gray-900 rounded-full" />
+                      </div>
+
+                      {/* Side buttons (decorative) */}
+                      <div className="absolute -left-0.5 top-24 h-10 w-1 rounded-r-full bg-gray-300" />
+                      <div className="absolute -left-0.5 top-40 h-16 w-1 rounded-r-full bg-gray-300" />
+
+                      {/* Screen */}
+                      <div className="absolute inset-4 rounded-[2.4rem] bg-black overflow-hidden">
+                        <video
+                          src="/wallet.mp4"
+                          className="h-full w-full object-cover"
+                          autoPlay
+                          muted
+                          loop
+                          playsInline
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Features bullets */}
+                <div className="space-y-6">
+                  <div className="flex items-start gap-4">
+                    <div className="flex-shrink-0 w-2 h-2 rounded-full bg-[#22c55e] mt-2" />
+                    <div>
+                      <h4 className="text-xl font-semibold text-[#0f172a] mb-1">Catálogo digital</h4>
+                      <p className="text-[#64748b]">Muestra todos tus productos con imágenes y descripciones</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-4">
+                    <div className="flex-shrink-0 w-2 h-2 rounded-full bg-[#22c55e] mt-2" />
+                    <div>
+                      <h4 className="text-xl font-semibold text-[#0f172a] mb-1">Puntos de lealtad</h4>
+                      <p className="text-[#64748b]">Acumula puntos con cada compra y canjéalos por recompensas</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-4">
+                    <div className="flex-shrink-0 w-2 h-2 rounded-full bg-[#22c55e] mt-2" />
+                    <div>
+                      <h4 className="text-xl font-semibold text-[#0f172a] mb-1">Cupones y promociones</h4>
+                      <p className="text-[#64748b]">Recibe ofertas exclusivas y descuentos especiales</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-4">
+                    <div className="flex-shrink-0 w-2 h-2 rounded-full bg-[#22c55e] mt-2" />
+                    <div>
+                      <h4 className="text-xl font-semibold text-[#0f172a] mb-1">Wallet / PKPass</h4>
+                      <p className="text-[#64748b]">Guarda tu tarjeta de lealtad en Apple Wallet o Google Pay</p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-            <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4">
+
+            {/* Mobile Section */}
+            <div className="mb-16">
+              <h3 className="text-3xl font-bold text-[#0f172a] mb-8">Móvil</h3>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                {/* Features bullets */}
+                <div className="space-y-6">
+                  <div className="flex items-start gap-4">
+                    <div className="flex-shrink-0 w-2 h-2 rounded-full bg-[#22c55e] mt-2" />
+                    <div>
+                      <h4 className="text-xl font-semibold text-[#0f172a] mb-1">Notificaciones push</h4>
+                      <p className="text-[#64748b]">Recibe alertas de nuevas ofertas y promociones al instante</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-4">
+                    <div className="flex-shrink-0 w-2 h-2 rounded-full bg-[#22c55e] mt-2" />
+                    <div>
+                      <h4 className="text-xl font-semibold text-[#0f172a] mb-1">Seguimiento de pedidos</h4>
+                      <p className="text-[#64748b]">Ve el proceso de tu pedido en tiempo real desde tu móvil</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-4">
+                    <div className="flex-shrink-0 w-2 h-2 rounded-full bg-[#22c55e] mt-2" />
+                    <div>
+                      <h4 className="text-xl font-semibold text-[#0f172a] mb-1">Experiencia nativa</h4>
+                      <p className="text-[#64748b]">Interfaz optimizada para iOS y Android</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* iPhone Mockup with movil.mp4 */}
+                <div className="flex justify-center lg:justify-end">
+                  <div className="relative w-full max-w-sm">
+                    <div className="relative mx-auto h-[520px] w-[260px] sm:h-[600px] sm:w-[300px] rounded-[3rem] border border-gray-300 bg-black shadow-2xl overflow-hidden">
+                      {/* Notch */}
+                      <div className="absolute top-3 left-1/2 -translate-x-1/2 w-28 h-5 bg-black rounded-full flex items-center justify-center z-10">
+                        <div className="w-16 h-3 bg-gray-900 rounded-full" />
+                      </div>
+
+                      {/* Side buttons (decorative) */}
+                      <div className="absolute -left-0.5 top-24 h-10 w-1 rounded-r-full bg-gray-300" />
+                      <div className="absolute -left-0.5 top-40 h-16 w-1 rounded-r-full bg-gray-300" />
+
+                      {/* Screen */}
+                      <div className="absolute inset-4 rounded-[2.4rem] bg-black overflow-hidden">
+                        <video
+                          src="/movil.mp4"
+                          className="h-full w-full object-cover"
+                          autoPlay
+                          muted
+                          loop
+                          playsInline
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
                 { number: '2,500+', label: 'Negocios' },
                 { number: '1M+', label: 'Clientes' },
