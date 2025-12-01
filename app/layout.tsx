@@ -5,6 +5,7 @@ import { AuthProvider } from '@/contexts/AuthContext'
 import './globals.css'
 import Script from 'next/script'
 import { GA4PageViewTracker } from '@/components/analytics/GA4PageViewTracker'
+import { CookieConsent } from '@/components/cookie-consent'
 
 export const metadata: Metadata = {
   title: 'Fideliza',
@@ -36,6 +37,15 @@ html {
           {`
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
+            
+            // Define default consent mode
+            gtag('consent', 'default', {
+              'ad_storage': 'denied',
+              'ad_user_data': 'denied',
+              'ad_personalization': 'denied',
+              'analytics_storage': 'denied'
+            });
+
             gtag('js', new Date());
 
             gtag('config', 'G-0BFVK699R7');
@@ -46,6 +56,7 @@ html {
         <AuthProvider>
           <GA4PageViewTracker />
           {children}
+          <CookieConsent />
         </AuthProvider>
       </body>
     </html>
