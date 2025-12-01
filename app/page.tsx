@@ -108,12 +108,133 @@ export default function HomePage() {
   const [slideWidth, setSlideWidth] = useState(240)
   const [activeDemo, setActiveDemo] = useState<'mobile' | 'web'>('mobile')
 
+  // Testimonials data for carousel
+  const testimonials = [
+    {
+      quote:
+        "Fuimos el primer negocio en confiar en Fideliza+ y no nos arrepentimos. Desde el día uno vimos resultados increíbles en la retención de clientes.",
+      author: "Miel de sol",
+      role: "Nuestro primer cliente",
+      avatar: "/company1.png"
+    },
+    {
+      quote:
+        "Incrementamos nuestras ventas recurrentes en un 30% desde que implementamos Fideliza+. ¡Nuestros clientes aman el programa de puntos!",
+      author: "María González",
+      role: "Dueña de Café Aromas",
+      avatar: "/placeholder-user.jpg"
+    },
+    {
+      quote:
+        "Lanzamos nuestro programa de fidelización en horas y ahora más del 60% de las ventas vienen de clientes frecuentes.",
+      author: "Panadería La Espiga",
+      role: "Negocio local",
+      avatar: "/placeholder-logo.png"
+    },
+    {
+      quote:
+        "La facilidad para crear cupones y campañas nos ha ayudado a llenar el local en días lentos. Es una herramienta indispensable.",
+      author: "Carlos Mendoza",
+      role: "Gerente de Tienda de Ropa",
+      avatar: "/placeholder-user.jpg"
+    },
+    {
+      quote:
+        "Las analíticas integradas nos han dado información valiosa sobre el comportamiento de nuestros clientes. Tomamos mejores decisiones.",
+      author: "Ana Lucía Ramírez",
+      role: "Directora de Marketing",
+      avatar: "/placeholder-user.jpg"
+    },
+    {
+      quote:
+        "Nuestros clientes valoran poder guardar su tarjeta en Apple Wallet y Google Wallet. Se siente muy profesional y moderno.",
+      author: "Spa Esencia",
+      role: "Centro de bienestar",
+      avatar: "/placeholder-logo.png"
+    },
+    {
+      quote:
+        "El equipo de soporte nos acompañó en todo el proceso. Hoy tenemos más de 5,000 clientes registrados en el programa.",
+      author: "Jorge López",
+      role: "Director Comercial",
+      avatar: "/placeholder-user.jpg"
+    },
+    {
+      quote:
+        "Implementamos Fideliza+ en nuestras 3 sucursales y los resultados son consistentes. Nuestros clientes regresan más seguido.",
+      author: "Restaurante Familiar",
+      role: "Cadena de restaurantes",
+      avatar: "/placeholder-logo.png"
+    },
+    {
+      quote:
+        "La integración con nuestro sistema de punto de venta fue perfecta. No tuvimos que cambiar nada de nuestro flujo de trabajo.",
+      author: "Patricia Herrera",
+      role: "Administradora de Farmacia",
+      avatar: "/placeholder-user.jpg"
+    },
+    {
+      quote:
+        "Los cupones digitales han revolucionado nuestras promociones. Ahora podemos medir exactamente qué funciona y qué no.",
+      author: "Tienda de Electrónicos TechMax",
+      role: "Retail especializado",
+      avatar: "/placeholder-logo.png"
+    }
+  ]
+
+  const [testimonialIndex, setTestimonialIndex] = useState(0)
+
   useEffect(() => {
     const id = setInterval(() => {
       setIndex((i) => i + 1)
     }, 2500)
     return () => clearInterval(id)
   }, [])
+
+  // Smooth continuous testimonial carousel
+  const [testimonialOffset, setTestimonialOffset] = useState(0)
+  const [isTestimonialAnimating, setIsTestimonialAnimating] = useState(true)
+  const [isTestimonialPaused, setIsTestimonialPaused] = useState(false)
+
+  useEffect(() => {
+    if (testimonials.length === 0 || isTestimonialPaused) return
+    const id = setInterval(() => {
+      setTestimonialOffset((prev) => prev + 1)
+    }, 3000) // Move every 3 seconds
+    return () => clearInterval(id)
+  }, [testimonials.length, isTestimonialPaused])
+
+  // Manual navigation functions
+  const goToNextTestimonial = () => {
+    setTestimonialOffset((prev) => prev + 1)
+  }
+
+  const goToPrevTestimonial = () => {
+    setTestimonialOffset((prev) => {
+      if (prev <= 0) {
+        setIsTestimonialAnimating(false)
+        setTimeout(() => {
+          setTestimonialOffset(testimonials.length - 1)
+          setIsTestimonialAnimating(true)
+        }, 50)
+        return testimonials.length - 1
+      }
+      return prev - 1
+    })
+  }
+
+  const toggleTestimonialAutoplay = () => {
+    setIsTestimonialPaused(!isTestimonialPaused)
+  }
+
+  // Handle smooth transition end for testimonials
+  const handleTestimonialTransitionEnd = () => {
+    if (testimonialOffset >= testimonials.length) {
+      setIsTestimonialAnimating(false)
+      setTestimonialOffset(0)
+      setTimeout(() => setIsTestimonialAnimating(true), 50)
+    }
+  }
 
   // Responsive slide width (matches Tailwind md breakpoint widths)
   useEffect(() => {
@@ -248,74 +369,51 @@ export default function HomePage() {
             </div>
           </div>
           <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
-            <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
-              <div className="aspect-w-16 aspect-h-9 bg-gray-100">
-                <div className="w-full h-96 bg-gradient-to-br from-green-100 to-blue-50 flex items-center justify-center">
-                  <div className="text-center p-8">
-                    <div className="w-16 h-16 bg-white rounded-full shadow-lg flex items-center justify-center mx-auto mb-4">
-                      <svg className="h-8 w-8 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
-                      </svg>
-                    </div>
-                    <h3 className="text-xl font-medium text-gray-900 mb-2">Dashboard de Fidelización</h3>
-                    <p className="text-gray-500 text-base">Panel de control intuitivo para gestionar tu programa de lealtad</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="text-center mt-6 md:mt-8">
-              <h2 className="text-2xl sm:text-3xl font-semibold text-gray-800">
-                Que tus clientes te sigan y reciban los cupones, puntos y premios
-              </h2>
-              <div className="mt-4">
-                <h3 className="text-xl font-medium text-gray-900">Dashboard de Fidelización</h3>
-                <p className="text-gray-500 text-base">Panel de control intuitivo para gestionar tu programa de lealtad</p>
-              </div>
-            </div>
-          <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
-            <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
-              <div className="w-full bg-gray-50">
-                <div className="relative py-6 px-6 md:px-8 flex items-center justify-center">
-                  {/* Viewport for 3 slides (prev, current, next) */}
-                  <div
-                    className="relative overflow-visible"
-                    style={{ width: slideWidth * 3, height: undefined, perspective: '1000px' }}
-                  >
-                    <div
-                      className="flex items-stretch"
-                      style={{
-                        transform: `translateX(-${(index - 1) * slideWidth}px)`,
-                        transition: isAnimating ? 'transform 700ms ease-in-out' : 'none',
-                      }}
-                      onTransitionEnd={handleTransitionEnd}
-                    >
-                      {displaySlides.map((src, idx) => (
-                        <div
-                          key={idx}
-                          className="flex-none px-2"
-                          style={{ width: slideWidth, ...getSlideStyle(idx) }}
-                        >
-                          <div className="relative h-[420px] md:h-[520px] w-full rounded-xl border border-gray-200 shadow-md bg-white overflow-hidden">
-                            <Image
-                              src={src}
-                              alt={`Captura de la app ${idx}`}
-                              fill
-                              sizes="(max-width: 768px) 240px, 300px"
-                              className="object-contain"
-                              priority={idx === index}
-                            />
-                          </div>
+            <div className="flex justify-center">
+              <div className="w-full max-w-5xl">
+                {/* MacBook mockup */}
+                <div className="relative">
+                  {/* Screen */}
+                  <div className="relative mx-auto w-full max-w-4xl">
+                    <div className="relative rounded-[1.5rem] bg-gradient-to-b from-gray-800 to-gray-900 p-3 shadow-2xl">
+                      {/* Top bezel with camera */}
+                      <div className="relative h-6 flex items-center justify-center rounded-t-xl bg-black">
+                        <div className="absolute top-2 left-1/2 transform -translate-x-1/2 w-2 h-2 rounded-full bg-gray-700" />
+                      </div>
+                      
+                      {/* Screen content */}
+                      <div className="relative bg-black rounded-b-xl overflow-hidden">
+                        <div className="relative w-full" style={{ paddingTop: '62.5%' }}>
+                          <video
+                            src="/dashboard.mp4"
+                            className="absolute inset-0 w-full h-full object-contain rounded-b-xl"
+                            autoPlay
+                            muted
+                            loop
+                            playsInline
+                          />
                         </div>
-                      ))}
+                      </div>
                     </div>
                   </div>
+                  
+                  {/* Base/Keyboard */}
+                  <div className="relative mx-auto mt-1 w-full max-w-5xl">
+                    <div className="h-8 rounded-b-[2rem] bg-gradient-to-b from-gray-300 to-gray-400 shadow-lg">
+                      <div className="flex items-center justify-center h-full">
+                        {/* Trackpad */}
+                        <div className="w-20 h-3 rounded-md bg-gray-500/30 border border-gray-400/50" />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Shadow under laptop */}
+                  <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 w-3/4 h-8 bg-black/10 rounded-full blur-xl" />
                 </div>
               </div>
             </div>
-            {/* Captions below gallery */}
-             
           </div>
+          
         </section>
 
         {/* Video Demo Section */}
@@ -398,7 +496,7 @@ export default function HomePage() {
 
             {/* Mobile Section */}
             <div className="mb-16">
-              <h3 className="text-3xl font-bold text-[#0f172a] mb-8">Móvil</h3>
+              <h3 className="text-3xl font-bold text-[#0f172a] mb-8">App Movil IOS/Android</h3>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
                 {/* Features bullets */}
                 <div className="space-y-6">
@@ -455,7 +553,45 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="mt-8 text-center">
+              <h3 className="text-xl font-semibold text-[#0f172a] mb-6">
+                Disponible para tus clientes
+              </h3>
+              <div className="flex justify-center items-center gap-8">
+                {/* Web */}
+                <div className="flex flex-col items-center">
+                  <div className="w-16 h-16 bg-blue-500 rounded-2xl flex items-center justify-center mb-3 shadow-lg">
+                    <svg className="w-10 h-10 text-white" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+                    </svg>
+                  </div>
+                  <span className="text-sm font-medium text-[#64748b]">Web</span>
+                </div>
+
+                {/* Android */}
+                <div className="flex flex-col items-center">
+                  <div className="w-16 h-16 bg-green-500 rounded-2xl flex items-center justify-center mb-3 shadow-lg">
+                    <svg className="w-10 h-10 text-white" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993.0001.5511-.4482.9997-.9993.9997m-11.046 0c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993 0 .5511-.4482.9997-.9993.9997m11.4045-6.02l1.9973-3.4592a.416.416 0 00-.1521-.5676.416.416 0 00-.5676.1521l-2.0223 3.503C15.5902 8.2439 13.8533 7.8508 12 7.8508s-3.5902.3931-5.1367 1.0989L4.841 5.4467a.4161.4161 0 00-.5677-.1521.4157.4157 0 00-.1521.5676l-1.9973 3.4592C2.6889 11.1867.3432 14.6589 0 18.761h24c-.3435-4.1021-2.6892-7.5743-6.1185-9.4396"/>
+                    </svg>
+                  </div>
+                  <span className="text-sm font-medium text-[#64748b]">Android</span>
+                </div>
+
+                {/* iOS */}
+                <div className="flex flex-col items-center">
+                  <div className="w-16 h-16 bg-gray-900 rounded-2xl flex items-center justify-center mb-3 shadow-lg">
+                    <svg className="w-10 h-10 text-white" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+                    </svg>
+                  </div>
+                  <span className="text-sm font-medium text-[#64748b]">iOS</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Statistics Grid */}
+            <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
                 { number: '2,500+', label: 'Negocios' },
                 { number: '1M+', label: 'Clientes' },
@@ -482,49 +618,116 @@ export default function HomePage() {
                 Empresas de todos los tamaños confían en Fideliza+ para fidelizar a sus clientes
               </p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {[
-                {
-                  quote: "Incrementamos nuestras ventas recurrentes en un 30% desde que implementamos Fideliza+. ¡Nuestros clientes aman el programa de puntos!",
-                  author: "María González",
-                  role: "Dueña de Café Aromas",
-                  avatar: "/placeholder-user.jpg"
-                },
-                {
-                  quote: "La facilidad de uso de la plataforma nos permitió lanzar nuestro programa de fidelización en cuestión de horas. ¡Excelente soporte!" ,
-                  author: "Carlos Mendoza",
-                  role: "Gerente de Tienda de Ropa",
-                  avatar: "/placeholder-user.jpg"
-                },
-                {
-                  quote: "Las analíticas integradas nos han dado información valiosa sobre el comportamiento de nuestros clientes. Una herramienta imprescindible.",
-                  author: "Ana Lucía Ramírez",
-                  role: "Directora de Marketing",
-                  avatar: "/placeholder-user.jpg"
-                }
-              ].map((testimonial, index) => (
-                <div key={index} className="bg-white p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
-                  <div className="mb-4 text-yellow-400">
-                    {[...Array(5)].map((_, i) => (
-                      <svg key={i} className="w-5 h-5 inline-block" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                      </svg>
+
+            {/* Testimonial carousel (smooth continuous sliding) */}
+            <div className="max-w-6xl mx-auto overflow-hidden">
+              <div className="relative">
+                {/* Viewport showing 3 testimonials */}
+                <div className="overflow-hidden">
+                  <div
+                    className="flex gap-6 transition-transform duration-1000 ease-in-out"
+                    style={{
+                      transform: `translateX(-${testimonialOffset * 33.333}%)`,
+                      transition: isTestimonialAnimating ? 'transform 1000ms ease-in-out' : 'none'
+                    }}
+                    onTransitionEnd={handleTestimonialTransitionEnd}
+                  >
+                    {/* Duplicate testimonials for seamless loop */}
+                    {[...testimonials, ...testimonials.slice(0, 3)].map((testimonial, index) => (
+                      <div
+                        key={`testimonial-${index}`}
+                        className="flex-shrink-0 w-full md:w-1/3 px-3"
+                      >
+                        <div className="bg-white p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow text-left h-full">
+                          <div className="mb-4 text-yellow-400">
+                            {[...Array(5)].map((_, i) => (
+                              <svg key={i} className="w-5 h-5 inline-block" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                              </svg>
+                            ))}
+                          </div>
+                          <p className="text-gray-600 text-lg mb-6 min-h-[88px]">
+                            "{testimonial.quote}"
+                          </p>
+                          <div className="flex items-center">
+                            <img
+                              src={testimonial.avatar}
+                              alt={testimonial.author}
+                              className="w-12 h-12 rounded-full object-cover mr-4"
+                            />
+                            <div>
+                              <div className="font-medium text-gray-900 text-lg">{testimonial.author}</div>
+                              <div className="text-base text-gray-500">{testimonial.role}</div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     ))}
                   </div>
-                  <p className="text-gray-600 text-lg mb-6">"{testimonial.quote}"</p>
-                  <div className="flex items-center">
-                    <img 
-                      src={testimonial.avatar} 
-                      alt={testimonial.author}
-                      className="w-12 h-12 rounded-full object-cover mr-4"
-                    />
-                    <div>
-                      <div className="font-medium text-gray-900 text-lg">{testimonial.author}</div>
-                      <div className="text-base text-gray-500">{testimonial.role}</div>
-                    </div>
-                  </div>
                 </div>
-              ))}
+
+                {/* Controls and dots */}
+                <div className="mt-6 flex items-center justify-center gap-6">
+                  {/* Previous button */}
+                  <button
+                    type="button"
+                    onClick={goToPrevTestimonial}
+                    className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+                    aria-label="Testimonio anterior"
+                  >
+                    <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+
+                  {/* Play/Pause button */}
+                  <button
+                    type="button"
+                    onClick={toggleTestimonialAutoplay}
+                    className="p-2 rounded-full bg-[#16a34a] hover:bg-[#15803d] transition-colors"
+                    aria-label={isTestimonialPaused ? 'Reproducir automático' : 'Pausar automático'}
+                  >
+                    {isTestimonialPaused ? (
+                      <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M8 5v14l11-7z" />
+                      </svg>
+                    ) : (
+                      <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
+                      </svg>
+                    )}
+                  </button>
+
+                  {/* Next button */}
+                  <button
+                    type="button"
+                    onClick={goToNextTestimonial}
+                    className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+                    aria-label="Siguiente testimonio"
+                  >
+                    <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
+
+                {/* Dots indicator */}
+                <div className="mt-4 flex items-center justify-center gap-2">
+                  {testimonials.map((_, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => setTestimonialOffset(i)}
+                      className={`h-2 w-2 rounded-full transition-colors ${
+                        i === (testimonialOffset % testimonials.length)
+                          ? 'bg-[#16a34a]'
+                          : 'bg-gray-300 hover:bg-gray-400'
+                      }`}
+                      aria-label={`Ir al testimonio ${i + 1}`}
+                    />
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </section>
