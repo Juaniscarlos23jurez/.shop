@@ -72,15 +72,7 @@ export default function HomePage() {
       title: "CRM & Gestión de Clientes",
       description: "Aumenta tus ventas con mejor gestión de relaciones con clientes y precios al por mayor."
     },
-    {
-      icon: (
-        <svg className="h-10 w-10 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      ),
-      title: "Cobro con Link & Membresías",
-      description: "Recibe pagos con tarjeta (Stripe), incentiva compras repetidas con crédito de recompensa."
-    },
+    
     {
       icon: (
         <svg className="h-10 w-10 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -306,11 +298,13 @@ export default function HomePage() {
               </div>
             </div>
             <div className="hidden md:block">
-              <div className="ml-10 flex items-center space-x-1">
+              <div className="ml-10 flex items-center space-x-4">
                 <a href="#features" className="text-gray-600 hover:text-gray-900 px-4 py-2 text-base font-medium rounded-lg hover:bg-gray-50 transition-colors">Características</a>
                 <a href="#how-it-works" className="text-gray-600 hover:text-gray-900 px-4 py-2 text-base font-medium rounded-lg hover:bg-gray-50 transition-colors">¿Cómo funciona?</a>
                 <a href="#contact" className="text-gray-600 hover:text-gray-900 px-4 py-2 text-base font-medium rounded-lg hover:bg-gray-50 transition-colors">Contacto</a>
                 <a href="#testimonials" className="text-gray-600 hover:text-gray-900 px-4 py-2 text-base font-medium rounded-lg hover:bg-gray-50 transition-colors">Testimonios</a>
+                <a href="#pricing" className="text-gray-600 hover:text-gray-900 px-4 py-2 text-base font-medium rounded-lg hover:bg-gray-50 transition-colors">Precios</a>
+                <a href="#faq" className="text-gray-600 hover:text-gray-900 px-4 py-2 text-base font-medium rounded-lg hover:bg-gray-50 transition-colors">Preguntas Frecuentes</a>
               </div>
             </div>
             <div className="flex items-center space-x-3">
@@ -335,7 +329,7 @@ export default function HomePage() {
                 <span className="text-xl">✨</span>
                 <span>Plataforma de fidelización #1 en Latinoamérica</span>
               </div>
-              <h1 className="text-5xl tracking-tight font-extrabold text-gray-900 sm:text-6xl md:text-7xl">
+              <h1 className="text-5xl tracking-tight font-extrabold text-gray-900 sm:text-6xl md:text-7xl leading-tight md:leading-[1.15] pt-2 md:pt-4 pb-4 md:pb-6">
                 <span className="block">Fideliza a tus clientes</span>
                 <span className="block text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-emerald-500">y haz crecer tu negocio</span>
               </h1>
@@ -927,62 +921,7 @@ export default function HomePage() {
             </div>
           </div>
         </section>
-
-        {/* How It Works */}
-        <section className="py-16 bg-[#f8fafc]">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16">
-              <h2 className="text-4xl font-black text-[#0f172a] mb-4">
-                ¿Cómo funciona?
-              </h2>
-              <p className="text-[#64748b] text-xl">
-                Comienza a fidelizar clientes en solo 3 pasos
-              </p>
-            </div>
-            <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
-              <div className="bg-white p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
-                <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-600 text-lg font-bold flex items-center justify-center mb-4 mx-auto">1</div>
-                <h3 className="text-xl font-bold text-[#0f172a] mb-2 text-center">Crea tu cuenta</h3>
-                <p className="text-[#64748b] text-base text-center">Regístrate en minutos y configura tu negocio en nuestra plataforma.</p>
-              </div>
-              <div className="bg-white p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
-                <div className="w-12 h-12 rounded-full bg-green-50 text-green-600 text-lg font-bold flex items-center justify-center mb-4 mx-auto">2</div>
-                <h3 className="text-xl font-bold text-[#0f172a] mb-2 text-center">Personaliza tu programa</h3>
-                <p className="text-[#64748b] text-base text-center">Configura tu sistema de puntos, beneficios y recompensas.</p>
-              </div>
-              <div className="bg-white p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
-                <div className="w-12 h-12 rounded-full bg-purple-50 text-purple-600 text-lg font-bold flex items-center justify-center mb-4 mx-auto">3</div>
-                <h3 className="text-xl font-bold text-[#0f172a] mb-2 text-center">Involucra a tus clientes</h3>
-                <p className="text-[#64748b] text-base text-center">Comienza a enviar ofertas y ver crecer la lealtad de tus clientes.</p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* CTA Section */}
-        <section className="bg-[#22c55e] py-16">
-          <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
-            <h2 className="text-4xl font-black text-white mb-6">
-              ¿Listo para hablar con nuestro equipo?
-            </h2>
-            <p className="text-green-100 text-xl mb-8 max-w-2xl mx-auto">
-              Conversemos sobre tus metas y cómo podemos ayudarte a aumentar las ventas recurrentes.
-            </p>
-            <div className="flex flex-col sm:flex-row justify-center gap-4 max-w-md mx-auto">
-              <Link href="#contact" className="w-full sm:w-auto">
-                <Button size="lg" className="w-full bg-white text-[#0f172a] hover:bg-gray-100 font-medium">
-                  Hablar con ventas
-                </Button>
-              </Link>
-              <Link href={CALENDLY_URL} className="w-full sm:w-auto" target="_blank" rel="noopener noreferrer">
-                <Button size="lg" variant="outline" className="w-full text-white border-white hover:bg-green-600 hover:border-green-600">
-                  Agendar demo
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </section>
-
+     
         {/* Plans Section */}
         <section id="pricing" className="py-16 bg-gray-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -1176,6 +1115,96 @@ export default function HomePage() {
             </div>
           </div>
         </section>
+
+        {/* FAQ Section */}
+        <section id="faq" className="py-16 bg-white">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-10">
+              <h2 className="text-4xl font-black text-[#0f172a] mb-4">
+                Preguntas frecuentes sobre Fideliza+
+              </h2>
+              <p className="text-[#64748b] text-xl max-w-2xl mx-auto">
+                Resolvemos las dudas más comunes sobre programas de lealtad, CRM y la plataforma Fideliza+
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <div className="border border-gray-200 rounded-2xl p-5 bg-white shadow-sm">
+                <h3 className="text-lg md:text-xl font-semibold text-[#0f172a] mb-2">
+                  ¿Qué es Fideliza+ y para qué tipo de negocios está pensado?
+                </h3>
+                <p className="text-[#64748b] text-base leading-relaxed">
+                  Fideliza+ es una plataforma de fidelización y CRM diseñada para pequeños y medianos negocios que quieren aumentar sus ventas recurrentes. Es ideal para cafeterías, restaurantes, tiendas de ropa, spas, farmacias y cualquier comercio que quiera premiar a sus clientes frecuentes con puntos, cupones y beneficios exclusivos.
+                </p>
+              </div>
+
+              <div className="border border-gray-200 rounded-2xl p-5 bg-white shadow-sm">
+                <h3 className="text-lg md:text-xl font-semibold text-[#0f172a] mb-2">
+                  ¿Necesito una app o página web propia para usar el programa de lealtad?
+                </h3>
+                <p className="text-[#64748b] text-base leading-relaxed">
+                  No. Al contratar Fideliza+ obtienes tu propio sitio web de lealtad con catálogo de productos y un perfil para tus clientes. Además, ellos pueden guardar su tarjeta digital en Apple Wallet y Google Wallet, sin necesidad de que tú desarrolles una app desde cero.
+                </p>
+              </div>
+
+              <div className="border border-gray-200 rounded-2xl p-5 bg-white shadow-sm">
+                <h3 className="text-lg md:text-xl font-semibold text-[#0f172a] mb-2">
+                  ¿Cómo se integra Fideliza+ con mi punto de venta o sistema actual?
+                </h3>
+                <p className="text-[#64748b] text-base leading-relaxed">
+                  Puedes registrar compras y puntos directamente desde el panel web o nuestro POS en la nube. Si ya cuentas con un sistema de punto de venta, nuestro equipo puede apoyarte con la integración vía API para que los puntos se asignen automáticamente en cada ticket.
+                </p>
+              </div>
+
+              <div className="border border-gray-200 rounded-2xl p-5 bg-white shadow-sm">
+                <h3 className="text-lg md:text-xl font-semibold text-[#0f172a] mb-2">
+                  ¿En cuánto tiempo puedo lanzar mi programa de lealtad?
+                </h3>
+                <p className="text-[#64748b] text-base leading-relaxed">
+                  La mayoría de los negocios lanzan su programa en menos de una semana. En un par de días definimos reglas de puntos, recompensas y diseño de la tarjeta; después solo tienes que comunicarlo a tus clientes en caja, redes sociales y WhatsApp.
+                </p>
+              </div>
+
+              <div className="border border-gray-200 rounded-2xl p-5 bg-white shadow-sm">
+                <h3 className="text-lg md:text-xl font-semibold text-[#0f172a] mb-2">
+                  ¿Cómo me ayuda Fideliza+ a vender más usando WhatsApp?
+                </h3>
+                <p className="text-[#64748b] text-base leading-relaxed">
+                  Puedes segmentar a tus mejores clientes y enviarles campañas por WhatsApp con cupones personalizados, recordatorios de puntos por vencer y promociones especiales para días de baja afluencia. Todo queda registrado para que veas qué campañas generan más ventas.
+                </p>
+              </div>
+
+              <div className="border border-gray-200 rounded-2xl p-5 bg-white shadow-sm">
+                <h3 className="text-lg md:text-xl font-semibold text-[#0f172a] mb-2">
+                  ¿Cuánto cuesta Fideliza+ y qué incluye cada plan?
+                </h3>
+                <p className="text-[#64748b] text-base leading-relaxed">
+                  Contamos con planes mensuales y anuales que se adaptan al tamaño de tu negocio. En todos los planes tienes acceso al programa de puntos, cupones digitales, dashboard de analíticas y soporte. En los planes superiores se incluye multi-sucursal, POS avanzado y acceso a la API. Puedes revisar los detalles en la sección de precios.
+                </p>
+              </div>
+
+              <div className="border border-gray-200 rounded-2xl p-5 bg-white shadow-sm">
+                <h3 className="text-lg md:text-xl font-semibold text-[#0f172a] mb-2">
+                  ¿Qué tan segura es la información de mis clientes?
+                </h3>
+                <p className="text-[#64748b] text-base leading-relaxed">
+                  Tomamos muy en serio la seguridad y privacidad de tus datos. Toda la información se almacena en infraestructuras en la nube con estándares de seguridad de nivel empresarial, y solo tu equipo autorizado tiene acceso al panel. Además, puedes exportar o solicitar tus datos cuando lo necesites.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-10 text-center">
+              <p className="text-[#64748b] text-base mb-4">
+                ¿Tienes alguna otra pregunta sobre cómo implementar un programa de lealtad en tu negocio?
+              </p>
+              <Link href="#contact">
+                <Button className="bg-[#22c55e] hover:bg-green-600 text-white rounded-xl px-6 text-base font-semibold">
+                  Hablar con nuestro equipo
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </section>
       </main>
 
       {/* CTA Section */}
@@ -1215,7 +1244,18 @@ export default function HomePage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Card className="p-6 border border-gray-100 rounded-2xl text-center">
-              <div className="text-2xl mb-2">💬</div>
+              <div className="flex items-center justify-center mb-2">
+                <div className="h-12 w-12 rounded-full bg-[#25D366] shadow-md flex items-center justify-center">
+                  <svg
+                    className="w-7 h-7 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                  >
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                  </svg>
+                </div>
+              </div>
               <h3 className="text-xl font-bold mb-2">WhatsApp</h3>
               <p className="text-base text-gray-600 mb-4">Escríbenos y te atendemos al instante.</p>
               <Link href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">
@@ -1223,7 +1263,29 @@ export default function HomePage() {
               </Link>
             </Card>
             <Card className="p-6 border border-gray-100 rounded-2xl text-center">
-              <div className="text-2xl mb-2">📧</div>
+              <div className="flex items-center justify-center mb-2">
+                <svg
+                  className="w-10 h-10 text-[#0f172a]"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M4 6H20C21.1046 6 22 6.89543 22 8V16C22 17.1046 21.1046 18 20 18H4C2.89543 18 2 17.1046 2 16V8C2 6.89543 2.89543 6 4 6Z"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M4 8L11.1056 12.737C11.6686 13.1121 12.3314 13.1121 12.8944 12.737L20 8"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </div>
               <h3 className="text-xl font-bold mb-2">Email</h3>
               <p className="text-base text-gray-600 mb-4">Cuéntanos sobre tu negocio y te contactamos.</p>
               <Link href={`mailto:${SALES_EMAIL}`}>
@@ -1231,7 +1293,33 @@ export default function HomePage() {
               </Link>
             </Card>
             <Card className="p-6 border border-gray-100 rounded-2xl text-center">
-              <div className="text-2xl mb-2">📅</div>
+              <div className="flex items-center justify-center mb-2">
+                <svg
+                  className="w-10 h-10 text-[#0f172a]"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <rect
+                    x="4"
+                    y="5"
+                    width="16"
+                    height="15"
+                    rx="2"
+                    ry="2"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                  />
+                  <path
+                    d="M8 3V7M16 3V7M4 9H20"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <rect x="8" y="12" width="3" height="3" rx="0.5" fill="currentColor" />
+                </svg>
+              </div>
               <h3 className="text-xl font-bold mb-2">Agendar demo</h3>
               <p className="text-base text-gray-600 mb-4">Reserva una demo de 30 minutos.</p>
               <Link href={CALENDLY_URL} target="_blank" rel="noopener noreferrer">
