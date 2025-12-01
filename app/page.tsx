@@ -635,8 +635,6 @@ export default function HomePage() {
                         <video
                           src="/wallet.mp4"
                           className="h-full w-full object-cover"
-                          muted
-                          loop
                           playsInline
                           controls
                         />
@@ -726,8 +724,6 @@ export default function HomePage() {
                         <video
                           src="/movil.mp4"
                           className="h-full w-full object-cover"
-                          muted
-                          loop
                           playsInline
                           controls
                         />
