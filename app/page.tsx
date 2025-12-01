@@ -644,7 +644,7 @@ export default function HomePage() {
                       {/* Screen */}
                       <div className="absolute inset-4 rounded-[2.4rem] bg-black overflow-hidden">
                         <video
-                          src="/walletcanva.mp4"
+                          src="/wallet_safari.mp4"
                           className="h-full w-full object-cover"
                           muted
                           loop
@@ -736,7 +736,7 @@ export default function HomePage() {
                       {/* Screen */}
                       <div className="absolute inset-4 rounded-[2.4rem] bg-black overflow-hidden">
                         <video
-                          src="/movil.mp4"
+                          src="/movil_safari.mp4"
                           className="h-full w-full object-cover"
                           muted
                           loop
