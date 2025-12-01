@@ -6,6 +6,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { Inter } from 'next/font/google'
 import { useEffect, useState } from "react"
+import type React from "react"
 import type { CSSProperties } from 'react'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -379,6 +380,15 @@ export default function HomePage() {
   const [isTestimonialAnimating, setIsTestimonialAnimating] = useState(true)
   const [isTestimonialPaused, setIsTestimonialPaused] = useState(false)
 
+  const handleVideoError = (event: React.SyntheticEvent<HTMLVideoElement>) => {
+    const video = event.currentTarget
+    console.error("Video load error", {
+      src: video.currentSrc || video.src,
+      networkState: video.networkState,
+      readyState: video.readyState,
+    })
+  }
+
   useEffect(() => {
     if (testimonials.length === 0 || isTestimonialPaused) return
     const id = setInterval(() => {
@@ -576,6 +586,7 @@ export default function HomePage() {
                             muted
                             loop
                             playsInline
+                            onError={handleVideoError}
                           />
                         </div>
                       </div>
@@ -635,8 +646,11 @@ export default function HomePage() {
                         <video
                           src="/wallet.mp4"
                           className="h-full w-full object-cover"
+                          muted
+                          loop
                           playsInline
-                          controls
+                          autoPlay
+                          onError={handleVideoError}
                         />
                       </div>
                     </div>
@@ -724,8 +738,11 @@ export default function HomePage() {
                         <video
                           src="/movil.mp4"
                           className="h-full w-full object-cover"
+                          muted
+                          loop
                           playsInline
-                          controls
+                          autoPlay
+                          onError={handleVideoError}
                         />
                       </div>
                     </div>
