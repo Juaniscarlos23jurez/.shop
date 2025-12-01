@@ -3,10 +3,10 @@
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import Link from "next/link"
- import Image from "next/image"
- import { Inter } from 'next/font/google'
- import { useEffect, useState } from "react"
- import type { CSSProperties } from 'react'
+import Image from "next/image"
+import { Inter } from 'next/font/google'
+import { useEffect, useState } from "react"
+import type { CSSProperties } from 'react'
 
 const inter = Inter({ subsets: ['latin'] })
 // Contact lead-gen links (override via NEXT_PUBLIC_* envs)
@@ -20,67 +20,209 @@ export default function HomePage() {
   const features = [
     {
       icon: (
-        <svg className="h-10 w-10 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
         </svg>
       ),
       title: "Programa de Lealtad",
-      description: "Crea un sistema de puntos personalizado para fidelizar a tus clientes."
+      description: "Crea un sistema de puntos personalizado para fidelizar a tus clientes.",
+      visual: (
+        <div className="relative w-full h-32 bg-blue-50/50 rounded-xl flex items-center justify-center overflow-hidden group-hover:bg-blue-50 transition-colors">
+          <div className="bg-white border border-blue-100 rounded-xl p-4 shadow-sm w-48 transform rotate-3 group-hover:rotate-0 transition-transform duration-300">
+            <div className="flex justify-between items-center mb-3">
+              <div className="text-xs font-bold text-gray-800">Fideliza+</div>
+              <div className="h-4 w-4 bg-yellow-400 rounded-full"></div>
+            </div>
+            <div className="text-2xl font-bold text-blue-600 mb-1">1,250</div>
+            <div className="text-xs text-gray-500">Puntos acumulados</div>
+          </div>
+        </div>
+      )
     },
     {
       icon: (
-        <svg className="h-10 w-10 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5v2m0 4v2m0 4v2m5-10a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V7a2 2 0 012-2h3.17l1.41-1.41A2 2 0 019.83 3h4.34a2 2 0 011.42.59L17.17 5H20z" />
         </svg>
       ),
       title: "Cupones Digitales & PKPass",
-      description: "Genera cupones para Apple Wallet (iOS) y Google Wallet (Android). Tus clientes los guardan en su teléfono."
+      description: "Genera cupones para Apple Wallet (iOS) y Google Wallet (Android).",
+      visual: (
+        <div className="relative w-full h-32 bg-green-50/50 rounded-xl flex items-center justify-center overflow-hidden group-hover:bg-green-50 transition-colors">
+          <div className="bg-gray-900 text-white rounded-xl p-3 w-40 shadow-lg transform -rotate-3 group-hover:rotate-0 transition-transform duration-300 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-12 h-12 bg-white/10 rounded-full -mr-6 -mt-6"></div>
+            <div className="flex justify-between items-start mb-3">
+              <div className="text-[10px] font-medium opacity-80">Store Card</div>
+              <div className="w-4 h-4 bg-green-500 rounded-full flex items-center justify-center text-[8px]">✓</div>
+            </div>
+            <div className="mt-2 flex justify-between items-end">
+              <div>
+                <div className="text-[10px] text-gray-400">Balance</div>
+                <div className="text-sm font-bold">$50.00</div>
+              </div>
+              <div className="w-6 h-6 bg-white rounded flex items-center justify-center">
+                <div className="w-4 h-4 bg-black"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )
     },
     {
       icon: (
-        <svg className="h-10 w-10 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg className="h-6 w-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
         </svg>
       ),
-      title: "Crea tu Sitio Web en Minutos",
-      description: "Diseña tu sitio web con catálogo de productos, enlace para Instagram, mapas y más. Sin código."
+      title: "Crea tu Sitio Web",
+      description: "Diseña tu sitio web con catálogo de productos, mapas y más. Sin código.",
+      visual: (
+        <div className="relative w-full h-32 bg-purple-50/50 rounded-xl flex items-center justify-center overflow-hidden group-hover:bg-purple-50 transition-colors">
+          <div className="bg-white border border-purple-100 rounded-lg shadow-sm w-44 overflow-hidden transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
+            <div className="bg-gray-50 px-2 py-1.5 flex gap-1 border-b">
+              <div className="w-1.5 h-1.5 rounded-full bg-red-400"></div>
+              <div className="w-1.5 h-1.5 rounded-full bg-yellow-400"></div>
+              <div className="w-1.5 h-1.5 rounded-full bg-green-400"></div>
+            </div>
+            <div className="p-2 space-y-2">
+              <div className="h-2 bg-purple-100 rounded w-3/4"></div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="h-8 bg-gray-50 rounded border border-gray-100"></div>
+                <div className="h-8 bg-gray-50 rounded border border-gray-100"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )
     },
     {
       icon: (
-        <svg className="h-10 w-10 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg className="h-6 w-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
         </svg>
       ),
       title: "Analíticas & SEO",
-      description: "Optimización para motores de búsqueda, visitantes y perspectivas comerciales en tiempo real."
+      description: "Optimización para motores de búsqueda y estadísticas en tiempo real.",
+      visual: (
+        <div className="relative w-full h-32 bg-amber-50/50 rounded-xl flex items-center justify-center overflow-hidden group-hover:bg-amber-50 transition-colors">
+          <div className="bg-white border border-amber-100 rounded-lg p-3 shadow-sm w-44">
+            <div className="flex items-end gap-1.5 h-16 justify-between px-1">
+              <div className="w-4 bg-amber-100 rounded-t h-[40%] group-hover:h-[50%] transition-all duration-500"></div>
+              <div className="w-4 bg-amber-200 rounded-t h-[60%] group-hover:h-[70%] transition-all duration-500 delay-75"></div>
+              <div className="w-4 bg-amber-300 rounded-t h-[30%] group-hover:h-[40%] transition-all duration-500 delay-100"></div>
+              <div className="w-4 bg-amber-400 rounded-t h-[80%] group-hover:h-[90%] transition-all duration-500 delay-150"></div>
+              <div className="w-4 bg-amber-500 rounded-t h-[50%] group-hover:h-[60%] transition-all duration-500 delay-200"></div>
+            </div>
+          </div>
+        </div>
+      )
     },
     {
       icon: (
-        <svg className="h-10 w-10 text-pink-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg className="h-6 w-6 text-pink-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
         </svg>
       ),
-      title: "Catálogo Digital de Productos",
-      description: "Hermosos catálogos con imágenes, precios, inventario y gestión completa de productos."
+      title: "Catálogo Digital",
+      description: "Hermosos catálogos con imágenes, precios y gestión completa.",
+      visual: (
+        <div className="relative w-full h-32 bg-pink-50/50 rounded-xl flex items-center justify-center overflow-hidden group-hover:bg-pink-50 transition-colors">
+          <div className="grid grid-cols-2 gap-2 w-40">
+            <div className="bg-white border border-pink-100 rounded p-1.5 shadow-sm transform group-hover:-translate-y-1 transition-transform duration-300">
+              <div className="w-full h-8 bg-pink-100 rounded mb-1"></div>
+              <div className="h-1 w-8 bg-gray-200 rounded"></div>
+            </div>
+            <div className="bg-white border border-pink-100 rounded p-1.5 shadow-sm transform group-hover:-translate-y-1 transition-transform duration-300 delay-75">
+              <div className="w-full h-8 bg-purple-100 rounded mb-1"></div>
+              <div className="h-1 w-8 bg-gray-200 rounded"></div>
+            </div>
+            <div className="bg-white border border-pink-100 rounded p-1.5 shadow-sm transform group-hover:-translate-y-1 transition-transform duration-300 delay-100">
+              <div className="w-full h-8 bg-blue-100 rounded mb-1"></div>
+              <div className="h-1 w-8 bg-gray-200 rounded"></div>
+            </div>
+            <div className="bg-white border border-pink-100 rounded p-1.5 shadow-sm transform group-hover:-translate-y-1 transition-transform duration-300 delay-150">
+              <div className="w-full h-8 bg-green-100 rounded mb-1"></div>
+              <div className="h-1 w-8 bg-gray-200 rounded"></div>
+            </div>
+          </div>
+        </div>
+      )
     },
     {
       icon: (
-        <svg className="h-10 w-10 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg className="h-6 w-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
         </svg>
       ),
-      title: "CRM & Gestión de Clientes",
-      description: "Aumenta tus ventas con mejor gestión de relaciones con clientes y precios al por mayor."
+      title: "CRM & Clientes",
+      description: "Mejora la gestión de relaciones con clientes y precios al por mayor.",
+      visual: (
+        <div className="relative w-full h-32 bg-indigo-50/50 rounded-xl flex items-center justify-center overflow-hidden group-hover:bg-indigo-50 transition-colors">
+          <div className="bg-white border border-indigo-100 rounded-lg shadow-sm w-44 overflow-hidden">
+            <div className="p-3 space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="w-5 h-5 rounded-full bg-indigo-100"></div>
+                <div className="flex-1 space-y-1">
+                  <div className="h-1.5 bg-gray-200 rounded w-12"></div>
+                  <div className="h-1 bg-gray-100 rounded w-16"></div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-5 h-5 rounded-full bg-green-100"></div>
+                <div className="flex-1 space-y-1">
+                  <div className="h-1.5 bg-gray-200 rounded w-10"></div>
+                  <div className="h-1 bg-gray-100 rounded w-14"></div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-5 h-5 rounded-full bg-amber-100"></div>
+                <div className="flex-1 space-y-1">
+                  <div className="h-1.5 bg-gray-200 rounded w-14"></div>
+                  <div className="h-1 bg-gray-100 rounded w-12"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )
     },
-    
     {
       icon: (
-        <svg className="h-10 w-10 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg className="h-6 w-6 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
         </svg>
       ),
-      title: "Inventario & Productos",
-      description: "Gestiona tu inventario en línea y evita la sobreventa o las faltas de stock."
+      title: "Inventario",
+      description: "Gestiona tu inventario en línea y evita la sobreventa.",
+      visual: (
+        <div className="relative w-full h-32 bg-teal-50/50 rounded-xl flex items-center justify-center overflow-hidden group-hover:bg-teal-50 transition-colors">
+          <div className="bg-white border border-teal-100 rounded-lg p-3 shadow-sm w-44">
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
+                  <div className="h-1.5 w-12 bg-gray-100 rounded"></div>
+                </div>
+                <div className="text-[8px] font-mono text-gray-400">84</div>
+              </div>
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-yellow-500"></div>
+                  <div className="h-1.5 w-10 bg-gray-100 rounded"></div>
+                </div>
+                <div className="text-[8px] font-mono text-gray-400">12</div>
+              </div>
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-red-500"></div>
+                  <div className="h-1.5 w-14 bg-gray-100 rounded"></div>
+                </div>
+                <div className="text-[8px] font-mono text-gray-400">0</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )
     }
   ]
 
@@ -374,7 +516,7 @@ export default function HomePage() {
                       <div className="relative h-6 flex items-center justify-center rounded-t-xl bg-black">
                         <div className="absolute top-2 left-1/2 transform -translate-x-1/2 w-2 h-2 rounded-full bg-gray-700" />
                       </div>
-                      
+
                       {/* Screen content */}
                       <div className="relative bg-black rounded-b-xl overflow-hidden">
                         <div className="relative w-full" style={{ paddingTop: '62.5%' }}>
@@ -390,7 +532,7 @@ export default function HomePage() {
                       </div>
                     </div>
                   </div>
-                  
+
                   {/* Base/Keyboard */}
                   <div className="relative mx-auto mt-1 w-full max-w-5xl">
                     <div className="h-8 rounded-b-[2rem] bg-gradient-to-b from-gray-300 to-gray-400 shadow-lg">
@@ -400,14 +542,14 @@ export default function HomePage() {
                       </div>
                     </div>
                   </div>
-                  
+
                   {/* Shadow under laptop */}
                   <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 w-3/4 h-8 bg-black/10 rounded-full blur-xl" />
                 </div>
               </div>
             </div>
           </div>
-          
+
         </section>
 
         {/* Video Demo Section */}
@@ -556,7 +698,7 @@ export default function HomePage() {
                 <div className="flex flex-col items-center">
                   <div className="w-16 h-16 bg-blue-500 rounded-2xl flex items-center justify-center mb-3 shadow-lg">
                     <svg className="w-10 h-10 text-white" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
                     </svg>
                   </div>
                   <span className="text-sm font-medium text-[#64748b]">Web</span>
@@ -566,7 +708,7 @@ export default function HomePage() {
                 <div className="flex flex-col items-center">
                   <div className="w-16 h-16 bg-green-500 rounded-2xl flex items-center justify-center mb-3 shadow-lg">
                     <svg className="w-10 h-10 text-white" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993.0001.5511-.4482.9997-.9993.9997m-11.046 0c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993 0 .5511-.4482.9997-.9993.9997m11.4045-6.02l1.9973-3.4592a.416.416 0 00-.1521-.5676.416.416 0 00-.5676.1521l-2.0223 3.503C15.5902 8.2439 13.8533 7.8508 12 7.8508s-3.5902.3931-5.1367 1.0989L4.841 5.4467a.4161.4161 0 00-.5677-.1521.4157.4157 0 00-.1521.5676l-1.9973 3.4592C2.6889 11.1867.3432 14.6589 0 18.761h24c-.3435-4.1021-2.6892-7.5743-6.1185-9.4396"/>
+                      <path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993.0001.5511-.4482.9997-.9993.9997m-11.046 0c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993 0 .5511-.4482.9997-.9993.9997m11.4045-6.02l1.9973-3.4592a.416.416 0 00-.1521-.5676.416.416 0 00-.5676.1521l-2.0223 3.503C15.5902 8.2439 13.8533 7.8508 12 7.8508s-3.5902.3931-5.1367 1.0989L4.841 5.4467a.4161.4161 0 00-.5677-.1521.4157.4157 0 00-.1521.5676l-1.9973 3.4592C2.6889 11.1867.3432 14.6589 0 18.761h24c-.3435-4.1021-2.6892-7.5743-6.1185-9.4396" />
                     </svg>
                   </div>
                   <span className="text-sm font-medium text-[#64748b]">Android</span>
@@ -576,7 +718,7 @@ export default function HomePage() {
                 <div className="flex flex-col items-center">
                   <div className="w-16 h-16 bg-gray-900 rounded-2xl flex items-center justify-center mb-3 shadow-lg">
                     <svg className="w-10 h-10 text-white" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+                      <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
                     </svg>
                   </div>
                   <span className="text-sm font-medium text-[#64748b]">iOS</span>
@@ -712,11 +854,10 @@ export default function HomePage() {
                       key={i}
                       type="button"
                       onClick={() => setTestimonialOffset(i)}
-                      className={`h-2 w-2 rounded-full transition-colors ${
-                        i === (testimonialOffset % testimonials.length)
-                          ? 'bg-[#16a34a]'
-                          : 'bg-gray-300 hover:bg-gray-400'
-                      }`}
+                      className={`h-2 w-2 rounded-full transition-colors ${i === (testimonialOffset % testimonials.length)
+                        ? 'bg-[#16a34a]'
+                        : 'bg-gray-300 hover:bg-gray-400'
+                        }`}
                       aria-label={`Ir al testimonio ${i + 1}`}
                     />
                   ))}
@@ -739,12 +880,19 @@ export default function HomePage() {
             </div>
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {features.map((feature, index) => (
-                <Card key={index} className="p-6 hover:shadow-md transition-shadow duration-300 border border-gray-100 rounded-2xl">
-                  <div className="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center mb-4">
-                    {feature.icon}
+                <Card key={index} className="group hover:shadow-xl transition-all duration-300 border border-gray-100 rounded-2xl overflow-hidden bg-white">
+                  <div className="p-1">
+                    {feature.visual}
                   </div>
-                  <h3 className="text-xl font-bold text-[#0f172a] mb-2">{feature.title}</h3>
-                  <p className="text-[#64748b] text-base leading-relaxed">{feature.description}</p>
+                  <div className="p-6">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-10 h-10 rounded-lg bg-gray-50 flex items-center justify-center group-hover:bg-green-50 transition-colors">
+                        {feature.icon}
+                      </div>
+                      <h3 className="text-lg font-bold text-[#0f172a] leading-tight">{feature.title}</h3>
+                    </div>
+                    <p className="text-[#64748b] text-sm leading-relaxed">{feature.description}</p>
+                  </div>
                 </Card>
               ))}
             </div>
@@ -888,7 +1036,7 @@ export default function HomePage() {
                       Visitantes y perspectivas comerciales
                     </p>
                   </div>
-                  
+
                   <div className="border-t border-gray-200 pt-6">
                     <div className="flex items-center gap-3 mb-4">
                       <div className="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center">
@@ -921,7 +1069,7 @@ export default function HomePage() {
             </div>
           </div>
         </section>
-     
+
         {/* Plans Section */}
         <section id="pricing" className="py-16 bg-gray-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -947,7 +1095,7 @@ export default function HomePage() {
                 </span>
               </div>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
               {[
                 {
@@ -1012,11 +1160,10 @@ export default function HomePage() {
                   badge: '🎁 Dominio gratis - Oferta limitada'
                 }
               ].map((plan, index) => (
-                <div 
-                  key={index} 
-                  className={`relative bg-white rounded-2xl shadow-sm overflow-hidden border ${
-                    plan.popular ? 'border-2 border-[#22c55e] transform scale-105 z-10' : 'border-gray-200'
-                  }`}
+                <div
+                  key={index}
+                  className={`relative bg-white rounded-2xl shadow-sm overflow-hidden border ${plan.popular ? 'border-2 border-[#22c55e] transform scale-105 z-10' : 'border-gray-200'
+                    }`}
                 >
                   {plan.popular && (
                     <div className="absolute top-0 right-0 bg-[#22c55e] text-white text-xs font-bold px-3 py-1 rounded-bl-lg">
@@ -1077,12 +1224,11 @@ export default function HomePage() {
                       ))}
                     </ul>
                     <Link href="#contact">
-                      <Button 
-                        className={`w-full mb-4 text-base font-semibold rounded-xl shadow-sm transition-all duration-200 ${
-                          plan.popular 
-                            ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white hover:from-emerald-600 hover:to-emerald-700 shadow-md hover:shadow-lg hover:-translate-y-0.5'
-                            : 'bg-white border border-gray-300 text-gray-800 hover:bg-gray-50 hover:border-gray-400'
-                        }`}
+                      <Button
+                        className={`w-full mb-4 text-base font-semibold rounded-xl shadow-sm transition-all duration-200 ${plan.popular
+                          ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white hover:from-emerald-600 hover:to-emerald-700 shadow-md hover:shadow-lg hover:-translate-y-0.5'
+                          : 'bg-white border border-gray-300 text-gray-800 hover:bg-gray-50 hover:border-gray-400'
+                          }`}
                       >
                         {plan.cta}
                       </Button>
@@ -1103,8 +1249,8 @@ export default function HomePage() {
 
             <div className="mt-12 text-center">
               <p className="text-gray-600 text-lg mb-6">¿Necesitas una solución personalizada para tu negocio?</p>
-              <a 
-                href="#contact" 
+              <a
+                href="#contact"
                 className="inline-flex items-center text-[#22c55e] font-medium hover:text-green-600"
               >
                 Contáctanos para una demostración personalizada
@@ -1210,10 +1356,10 @@ export default function HomePage() {
       {/* CTA Section */}
       <section className="bg-[#22c55e] py-12">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-              ¿Hablamos de tu estrategia de lealtad?
-            </h2>
-            <p className="text-green-100 text-xl mb-8 max-w-2xl mx-auto">
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+            ¿Hablamos de tu estrategia de lealtad?
+          </h2>
+          <p className="text-green-100 text-xl mb-8 max-w-2xl mx-auto">
             Agenda una llamada o escríbenos por WhatsApp para conocer tus objetivos y proponerte la mejor solución.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4 max-w-md mx-auto">
@@ -1390,15 +1536,15 @@ export default function HomePage() {
         aria-label="Chatear por WhatsApp"
         className="fixed bottom-6 right-6 z-50 group flex items-center gap-3"
       >
-         <span className="hidden sm:inline-block bg-[#25D366] text-white font-medium px-3 py-2 rounded-full shadow-lg transition-transform duration-200 group-hover:scale-105">
+        <span className="hidden sm:inline-block bg-[#25D366] text-white font-medium px-3 py-2 rounded-full shadow-lg transition-transform duration-200 group-hover:scale-105">
           Contactar
         </span>
         <div className="h-16 w-16 rounded-full bg-[#25D366] shadow-lg flex items-center justify-center transition-transform duration-200 group-hover:scale-105">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-        </svg>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+          </svg>
         </div>
-        
+
       </a>
     </div>
   )
