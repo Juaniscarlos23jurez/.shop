@@ -31,7 +31,7 @@ export default function HomePage() {
         <div className="relative w-full h-32 bg-blue-50/50 rounded-xl flex items-center justify-center overflow-hidden group-hover:bg-blue-50 transition-colors">
           <div className="bg-white border border-blue-100 rounded-xl p-4 shadow-sm w-48 transform rotate-3 group-hover:rotate-0 transition-transform duration-300">
             <div className="flex justify-between items-center mb-3">
-              <div className="text-xs font-bold text-gray-800">Fideliza+</div>
+              <div className="text-xs font-bold text-gray-800">Fynlink+</div>
               <div className="h-4 w-4 bg-yellow-400 rounded-full"></div>
             </div>
             <div className="text-2xl font-bold text-blue-600 mb-1">1,250</div>
@@ -296,14 +296,14 @@ export default function HomePage() {
   const testimonials = [
     {
       quote:
-        "Fuimos el primer negocio en confiar en Fideliza+ y no nos arrepentimos. Desde el día uno vimos resultados increíbles en la retención de clientes.",
+        "Fuimos el primer negocio en confiar en Fynlink+ y no nos arrepentimos. Desde el día uno vimos resultados increíbles en la retención de clientes.",
       author: "Miel de sol",
       role: "Nuestro primer cliente",
       avatar: "/company1.png"
     },
     {
       quote:
-        "Incrementamos nuestras ventas recurrentes en un 30% desde que implementamos Fideliza+. ¡Nuestros clientes aman el programa de puntos!",
+        "Incrementamos nuestras ventas recurrentes en un 30% desde que implementamos Fynlink+. ¡Nuestros clientes aman el programa de puntos!",
       author: "María González",
       role: "Dueña de Café Aromas",
       avatar: "/placeholder-user.jpg"
@@ -345,7 +345,7 @@ export default function HomePage() {
     },
     {
       quote:
-        "Implementamos Fideliza+ en nuestras 3 sucursales y los resultados son consistentes. Nuestros clientes regresan más seguido.",
+        "Implementamos Fynlink+ en nuestras 3 sucursales y los resultados son consistentes. Nuestros clientes regresan más seguido.",
       author: "Restaurante Familiar",
       role: "Cadena de restaurantes",
       avatar: "/placeholder-logo.png"
@@ -495,7 +495,7 @@ export default function HomePage() {
                     <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
                   </svg>
                 </div>
-                <span className="text-2xl font-bold text-gray-900">Fideliza+</span>
+                <span className="text-2xl font-bold text-gray-900">Fynlink+</span>
               </div>
             </div>
             <div className="hidden md:block">
@@ -558,7 +558,7 @@ export default function HomePage() {
                       </div>
                     ))}
                   </div>
-                  <span className="ml-3 text-base">+2,500 negocios confían en nosotros</span>
+                  <span className="ml-3 text-base">+120 negocios confían en nosotros</span>
                 </div>
               </div>
             </div>
@@ -617,10 +617,10 @@ export default function HomePage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="mb-16 text-center">
               <h2 className="text-4xl font-black text-[#0f172a] mb-4">
-                Descubre cómo funciona Fideliza+
+                Descubre cómo funciona Rewin+
               </h2>
               <p className="text-[#64748b] text-xl max-w-2xl mx-auto">
-                Mira cómo se ve tu catálogo digital en móvil (app) y en la web
+                Ofrece a tus clientes una experiencia completa en móvil (app) y web
               </p>
             </div>
 
@@ -658,33 +658,72 @@ export default function HomePage() {
                 </div>
 
                 {/* Features bullets */}
-                <div className="space-y-6">
-                  <div className="flex items-start gap-4">
-                    <div className="flex-shrink-0 w-2 h-2 rounded-full bg-[#22c55e] mt-2" />
-                    <div>
-                      <h4 className="text-xl font-semibold text-[#0f172a] mb-1">Catálogo digital</h4>
-                      <p className="text-[#64748b]">Muestra todos tus productos con imágenes y descripciones</p>
+                <div className="space-y-8">
+                  <div className="flex items-start gap-4 group">
+                    <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-[#22c55e] to-[#16a34a] flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="text-xl font-bold text-[#0f172a] mb-2">Catálogo digital interactivo</h4>
+                      <p className="text-[#64748b] leading-relaxed">Muestra todos tus productos con imágenes de alta calidad, descripciones detalladas, precios actualizados y categorías organizadas. Tus clientes pueden explorar, buscar y filtrar fácilmente desde cualquier dispositivo.</p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        <span className="text-xs px-2 py-1 bg-green-50 text-green-700 rounded-full">Búsqueda inteligente</span>
+                        <span className="text-xs px-2 py-1 bg-green-50 text-green-700 rounded-full">Filtros avanzados</span>
+                        <span className="text-xs px-2 py-1 bg-green-50 text-green-700 rounded-full">Actualización en tiempo real</span>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-start gap-4">
-                    <div className="flex-shrink-0 w-2 h-2 rounded-full bg-[#22c55e] mt-2" />
-                    <div>
-                      <h4 className="text-xl font-semibold text-[#0f172a] mb-1">Puntos de lealtad</h4>
-                      <p className="text-[#64748b]">Acumula puntos con cada compra y canjéalos por recompensas</p>
+
+                  <div className="flex items-start gap-4 group">
+                    <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-[#3b82f6] to-[#2563eb] flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="text-xl font-bold text-[#0f172a] mb-2">Sistema de puntos de lealtad</h4>
+                      <p className="text-[#64748b] leading-relaxed">Permite que tus clientes acumulen puntos automáticamente con cada compra y los canjeen por recompensas exclusivas, descuentos especiales o productos gratis. Visualizan su progreso y beneficios en tiempo real.</p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        <span className="text-xs px-2 py-1 bg-blue-50 text-blue-700 rounded-full">Acumulación automática</span>
+                        <span className="text-xs px-2 py-1 bg-blue-50 text-blue-700 rounded-full">Recompensas personalizadas</span>
+                        <span className="text-xs px-2 py-1 bg-blue-50 text-blue-700 rounded-full">Historial completo</span>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-start gap-4">
-                    <div className="flex-shrink-0 w-2 h-2 rounded-full bg-[#22c55e] mt-2" />
-                    <div>
-                      <h4 className="text-xl font-semibold text-[#0f172a] mb-1">Cupones y promociones</h4>
-                      <p className="text-[#64748b]">Recibe ofertas exclusivas y descuentos especiales</p>
+
+                  <div className="flex items-start gap-4 group">
+                    <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-[#f59e0b] to-[#d97706] flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="text-xl font-bold text-[#0f172a] mb-2">Cupones y promociones inteligentes</h4>
+                      <p className="text-[#64748b] leading-relaxed">Envía ofertas exclusivas personalizadas según las preferencias de tus clientes, descuentos especiales en sus productos favoritos y promociones por tiempo limitado. Ellos activan sus cupones con un solo clic.</p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        <span className="text-xs px-2 py-1 bg-amber-50 text-amber-700 rounded-full">Ofertas personalizadas</span>
+                        <span className="text-xs px-2 py-1 bg-amber-50 text-amber-700 rounded-full">Activación instantánea</span>
+                        <span className="text-xs px-2 py-1 bg-amber-50 text-amber-700 rounded-full">Alertas de vencimiento</span>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-start gap-4">
-                    <div className="flex-shrink-0 w-2 h-2 rounded-full bg-[#22c55e] mt-2" />
-                    <div>
-                      <h4 className="text-xl font-semibold text-[#0f172a] mb-1">Wallet / PKPass</h4>
-                      <p className="text-[#64748b]">Guarda tu tarjeta de lealtad en Apple Wallet o Google Pay</p>
+
+                  <div className="flex items-start gap-4 group">
+                    <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-[#8b5cf6] to-[#7c3aed] flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="text-xl font-bold text-[#0f172a] mb-2">Wallet / PKPass integrado</h4>
+                      <p className="text-[#64748b] leading-relaxed">Tus clientes guardan su tarjeta de lealtad digital en Apple Wallet o Google Pay para acceso instantáneo. Reciben notificaciones automáticas de sus puntos, ofertas y actualizaciones sin abrir la app.</p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        <span className="text-xs px-2 py-1 bg-purple-50 text-purple-700 rounded-full">Apple Wallet</span>
+                        <span className="text-xs px-2 py-1 bg-purple-50 text-purple-700 rounded-full">Google Pay</span>
+                        <span className="text-xs px-2 py-1 bg-purple-50 text-purple-700 rounded-full">Acceso offline</span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -693,29 +732,75 @@ export default function HomePage() {
 
             {/* Mobile Section */}
             <div className="mb-16">
-              <h3 className="text-3xl font-bold text-[#0f172a] mb-8">App Movil IOS/Android</h3>
+              <h3 className="text-3xl font-bold text-[#0f172a] mb-8">App Móvil iOS/Android</h3>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
                 {/* Features bullets */}
-                <div className="space-y-6">
-                  <div className="flex items-start gap-4">
-                    <div className="flex-shrink-0 w-2 h-2 rounded-full bg-[#22c55e] mt-2" />
-                    <div>
-                      <h4 className="text-xl font-semibold text-[#0f172a] mb-1">Notificaciones push</h4>
-                      <p className="text-[#64748b]">Recibe alertas de nuevas ofertas y promociones al instante</p>
+                <div className="space-y-8">
+                  <div className="flex items-start gap-4 group">
+                    <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-[#ef4444] to-[#dc2626] flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="text-xl font-bold text-[#0f172a] mb-2">Notificaciones push inteligentes</h4>
+                      <p className="text-[#64748b] leading-relaxed">Envía alertas instantáneas a tus clientes sobre nuevas ofertas, promociones exclusivas, puntos acumulados y recordatorios personalizados. Mantenlos siempre informados sin que pierdan ninguna oportunidad.</p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        <span className="text-xs px-2 py-1 bg-red-50 text-red-700 rounded-full">Alertas en tiempo real</span>
+                        <span className="text-xs px-2 py-1 bg-red-50 text-red-700 rounded-full">Personalización avanzada</span>
+                        <span className="text-xs px-2 py-1 bg-red-50 text-red-700 rounded-full">Control total</span>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-start gap-4">
-                    <div className="flex-shrink-0 w-2 h-2 rounded-full bg-[#22c55e] mt-2" />
-                    <div>
-                      <h4 className="text-xl font-semibold text-[#0f172a] mb-1">Seguimiento de pedidos</h4>
-                      <p className="text-[#64748b]">Ve el proceso de tu pedido en tiempo real desde tu móvil</p>
+
+                  <div className="flex items-start gap-4 group">
+                    <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-[#06b6d4] to-[#0891b2] flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="text-xl font-bold text-[#0f172a] mb-2">Seguimiento de pedidos en tiempo real</h4>
+                      <p className="text-[#64748b] leading-relaxed">Permite que tus clientes monitoreen el estado completo de sus pedidos desde la confirmación hasta la entrega. Visualizan cada etapa del proceso, reciben actualizaciones automáticas y conocen el tiempo estimado de llegada.</p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        <span className="text-xs px-2 py-1 bg-cyan-50 text-cyan-700 rounded-full">Rastreo GPS</span>
+                        <span className="text-xs px-2 py-1 bg-cyan-50 text-cyan-700 rounded-full">Actualizaciones automáticas</span>
+                        <span className="text-xs px-2 py-1 bg-cyan-50 text-cyan-700 rounded-full">Historial completo</span>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-start gap-4">
-                    <div className="flex-shrink-0 w-2 h-2 rounded-full bg-[#22c55e] mt-2" />
-                    <div>
-                      <h4 className="text-xl font-semibold text-[#0f172a] mb-1">Experiencia nativa</h4>
-                      <p className="text-[#64748b]">Interfaz optimizada para iOS y Android</p>
+
+                  <div className="flex items-start gap-4 group">
+                    <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-[#ec4899] to-[#db2777] flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="text-xl font-bold text-[#0f172a] mb-2">Experiencia nativa optimizada</h4>
+                      <p className="text-[#64748b] leading-relaxed">Ofrece una interfaz fluida y rápida diseñada específicamente para iOS y Android. Tus clientes disfrutan de animaciones suaves, navegación intuitiva, modo oscuro automático y rendimiento superior en cualquier dispositivo.</p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        <span className="text-xs px-2 py-1 bg-pink-50 text-pink-700 rounded-full">Diseño adaptativo</span>
+                        <span className="text-xs px-2 py-1 bg-pink-50 text-pink-700 rounded-full">Modo oscuro</span>
+                        <span className="text-xs px-2 py-1 bg-pink-50 text-pink-700 rounded-full">Ultra rápida</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-4 group">
+                    <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-[#10b981] to-[#059669] flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="text-xl font-bold text-[#0f172a] mb-2">Seguridad y privacidad garantizada</h4>
+                      <p className="text-[#64748b] leading-relaxed">Los datos de tus clientes están protegidos con encriptación de nivel bancario. Autenticación biométrica (Face ID/Touch ID), pagos seguros y cumplimiento total con normativas de privacidad internacionales.</p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        <span className="text-xs px-2 py-1 bg-emerald-50 text-emerald-700 rounded-full">Encriptación SSL</span>
+                        <span className="text-xs px-2 py-1 bg-emerald-50 text-emerald-700 rounded-full">Biometría</span>
+                        <span className="text-xs px-2 py-1 bg-emerald-50 text-emerald-700 rounded-full">GDPR compliant</span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -791,8 +876,8 @@ export default function HomePage() {
             {/* Statistics Grid */}
             <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
-                { number: '2,500+', label: 'Negocios' },
-                { number: '1M+', label: 'Clientes' },
+                { number: '120+', label: 'Negocios' },
+                { number: '1000+', label: 'Clientes' },
                 { number: '4.9/5', label: 'Calificación' },
                 { number: '24/7', label: 'Soporte' }
               ].map((stat, index) => (
@@ -813,7 +898,7 @@ export default function HomePage() {
                 Lo que dicen nuestros clientes
               </h2>
               <p className="text-[#64748b] text-xl max-w-2xl mx-auto">
-                Empresas de todos los tamaños confían en Fideliza+ para fidelizar a sus clientes
+                Empresas de todos los tamaños confían en Fynlink+ para fidelizar a sus clientes
               </p>
             </div>
 
