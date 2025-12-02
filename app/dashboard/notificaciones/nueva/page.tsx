@@ -32,6 +32,7 @@ export default function NuevaNotificacionPage() {
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
   const [deepLink, setDeepLink] = useState('');
+  const [channelMode, setChannelMode] = useState<'push' | 'email' | 'both'>('push');
   const [followers, setFollowers] = useState<Array<{
     customer_id: number;
     customer_name: string;
@@ -208,55 +209,77 @@ export default function NuevaNotificacionPage() {
     }
     setIsLoading(true);
     try {
-      const payload = {
-        channel: 'push' as const,
-        title,
-        body: message,
-        data: deepLink ? { deepLink } : null,
-        segment_type: 'custom' as const,
-        recipient_ids: selectedRecipients,
-        scheduled_at: null as const,
-      };
+      const wantsPush = channelMode === 'push' || channelMode === 'both';
+      const wantsEmail = channelMode === 'email' || channelMode === 'both';
 
-      // 1) Registrar la notificación en el backend (persistencia / métricas)
-      const r = await api.companies.createNotification(cid, payload, token);
-      if (!r.success) throw new Error(r.message || 'Error creando notificación');
+      // 1) Registrar notificaciones en el backend según canal seleccionado
+      if (wantsEmail) {
+        const emailPayload = {
+          channel: 'email' as const,
+          title,
+          body: message,
+          data: deepLink ? { deepLink } : null,
+          segment_type: 'custom' as const,
+          recipient_ids: selectedRecipients,
+          scheduled_at: null,
+        };
 
-      // 2) Enviar push a dispositivos móviles desde el frontend vía API route segura
-      const selected = followers.filter(f => selectedRecipients.includes(f.customer_id));
-      const tokens = selected
-        .map(f => f.customer_fcm_token)
-        .filter((t): t is string => typeof t === 'string' && t.length > 0);
-
-      if (tokens.length === 0) {
-        alert('No hay tokens FCM válidos entre los destinatarios seleccionados. Se registró la notificación, pero no se enviaron pushes.');
-        router.push('/dashboard/notificaciones');
-        return;
+        const emailRes = await api.companies.createNotification(cid, emailPayload, token);
+        if (!emailRes.success) throw new Error(emailRes.message || 'Error creando notificación por correo');
       }
 
-      // Compose notification for FCM
-      const sendBody = {
-        tokens,
-        notification: { title, body: message },
-        data: deepLink ? { deepLink: String(deepLink) } : undefined,
-      };
+      if (wantsPush) {
+        const pushPayload = {
+          channel: 'push' as const,
+          title,
+          body: message,
+          data: deepLink ? { deepLink } : null,
+          segment_type: 'custom' as const,
+          recipient_ids: selectedRecipients,
+          scheduled_at: null,
+        };
 
-      const sendRes = await fetch('/api/notifications/send', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          // Reutilizamos el token de sesión como Bearer para la API route
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify(sendBody),
-      });
+        const pushRes = await api.companies.createNotification(cid, pushPayload, token);
+        if (!pushRes.success) throw new Error(pushRes.message || 'Error creando notificación push');
 
-      const sendJson = await sendRes.json();
-      if (!sendRes.ok || !sendJson?.success) {
-        console.error('Error enviando FCM', sendJson);
-        alert(`Notificación creada, pero error al enviar push: ${sendJson?.message || sendRes.statusText}`);
-      } else {
-        alert(`Notificación enviada: ${sendJson.sent} entregadas, ${sendJson.failure} fallidas`);
+        // 2) Enviar push a dispositivos móviles desde el frontend vía API route segura
+        const selected = followers.filter(f => selectedRecipients.includes(f.customer_id));
+        const tokens = selected
+          .map(f => f.customer_fcm_token)
+          .filter((t): t is string => typeof t === 'string' && t.length > 0);
+
+        if (tokens.length === 0) {
+          alert('No hay tokens FCM válidos entre los destinatarios seleccionados. Se registró la notificación push, pero no se enviaron pushes.');
+          router.push('/dashboard/notificaciones');
+          return;
+        }
+
+        const sendBody = {
+          tokens,
+          notification: { title, body: message },
+          data: deepLink ? { deepLink: String(deepLink) } : undefined,
+        };
+
+        const sendRes = await fetch('/api/notifications/send', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify(sendBody),
+        });
+
+        const sendJson = await sendRes.json();
+        if (!sendRes.ok || !sendJson?.success) {
+          console.error('Error enviando FCM', sendJson);
+          alert(`Notificación creada, pero error al enviar push: ${sendJson?.message || sendRes.statusText}`);
+        } else {
+          alert(`Notificación enviada: ${sendJson.sent} entregadas, ${sendJson.failure} fallidas`);
+        }
+      }
+
+      if (wantsEmail && !wantsPush) {
+        alert('Notificación por correo creada y programada correctamente.');
       }
 
       router.push('/dashboard/notificaciones');
@@ -313,6 +336,55 @@ export default function NuevaNotificacionPage() {
           </div>
 
           <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Canal de envío</CardTitle>
+                <CardDescription>Elige si quieres enviar por correo, push o ambos</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="inline-flex rounded-md border bg-slate-50 p-1 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setChannelMode('email')}
+                    className={`px-3 py-1 rounded-md font-medium transition-colors ${
+                      channelMode === 'email'
+                        ? 'bg-white text-blue-700 border border-blue-200 shadow-sm'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Solo correo
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setChannelMode('push')}
+                    className={`px-3 py-1 rounded-md font-medium transition-colors mx-1 ${
+                      channelMode === 'push'
+                        ? 'bg-white text-blue-700 border border-blue-200 shadow-sm'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Solo notificación
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setChannelMode('both')}
+                    className={`px-3 py-1 rounded-md font-medium transition-colors ${
+                      channelMode === 'both'
+                        ? 'bg-white text-blue-700 border border-blue-200 shadow-sm'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Ambos
+                  </button>
+                </div>
+                <p className="text-xs text-slate-500">
+                  
+                  {channelMode === 'email' && 'Se enviará solo por correo a los clientes seleccionados que tengan email registrado.'}
+                  {channelMode === 'push' && 'Se enviará solo como notificación push a los clientes seleccionados con token FCM válido.'}
+                  {channelMode === 'both' && 'Se enviará como correo y como notificación push a los clientes seleccionados.'}
+                </p>
+              </CardContent>
+            </Card>
             <Card>
               <CardHeader>
                 <CardTitle>Destinatarios</CardTitle>
@@ -445,7 +517,13 @@ export default function NuevaNotificacionPage() {
             <div className="flex justify-end gap-3">
               <Button type="button" variant="outline" onClick={() => router.push('/dashboard/notificaciones')} disabled={isLoading}>Cancelar</Button>
               <Button type="submit" disabled={isLoading || selectedRecipients.length === 0} className="bg-blue-600 hover:bg-blue-700">
-                {isLoading ? 'Enviando…' : 'Enviar notificación push'}
+                {isLoading
+                  ? 'Enviando…'
+                  : channelMode === 'email'
+                    ? 'Enviar correo'
+                    : channelMode === 'push'
+                      ? 'Enviar notificación push'
+                      : 'Enviar por ambos canales'}
               </Button>
           </div>
         </div>
