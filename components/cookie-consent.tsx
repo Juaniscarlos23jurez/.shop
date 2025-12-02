@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { X } from 'lucide-react'
@@ -15,6 +16,7 @@ declare global {
 export function CookieConsent() {
     const [isVisible, setIsVisible] = useState(false)
     const [isMounted, setIsMounted] = useState(false)
+    const pathname = usePathname()
 
     useEffect(() => {
         setIsMounted(true)
@@ -68,6 +70,9 @@ export function CookieConsent() {
     }
 
     if (!isMounted) return null
+
+    // Only show on landing page
+    if (pathname !== '/') return null
 
     return (
         <div
