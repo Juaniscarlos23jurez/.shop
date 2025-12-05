@@ -43,7 +43,7 @@ const adminSidebarItems = [
   { icon: Package, label: "Productos", href: "/dashboard/productos" },
   { icon: ShoppingCart, label: "Punto de Venta", href: "/dashboard/pos" },
   { icon: Clock4, label: "Órdenes Pendientes", href: "/dashboard/ordenes-pendientes" },
-  { icon: MessageSquare, label: "WhatsApp", href: "/dashboard/whatsapp" },
+//  { icon: MessageSquare, label: "WhatsApp", href: "/dashboard/whatsapp" },
   { icon: CreditCardIcon, label: "Metodos de cobro", href: "/dashboard/stripe" },
 
   // Clientes Section
