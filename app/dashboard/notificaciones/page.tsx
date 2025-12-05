@@ -109,8 +109,35 @@ export default function NotificacionesPage() {
   };
 
   const getTypeIcon = (type: string) => {
-    if (type === 'both') return <span>📱✉️</span>;
-    return type === 'push' ? <span>📱</span> : <span>✉️</span>;
+    if (type === 'both') {
+      return (
+        <span className="inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700 border border-indigo-100">
+          Ambos (Push + Email)
+        </span>
+      );
+    }
+
+    if (type === 'push') {
+      return (
+        <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 border border-blue-100">
+          Push
+        </span>
+      );
+    }
+
+    if (type === 'email') {
+      return (
+        <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 border border-emerald-100">
+          Email
+        </span>
+      );
+    }
+
+    return (
+      <span className="inline-flex items-center rounded-full bg-slate-50 px-2 py-0.5 text-xs font-medium text-slate-600 border border-slate-100 capitalize">
+        {type}
+      </span>
+    );
   };
 
   return (
@@ -177,9 +204,7 @@ export default function NotificacionesPage() {
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Tipo
                         </th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Estado
-                        </th>
+                        
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Fecha
                         </th>
@@ -201,9 +226,7 @@ export default function NotificacionesPage() {
                           <td className="px-6 py-4 whitespace-nowrap">
                             {getTypeIcon(n.channel)}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {getStatusBadge(n.status)}
-                          </td>
+                           
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {new Date(n.created_at).toLocaleString()}
                           </td>

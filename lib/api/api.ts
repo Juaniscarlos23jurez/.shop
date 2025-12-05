@@ -1059,6 +1059,30 @@ export const api = {
     },
 
     /**
+     * Notifications: send emails for a notification (Paso 2)
+     * POST /api/companies/{companyId}/notifications/{notificationId}/send-emails
+     */
+    async sendNotificationEmails(
+      companyId: string,
+      notificationId: string | number,
+      token: string
+    ): Promise<ApiResponse<{ 
+      data: { 
+        notification_id: number; 
+        sent_count: number; 
+        failed_count: number; 
+        total_processed: number; 
+        errors: any[] 
+      } 
+    }>> {
+      return fetch(`${BASE_URL}/api/companies/${companyId}/notifications/${notificationId}/send-emails`, {
+        method: 'POST',
+        headers: getAuthHeader(token),
+        body: JSON.stringify({}),
+      }).then(handleResponse);
+    },
+
+    /**
      * Announcements (Banners): Public list of active announcements for a company
      * GET /api/public/companies/{companyId}/announcements
      */

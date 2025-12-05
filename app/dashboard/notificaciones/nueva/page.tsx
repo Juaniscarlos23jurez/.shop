@@ -226,6 +226,19 @@ export default function NuevaNotificacionPage() {
 
         const emailRes = await api.companies.createNotification(cid, emailPayload, token);
         if (!emailRes.success) throw new Error(emailRes.message || 'Error creando notificación por correo');
+
+        // 2) Enviar correos inmediatamente (Paso 2)
+        const notificationId = emailRes.data?.data?.notification?.id;
+        if (notificationId) {
+          const sendEmailRes = await api.companies.sendNotificationEmails(cid, notificationId, token);
+          if (!sendEmailRes.success) {
+            console.error('Error enviando correos:', sendEmailRes.message);
+            alert(`Notificación creada, pero error al enviar correos: ${sendEmailRes.message}`);
+          } else {
+            const { sent_count, failed_count } = sendEmailRes.data?.data || {};
+            console.log(`Correos enviados: ${sent_count || 0} exitosos, ${failed_count || 0} fallidos`);
+          }
+        }
       }
 
       if (wantsPush) {
@@ -278,8 +291,18 @@ export default function NuevaNotificacionPage() {
         }
       }
 
-      if (wantsEmail && !wantsPush) {
-        alert('Notificación por correo creada y programada correctamente.');
+      // Mostrar mensaje final según el resultado
+      let successMessage = '';
+      if (wantsEmail && wantsPush) {
+        successMessage = 'Notificación enviada por correo y push exitosamente.';
+      } else if (wantsEmail && !wantsPush) {
+        successMessage = 'Correos enviados exitosamente.';
+      } else if (!wantsEmail && wantsPush) {
+        successMessage = 'Notificaciones push enviadas exitosamente.';
+      }
+      
+      if (successMessage) {
+        alert(successMessage);
       }
 
       router.push('/dashboard/notificaciones');
@@ -339,50 +362,91 @@ export default function NuevaNotificacionPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Canal de envío</CardTitle>
-                <CardDescription>Elige si quieres enviar por correo, push o ambos</CardDescription>
+                <CardDescription>Elige cómo quieres comunicarte con tus clientes</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="inline-flex rounded-md border bg-slate-50 p-1 text-xs">
+                <div className="grid gap-3">
                   <button
                     type="button"
                     onClick={() => setChannelMode('email')}
-                    className={`px-3 py-1 rounded-md font-medium transition-colors ${
+                    className={`flex items-start gap-3 rounded-lg border px-3 py-2 text-left transition shadow-sm ${
                       channelMode === 'email'
-                        ? 'bg-white text-blue-700 border border-blue-200 shadow-sm'
-                        : 'text-slate-600 hover:text-slate-900'
+                        ? 'border-blue-500 bg-blue-50/70'
+                        : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
                     }`}
                   >
-                    Solo correo
+                    <div className={`mt-1 h-4 w-4 flex-shrink-0 rounded-full border-2 ${
+                      channelMode === 'email' ? 'border-blue-600 bg-blue-600' : 'border-slate-300'
+                    }`} />
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-sm font-semibold text-slate-900">Solo correo</span>
+                        {channelMode === 'email' && (
+                          <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-blue-700">
+                            Seleccionado
+                          </span>
+                        )}
+                      </div>
+                      <p className="mt-1 text-xs text-slate-600">
+                        Envía una campaña por correo electrónico a los contactos seleccionados que tengan email registrado.
+                      </p>
+                    </div>
                   </button>
+
                   <button
                     type="button"
                     onClick={() => setChannelMode('push')}
-                    className={`px-3 py-1 rounded-md font-medium transition-colors mx-1 ${
+                    className={`flex items-start gap-3 rounded-lg border px-3 py-2 text-left transition shadow-sm ${
                       channelMode === 'push'
-                        ? 'bg-white text-blue-700 border border-blue-200 shadow-sm'
-                        : 'text-slate-600 hover:text-slate-900'
+                        ? 'border-blue-500 bg-blue-50/70'
+                        : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
                     }`}
                   >
-                    Solo notificación
+                    <div className={`mt-1 h-4 w-4 flex-shrink-0 rounded-full border-2 ${
+                      channelMode === 'push' ? 'border-blue-600 bg-blue-600' : 'border-slate-300'
+                    }`} />
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-sm font-semibold text-slate-900">Solo notificación</span>
+                        {channelMode === 'push' && (
+                          <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-blue-700">
+                            Seleccionado
+                          </span>
+                        )}
+                      </div>
+                      <p className="mt-1 text-xs text-slate-600">
+                        Envía una notificación push a los dispositivos con token FCM válido entre los destinatarios seleccionados.
+                      </p>
+                    </div>
                   </button>
+
                   <button
                     type="button"
                     onClick={() => setChannelMode('both')}
-                    className={`px-3 py-1 rounded-md font-medium transition-colors ${
+                    className={`flex items-start gap-3 rounded-lg border px-3 py-2 text-left transition shadow-sm ${
                       channelMode === 'both'
-                        ? 'bg-white text-blue-700 border border-blue-200 shadow-sm'
-                        : 'text-slate-600 hover:text-slate-900'
+                        ? 'border-blue-500 bg-blue-50/70'
+                        : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
                     }`}
                   >
-                    Ambos
+                    <div className={`mt-1 h-4 w-4 flex-shrink-0 rounded-full border-2 ${
+                      channelMode === 'both' ? 'border-blue-600 bg-blue-600' : 'border-slate-300'
+                    }`} />
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-sm font-semibold text-slate-900">Ambos canales</span>
+                        {channelMode === 'both' && (
+                          <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-blue-700">
+                            Seleccionado
+                          </span>
+                        )}
+                      </div>
+                      <p className="mt-1 text-xs text-slate-600">
+                        Combina correo y notificación push para maximizar el alcance con los clientes seleccionados.
+                      </p>
+                    </div>
                   </button>
                 </div>
-                <p className="text-xs text-slate-500">
-                  
-                  {channelMode === 'email' && 'Se enviará solo por correo a los clientes seleccionados que tengan email registrado.'}
-                  {channelMode === 'push' && 'Se enviará solo como notificación push a los clientes seleccionados con token FCM válido.'}
-                  {channelMode === 'both' && 'Se enviará como correo y como notificación push a los clientes seleccionados.'}
-                </p>
               </CardContent>
             </Card>
             <Card>

@@ -489,11 +489,15 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex-shrink-0 flex items-center">
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 rounded-lg bg-[#22c55e] flex items-center justify-center">
-                  <svg className="h-5 w-5 text-white" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-                  </svg>
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 relative">
+                  <Image
+                    src="/logorewa.png"
+                    alt="Rewin logo"
+                    fill
+                    sizes="40px"
+                    className="object-contain"
+                  />
                 </div>
                 <span className="text-2xl font-bold text-gray-900">Fynlink+</span>
               </div>

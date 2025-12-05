@@ -28,6 +28,7 @@ html {
   --font-mono: ${GeistMono.variable};
 }
         `}</style>
+        <link rel="icon" href="/logorewa.png" type="image/png" />
         {/* Google tag (gtag.js) */}
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-0BFVK699R7"
