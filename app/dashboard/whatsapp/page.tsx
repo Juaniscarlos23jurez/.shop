@@ -230,7 +230,8 @@ export default function WhatsAppPage() {
       setSessionError(null);
       setSessionStatus('connecting');
 
-      const res = await fetch(`/api/whatsapp/sessions`, {
+      // Llama al backend Laravel vía proxy de Next: /api/proxy/api/whatsapp/sessions
+      const res = await fetch(`/api/proxy/api/whatsapp/sessions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -241,7 +242,7 @@ export default function WhatsAppPage() {
         }),
       });
 
-      console.log('[WhatsApp] POST /api/whatsapp/sessions status:', res.status);
+      console.log('[WhatsApp] POST /api/proxy/api/whatsapp/sessions status:', res.status);
       if (!res.ok) {
         throw new Error('No se pudo iniciar la sesión de WhatsApp');
       }
@@ -272,13 +273,14 @@ export default function WhatsAppPage() {
     }
 
     try {
-      const res = await fetch(`/api/whatsapp/sessions/status?company_id=${user.company_id}`, {
+      // Llama al backend Laravel vía proxy de Next: /api/proxy/api/whatsapp/sessions/status
+      const res = await fetch(`/api/proxy/api/whatsapp/sessions/status?company_id=${user.company_id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
-      console.log('[WhatsApp] GET /api/whatsapp/sessions/status status:', res.status);
+      console.log('[WhatsApp] GET /api/proxy/api/whatsapp/sessions/status status:', res.status);
       if (!res.ok) {
         console.warn('[WhatsApp] Error al obtener estado de sesión, response not ok');
         return;
