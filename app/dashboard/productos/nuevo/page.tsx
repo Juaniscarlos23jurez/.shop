@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,7 +29,6 @@ export default function NuevoProductoPage() {
   const [selectedLocations, setSelectedLocations] = useState<number[]>([]);
   const [productType, setProductType] = useState('physical'); // 'physical', 'made_to_order', or 'service'
   const [previewImage, setPreviewImage] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -91,10 +90,6 @@ export default function NuevoProductoPage() {
       });
       setSelectedFile(file);
     }
-  };
-
-  const handleOpenFileDialog = () => {
-    fileInputRef.current?.click();
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -562,7 +557,6 @@ export default function NuevoProductoPage() {
               <div className="flex items-center justify-center w-full">
                 <label
                   htmlFor="dropzone-file"
-                  onClick={handleOpenFileDialog}
                   onDragOver={handleDragOver}
                   onDrop={handleDrop}
                   className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-lg cursor-pointer bg-slate-50 hover:bg-slate-100"
@@ -600,7 +594,6 @@ export default function NuevoProductoPage() {
                   </div>
                   <input
                     id="dropzone-file"
-                    ref={fileInputRef}
                     type="file"
                     accept="image/*"
                     className="hidden"

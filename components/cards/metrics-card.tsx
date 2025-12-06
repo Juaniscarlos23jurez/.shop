@@ -1,15 +1,44 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import type { ReactNode } from "react";
 
-// Simple icon mapping
-const iconMap = {
-  'dollar': '💵',
-  'users': '👥',
-  'shopping-cart': '🛒',
-  'message-square': '💬',
-  'star': '⭐',
-  'arrow-up': '↑',
-  'arrow-down': '↓'
+// Icon mapping using simple non-emoji glyphs (no external icon dependency)
+const iconMap: Record<string, ReactNode> = {
+  dollar: (
+    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white/70 text-xs font-bold">
+      $
+    </span>
+  ),
+  users: (
+    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white/70 text-[10px] font-semibold">
+      UX
+    </span>
+  ),
+  "shopping-cart": (
+    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white/70 text-xs font-semibold">
+      CT
+    </span>
+  ),
+  "message-square": (
+    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white/70 text-[10px] font-semibold">
+      MSG
+    </span>
+  ),
+  star: (
+    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white/70 text-xs font-semibold">
+      *
+    </span>
+  ),
+  "arrow-up": (
+    <span className="inline-flex items-center justify-center w-3 h-3 mr-1 text-[10px] font-semibold">
+      ▲
+    </span>
+  ),
+  "arrow-down": (
+    <span className="inline-flex items-center justify-center w-3 h-3 mr-1 text-[10px] font-semibold">
+      ▼
+    </span>
+  ),
 };
 
 interface MetricsCardProps {
@@ -38,7 +67,7 @@ export function MetricsCard({
       <CardContent className="p-6">
         <div className="flex items-start justify-between mb-4">
           <div className={`p-3 rounded-lg ${bgColor} ${iconColor} text-lg`}>
-            {iconMap[icon] || '•'}
+            {iconMap[icon] || <span className="w-5 h-5 rounded-full bg-slate-300 inline-block" />}
           </div>
           <Badge 
             variant="secondary" 
@@ -49,9 +78,13 @@ export function MetricsCard({
             }`}
           >
             {trend === 'up' ? (
-              <span className="text-green-500">{iconMap['arrow-up']}</span>
+              <span className="inline-flex items-center justify-center w-3 h-3 mr-1 text-[10px] font-semibold text-green-500">
+                ▲
+              </span>
             ) : (
-              <span className="text-red-500">{iconMap['arrow-down']}</span>
+              <span className="inline-flex items-center justify-center w-3 h-3 mr-1 text-[10px] font-semibold text-red-500">
+                ▼
+              </span>
             )}
             {change}
           </Badge>
