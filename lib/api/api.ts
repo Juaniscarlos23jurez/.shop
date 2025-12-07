@@ -271,6 +271,51 @@ export const api = {
     },
 
     /**
+     * Get a single follower detail for the authenticated user's company
+     * Backend route: GET /api/my-company/followers/{customerId}
+     */
+    async getFollowerDetail(
+      customerId: string | number,
+      token: string
+    ): Promise<ApiResponse<{
+      company: {
+        id: number;
+        name: string;
+        owner_id?: number;
+      };
+      follower: {
+        company_id: number;
+        customer_id: number;
+        customer_name: string;
+        customer_email: string;
+        customer_phone?: string;
+        customer_fcm_token?: string;
+        customer_profile_photo_path?: string;
+        customer_since: string;
+        following_since: string;
+        points_balance: number;
+        total_points_earned: number;
+        total_points_spent: number;
+        membership_id: number | null;
+        membership_name: string | null;
+        membership_description: string | null;
+        membership_price: string | null;
+        has_active_membership: boolean;
+      };
+    }>> {
+      const url = `${BASE_URL}/api/my-company/followers/${customerId}`;
+      try {
+        const response = await fetch(url, {
+          headers: getAuthHeader(token),
+        });
+        return handleResponse(response);
+      } catch (error) {
+        console.error('Error in getFollowerDetail:', error);
+        throw error;
+      }
+    },
+
+    /**
      * Create a new company for the authenticated user
      */
     async create(
@@ -1871,6 +1916,30 @@ export const api = {
           method: 'PUT',
           headers: getAuthHeader(token),
           body: JSON.stringify({ location_id: locationId, is_available: isAvailable }),
+        }
+      ).then(handleResponse);
+    },
+
+    /**
+     * Reorder products by updating their position
+     */
+    async reorderProducts(
+      companyId: string,
+      items: { product_id: string | number; position: number }[],
+      token: string
+    ): Promise<ApiResponse> {
+      const headers = {
+        ...getAuthHeader(token),
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      };
+
+      return fetch(
+        `${BASE_URL}/api/companies/${companyId}/products/reorder`,
+        {
+          method: 'PUT',
+          headers,
+          body: JSON.stringify({ items }),
         }
       ).then(handleResponse);
     },

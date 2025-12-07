@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, ShoppingCart } from 'lucide-react';
-import { getProducts } from '@/lib/api/products';
+import { getProducts, reorderProducts } from '@/lib/api/products';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
@@ -14,8 +14,9 @@ import { Badge } from '@/components/ui/badge';
 import { formatCurrency } from '@/lib/utils/currency';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
 
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 20;
 
 const ProductTypeBadge = ({ type }: { type: string }) => {
   const typeConfig = {
@@ -38,6 +39,7 @@ const ProductTypeBadge = ({ type }: { type: string }) => {
 export default function ProductosPage() {
   const { token, user } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
   // Obtener companyId real desde el contexto de autenticación
   const companyId = user?.company_id;
   const [products, setProducts] = useState<Product[]>([]);
@@ -47,6 +49,10 @@ export default function ProductosPage() {
   const [totalItems, setTotalItems] = useState<number>(0);
   const [productType, setProductType] = useState<string>('all');
   const [error, setError] = useState<string | null>(null);
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [hasOrderChanges, setHasOrderChanges] = useState(false);
+  const [savingOrder, setSavingOrder] = useState(false);
 
   const fetchProducts = async (page: number = 1, type: string = 'all') => {
     if (!token || !companyId) return;
@@ -70,25 +76,53 @@ export default function ProductosPage() {
         // Normalizar posibles formatos de respuesta
         const payload: any = response.data;
         console.log('[Productos] payload:', payload);
-        const normalized: Product[] = Array.isArray(payload?.data)
-          ? payload.data
-          : Array.isArray(payload?.products)
-            ? payload.products
-            : Array.isArray(payload)
-              ? payload
-              : Array.isArray(payload?.data?.products)
-                ? payload.data.products
-                : [];
+
+        // Soportar shape Laravel paginator: { products: { data: [...], total, current_page, last_page } }
+        const paginator = payload?.products && !Array.isArray(payload.products)
+          ? payload.products
+          : (payload?.data && !Array.isArray(payload.data) && payload.data.products && !Array.isArray(payload.data.products)
+              ? payload.data.products
+              : null);
+
+        const normalized: Product[] = paginator?.data && Array.isArray(paginator.data)
+          ? paginator.data
+          : Array.isArray(payload?.data)
+            ? payload.data
+            : Array.isArray(payload?.products)
+              ? payload.products
+              : Array.isArray(payload)
+                ? payload
+                : Array.isArray(payload?.data?.products)
+                  ? payload.data.products
+                  : [];
+
         console.log('[Productos] normalized products length:', normalized.length);
         setProducts(normalized);
-        // Intentar leer total y paginación de distintas llaves comunes
-        const total = payload?.total ?? payload?.meta?.total ?? payload?.data?.total ?? normalized.length ?? 0;
+
+        // Intentar leer total y paginación desde paginator.products o llaves comunes
+        const total = paginator?.total
+          ?? payload?.total
+          ?? payload?.meta?.total
+          ?? payload?.data?.total
+          ?? normalized.length
+          ?? 0;
+
         setTotalItems(Number.isFinite(total) ? Number(total) : normalized.length);
-        const lastPage = payload?.last_page ?? payload?.meta?.last_page ?? (total ? Math.max(1, Math.ceil(Number(total) / ITEMS_PER_PAGE)) : 1);
-        const current = payload?.current_page ?? payload?.meta?.current_page ?? page ?? 1;
+
+        const lastPage = paginator?.last_page
+          ?? payload?.last_page
+          ?? payload?.meta?.last_page
+          ?? (total ? Math.max(1, Math.ceil(Number(total) / ITEMS_PER_PAGE)) : 1);
+
+        const current = paginator?.current_page
+          ?? payload?.current_page
+          ?? payload?.meta?.current_page
+          ?? page
+          ?? 1;
         setTotalPages(Number.isFinite(lastPage) ? Number(lastPage) : 1);
         setCurrentPage(Number.isFinite(current) ? Number(current) : 1);
         setError(null);
+        setHasOrderChanges(false);
       } else {
         setProducts([]);
         setTotalItems(0);
@@ -124,6 +158,67 @@ export default function ProductosPage() {
     setCurrentPage(1); // Reset to first page when changing filters
   };
 
+  const handleDragStart = (index: number) => {
+    setDraggedIndex(index);
+    setIsDragging(true);
+  };
+
+  const handleDragOver = (event: React.DragEvent<HTMLDivElement>, index: number) => {
+    event.preventDefault();
+    if (draggedIndex === null || draggedIndex === index) return;
+
+    setProducts((prev) => {
+      const updated = [...prev];
+      const [moved] = updated.splice(draggedIndex, 1);
+      updated.splice(index, 0, moved);
+      setDraggedIndex(index);
+      setHasOrderChanges(true);
+      return updated;
+    });
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    // Pequeño timeout para no disparar navegación por click inmediato después de un drag
+    setTimeout(() => setIsDragging(false), 50);
+  };
+
+  const handleSaveOrder = async () => {
+    if (!token || !companyId || products.length === 0) return;
+    try {
+      setSavingOrder(true);
+      const items = products.map((product, index) => ({
+        product_id: product.id as string | number,
+        position: index + 1,
+      }));
+
+      const response = await reorderProducts(companyId, token, items);
+
+      if (response?.success) {
+        toast({
+          title: 'Orden guardado',
+          description: 'El orden de los productos se actualizó correctamente.',
+        });
+        setHasOrderChanges(false);
+      } else {
+        toast({
+          title: 'No se pudo guardar el orden',
+          description: 'Intenta nuevamente en unos momentos.',
+          variant: 'destructive',
+        });
+      }
+    } catch (err) {
+      console.error('Error saving product order:', err);
+      toast({
+        title: 'Error al guardar el orden',
+        description: 'Ocurrió un problema al conectar con el servidor.',
+        variant: 'destructive',
+      });
+    } finally {
+      setSavingOrder(false);
+    }
+  };
+
   if (loading && products.length === 0) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -151,6 +246,15 @@ export default function ProductosPage() {
               <SelectItem value="service">Servicios</SelectItem>
             </SelectContent>
           </Select>
+          <Button
+            type="button"
+            variant={hasOrderChanges ? 'default' : 'outline'}
+            disabled={!hasOrderChanges || savingOrder}
+            onClick={handleSaveOrder}
+            className="whitespace-nowrap"
+          >
+            {savingOrder ? 'Guardando...' : 'Guardar orden'}
+          </Button>
           <Button asChild>
             <Link href="/dashboard/productos/nuevo" className="whitespace-nowrap">
               <Plus className="h-4 w-4 mr-2" />
@@ -172,13 +276,14 @@ export default function ProductosPage() {
         <CardContent>
           <div className="rounded-md border overflow-hidden">
             <div className="grid grid-cols-12 items-center gap-2 p-3 font-medium text-slate-600 border-b bg-slate-50 text-sm">
-              <div className="col-span-3 pl-2">Producto</div>
+              <div className="col-span-1 pl-2 text-center">Posición</div>
+              <div className="col-span-3">Producto</div>
               <div className="col-span-1 text-center">Categoría</div>
               <div className="col-span-1 text-right pr-2">Precio</div>
               <div className="col-span-1 text-center">Puntos</div>
               <div className="col-span-1 text-center">Stock</div>
               <div className="col-span-1 text-center">Tipo</div>
-              <div className="col-span-2">Ubicaciones</div>
+              <div className="col-span-1">Ubicaciones</div>
               <div className="col-span-1 text-center">Estado</div>
               <div className="col-span-1"></div>
             </div>
@@ -207,13 +312,27 @@ export default function ProductosPage() {
               </div>
             ) : (
               <>
-                {(Array.isArray(products) ? products : []).map((product) => (
+                {(Array.isArray(products) ? products : []).map((product, index) => (
                   <div 
                     key={product.id}
-                    className="grid grid-cols-12 items-start gap-2 p-2 border-b hover:bg-slate-50 transition-colors text-sm h-16 cursor-pointer"
-                    onClick={() => router.push(`/dashboard/productos/${product.id}`)}
+                    className="grid grid-cols-12 items-start gap-2 p-2 border-b hover:bg-slate-50 transition-colors text-sm h-16 cursor-move"
+                    draggable
+                    onDragStart={() => handleDragStart(index)}
+                    onDragOver={(e) => handleDragOver(e, index)}
+                    onDragEnd={handleDragEnd}
+                    onDrop={handleDragEnd}
+                    onClick={() => {
+                      if (!isDragging) {
+                        router.push(`/dashboard/productos/${product.id}`);
+                      }
+                    }}
                   >
-                    <div className="col-span-3 flex items-start pl-2 h-full">
+                    <div className="col-span-1 flex items-center justify-center text-xs text-slate-500">
+                      <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-slate-100 text-[11px] font-medium">
+                        {index + 1}
+                      </span>
+                    </div>
+                    <div className="col-span-3 flex items-start h-full">
                       <div className="flex-shrink-0 mt-1">
                         {product.image_url ? (
                           <img 
@@ -268,7 +387,7 @@ export default function ProductosPage() {
                         <ProductTypeBadge type={product.product_type} />
                       </div>
                     </div>
-                    <div className="col-span-2 flex items-center h-full">
+                    <div className="col-span-1 flex items-center h-full">
                       <div className="max-h-12 overflow-y-auto py-1">
                         {product.locations?.length > 0 ? (
                           <div className="flex flex-wrap gap-1 items-center">

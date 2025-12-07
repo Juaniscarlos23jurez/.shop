@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Edit, Edit2, Package, Clock, Wrench } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
-import { getProduct } from '@/lib/api/products';
+import { deleteProduct } from '@/lib/api/products';
 import { toast } from '@/components/ui/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency } from '@/lib/utils/currency';
@@ -15,7 +15,7 @@ import { formatCurrency } from '@/lib/utils/currency';
 export default function DetalleProductoPage() {
   const router = useRouter();
   const { id } = useParams();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [product, setProduct] = useState<any>(null);
   
@@ -68,6 +68,40 @@ export default function DetalleProductoPage() {
         return { label: 'Servicio', icon: <Wrench className="h-5 w-5" /> };
       default:
         return { label: type, icon: null };
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!id || !token || !user?.company_id) return;
+    const confirmed = window.confirm('¿Seguro que deseas eliminar este producto? Esta acción no se puede deshacer.');
+    if (!confirmed) return;
+
+    try {
+      setIsLoading(true);
+      const response = await deleteProduct(String(user.company_id), String(id), token);
+
+      if (response?.success) {
+        toast({
+          title: 'Producto eliminado',
+          description: 'El producto se eliminó correctamente.',
+        });
+        router.push('/dashboard/productos');
+      } else {
+        toast({
+          title: 'No se pudo eliminar',
+          description: response?.message || 'Intenta nuevamente en unos momentos.',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      toast({
+        title: 'Error al eliminar',
+        description: 'Ocurrió un problema al conectar con el servidor.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -125,6 +159,9 @@ export default function DetalleProductoPage() {
               <Edit className="h-4 w-4 mr-2" />
               Editar
             </Link>
+          </Button>
+          <Button variant="destructive" onClick={handleDelete}>
+            Eliminar
           </Button>
         </div>
       </div>

@@ -14,6 +14,8 @@ import { Calendar as CalendarIcon, Mail, Phone, MapPin, User, Edit, Trash2, Cred
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { formatCurrency } from '@/lib/utils/currency';
+import { useAuth } from '@/contexts/AuthContext';
+import { api } from '@/lib/api/api';
 
 interface Client {
   id: string;
@@ -39,90 +41,118 @@ interface Client {
   updatedAt: string;
 }
 
-interface Order {
-  id: string;
-  date: string;
-  total: number;
-  status: 'completed' | 'pending' | 'cancelled' | 'refunded';
-  items: number;
+interface RecentSaleItem {
+  product_id: number;
+  quantity: number;
+  unit_price: string;
+  subtotal: string;
+  product?: {
+    id: number;
+    name: string;
+    price: string;
+  };
 }
 
-interface Transaction {
-  id: string;
-  date: string;
-  description: string;
-  amount: number;
-  type: 'earn' | 'redeem' | 'expire';
-  balance: number;
+interface RecentSale {
+  id: number;
+  company_id: number;
+  user_id: number;
+  location_id: number;
+  total: string;
+  created_at: string;
+  location?: {
+    id: number;
+    name: string;
+  };
+  items?: RecentSaleItem[];
 }
 
-const mockClient: Client = {
-  id: '1',
-  firstName: 'María',
-  lastName: 'García',
-  email: 'maria.garcia@example.com',
-  phone: '+52 55 1234 5678',
-  address: 'Av. Insurgentes Sur 1234',
-  city: 'Ciudad de México',
-  state: 'Ciudad de México',
-  zipCode: '03100',
-  country: 'México',
-  birthdate: '1990-05-15',
-  membership: 'gold',
-  points: 1250,
-  totalSpent: 12500,
-  totalOrders: 27,
-  lastPurchase: '2024-02-10T14:30:00-06:00',
-  isActive: true,
-  acceptMarketing: true,
-  notes: 'Cliente frecuente, prefiere contacto por email.',
-  createdAt: '2023-01-15T10:00:00-06:00',
-  updatedAt: '2024-02-10T14:30:00-06:00',
-};
-
-const mockOrders: Order[] = [
-  { id: 'ORD-1001', date: '2024-02-10T14:30:00-06:00', total: 1250, status: 'completed', items: 3 },
-  { id: 'ORD-0998', date: '2024-01-28T11:15:00-06:00', total: 875, status: 'completed', items: 2 },
-  { id: 'ORD-0987', date: '2024-01-15T16:45:00-06:00', total: 2300, status: 'completed', items: 5 },
-  { id: 'ORD-0975', date: '2024-01-02T09:30:00-06:00', total: 650, status: 'completed', items: 2 },
-  { id: 'ORD-0963', date: '2023-12-20T13:20:00-06:00', total: 3200, status: 'completed', items: 7 },
-];
-
-const mockTransactions: Transaction[] = [
-  { id: 'TXN-1001', date: '2024-02-10T14:30:00-06:00', description: 'Compra #ORD-1001', amount: 125, type: 'earn', balance: 1250 },
-  { id: 'TXN-0998', date: '2024-01-28T11:15:00-06:00', description: 'Compra #ORD-0998', amount: 87, type: 'earn', balance: 1125 },
-  { id: 'TXN-0987', date: '2024-01-15T16:45:00-06:00', description: 'Canje de puntos', amount: -250, type: 'redeem', balance: 1038 },
-  { id: 'TXN-0975', date: '2024-01-02T09:30:00-06:00', description: 'Compra #ORD-0975', amount: 65, type: 'earn', balance: 1288 },
-  { id: 'TXN-0963', date: '2023-12-20T13:20:00-06:00', description: 'Compra #ORD-0963', amount: 320, type: 'earn', balance: 1223 },
-];
+interface FavoriteProduct {
+  id: number;
+  company_id: number;
+  name: string;
+  price: string;
+  categories?: { id: number; name: string; slug: string }[];
+  locations?: { id: number; name: string }[];
+}
 
 export default function ClientDetailPage() {
   const router = useRouter();
   const { id } = useParams();
+  const { token } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [client, setClient] = useState<Client | null>(null);
   const [formData, setFormData] = useState<Partial<Client>>({});
   const [activeTab, setActiveTab] = useState('overview');
+  const [recentSales, setRecentSales] = useState<RecentSale[]>([]);
+  const [favoriteProducts, setFavoriteProducts] = useState<FavoriteProduct[]>([]);
 
   useEffect(() => {
-    // Simulate API fetch
     const fetchClient = async () => {
+      if (!id || !token) return;
       setIsLoading(true);
       try {
-        // In a real app, you would fetch the client data here
-        await new Promise(resolve => setTimeout(resolve, 500));
-        setClient(mockClient);
-        setFormData(mockClient);
+        const response = await api.userCompanies.getFollowerDetail(id as string, token);
+        if (response.success && (response as any).data?.status === 'success') {
+          const payload = (response as any).data.data;
+          const follower = payload.follower;
+
+          const mapped: Client = {
+            id: String(follower.customer_id),
+            firstName: follower.customer_name,
+            lastName: '',
+            email: follower.customer_email,
+            phone: follower.customer_phone || '',
+            address: '',
+            city: '',
+            state: '',
+            zipCode: '',
+            country: 'México',
+            birthdate: follower.customer_since,
+            membership: follower.has_active_membership ? 'gold' : 'none',
+            points: follower.points_balance ?? 0,
+            totalSpent: follower.total_points_earned ?? 0,
+            totalOrders: 0,
+            lastPurchase: follower.following_since,
+            isActive: !!follower.has_active_membership,
+            acceptMarketing: true,
+            notes: '',
+            createdAt: follower.customer_since,
+            updatedAt: follower.following_since,
+          };
+
+          setClient(mapped);
+          setFormData(mapped);
+
+          // Optional extra data from API: recent_sales and favorite_products
+          const rs = (payload as any).recent_sales;
+          if (Array.isArray(rs)) {
+            setRecentSales(rs as RecentSale[]);
+          } else {
+            setRecentSales([]);
+          }
+
+          const fp = (payload as any).favorite_products;
+          if (Array.isArray(fp)) {
+            setFavoriteProducts(fp as FavoriteProduct[]);
+          } else {
+            setFavoriteProducts([]);
+          }
+        } else {
+          console.error('Follower not found or not a follower of your company');
+          router.back();
+        }
       } catch (error) {
-        console.error('Error fetching client:', error);
+        console.error('Error fetching follower detail:', error);
+        router.back();
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchClient();
-  }, [id]);
+  }, [id, token, router]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target as HTMLInputElement;
@@ -440,38 +470,39 @@ export default function ClientDetailPage() {
                 <CardDescription>Últimas transacciones del cliente</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {mockTransactions.slice(0, 5).map((transaction) => (
-                    <div key={transaction.id} className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-full bg-muted">
-                          {getTransactionIcon(transaction.type)}
+                {recentSales.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    Aún no hay historial de transacciones disponible.
+                  </p>
+                ) : (
+                  <div className="space-y-4">
+                    {recentSales.slice(0, 5).map((sale) => {
+                      const totalNumber = Number(sale.total || 0);
+                      const totalFmt = formatCurrency(totalNumber);
+                      const created = sale.created_at ? new Date(sale.created_at) : null;
+                      const dateFmt = created ? format(created, 'PPp', { locale: es }) : '';
+                      const itemsCount = (sale.items || []).reduce((acc, it) => acc + (it.quantity || 0), 0);
+                      return (
+                        <div key={sale.id} className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-full bg-muted">
+                              <History className="h-4 w-4 text-muted-foreground" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium">
+                                Venta #{sale.id} · {totalFmt}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {itemsCount} productos · {dateFmt}
+                              </p>
+                            </div>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-sm font-medium">{transaction.description}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {format(new Date(transaction.date), 'PPp', { locale: es })}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className={`font-medium ${transaction.type === 'earn' ? 'text-green-600' : 'text-red-600'}`}>
-                          {transaction.type === 'earn' ? '+' : ''}
-                          {transaction.amount} pts
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          Saldo: {transaction.balance} pts
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                      );
+                    })}
+                  </div>
+                )}
               </CardContent>
-              <CardFooter className="border-t px-6 py-4">
-                <Button variant="ghost" className="w-full" onClick={() => setActiveTab('points')}>
-                  Ver todos los puntos
-                </Button>
-              </CardFooter>
             </Card>
           </div>
         </TabsContent>
@@ -483,36 +514,42 @@ export default function ClientDetailPage() {
               <CardDescription>Lista de todas las compras realizadas por el cliente</CardDescription>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>ID de Orden</TableHead>
-                    <TableHead>Fecha</TableHead>
-                    <TableHead>Productos</TableHead>
-                    <TableHead>Total</TableHead>
-                    <TableHead>Estado</TableHead>
-                    <TableHead className="text-right">Acciones</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {mockOrders.map((order) => (
-                    <TableRow key={order.id}>
-                      <TableCell className="font-medium">{order.id}</TableCell>
-                      <TableCell>
-                        {format(new Date(order.date), 'PPp', { locale: es })}
-                      </TableCell>
-                      <TableCell>{order.items} {order.items === 1 ? 'producto' : 'productos'}</TableCell>
-                      <TableCell>{formatCurrency(order.total)}</TableCell>
-                      <TableCell>{getStatusBadge(order.status)}</TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="ghost" size="sm" onClick={() => router.push(`/dashboard/ventas/${order.id}`)}>
-                          Ver detalle
-                        </Button>
-                      </TableCell>
+              {recentSales.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Aún no hay historial de compras disponible.
+                </p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>ID de Orden</TableHead>
+                      <TableHead>Fecha</TableHead>
+                      <TableHead>Productos</TableHead>
+                      <TableHead>Total</TableHead>
+                      <TableHead>Sucursal</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {recentSales.map((sale) => {
+                      const totalNumber = Number(sale.total || 0);
+                      const totalFmt = formatCurrency(totalNumber);
+                      const created = sale.created_at ? new Date(sale.created_at) : null;
+                      const dateFmt = created ? format(created, 'PPp', { locale: es }) : '';
+                      const itemsCount = (sale.items || []).reduce((acc, it) => acc + (it.quantity || 0), 0);
+                      const locationName = sale.location?.name || '-';
+                      return (
+                        <TableRow key={sale.id}>
+                          <TableCell className="font-medium">{sale.id}</TableCell>
+                          <TableCell>{dateFmt}</TableCell>
+                          <TableCell>{itemsCount}</TableCell>
+                          <TableCell>{totalFmt}</TableCell>
+                          <TableCell>{locationName}</TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -532,40 +569,9 @@ export default function ClientDetailPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {mockTransactions.map((transaction) => (
-                  <div key={transaction.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-full ${
-                        transaction.type === 'earn' ? 'bg-green-100' : 
-                        transaction.type === 'redeem' ? 'bg-blue-100' : 'bg-red-100'
-                      }`}>
-                        {getTransactionIcon(transaction.type)}
-                      </div>
-                      <div>
-                        <p className="font-medium">
-                          {transaction.type === 'earn' ? 'Puntos ganados' : 
-                           transaction.type === 'redeem' ? 'Puntos canjeados' : 'Puntos expirados'}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {transaction.description} • {format(new Date(transaction.date), 'PPp', { locale: es })}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className={`font-medium ${
-                        transaction.type === 'earn' ? 'text-green-600' : 'text-red-600'
-                      }`}>
-                        {transaction.type === 'earn' ? '+' : '-'}
-                        {Math.abs(transaction.amount)} pts
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        Saldo: {transaction.balance} pts
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <p className="text-sm text-muted-foreground">
+                Aún no hay historial de movimientos de puntos disponible.
+              </p>
             </CardContent>
           </Card>
         </TabsContent>

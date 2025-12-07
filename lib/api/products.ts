@@ -137,3 +137,14 @@ export async function toggleProductAvailability(
 ): Promise<ApiResponse<{ product: Product }>> {
   return api.products.toggleProductAvailability(companyId, productId, locationId, isAvailable, token);
 }
+
+/**
+ * Reorder products by updating their position
+ */
+export async function reorderProducts(
+  companyId: string,
+  token: string,
+  items: { product_id: string | number; position: number }[],
+): Promise<ApiResponse<{}>> {
+  return api.products.reorderProducts(companyId, items, token);
+}

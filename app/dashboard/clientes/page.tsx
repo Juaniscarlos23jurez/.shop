@@ -368,7 +368,9 @@ export default function ClientesPage() {
                     </td>
                     <td className="py-4 px-4 text-right">
                       <div className="font-medium">
-                        {formatCurrency(client.membership_price)}
+                        {client.membership_name && client.membership_price
+                          ? formatCurrency(client.membership_price)
+                          : '—'}
                       </div>
                     </td>
                     <td className="py-4 px-4 text-right">
