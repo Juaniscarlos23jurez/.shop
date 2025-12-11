@@ -1,5 +1,6 @@
 import { api } from './api';
 import type { ProfileApiUser } from '@/types/api';
+import { getFcmBrowserToken } from '@/lib/firebase';
 
 export interface User {
   id: string;
@@ -22,6 +23,20 @@ export const loginUser = async (email: string, password: string) => {
     console.log('Login API response:', response);
     
     if (response.success && response.data?.user && response.data?.access_token) {
+      // Fire-and-forget: intentar registrar el token FCM del navegador
+      if (typeof window !== 'undefined') {
+        (async () => {
+          try {
+            const fcmToken = await getFcmBrowserToken();
+            if (fcmToken) {
+              await api.auth.updateFcmToken(response.data!.access_token, fcmToken);
+            }
+          } catch (err) {
+            console.error('Error updating FCM token after login:', err);
+          }
+        })();
+      }
+
       return { 
         user: response.data.user, 
         token: response.data.access_token,

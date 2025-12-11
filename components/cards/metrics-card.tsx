@@ -1,44 +1,14 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { ReactNode } from "react";
+import { DollarSign, Users, ShoppingCart, MessageSquare } from "lucide-react";
 
-// Icon mapping using simple non-emoji glyphs (no external icon dependency)
+// Icon mapping using lucide-react for consistency with the rest of the dashboard
 const iconMap: Record<string, ReactNode> = {
-  dollar: (
-    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white/70 text-xs font-bold">
-      $
-    </span>
-  ),
-  users: (
-    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white/70 text-[10px] font-semibold">
-      UX
-    </span>
-  ),
-  "shopping-cart": (
-    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white/70 text-xs font-semibold">
-      CT
-    </span>
-  ),
-  "message-square": (
-    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white/70 text-[10px] font-semibold">
-      MSG
-    </span>
-  ),
-  star: (
-    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white/70 text-xs font-semibold">
-      *
-    </span>
-  ),
-  "arrow-up": (
-    <span className="inline-flex items-center justify-center w-3 h-3 mr-1 text-[10px] font-semibold">
-      ▲
-    </span>
-  ),
-  "arrow-down": (
-    <span className="inline-flex items-center justify-center w-3 h-3 mr-1 text-[10px] font-semibold">
-      ▼
-    </span>
-  ),
+  dollar: <DollarSign className="w-5 h-5" />, 
+  users: <Users className="w-5 h-5" />, 
+  "shopping-cart": <ShoppingCart className="w-5 h-5" />, 
+  "message-square": <MessageSquare className="w-5 h-5" />,
 };
 
 interface MetricsCardProps {

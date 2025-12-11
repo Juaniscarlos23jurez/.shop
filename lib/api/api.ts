@@ -165,6 +165,20 @@ export const api = {
         },
       }).then(handleResponse);
     },
+
+    async updateFcmToken(token: string, fcmBrowserToken: string): Promise<ApiResponse<any>> {
+      return fetch(`/api/proxy/api/auth/profile/fcm-token`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          fcm_browser_token: fcmBrowserToken,
+        }),
+      }).then(handleResponse);
+    },
   },
 
   // Profile API

@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { api } from '@/lib/api/api';
 import { ApiResponse, LoginResponse, UserProfile } from '@/types/api';
+import { getFcmBrowserToken } from '@/lib/firebase';
 
 interface AuthContextType {
   user: UserProfile | null;
@@ -126,6 +127,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (response.success && response.data) {
         const { access_token, user } = response.data;
         handleAuthSuccess(access_token, user);
+
+        // Fire-and-forget: intentar registrar el token FCM del navegador
+        if (typeof window !== 'undefined') {
+          (async () => {
+            try {
+              console.log('[FCM] Iniciando flujo para obtener token FCM después de login');
+              const fcmToken = await getFcmBrowserToken();
+              console.log('[FCM] Token obtenido desde getFcmBrowserToken:', fcmToken);
+              if (fcmToken) {
+                console.log('[FCM] Enviando token FCM al backend vía PUT /api/proxy/api/auth/profile/fcm-token');
+                const putResponse = await api.auth.updateFcmToken(access_token, fcmToken);
+                console.log('[FCM] Respuesta de updateFcmToken:', putResponse);
+              } else {
+                console.warn('[FCM] No se obtuvo token FCM (puede que el usuario haya negado permisos o haya fallado algo).');
+              }
+            } catch (err) {
+              console.error('[FCM] Error actualizando token FCM después de login:', err);
+            }
+          })();
+        } else {
+          console.log('[FCM] window no está definido, no se ejecuta flujo FCM (esto es normal en el servidor).');
+        }
+
         return { user, access_token };
       } else {
         throw new Error(response.message || 'Failed to login');
