@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import * as Lucide from 'lucide-react';
-const { Bot, ArrowLeft, Plus, TrendingUp, MoreVertical, Edit, Pause, Play, Trash2 } = Lucide as any;
+const { Bot, ArrowLeft, Plus, TrendingUp, MoreVertical, Edit, Pause, Play, Trash2, Search, Filter } = Lucide as any;
 
 import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -10,103 +10,68 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
-import { FlowchartEditor } from "@/components/whatsapp/FlowchartEditor";
 import { FlowTemplate } from "@/types/whatsapp";
+import { mockFlowTemplates } from "@/app/dashboard/whatsapp/flows/mock-data";
 
 export default function WhatsAppFlowsPage() {
   const router = useRouter();
+  const [flowTemplates] = useState<FlowTemplate[]>(mockFlowTemplates);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "paused">("all");
 
-  const [flowTemplates, setFlowTemplates] = useState<FlowTemplate[]>([
-    {
-      id: '1',
-      name: 'Bienvenida Nuevos Clientes',
-      description: 'Flujo automático para dar la bienvenida a nuevos clientes que escriben por primera vez.',
-      trigger: 'first_message',
-      isActive: true,
-      createdAt: '2024-01-01T00:00:00Z',
-      updatedAt: '2024-01-01T00:00:00Z',
-      steps: [],
-    },
-    {
-      id: '2',
-      name: 'Seguimiento Post-Venta',
-      description: 'Pide feedback y ofrece un cupón después de una compra.',
-      trigger: 'post_purchase',
-      isActive: true,
-      createdAt: '2024-01-01T00:00:00Z',
-      updatedAt: '2024-01-01T00:00:00Z',
-      steps: [],
-    },
-  ]);
-
-  const [editingFlow, setEditingFlow] = useState<FlowTemplate | null>(flowTemplates[0] || null);
-
-  const handleNewFlow = () => {
-    const emptyFlow: FlowTemplate = {
-      id: '',
-      name: '',
-      description: '',
-      trigger: 'manual',
-      steps: [],
-      isActive: false,
-      createdAt: '',
-      updatedAt: '',
-    };
-    setEditingFlow(emptyFlow);
-  };
-
-  const handleSaveFlow = (data: Omit<FlowTemplate, 'id' | 'createdAt' | 'updatedAt'>) => {
-    if (editingFlow && editingFlow.id) {
-      // Actualizar en memoria
-      setFlowTemplates((prev) =>
-        prev.map((flow) =>
-          flow.id === editingFlow.id
-            ? {
-                ...flow,
-                ...data,
-                updatedAt: new Date().toISOString(),
-              }
-            : flow,
-        ),
-      );
-    } else {
-      const newFlow: FlowTemplate = {
-        ...data,
-        id: String(Date.now()),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      setFlowTemplates((prev) => [...prev, newFlow]);
-      setEditingFlow(newFlow);
-    }
-  };
-
-  const getTriggerLabel = (trigger: FlowTemplate['trigger']) => {
+  const getTriggerLabel = (trigger: FlowTemplate["trigger"]) => {
     switch (trigger) {
-      case 'first_message':
-        return 'Primer mensaje';
-      case 'post_purchase':
-        return 'Post-compra';
-      case 'keyword':
-        return 'Palabra clave';
-      case 'abandoned_cart':
-        return 'Carrito abandonado';
+      case "first_message":
+        return "Primer mensaje";
+      case "post_purchase":
+        return "Post-compra";
+      case "keyword":
+        return "Palabra clave";
+      case "abandoned_cart":
+        return "Carrito abandonado";
       default:
-        return 'Manual';
+        return "Manual";
     }
   };
+
+  const filteredFlows = useMemo(() => {
+    return flowTemplates
+      .filter((flow) => {
+        if (statusFilter === "active" && !flow.isActive) return false;
+        if (statusFilter === "paused" && flow.isActive) return false;
+        if (!searchTerm) return true;
+        const normalized = searchTerm.toLowerCase();
+        return (
+          flow.name.toLowerCase().includes(normalized) ||
+          flow.description.toLowerCase().includes(normalized) ||
+          flow.trigger.toLowerCase().includes(normalized)
+        );
+      })
+      .sort(
+        (a, b) =>
+          new Date(b.updatedAt || b.createdAt).getTime() -
+          new Date(a.updatedAt || a.createdAt).getTime(),
+      );
+  }, [flowTemplates, searchTerm, statusFilter]);
+
+  const totalActive = flowTemplates.filter((flow) => flow.isActive).length;
 
   return (
     <div className="h-screen flex flex-col bg-gray-50">
-      {/* Header */}
       <div className="border-b bg-white px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => router.push('/dashboard/whatsapp')}
-          >
+          <Button variant="ghost" size="icon" onClick={() => router.push("/dashboard/whatsapp")}>
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div>
@@ -115,12 +80,12 @@ export default function WhatsAppFlowsPage() {
               Flujos Automáticos de WhatsApp
             </h1>
             <p className="text-sm text-gray-600">
-              Diseña flujos tipo n8n para automatizar respuestas y opciones que verá el cliente.
+              Consulta los flujos existentes o crea uno nuevo para automatizar tus conversaciones.
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={handleNewFlow}>
+          <Button variant="outline" size="sm" onClick={() => router.push("/dashboard/whatsapp/flows/create")}>
             <Plus className="w-4 h-4 mr-2" />
             Nuevo flujo
           </Button>
@@ -131,126 +96,186 @@ export default function WhatsAppFlowsPage() {
         </div>
       </div>
 
-      {/* Main layout */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Panel izquierdo: lista de flujos */}
-        <div className="w-80 border-r bg-white flex flex-col">
-          <div className="px-4 py-3 border-b">
-            <h2 className="font-medium text-sm text-gray-800">Tus flujos</h2>
-            <p className="text-xs text-gray-500">Selecciona un flujo para editarlo.</p>
+        <div className="flex-1 bg-white flex flex-col">
+          <div className="px-6 py-4 border-b space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="font-medium text-sm text-gray-800">Flujos configurados</h2>
+                <p className="text-xs text-gray-500">Administra y consulta los flujos existentes.</p>
+              </div>
+              <Badge variant="secondary" className="text-[11px]">
+                {totalActive} activos
+              </Badge>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <Input
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                  placeholder="Buscar por nombre, trigger o descripción"
+                  className="pl-9"
+                />
+              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Filter className="w-4 h-4 mr-2" />
+                    Filtrar
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="space-y-1">
+                  <DropdownMenuItem onClick={() => setStatusFilter("all")}>
+                    {statusFilter === "all" ? "• " : ""}
+                    Todos
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setStatusFilter("active")}>
+                    {statusFilter === "active" ? "• " : ""}
+                    Activos
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setStatusFilter("paused")}>
+                    {statusFilter === "paused" ? "• " : ""}
+                    Pausados
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+            <div className="flex gap-2 text-xs text-gray-500">
+              <div className="flex-1 rounded-md border border-gray-200 px-3 py-2">
+                <p className="text-[11px] uppercase tracking-wide text-gray-400">Triggers totales</p>
+                <p className="text-base font-semibold text-gray-900">
+                  {flowTemplates.reduce((acc, flow) => acc + (flow.stats?.totalTriggers || 0), 0)}
+                </p>
+              </div>
+              <div className="flex-1 rounded-md border border-gray-200 px-3 py-2">
+                <p className="text-[11px] uppercase tracking-wide text-gray-400">Tasa promedio</p>
+                <p className="text-base font-semibold text-gray-900">
+                  {Math.round(
+                    flowTemplates.reduce((acc, flow) => acc + (flow.stats?.completionRate || 0), 0) /
+                      (flowTemplates.length || 1),
+                  )}
+                  %
+                </p>
+              </div>
+            </div>
           </div>
           <ScrollArea className="flex-1">
-            <div className="p-3 space-y-2">
-              {flowTemplates.map((flow) => (
-                <Card
-                  key={flow.id}
-                  className={`p-3 cursor-pointer hover:shadow-sm transition-shadow border ${
-                    editingFlow?.id === flow.id ? 'border-green-500' : ''
-                  }`}
-                  onClick={() => setEditingFlow(flow)}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <h3 className="text-sm font-medium truncate">{flow.name || 'Sin título'}</h3>
-                      <p className="text-xs text-gray-500 truncate">
-                        {getTriggerLabel(flow.trigger)}
-                      </p>
-                    </div>
-                    <Badge
-                      variant={flow.isActive ? 'default' : 'secondary'}
-                      className="text-[10px] px-2 py-0.5 whitespace-nowrap"
-                    >
-                      {flow.isActive ? 'Activo' : 'Inactivo'}
-                    </Badge>
-                  </div>
-
-                  <p className="mt-2 text-xs text-gray-600 line-clamp-2">
-                    {flow.description || 'Sin descripción'}
-                  </p>
-
-                  <div className="mt-2 flex items-center justify-between text-[11px] text-gray-500">
-                    <span>{flow.steps.length} pasos</span>
-                    <span>{flow.createdAt ? new Date(flow.createdAt).toLocaleDateString() : ''}</span>
-                  </div>
-
-                  <div className="mt-2 flex justify-end gap-1">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-7 w-7">
-                          <MoreVertical className="w-3 h-3" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => setEditingFlow(flow)}>
-                          <Edit className="w-4 h-4 mr-2" />
-                          Editar
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          {flow.isActive ? (
-                            <>
-                              <Pause className="w-4 h-4 mr-2" />
-                              Pausar
-                            </>
-                          ) : (
-                            <>
-                              <Play className="w-4 h-4 mr-2" />
-                              Activar
-                            </>
-                          )}
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-red-600">
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          Eliminar
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
+            <div className="p-6">
+              {filteredFlows.length === 0 ? (
+                <Card className="border-dashed">
+                  <CardHeader>
+                    <CardTitle className="text-sm">Sin resultados</CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-sm text-gray-500">
+                    Ajusta la búsqueda o crea un nuevo flujo.
+                  </CardContent>
                 </Card>
-              ))}
-              {flowTemplates.length === 0 && (
-                <p className="text-xs text-gray-500 px-1">No tienes flujos todavía. Crea uno nuevo.</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Flujo</TableHead>
+                      <TableHead>Trigger</TableHead>
+                      <TableHead>Estado</TableHead>
+                      <TableHead className="text-right">Métricas</TableHead>
+                      <TableHead className="w-12" />
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredFlows.map((flow) => (
+                      <TableRow
+                        key={flow.id}
+                        className="cursor-pointer"
+                        onClick={() => router.push(`/dashboard/whatsapp/flows/${flow.id}`)}
+                      >
+                        <TableCell>
+                          <div className="space-y-1">
+                            <p className="text-sm font-semibold text-gray-900">{flow.name}</p>
+                            <p className="text-xs text-gray-500 line-clamp-2">{flow.description}</p>
+                            <p className="text-[11px] text-gray-400">
+                              Última actualización:{" "}
+                              {flow.updatedAt ? new Date(flow.updatedAt).toLocaleString() : "Sin definir"}
+                            </p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{getTriggerLabel(flow.trigger)}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={flow.isActive ? "default" : "secondary"}
+                            className="text-[11px]"
+                          >
+                            {flow.isActive ? "Activo" : "Pausado"}
+                          </Badge>
+                          <p className="text-[11px] text-gray-400 mt-1">
+                            {flow.steps.length} pasos
+                          </p>
+                        </TableCell>
+                        <TableCell className="text-right text-xs text-gray-500">
+                          <p>
+                            🧠 Triggers:{" "}
+                            <span className="font-semibold text-gray-900">
+                              {flow.stats?.totalTriggers ?? 0}
+                            </span>
+                          </p>
+                          <p>
+                            ✅ Completion:{" "}
+                            <span className="font-semibold text-gray-900">
+                              {flow.stats?.completionRate ?? 0}%
+                            </span>
+                          </p>
+                          <p>
+                            ⏱ Promedio:{" "}
+                            <span className="font-semibold text-gray-900">
+                              {flow.stats?.averageTime ?? 0} s
+                            </span>
+                          </p>
+                        </TableCell>
+                        <TableCell>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <MoreVertical className="w-4 h-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onSelect={() => router.push(`/dashboard/whatsapp/flows/${flow.id}`)}>
+                                <Edit className="w-4 h-4 mr-2" />
+                                Editar
+                              </DropdownMenuItem>
+                              <DropdownMenuItem>
+                                {flow.isActive ? (
+                                  <>
+                                    <Pause className="w-4 h-4 mr-2" />
+                                    Pausar
+                                  </>
+                                ) : (
+                                  <>
+                                    <Play className="w-4 h-4 mr-2" />
+                                    Activar
+                                  </>
+                                )}
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem className="text-red-600">
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                Eliminar
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                  <TableCaption className="text-xs">
+                    Datos basados en la documentación de flujos de WhatsApp.
+                  </TableCaption>
+                </Table>
               )}
             </div>
           </ScrollArea>
-        </div>
-
-        {/* Panel derecho: canvas tipo n8n con FlowBuilder */}
-        <div className="flex-1 flex flex-col bg-slate-50">
-          <div className="px-4 py-3 border-b flex items-center justify-between">
-            <div>
-              <h2 className="font-medium text-sm text-gray-800">
-                {editingFlow?.name || 'Nuevo flujo'}
-              </h2>
-              <p className="text-xs text-gray-500">
-                Define los mensajes y opciones que verá el cliente paso a paso.
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              {editingFlow && editingFlow.id && (
-                <Badge
-                  variant={editingFlow.isActive ? 'default' : 'secondary'}
-                  className="text-[10px] px-2 py-0.5"
-                >
-                  {editingFlow.isActive ? 'Activo' : 'Inactivo'}
-                </Badge>
-              )}
-            </div>
-          </div>
-
-          <div className="flex-1 overflow-hidden">
-            <FlowchartEditor
-              flow={editingFlow || undefined}
-              onSave={(data: Omit<FlowTemplate, 'id' | 'createdAt' | 'updatedAt'>) => handleSaveFlow(data)}
-              onCancel={() => {
-                if (flowTemplates.length > 0) {
-                  setEditingFlow(flowTemplates[0]);
-                } else {
-                  setEditingFlow(null);
-                }
-              }}
-            />
-          </div>
         </div>
       </div>
     </div>
