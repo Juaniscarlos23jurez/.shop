@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { api } from '@/lib/api/api';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
+import * as Lucide from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -15,6 +16,8 @@ import {
   DialogOverlay,
 } from '@/components/ui/dialog';
 // Loading indicator without external dependencies
+
+const { Plus, Users } = Lucide as any;
 
 export interface Location {
   id: string;
@@ -178,7 +181,9 @@ export function BranchesList({
       <CardHeader>
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="p-2 rounded-lg bg-blue-100 text-blue-600 text-lg">👥</div>
+            <div className="p-2 rounded-lg bg-blue-100 text-blue-600">
+              <Users className="h-5 w-5" />
+            </div>
             <div>
               <CardTitle className="text-xl text-slate-900">Sucursales</CardTitle>
               <CardDescription className="text-slate-600">
@@ -190,7 +195,7 @@ export function BranchesList({
             className="bg-emerald-500 hover:bg-emerald-600"
             onClick={onAddBranchClick}
           >
-            <span className="mr-2">+</span>
+            <Plus className="h-4 w-4 mr-2" />
             Agregar Sucursal
           </Button>
         </div>

@@ -1,7 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useEffect, useState } from "react";
+import * as Lucide from "lucide-react";
 import { api } from '@/lib/api/api';
+
+const { Building2, Globe, Mail, MapPin, Phone } = Lucide as any;
 
 
 interface CompanyData {
@@ -86,7 +89,7 @@ export function CompanyInfo({
       <CardHeader className="pb-3">
         <div className="flex items-center space-x-3">
           <div className="p-2 rounded-lg bg-emerald-100 text-emerald-600">
-            <span className="text-lg">🏢</span>
+            <Building2 className="h-5 w-5" />
           </div>
           <div>
             <CardTitle className="text-xl text-slate-900">{companyData?.name || 'Compañía'}</CardTitle>
@@ -208,7 +211,7 @@ export function CompanyInfo({
             
             <div className="grid gap-4 md:grid-cols-2">
               <div className="flex items-start space-x-3">
-                <span className="text-slate-400 mt-0.5 flex-shrink-0">📍</span>
+                <MapPin className="h-5 w-5 text-slate-400 mt-0.5 flex-shrink-0" />
                 <div>
                   <h4 className="font-medium text-slate-900">Dirección</h4>
                   <p className="text-slate-600">
@@ -224,7 +227,7 @@ export function CompanyInfo({
               </div>
               
               <div className="flex items-start space-x-3">
-                <span className="text-slate-400 mt-0.5 flex-shrink-0">📞</span>
+                <Phone className="h-5 w-5 text-slate-400 mt-0.5 flex-shrink-0" />
                 <div>
                   <h4 className="font-medium text-slate-900">Teléfono</h4>
                   <p className="text-slate-600">{companyData.phone || 'No especificado'}</p>
@@ -232,7 +235,7 @@ export function CompanyInfo({
               </div>
               
               <div className="flex items-start space-x-3">
-                <span className="text-slate-400 mt-0.5 flex-shrink-0">✉️</span>
+                <Mail className="h-5 w-5 text-slate-400 mt-0.5 flex-shrink-0" />
                 <div>
                   <h4 className="font-medium text-slate-900">Correo Electrónico</h4>
                   <p className="text-slate-600">{companyData.email || 'No especificado'}</p>
@@ -243,7 +246,7 @@ export function CompanyInfo({
                 <p className="text-slate-600">{businessTypeLabel}</p>
               </div>
               <div className="flex items-start space-x-3">
-                <span className="text-slate-400 mt-0.5 flex-shrink-0">🌐</span>
+                <Globe className="h-5 w-5 text-slate-400 mt-0.5 flex-shrink-0" />
                 <div>
                   <h4 className="font-medium text-slate-900">Sitio Web</h4>
                   <p className="text-slate-600">
