@@ -276,18 +276,6 @@ export default function ProductosPage() {
               <SelectItem value="service">Servicios</SelectItem>
             </SelectContent>
           </Select>
-          <Button
-            type="button"
-            variant={hasOrderChanges ? 'default' : 'outline'}
-            disabled={!hasOrderChanges || savingOrder}
-            onClick={() => {
-              console.log('[Button] Guardar orden clicked! hasOrderChanges:', hasOrderChanges, 'savingOrder:', savingOrder);
-              handleSaveOrder();
-            }}
-            className="whitespace-nowrap"
-          >
-            {savingOrder ? 'Guardando...' : 'Guardar orden'}
-          </Button>
           <Button asChild>
             <Link href="/dashboard/productos/nuevo" className="whitespace-nowrap">
               <Plus className="h-4 w-4 mr-2" />
@@ -537,6 +525,24 @@ export default function ProductosPage() {
           )}
         </CardContent>
       </Card>
+      {hasOrderChanges && (
+        <Button
+          type="button"
+          variant="default"
+          disabled={savingOrder}
+          onClick={() => {
+            console.log('[Button] Guardar orden clicked! hasOrderChanges:', hasOrderChanges, 'savingOrder:', savingOrder);
+            handleSaveOrder();
+          }}
+          className="fixed bottom-16 right-8 sm:bottom-20 sm:right-14 rounded-full shadow-xl shadow-primary/25 pl-6 pr-10 py-5 text-base z-40"
+          style={{
+            bottom: 'max(env(safe-area-inset-bottom, 3rem), 3rem)',
+            right: 'max(env(safe-area-inset-right, 2.75rem), 2.75rem)',
+          }}
+        >
+          {savingOrder ? 'Guardando...' : 'Guardar orden'}
+        </Button>
+      )}
     </div>
   );
 }

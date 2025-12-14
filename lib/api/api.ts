@@ -1017,6 +1017,52 @@ export const api = {
     },
 
     /**
+     * Product Promotions: update
+     * PUT /api/companies/{companyId}/product-promotions/{promotionId}
+     */
+    async updateProductPromotion(
+      companyId: string,
+      token: string,
+      promotionId: string | number,
+      data: {
+        product_id?: number | string;
+        location_id?: number | string;
+        promo_price?: number;
+        start_at?: string | null;
+        end_at?: string | null;
+        is_active?: boolean;
+        quantity_limit?: number | null;
+        per_user_limit?: number | null;
+      }
+    ): Promise<ApiResponse<any>> {
+      const url = `${BASE_URL}/api/companies/${companyId}/product-promotions/${promotionId}`;
+      return fetch(url, {
+        method: 'PUT',
+        headers: {
+          ...getAuthHeader(token),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      }).then(handleResponse);
+    },
+
+    /**
+     * Product Promotions: delete
+     * DELETE /api/companies/{companyId}/product-promotions/{promotionId}
+     */
+    async deleteProductPromotion(
+      companyId: string,
+      token: string,
+      promotionId: string | number,
+    ): Promise<ApiResponse<any>> {
+      const url = `${BASE_URL}/api/companies/${companyId}/product-promotions/${promotionId}`;
+      return fetch(url, {
+        method: 'DELETE',
+        headers: getAuthHeader(token),
+      }).then(handleResponse);
+    },
+
+    /**
      * Notifications: list company notifications
      */
     async listNotifications(

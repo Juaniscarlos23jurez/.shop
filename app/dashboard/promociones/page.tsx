@@ -38,6 +38,8 @@ export default function PromocionesPage() {
   const [page, setPage] = useState<number>(1);
   const [perPage, setPerPage] = useState<number>(15);
   const [totalPages, setTotalPages] = useState<number>(1);
+  const [editingPromotion, setEditingPromotion] = useState<any | null>(null);
+  const [actionPromotionId, setActionPromotionId] = useState<string | number | null>(null);
 
   const selectedProduct = useMemo(
     () => products.find((p) => String(p.id) === String(selectedProductId)),
@@ -80,39 +82,115 @@ export default function PromocionesPage() {
     fetchData();
   }, [token, companyId]);
 
+  const resetForm = () => {
+    setSelectedProductId("");
+    setSelectedLocationId("");
+    setPromoPrice("");
+    setStartDate("");
+    setEndDate("");
+    setIsActive(true);
+    setQuantityLimit("");
+    setPerUserLimit("");
+    setEditingPromotion(null);
+    setError(null);
+  };
+
+  const formatDateInputValue = (value?: string | null) => {
+    if (!value) return "";
+    // Value can come as ISO or "YYYY-MM-DD HH:MM:SS"
+    return value.split("T")[0]?.split(" ")[0] || "";
+  };
+
   const fetchPromotions = async (
     pageParam: number = page,
     perPageParam: number = perPage,
     productId?: string,
     locationId?: string
   ) => {
-    if (!companyId) return;
+    if (!companyId || !token) return;
     setPromosLoading(true);
     try {
-      const res = await api.publicGeo.listPublicProductPromotions(String(companyId), {
+      const res = await api.companies.listProductPromotions(String(companyId), token, {
         per_page: perPageParam,
         page: pageParam,
         product_id: productId && productId !== 'all' ? productId : undefined,
         location_id: locationId && locationId !== 'all' ? locationId : undefined,
       });
       const payload: any = res?.data ?? res;
-      // Server returns { success, data: { data: [...], last_page, ... } }
-      const pageObj = payload?.data || payload; // prefer nested data
+      const pageObj = payload?.data && !Array.isArray(payload.data) ? payload.data : payload;
       const list: any[] = Array.isArray(pageObj?.data)
         ? pageObj.data
+        : Array.isArray(payload?.data?.data)
+        ? payload.data.data
         : Array.isArray(payload?.data)
         ? payload.data
         : Array.isArray(payload)
         ? payload
         : [];
       setPromotions(list);
-      const lastPage = pageObj?.last_page ?? payload?.meta?.last_page ?? 1;
+      const lastPage =
+        pageObj?.last_page ??
+        payload?.data?.last_page ??
+        payload?.meta?.last_page ??
+        payload?.last_page ??
+        1;
       setTotalPages(Number.isFinite(lastPage) ? Number(lastPage) : 1);
       setPage(pageParam);
     } catch (e) {
       console.error('Error fetching promotions', e);
     } finally {
       setPromosLoading(false);
+    }
+  };
+
+  const populateFormFromPromotion = (promo: any) => {
+    setSelectedProductId(String(promo.product_id || ""));
+    setSelectedLocationId(String(promo.location_id || ""));
+    setPromoPrice(
+      promo.promo_price !== undefined && promo.promo_price !== null
+        ? String(promo.promo_price)
+        : ""
+    );
+    setQuantityLimit(
+      promo.quantity_limit !== undefined && promo.quantity_limit !== null
+        ? String(promo.quantity_limit)
+        : ""
+    );
+    setPerUserLimit(
+      promo.per_user_limit !== undefined && promo.per_user_limit !== null
+        ? String(promo.per_user_limit)
+        : ""
+    );
+    setStartDate(formatDateInputValue(promo.start_at));
+    setEndDate(formatDateInputValue(promo.end_at));
+    setIsActive(Boolean(promo.is_active));
+  };
+
+  const handleEditPromotion = (promo: any) => {
+    setEditingPromotion(promo);
+    populateFormFromPromotion(promo);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleDeletePromotion = async (promo: any) => {
+    if (!token || !companyId) return;
+    const confirmed = confirm(`¿Eliminar la promoción de ${promo.product?.name || 'este producto'}?`);
+    if (!confirmed) return;
+    try {
+      setActionPromotionId(promo.id);
+      const res = await api.companies.deleteProductPromotion(String(companyId), token, promo.id);
+      if (!res?.success) {
+        throw new Error(res?.message || "No se pudo eliminar la promoción");
+      }
+      alert("Promoción eliminada");
+      if (editingPromotion?.id === promo.id) {
+        resetForm();
+      }
+      fetchPromotions(page, perPage, filterProductId, filterLocationId);
+    } catch (e) {
+      setError("No se pudo eliminar la promoción");
+    } finally {
+      setActionPromotionId(null);
     }
   };
 
@@ -159,35 +237,29 @@ export default function PromocionesPage() {
     setError(null);
     setSaving(true);
     try {
-      // Call backend API
       const payload = {
         product_id: Number(selectedProductId),
         location_id: Number(selectedLocationId),
         promo_price: priceNum,
-        // send date-only, backend normalizes to start/end of day
         start_at: startDate ? startDate : null,
         end_at: endDate ? endDate : null,
         is_active: isActive,
         quantity_limit: qty,
         per_user_limit: userQty,
       } as const;
-      const res = await api.companies.createProductPromotion(String(companyId), token, payload as any);
+      const res = editingPromotion
+        ? await api.companies.updateProductPromotion(
+            String(companyId),
+            token,
+            editingPromotion.id,
+            payload as any
+          )
+        : await api.companies.createProductPromotion(String(companyId), token, payload as any);
       if (!res?.success) {
-        throw new Error(res?.message || "Error al crear la promoción");
+        throw new Error(res?.message || "Error al guardar la promoción");
       }
-      alert("Promoción creada correctamente");
-
-      // Reset opcional
-      setSelectedProductId("");
-      setSelectedLocationId("");
-      setPromoPrice("");
-      setStartDate("");
-      setEndDate("");
-      setIsActive(true);
-      setQuantityLimit(""); // Reset quantity_limit field
-      setPerUserLimit("");
-
-      // Refresh promotions list
+      alert(editingPromotion ? "Promoción actualizada correctamente" : "Promoción creada correctamente");
+      resetForm();
       fetchPromotions(1, perPage, filterProductId, filterLocationId);
     } catch (e) {
       setError("No se pudo guardar la promoción");
@@ -195,6 +267,8 @@ export default function PromocionesPage() {
       setSaving(false);
     }
   };
+
+  const isEditing = Boolean(editingPromotion);
 
   return (
     <div className="space-y-6">
@@ -205,7 +279,9 @@ export default function PromocionesPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-slate-900">Nueva promoción</CardTitle>
+          <CardTitle className="text-slate-900">
+            {isEditing ? "Editar promoción" : "Nueva promoción"}
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           {error && (
@@ -335,9 +411,28 @@ export default function PromocionesPage() {
             </div>
           </div>
 
-          <div className="flex justify-end">
-            <Button onClick={handleSave} disabled={saving || loading} className="bg-emerald-600 hover:bg-emerald-700">
-              {saving ? "Guardando..." : "Guardar promoción"}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            {isEditing && (
+              <Button
+                type="button"
+                variant="outline"
+                className="sm:w-auto"
+                onClick={resetForm}
+                disabled={saving || loading}
+              >
+                Cancelar edición
+              </Button>
+            )}
+            <Button
+              onClick={handleSave}
+              disabled={saving || loading}
+              className="bg-emerald-600 hover:bg-emerald-700 sm:min-w-[180px]"
+            >
+              {saving
+                ? "Guardando..."
+                : isEditing
+                  ? "Actualizar promoción"
+                  : "Guardar promoción"}
             </Button>
           </div>
         </CardContent>
@@ -404,6 +499,7 @@ export default function PromocionesPage() {
                   <th className="py-2 pr-4">Límite x usuario</th>
                   <th className="py-2 pr-4">Inicio</th>
                   <th className="py-2 pr-4">Fin</th>
+                  <th className="py-2 pr-4 text-right">Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -419,6 +515,26 @@ export default function PromocionesPage() {
                       <td className="py-2 pr-4">{promo.per_user_limit ?? '-'}</td>
                       <td className="py-2 pr-4">{promo.start_at ? new Date(promo.start_at).toLocaleString() : '-'}</td>
                       <td className="py-2 pr-4">{promo.end_at ? new Date(promo.end_at).toLocaleString() : '-'}</td>
+                      <td className="py-2 pr-4">
+                        <div className="flex flex-wrap justify-end gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleEditPromotion(promo)}
+                            disabled={Boolean(actionPromotionId)}
+                          >
+                            Editar
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleDeletePromotion(promo)}
+                            disabled={actionPromotionId === promo.id}
+                          >
+                            {actionPromotionId === promo.id ? "Eliminando..." : "Eliminar"}
+                          </Button>
+                        </div>
+                      </td>
                     </tr>
                   );
                 })}
