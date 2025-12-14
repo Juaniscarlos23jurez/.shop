@@ -3,7 +3,7 @@ import { Product, ProductListResponse, ProductResponse, ProductCreateInput, Prod
 import { Category, CategoryCreateInput, CategoryUpdateInput, CategoryResponse, CategoryListResponse } from '@/types/category';
 import { ordersApi } from './orders';
 
-const BASE_URL = 'https://laravel-pkpass-backend-development-pfaawl.laravel.cloud';
+export const BASE_URL = 'https://laravel-pkpass-backend-development-pfaawl.laravel.cloud';
 //http://127.0.0.1:8000
 export const api = {
   // Public Geo endpoints (no auth required)
@@ -1948,14 +1948,24 @@ export const api = {
         'Accept': 'application/json',
       };
 
-      return fetch(
-        `${BASE_URL}/api/companies/${companyId}/products/reorder`,
-        {
+      const url = `${BASE_URL}/api/companies/${companyId}/products/reorder`;
+      const body = JSON.stringify({ items });
+      
+     
+      try {
+        const response = await fetch(url, {
           method: 'PUT',
           headers,
-          body: JSON.stringify({ items }),
-        }
-      ).then(handleResponse);
+          body,
+        });
+    
+        const result = await handleResponse(response);
+         
+        return result;
+      } catch (err) {
+        console.error('[API reorderProducts] EXCEPTION:', err);
+        throw err;
+      }
     },
   },
 

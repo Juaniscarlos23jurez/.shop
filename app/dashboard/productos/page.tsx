@@ -158,57 +158,87 @@ export default function ProductosPage() {
     setCurrentPage(1); // Reset to first page when changing filters
   };
 
-  const handleDragStart = (index: number) => {
+  const handleDragStart = (
+    event: React.DragEvent<HTMLDivElement>,
+    index: number
+  ) => {
+    console.log('[Drag] START - index:', index, 'product:', products[index]?.name);
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', String(index));
     setDraggedIndex(index);
     setIsDragging(true);
   };
 
-  const handleDragOver = (event: React.DragEvent<HTMLDivElement>, index: number) => {
-    event.preventDefault();
+  const handleDragEnter = (index: number) => {
     if (draggedIndex === null || draggedIndex === index) return;
+    console.log('[Drag] ENTER - from:', draggedIndex, 'to:', index);
 
     setProducts((prev) => {
       const updated = [...prev];
       const [moved] = updated.splice(draggedIndex, 1);
       updated.splice(index, 0, moved);
-      setDraggedIndex(index);
-      setHasOrderChanges(true);
+      console.log('[Drag] Reordered products:', updated.map((p, i) => ({ pos: i+1, id: p.id, name: p.name })));
       return updated;
     });
+    setDraggedIndex(index);
+    setHasOrderChanges(true);
+    console.log('[Drag] hasOrderChanges set to true');
+  };
+
+  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
   };
 
   const handleDragEnd = () => {
+    console.log('[Drag] END - hasOrderChanges:', hasOrderChanges);
     setDraggedIndex(null);
     // Pequeño timeout para no disparar navegación por click inmediato después de un drag
     setTimeout(() => setIsDragging(false), 50);
   };
 
   const handleSaveOrder = async () => {
-    if (!token || !companyId || products.length === 0) return;
+    console.log('[Reorder] handleSaveOrder called');
+    console.log('[Reorder] token:', token ? 'present' : 'missing');
+    console.log('[Reorder] companyId:', companyId);
+    console.log('[Reorder] products.length:', products.length);
+    
+    if (!token || !companyId || products.length === 0) {
+      console.log('[Reorder] Aborted - missing data');
+      return;
+    }
     try {
       setSavingOrder(true);
       const items = products.map((product, index) => ({
         product_id: product.id as string | number,
         position: index + 1,
       }));
+      
+      console.log('[Reorder] Sending items to API:', JSON.stringify(items, null, 2));
+      console.log('[Reorder] API URL will be: /api/companies/' + companyId + '/products/reorder');
 
       const response = await reorderProducts(companyId, token, items);
+      
+      console.log('[Reorder] API Response:', JSON.stringify(response, null, 2));
 
       if (response?.success) {
+        console.log('[Reorder] SUCCESS');
         toast({
           title: 'Orden guardado',
           description: 'El orden de los productos se actualizó correctamente.',
         });
         setHasOrderChanges(false);
       } else {
+        console.log('[Reorder] FAILED - response.success is false');
+        console.log('[Reorder] Error message:', response?.message || response?.error);
         toast({
           title: 'No se pudo guardar el orden',
-          description: 'Intenta nuevamente en unos momentos.',
+          description: response?.message || 'Intenta nuevamente en unos momentos.',
           variant: 'destructive',
         });
       }
     } catch (err) {
-      console.error('Error saving product order:', err);
+      console.error('[Reorder] EXCEPTION:', err);
       toast({
         title: 'Error al guardar el orden',
         description: 'Ocurrió un problema al conectar con el servidor.',
@@ -250,7 +280,10 @@ export default function ProductosPage() {
             type="button"
             variant={hasOrderChanges ? 'default' : 'outline'}
             disabled={!hasOrderChanges || savingOrder}
-            onClick={handleSaveOrder}
+            onClick={() => {
+              console.log('[Button] Guardar orden clicked! hasOrderChanges:', hasOrderChanges, 'savingOrder:', savingOrder);
+              handleSaveOrder();
+            }}
             className="whitespace-nowrap"
           >
             {savingOrder ? 'Guardando...' : 'Guardar orden'}
@@ -317,8 +350,9 @@ export default function ProductosPage() {
                     key={product.id}
                     className="grid grid-cols-12 items-start gap-2 p-2 border-b hover:bg-slate-50 transition-colors text-sm h-16 cursor-move"
                     draggable
-                    onDragStart={() => handleDragStart(index)}
-                    onDragOver={(e) => handleDragOver(e, index)}
+                    onDragStart={(e) => handleDragStart(e, index)}
+                    onDragEnter={() => handleDragEnter(index)}
+                    onDragOver={handleDragOver}
                     onDragEnd={handleDragEnd}
                     onDrop={handleDragEnd}
                     onClick={() => {

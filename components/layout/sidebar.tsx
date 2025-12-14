@@ -33,6 +33,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useRouter, usePathname } from 'next/navigation';
 import { useState, useLayoutEffect, useEffect } from 'react'; // Import useState, useLayoutEffect and useEffect
 import { ordersApi } from "@/lib/api/orders";
+import { api } from "@/lib/api/api";
 
 // Admin sidebar items (shown for non-employee users)
 const adminSidebarItems = [
@@ -177,6 +178,17 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
   });
 
   const [pendingOrdersCount, setPendingOrdersCount] = useState<number | null>(null);
+  const [companySlug, setCompanySlug] = useState<string | null>(null);
+
+  const slugifyCompanyName = (name: string) => {
+    return name
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  };
 
   useEffect(() => {
     const fetchPendingOrdersCount = async () => {
@@ -204,6 +216,24 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
 
     fetchPendingOrdersCount();
   }, [user?.company_id, token]);
+
+  // Fetch company slug for the public link
+  useEffect(() => {
+    const fetchCompanySlug = async () => {
+      try {
+        if (!token) return;
+        const response = await api.userCompanies.get(token);
+        if (response.success && response.data?.data?.name) {
+          const name = response.data.data.name;
+          setCompanySlug(slugifyCompanyName(name));
+        }
+      } catch (error) {
+        console.error('[Sidebar] Error fetching company slug', error);
+      }
+    };
+
+    fetchCompanySlug();
+  }, [token]);
    
   // Get user initials for avatar fallback
   const getUserInitials = (name?: string, email?: string) => {
@@ -245,7 +275,22 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
           </div>
           <div>
             <h1 className="text-lg font-bold text-slate-900">Dashboard</h1>
-            <p className="text-xs text-slate-500">Panel de control</p>
+             
+              <Button
+                asChild
+                variant="outline"
+                size="sm"
+                className="mt-1 h-7 px-3 text-xs text-emerald-600 border-emerald-200 hover:bg-emerald-50"
+              >
+                <a
+                  href={`https://fynlink.shop/rewin/${companySlug}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Abrir tienda pública
+                </a>
+              </Button>
+           
           </div>
         </div>
         <Button
@@ -257,7 +302,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
           <ChevronLeft className={`h-5 w-5 transition-transform duration-300 ${isCollapsed ? 'rotate-180' : ''}`} />
         </Button>
       </div>
-
+ 
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
         {sidebarItems.map((item, index) => {

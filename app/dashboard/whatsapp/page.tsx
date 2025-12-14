@@ -48,6 +48,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { whatsappApi } from "@/lib/api/whatsapp";
+import { BASE_URL } from "@/lib/api/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
@@ -231,7 +232,7 @@ export default function WhatsAppPage() {
       setSessionStatus('connecting');
 
       // Llama al backend Laravel vía proxy de Next: /api/proxy/api/whatsapp/sessions
-      const res = await fetch(`/api/proxy/api/whatsapp/sessions`, {
+      const res = await fetch(`${BASE_URL}/api/whatsapp/sessions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -248,11 +249,12 @@ export default function WhatsAppPage() {
       }
 
       const data = await res.json();
-      console.log('[WhatsApp] Sesión iniciada respuesta:', data);
+      console.log('[WhatsApp] Sesión iniciada respuesta completa:', data);
+      console.log('[WhatsApp] Estado inicial devuelto por backend:', data?.status, 'QR incluido:', Boolean(data?.qrCodeUrl));
       // Se espera que el backend regrese algo como:
       // { sessionId: string, qrCodeUrl: string }
       setQrCodeUrl(data.qrCodeUrl || null);
-      setSessionStatus('waiting_qr');
+      setSessionStatus(data.status === 'connected' ? 'connected' : 'waiting_qr');
     } catch (error: any) {
       console.error('Error iniciando sesión de WhatsApp:', error);
       setSessionError(error?.message || 'Error al iniciar sesión de WhatsApp');
@@ -274,7 +276,7 @@ export default function WhatsAppPage() {
 
     try {
       // Llama al backend Laravel vía proxy de Next: /api/proxy/api/whatsapp/sessions/status
-      const res = await fetch(`/api/proxy/api/whatsapp/sessions/status?company_id=${user.company_id}`, {
+      const res = await fetch(`${BASE_URL}/api/whatsapp/sessions/status?company_id=${user.company_id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -288,10 +290,14 @@ export default function WhatsAppPage() {
 
       const data = await res.json();
       console.log('[WhatsApp] Estado de sesión recibido:', data);
+      console.log('[WhatsApp] Estado actual:', data?.status, '¿QR presente?:', Boolean(data?.qrCodeUrl));
       // Se espera algo como: { status: 'connected' | 'waiting_qr' | 'disconnected', qrCodeUrl?: string }
       setSessionStatus(data.status || 'disconnected');
       if (data.qrCodeUrl) {
         setQrCodeUrl(data.qrCodeUrl);
+      } else if (data.status === 'connected') {
+        // Si ya está conectada la sesión, no necesitamos QR: limpiamos el QR y seguimos.
+        setQrCodeUrl(null);
       }
     } catch (error) {
       console.error('Error verificando estado de sesión WhatsApp:', error);
