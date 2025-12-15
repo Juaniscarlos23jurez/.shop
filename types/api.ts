@@ -18,6 +18,36 @@ export interface BusinessHour {
   updated_at: string;
 }
 
+export type ReviewStatus = 'pending' | 'approved' | 'rejected';
+
+export interface CompanyReview {
+  id: number;
+  company_id: number;
+  customer_name: string;
+  customer_email?: string;
+  customer_handle?: string;
+  rating: number;
+  comment: string;
+  status: ReviewStatus;
+  response?: string | null;
+  responded_at?: string | null;
+  owner_name?: string | null;
+  channel?: 'app' | 'web' | 'store' | string | null;
+  platform?: string | null;
+  location?: string | null;
+  tags?: string[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CompanyReviewStats {
+  total: number;
+  approved: number;
+  pending: number;
+  rejected: number;
+  average_rating: number;
+}
+
 export interface BusinessHoursResponse {
   hours: BusinessHour[];
 }

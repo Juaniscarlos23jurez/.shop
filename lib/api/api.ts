@@ -1,4 +1,4 @@
-import { ApiResponse, UserProfile, ProfileApiUser, BusinessHour, Membership, Coupon, CouponCreateInput, CouponUpdateInput, CouponValidationRequest, CouponValidationResponse, CouponAssignmentRequest, CouponAssignByMembershipRequest, CompanyPaymentMethod, CompanyPaymentMethodCreateInput, CompanyPaymentMethodUpdateInput } from '@/types/api';
+import { ApiResponse, UserProfile, ProfileApiUser, BusinessHour, Membership, Coupon, CouponCreateInput, CouponUpdateInput, CouponValidationRequest, CouponValidationResponse, CouponAssignmentRequest, CouponAssignByMembershipRequest, CompanyPaymentMethod, CompanyPaymentMethodCreateInput, CompanyPaymentMethodUpdateInput, CompanyReview, CompanyReviewStats, ReviewStatus } from '@/types/api';
 import { Product, ProductListResponse, ProductResponse, ProductCreateInput, ProductUpdateInput } from '@/types/product';
 import { Category, CategoryCreateInput, CategoryUpdateInput, CategoryResponse, CategoryListResponse } from '@/types/category';
 import { ordersApi } from './orders';
@@ -82,6 +82,63 @@ export const api = {
       }).then(handleResponse);
     },
   },
+
+  // Reviews/Comments endpoints (authenticated)
+  reviews: {
+    async list(
+      companyId: string | number,
+      token: string,
+      filters: { status?: ReviewStatus; channel?: string; per_page?: number; page?: number } = {}
+    ): Promise<ApiResponse<{ data: CompanyReview[]; stats?: CompanyReviewStats }>> {
+      const search = new URLSearchParams();
+      if (filters.status) search.set('status', filters.status);
+      if (filters.channel) search.set('channel', filters.channel);
+      if (filters.per_page !== undefined) search.set('per_page', String(filters.per_page));
+      if (filters.page !== undefined) search.set('page', String(filters.page));
+
+      const url = `${BASE_URL}/api/companies/${companyId}/reviews${search.toString() ? `?${search.toString()}` : ''}`;
+
+      return fetch(url, {
+        method: 'GET',
+        headers: getAuthHeader(token),
+      }).then(handleResponse);
+    },
+
+    async respond(
+      companyId: string | number,
+      reviewId: string | number,
+      responseText: string,
+      token: string
+    ): Promise<ApiResponse<any>> {
+      const url = `${BASE_URL}/api/companies/${companyId}/reviews/${reviewId}/respond`;
+      return fetch(url, {
+        method: 'POST',
+        headers: {
+          ...getAuthHeader(token),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ response: responseText }),
+      }).then(handleResponse);
+    },
+
+    async updateStatus(
+      companyId: string | number,
+      reviewId: string | number,
+      status: ReviewStatus,
+      token: string
+    ): Promise<ApiResponse<any>> {
+      const url = `${BASE_URL}/api/companies/${companyId}/reviews/${reviewId}/status`;
+      return fetch(url, {
+        method: 'PATCH',
+        headers: {
+          ...getAuthHeader(token),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status }),
+      }).then(handleResponse);
+    },
+  },
+
   // Authentication methods
   auth: {
     async login(email: string, password: string): Promise<ApiResponse<{ 
@@ -2330,6 +2387,55 @@ export const pointRulesApi = {
     }
 
     return { success: true };
+  },
+
+  // Reviews/Comments endpoints (authenticated)
+  reviews: {
+    async list(
+      companyId: string | number,
+      token: string,
+      filters?: { status?: ReviewStatus; channel?: string }
+    ): Promise<ApiResponse<any>> {
+      const search = new URLSearchParams();
+      if (filters?.status) search.set('status', filters.status);
+      if (filters?.channel) search.set('channel', filters.channel);
+      const url = `${BASE_URL}/api/companies/${companyId}/reviews${search.toString() ? `?${search.toString()}` : ''}`;
+      return fetch(url, {
+        headers: getAuthHeader(token),
+      }).then(handleResponse);
+    },
+
+    async updateStatus(
+      companyId: string | number,
+      reviewId: number,
+      status: ReviewStatus,
+      token: string
+    ): Promise<ApiResponse<any>> {
+      return fetch(`${BASE_URL}/api/companies/${companyId}/reviews/${reviewId}/status`, {
+        method: 'PUT',
+        headers: {
+          ...getAuthHeader(token),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status }),
+      }).then(handleResponse);
+    },
+
+    async respond(
+      companyId: string | number,
+      reviewId: number,
+      response: string,
+      token: string
+    ): Promise<ApiResponse<any>> {
+      return fetch(`${BASE_URL}/api/companies/${companyId}/reviews/${reviewId}/respond`, {
+        method: 'POST',
+        headers: {
+          ...getAuthHeader(token),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ response }),
+      }).then(handleResponse);
+    },
   },
 };
 
