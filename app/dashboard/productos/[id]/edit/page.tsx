@@ -533,7 +533,7 @@ export default function EditarProductoPage() {
                     <Label htmlFor="category_id">Categoría</Label>
                     <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
                       <DialogTrigger asChild>
-                        <Button type="button" variant="outline" size="sm" className="h-8">
+                        <Button type="button" size="sm" className="h-8 bg-primary text-primary-foreground hover:bg-primary/90">
                           <Plus className="h-4 w-4 mr-1" />
                           Nueva Categoría
                         </Button>
