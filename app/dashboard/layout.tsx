@@ -1,5 +1,6 @@
 "use client";
 import { Sidebar } from "@/components/layout/sidebar"
+import { FeedbackButton } from "@/components/feedback/FeedbackButton"
 import { useEffect, useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile"; // Import useIsMobile
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"; // Import Sheet components
@@ -114,6 +115,8 @@ export default function DashboardLayout({
       <main className="flex-1 overflow-y-auto p-6 transition-all duration-300">
         {children}
       </main>
+      
+      <FeedbackButton />
     </div>
   )
 }

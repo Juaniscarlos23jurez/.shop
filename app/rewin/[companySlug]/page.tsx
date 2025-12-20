@@ -232,7 +232,7 @@ export default function PublicCompanyPage() {
         {user ? (
           <>
             <Button
-              className="gap-2 shadow-xl bg-emerald-600 text-white hover:bg-emerald-700 rounded-full h-12 px-5 text-sm font-semibold hidden sm:inline-flex"
+              className="gap-2 shadow-xl bg-emerald-600 text-white hover:bg-emerald-700 rounded-full h-12 px-5 text-sm font-semibold"
               onClick={() => {
                 if (typeof window === 'undefined') return;
 
@@ -291,7 +291,7 @@ export default function PublicCompanyPage() {
         ) : (
           <>
             <Button
-              className="gap-2 shadow-xl bg-emerald-600 text-white hover:bg-emerald-700 rounded-full h-12 px-5 text-sm font-semibold hidden sm:inline-flex"
+              className="gap-2 shadow-xl bg-emerald-600 text-white hover:bg-emerald-700 rounded-full h-12 px-5 text-sm font-semibold"
               onClick={() => {
                 if (typeof window === 'undefined') return;
 

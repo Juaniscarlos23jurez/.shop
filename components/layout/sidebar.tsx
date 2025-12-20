@@ -309,7 +309,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
           const isActive = pathname === item.href || 
                          (pathname.startsWith(item.href) && item.href !== '/dashboard');
 
-          if (item.isCollapsible) {
+          if ('isCollapsible' in item && item.isCollapsible && 'subItems' in item) {
             const isAnySubItemActive = item.subItems?.some(subItem => pathname.startsWith(subItem.href));
             return (
               <div key={index} className="space-y-2">
