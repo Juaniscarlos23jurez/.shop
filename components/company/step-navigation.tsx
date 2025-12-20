@@ -12,8 +12,7 @@ export const StepNavigation: React.FC<StepNavigationProps> = ({ currentStep }) =
       <div className="flex justify-between mb-4">
         {[
           { number: 1, label: 'Información' },
-          { number: 2, label: 'Horario' },
-          { number: 3, label: 'Sucursal' }
+          { number: 2, label: 'Sucursal' }
         ].map((step) => (
           <div key={step.number} className="flex flex-col items-center flex-1">
             <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 ${
@@ -38,7 +37,7 @@ export const StepNavigation: React.FC<StepNavigationProps> = ({ currentStep }) =
         <div 
           className="absolute top-1/2 left-0 h-0.5 bg-emerald-500 transition-all duration-300 -z-5"
           style={{
-            width: `${(currentStep - 1) * 50}%`,
+            width: `${(currentStep - 1) * 100}%`,
             transition: 'width 0.3s ease-in-out'
           }}
         ></div>

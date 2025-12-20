@@ -159,6 +159,30 @@ export const api = {
       }).then(handleResponse);
     },
 
+    async socialLogin(
+      idToken: string,
+      provider: 'google.com' | 'apple.com' | string,
+      fcmBrowserToken?: string | null
+    ): Promise<ApiResponse<{
+      access_token: string;
+      token_type: string;
+      user: ProfileApiUser;
+    }>> {
+      return fetch(`/api/proxy/api/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          idToken,
+          id_token: idToken,
+          provider,
+          fcm_browser_token: fcmBrowserToken ?? undefined,
+        }),
+      }).then(handleResponse);
+    },
+
     async employeeLogin(email: string, password: string): Promise<ApiResponse<{ 
       access_token: string;
       token_type: string;
@@ -201,6 +225,30 @@ export const api = {
           password_confirmation,
           phone: phone || null
         })
+      }).then(handleResponse);
+    },
+
+    async socialRegister(
+      idToken: string,
+      provider: 'google.com' | 'apple.com' | string,
+      fcmBrowserToken?: string | null
+    ): Promise<ApiResponse<{
+      access_token: string;
+      token_type: string;
+      user: ProfileApiUser;
+    }>> {
+      return fetch(`/api/proxy/api/auth/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          idToken,
+          id_token: idToken,
+          provider,
+          fcm_browser_token: fcmBrowserToken ?? undefined,
+        }),
       }).then(handleResponse);
     },
 
@@ -964,9 +1012,13 @@ export const api = {
 
     async updateCompany(companyId: string, data: any, token: string): Promise<ApiResponse> {
       try {
+        console.log('[API] Updating company with data:', data);
         const response = await fetch(`${BASE_URL}/api/companies/${companyId}`, {
           method: 'PUT',
-          headers: getAuthHeader(token),
+          headers: {
+            ...getAuthHeader(token),
+            'Content-Type': 'application/json',
+          },
           body: JSON.stringify(data),
         });
         return handleResponse(response);

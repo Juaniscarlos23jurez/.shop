@@ -136,17 +136,7 @@ export function CompanyInfo({
                 />
               </div>
               
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">Sitio Web</label>
-                <input
-                  type="url"
-                  name="website"
-                  value={formData.website || ''}
-                  onChange={onInputChange}
-                  className="w-full p-2 border rounded-md"
-                  placeholder="https://"
-                />
-              </div>
+               
               
               <div className="space-y-2 md:col-span-2">
                 <label className="text-sm font-medium text-slate-700">Descripción</label>
@@ -245,24 +235,7 @@ export function CompanyInfo({
                 <h4 className="font-medium text-slate-900">Tipo de negocio</h4>
                 <p className="text-slate-600">{businessTypeLabel}</p>
               </div>
-              <div className="flex items-start space-x-3">
-                <Globe className="h-5 w-5 text-slate-400 mt-0.5 flex-shrink-0" />
-                <div>
-                  <h4 className="font-medium text-slate-900">Sitio Web</h4>
-                  <p className="text-slate-600">
-                    {companyData.website ? (
-                      <a 
-                        href={companyData.website.startsWith('http') ? companyData.website : `https://${companyData.website}`}
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-emerald-600 hover:underline"
-                      >
-                        {companyData.website}
-                      </a>
-                    ) : 'No especificado'}
-                  </p>
-                </div>
-              </div>
+               
               
             </div>
           </>

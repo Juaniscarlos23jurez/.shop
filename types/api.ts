@@ -359,10 +359,27 @@ export interface PublicCompanyLocation {
   id: string;
   company_id: string;
   name: string;
+  slug?: string;
   address: string;
   city: string;
   state: string;
   country: string;
+  postal_code?: string;
+  phone?: string;
+  email?: string;
+  contact_person?: string;
+  primary_color?: string;
+  secondary_color?: string;
+  timezone?: string;
+  status?: string;
+  latitude?: string | number | null;
+  longitude?: string | number | null;
+  notes?: string;
+  created_at?: string;
+  updated_at?: string;
+  country_id?: number;
+  state_id?: number;
+  city_id?: number;
 }
 
 export interface PointRule {
@@ -383,18 +400,28 @@ export interface BusinessType {
 
 export interface PublicCompany {
   id: string;
+  user_id?: number;
   name: string;
+  slug?: string;
   description?: string;
+  status?: string;
   email?: string;
   phone?: string;
   website?: string;
   logo_url?: string;
   banner_url?: string;
+  business_type_id?: number;
   address?: string;
   city?: string;
   state?: string;
   country?: string;
   postal_code?: string;
+  latitude?: string | number | null;
+  longitude?: string | number | null;
+  timezone?: string;
+  currency?: string;
+  language?: string;
+  is_active?: boolean;
   locations_count?: number;
   memberships_count?: number;
   locations?: PublicCompanyLocation[];

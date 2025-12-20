@@ -27,9 +27,10 @@ interface BranchInfoFormProps {
     longitude?: number;
   };
   handleInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
+  isFirstBranch?: boolean;
 }
 
-export const BranchInfoForm: React.FC<BranchInfoFormProps> = ({ formData, handleInputChange }) => {
+export const BranchInfoForm: React.FC<BranchInfoFormProps> = ({ formData, handleInputChange, isFirstBranch = true }) => {
   const router = useRouter();
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
   const [markerPos, setMarkerPos] = useState<{ lat: number; lng: number } | null>(null);
@@ -145,15 +146,15 @@ export const BranchInfoForm: React.FC<BranchInfoFormProps> = ({ formData, handle
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData.state_id]);
 
+  const stateMissing = Boolean(formData.country_id) && !formData.state_id;
+  const cityMissing = Boolean(formData.state_id) && !formData.city_id;
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div>
         <h3 className="text-lg font-medium text-slate-900">Agregar Sucursal</h3>
-        <Button variant="outline" onClick={() => router.push('?edit=true&step=1')}>
-          Editar información de compañía
-        </Button>
+        <p className="text-sm text-slate-500 mt-1">{isFirstBranch ? 'Agrega tu primera sucursal' : 'Agrega una nueva sucursal'}</p>
       </div>
-      <p className="text-sm text-slate-500 mb-4">Agrega tu primera sucursal</p>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
@@ -240,7 +241,7 @@ export const BranchInfoForm: React.FC<BranchInfoFormProps> = ({ formData, handle
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Estado</label>
+          <label className="block text-sm font-medium text-slate-700 mb-1">Estado/Provincia <span className="text-red-500">*</span></label>
           <select
             name="location.state_id"
             value={String(formData.state_id || '')}
@@ -260,10 +261,13 @@ export const BranchInfoForm: React.FC<BranchInfoFormProps> = ({ formData, handle
               <option key={s.id} value={s.id}>{s.name}</option>
             ))}
           </select>
+          {stateMissing && (
+            <p className="mt-1 text-sm text-red-600">Estado/Provincia es requerido</p>
+          )}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Ciudad</label>
+          <label className="block text-sm font-medium text-slate-700 mb-1">Ciudad <span className="text-red-500">*</span></label>
           <select
             name="location.city_id"
             value={String(formData.city_id || '')}
@@ -283,6 +287,9 @@ export const BranchInfoForm: React.FC<BranchInfoFormProps> = ({ formData, handle
               <option key={ci.id} value={ci.id}>{ci.name}</option>
             ))}
           </select>
+          {cityMissing && (
+            <p className="mt-1 text-sm text-red-600">Ciudad es requerida</p>
+          )}
         </div>
 
         <div>

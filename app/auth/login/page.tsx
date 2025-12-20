@@ -10,11 +10,12 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/contexts/AuthContext";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { api } from "@/lib/api/api";
 
 export default function LoginPage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
-  const { login, loading, isAuthenticated, userRole } = useAuth();
+  const { login, loginWithGoogle, loading, isAuthenticated, userRole } = useAuth();
   const [isEmployee, setIsEmployee] = useState(false);
 
   useEffect(() => {
@@ -38,13 +39,54 @@ export default function LoginPage() {
       if (role && role.startsWith('employee_')) {
         router.push('/dashboard/pos');
       } else {
-        router.push(routes.dashboard);
+        const accessToken = result?.access_token;
+        if (accessToken) {
+          try {
+            const companyRes = await api.userCompanies.get(accessToken);
+            const hasCompany = Boolean((companyRes as any)?.data?.data?.id);
+            router.push(hasCompany ? routes.dashboard : '/onboarding/compania');
+          } catch {
+            router.push('/onboarding/compania');
+          }
+        } else {
+          router.push('/onboarding/compania');
+        }
       }
       router.refresh();
     } catch (error) {
       console.error('Login error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
       setError(`No se pudo iniciar sesión: ${errorMessage}`);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setError(null);
+
+    try {
+      const result = await loginWithGoogle();
+      const role = result && (result.user as any)?.role as string | undefined;
+      if (role && role.startsWith('employee_')) {
+        router.push('/dashboard/pos');
+      } else {
+        const accessToken = result?.access_token;
+        if (accessToken) {
+          try {
+            const companyRes = await api.userCompanies.get(accessToken);
+            const hasCompany = Boolean((companyRes as any)?.data?.data?.id);
+            router.push(hasCompany ? routes.dashboard : '/onboarding/compania');
+          } catch {
+            router.push('/onboarding/compania');
+          }
+        } else {
+          router.push('/onboarding/compania');
+        }
+      }
+      router.refresh();
+    } catch (error) {
+      console.error('Google login error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      setError(`No se pudo iniciar sesión con Google: ${errorMessage}`);
     }
   };
 
@@ -123,20 +165,21 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <div className="mt-6 grid grid-cols-2 gap-3">
-                <div>
-                  <a
-                    href="#"
-                    className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
-                  >
-                    <span className="sr-only">Iniciar con Google</span>
-                    <svg className="w-5 h-5" aria-hidden="true" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z" />
-                    </svg>
-                  </a>
-                </div>
-
-                 
+              <div className="mt-6">
+                <a
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleGoogleLogin();
+                  }}
+                  className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+                >
+                  <span className="sr-only">Iniciar con Google</span>
+                  <svg className="w-5 h-5 mr-2" aria-hidden="true" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z" />
+                  </svg>
+                  Iniciar con Google
+                </a>
               </div>
             </div>
           </div>

@@ -3,12 +3,15 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { api } from '@/lib/api/api';
 import { ApiResponse, LoginResponse, UserProfile } from '@/types/api';
-import { getFcmBrowserToken } from '@/lib/firebase';
+import { getFcmBrowserToken, auth, isFirebaseConfigured } from '@/lib/firebase';
+import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 
 interface AuthContextType {
   user: UserProfile | null;
   token: string | null;
   login: (email: string, password: string, isEmployee?: boolean) => Promise<{ user: any; access_token: string } | void>;
+  loginWithGoogle: () => Promise<{ user: any; access_token: string } | void>;
+  registerWithGoogle: () => Promise<{ user: any; access_token: string } | void>;
   register: (name: string, email: string, password: string, password_confirmation: string, phone?: string) => Promise<void>;
   logout: () => void;
   loading: boolean;
@@ -117,6 +120,74 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const registerWithGoogle = async () => {
+    try {
+      if (!isFirebaseConfigured() || !auth) {
+        throw new Error('Firebase no está configurado para registro social');
+      }
+
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      const idToken = await result.user.getIdToken();
+
+      let fcmToken: string | null = null;
+      if (typeof window !== 'undefined') {
+        try {
+          fcmToken = await getFcmBrowserToken();
+        } catch {
+          fcmToken = null;
+        }
+      }
+
+      const response = await api.auth.socialRegister(idToken, 'google.com', fcmToken);
+
+      if (response.success && response.data) {
+        const { access_token, user } = response.data;
+        handleAuthSuccess(access_token, user);
+        return { user, access_token };
+      }
+
+      throw new Error(response.message || 'Failed to register with Google');
+    } catch (error) {
+      console.error('Google register error:', error);
+      throw error;
+    }
+  };
+
+  const loginWithGoogle = async () => {
+    try {
+      if (!isFirebaseConfigured() || !auth) {
+        throw new Error('Firebase no está configurado para login social');
+      }
+
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      const idToken = await result.user.getIdToken();
+
+      let fcmToken: string | null = null;
+      if (typeof window !== 'undefined') {
+        try {
+          fcmToken = await getFcmBrowserToken();
+        } catch {
+          fcmToken = null;
+        }
+      }
+
+      const response = await api.auth.socialLogin(idToken, 'google.com', fcmToken);
+
+      if (response.success && response.data) {
+        const { access_token, user } = response.data;
+        handleAuthSuccess(access_token, user);
+        return { user, access_token };
+      }
+
+      throw new Error(response.message || 'Failed to login with Google');
+    } catch (error) {
+      console.error('Google login error:', error);
+      throw error;
+    }
+  };
+
   const login = async (email: string, password: string, _isEmployeeLogin: boolean = false) => {
     try {
       // Always use general login endpoint. Role is derived from response.
@@ -194,6 +265,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       token,
       login,
+      loginWithGoogle,
+      registerWithGoogle,
       register,
       logout,
       loading,

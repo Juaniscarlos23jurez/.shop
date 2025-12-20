@@ -48,8 +48,8 @@ export const publicWebApiClient = {
    * Get public announcements for a company by ID.
    * GET /api/public/companies/{companyId}/announcements
    */
-  async getCompanyAnnouncementsById(companyId: string): Promise<ApiResponse<{ data: Announcement[] }>> {
-    const url = `${BASE_URL}/api/public/companies/${companyId}/announcements`;
+  async getCompanyAnnouncementsById(companyId: string, perPage: number = 50): Promise<ApiResponse<{ data: Announcement[] }>> {
+    const url = `${BASE_URL}/api/public/companies/${companyId}/announcements?per_page=${perPage}`;
     return fetch(url, {
       method: 'GET',
       headers: {

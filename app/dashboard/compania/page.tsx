@@ -251,7 +251,7 @@ export default function CompaniaPage() {
       params.set('step', step.toString());
       router.push(`?${params.toString()}`, { scroll: false });
     } else {
-      router.push('', { scroll: false });
+      router.push('/dashboard/compania', { scroll: false });
     }
   }, [router, isLoading]);
 
@@ -433,8 +433,8 @@ export default function CompaniaPage() {
     }
     
     try {
-      // If we're in step 3 (creating a location)
-      if (currentStep === 3) {
+      // If we're in step 2 (creating a location)
+      if (currentStep === 2) {
         if (!companyData?.id) {
           throw new Error('No se encontró el ID de la compañía');
         }
@@ -457,7 +457,7 @@ export default function CompaniaPage() {
           city: formData.location.city?.trim() || companyData?.city || '',
           state: formData.location.state?.trim() || companyData?.state || '',
           country: formData.location.country?.trim() || companyData?.country || 'México',
-          zip_code: formData.location.zip_code?.trim() || formData.location.postal_code?.trim() || companyData?.postal_code || '',
+          postal_code: formData.location.zip_code?.trim() || formData.location.postal_code?.trim() || companyData?.postal_code || '',
           is_primary: true,
           is_active: true,
         };
@@ -522,9 +522,15 @@ export default function CompaniaPage() {
         language: formData.language || undefined,
         logo_url: formData.logo_url || undefined,
         banner_url: formData.banner_url || undefined,
-        latitude: formData.latitude || undefined,
-        longitude: formData.longitude || undefined,
-              };
+      };
+
+      // Include coordinates if they exist in formData
+      if (formData.latitude !== undefined && formData.latitude !== null) {
+        data.latitude = Number(formData.latitude);
+      }
+      if (formData.longitude !== undefined && formData.longitude !== null) {
+        data.longitude = Number(formData.longitude);
+      }
 
       // Validate required fields for new company
       if (companyData?.id === 0 && (!formData.name || !formData.email)) {
@@ -579,9 +585,7 @@ export default function CompaniaPage() {
       
       toast({
         title: '¡Éxito!',
-        description: currentStep === 1 
-          ? 'Información de la compañía guardada correctamente. Continúa con los siguientes pasos.'
-          : 'Horarios comerciales guardados correctamente. Continúa con el siguiente paso.',
+        description: 'Información de la compañía guardada correctamente. Continúa con el siguiente paso.',
       });
 
     } catch (error) {
@@ -624,12 +628,11 @@ export default function CompaniaPage() {
           <CardHeader>
             <CardTitle className="text-2xl">
               {currentStep === 1 && 'Información de la Empresa'}
-              {currentStep === 2 && 'Horario Comercial'}
-              {currentStep === 3 && 'Agregar Sucursal'}
+              {currentStep === 2 && 'Agregar Sucursal'}
             </CardTitle>
             <CardDescription>
               {currentStep === 1 && 'Completa la información básica de tu empresa'}
-              {currentStep === 2 && 'Configura los horarios de atención de tu negocio'}
+              {currentStep === 2 && 'Configura la información de tu sucursal'}
              </CardDescription>
           </CardHeader>
           <CardContent>
@@ -641,7 +644,6 @@ export default function CompaniaPage() {
                       <label className="block text-sm font-medium text-slate-700">Logo de la empresa</label>
                       <div className="flex items-center justify-center w-full">
                         <label
-                          onClick={handleOpenLogoDialog}
                           onDragOver={handleLogoDragOver}
                           onDrop={handleLogoDrop}
                           className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-lg cursor-pointer bg-slate-50 hover:bg-slate-100"
@@ -692,7 +694,6 @@ export default function CompaniaPage() {
                       <label className="block text-sm font-medium text-slate-700">Banner de la empresa</label>
                       <div className="flex items-center justify-center w-full">
                         <label
-                          onClick={handleOpenBannerDialog}
                           onDragOver={handleBannerDragOver}
                           onDrop={handleBannerDrop}
                           className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-lg cursor-pointer bg-slate-50 hover:bg-slate-100"
@@ -759,17 +760,15 @@ export default function CompaniaPage() {
                     />
                   </>
                 )}
-
-
                 {/* Branch Information Step */}
-                {currentStep === 3 && (
+                {currentStep === 2 && (
                   <BranchInfoForm 
                     formData={formData.location || { name: '', address: '', timezone: '' }} 
                     handleInputChange={handleInputChange} 
+                    isFirstBranch={!companyData?.locations || companyData.locations.length === 0}
                   />
                 )}
               </div>
-
               <div className="flex justify-end space-x-3">
                 {currentStep === 1 ? (
                   <Button 
@@ -788,11 +787,18 @@ export default function CompaniaPage() {
                     >
                       Atrás
                     </Button>
-                    {currentStep === 3 ? (
+                    {currentStep === 2 ? (
                       <Button 
                         type="submit"
                         className="bg-emerald-600 hover:bg-emerald-700"
-                        disabled={isLoading || !formData.location?.name || !formData.location?.address}
+                        disabled={
+                          isLoading ||
+                          !formData.location?.name ||
+                          !formData.location?.address ||
+                          !formData.location?.state_id ||
+                          !formData.location?.city_id ||
+                          !formData.location?.zip_code
+                        }
                       >
                         {isLoading ? 'Guardando...' : 'Crear Sucursal'}
                       </Button>
@@ -863,7 +869,7 @@ export default function CompaniaPage() {
         )}
         <BranchesList 
           companyId={companyData?.id?.toString() || ''} 
-          onAddBranchClick={() => toggleEditMode(true, 3)} 
+          onAddBranchClick={() => toggleEditMode(true, 2)} 
         />
       </div>
     </div>
