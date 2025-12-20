@@ -6,6 +6,8 @@ import { publicWebApiClient } from '@/lib/api/public-web';
 import { PublicCompany, PublicCompanyLocation, Announcement, PublicItem, BusinessHour } from '@/types/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MapPin, Phone, Mail, Globe, Clock, Package, Megaphone } from 'lucide-react';
 import { GoogleMap, Marker, useJsApiLoader } from '@react-google-maps/api';
 
@@ -42,6 +44,7 @@ export default function PublicCompanyPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [companyMarker, setCompanyMarker] = useState<{ lat: number; lng: number } | null>(null);
+  const [user, setUser] = useState<any>(null);
 
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
   const hasApiKey = Boolean(apiKey);
@@ -199,6 +202,17 @@ export default function PublicCompanyPage() {
     geocodeCompanyAddress();
   }, [hasApiKey, isLoaded, company, mapMarkers]);
 
+  // User management functions
+  const handleLogout = () => {
+    setUser(null);
+    // Add actual logout logic here
+  };
+
+  const trackAnalyticsEvent = (eventName: string, params: any) => {
+    // Add analytics tracking logic here
+    console.log('Analytics Event:', eventName, params);
+  };
+
   if (loading) {
     return <div className="flex justify-center items-center h-screen text-lg">Cargando información de la compañía...</div>;
   }
@@ -213,6 +227,108 @@ export default function PublicCompanyPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
+      {/* Floating Action Buttons */}
+      <div className="fixed top-16 right-6 z-50 flex items-center gap-3">
+        {user ? (
+          <>
+            <Button
+              className="gap-2 shadow-xl bg-emerald-600 text-white hover:bg-emerald-700 rounded-full h-12 px-5 text-sm font-semibold hidden sm:inline-flex"
+              onClick={() => {
+                if (typeof window === 'undefined') return;
+
+                trackAnalyticsEvent('download_app_click', {
+                  location: 'top_right_logged_in',
+                  company_slug: companySlug,
+                  user_logged_in: !!user,
+                });
+
+                const IOS_URL = 'https://apps.apple.com/us/app/rewin-reward/id6748548104';
+                const ANDROID_URL = process.env.NEXT_PUBLIC_ANDROID_URL ||
+                  'https://play.google.com/store/apps/details?id=com.fynlink.BoostYou';
+
+                const userAgent = window.navigator.userAgent || '';
+                const isIOS = /iPhone|iPad|iPod/i.test(userAgent);
+                const isAndroid = /Android/i.test(userAgent);
+
+                const targetUrl = isIOS ? IOS_URL : ANDROID_URL;
+                window.location.href = targetUrl;
+              }}
+            >
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+</svg>
+              <span>Descargar app</span>
+            </Button>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button className="gap-3 shadow-xl bg-white text-emerald-600 hover:bg-gray-50 hover:text-emerald-700 border-2 border-emerald-100 rounded-full pl-3 pr-6 h-16 text-lg">
+                  <Avatar className="h-11 w-11 border-2 border-emerald-200">
+                    <AvatarImage src={user.profile_photo_path || user.avatar_url || user.photo_url} />
+                    <AvatarFallback className="bg-emerald-100 text-emerald-700">
+                      {user.name ? user.name.substring(0, 2).toUpperCase() : 'US'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="font-semibold max-w-[140px] truncate text-base">{user.name}</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>Mi Cuenta</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => console.log("Navigate to profile")}>
+                  Perfil
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => console.log("Navigate to orders")}>
+                  Mis Pedidos
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout} className="text-red-600">
+                  Cerrar Sesión
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </>
+        ) : (
+          <>
+            <Button
+              className="gap-2 shadow-xl bg-emerald-600 text-white hover:bg-emerald-700 rounded-full h-12 px-5 text-sm font-semibold hidden sm:inline-flex"
+              onClick={() => {
+                if (typeof window === 'undefined') return;
+
+                trackAnalyticsEvent('download_app_click', {
+                  location: 'top_right_guest',
+                  company_slug: companySlug,
+                  user_logged_in: !!user,
+                });
+
+                const IOS_URL = 'https://apps.apple.com/us/app/rewin-reward/id6748548104';
+                const ANDROID_URL = process.env.NEXT_PUBLIC_ANDROID_URL ||
+                  'https://play.google.com/store/apps/details?id=com.fynlink.BoostYou';
+
+                const userAgent = window.navigator.userAgent || '';
+                const isIOS = /iPhone|iPad|iPod/i.test(userAgent);
+                const isAndroid = /Android/i.test(userAgent);
+
+                const targetUrl = isIOS ? IOS_URL : ANDROID_URL;
+                window.location.href = targetUrl;
+              }}
+            >
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+</svg>
+              <span>Descargar app</span>
+            </Button>
+
+            <Button className="gap-3 shadow-xl bg-white text-emerald-600 hover:bg-gray-50 hover:text-emerald-700 border-2 border-emerald-100 rounded-full h-16 px-6 text-lg font-semibold">
+              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+</svg>
+              <span>Iniciar Sesión</span>
+            </Button>
+          </>
+        )}
+      </div>
+
       {/* Hero con banner mejorado */}
       <div className="relative h-64 md:h-80 w-full overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
         {company.banner_url && (
@@ -603,11 +719,18 @@ export default function PublicCompanyPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {locations.map((location) => (
                 <Card key={location.id} className="h-full flex flex-col shadow-lg border-slate-200/60 hover:shadow-xl transition-all duration-300 overflow-hidden group">
-                  <div className="h-2 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500" />
                   <CardHeader className="pb-3">
                     <CardTitle className="text-lg md:text-xl flex items-center gap-3">
-                      <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-md">
-                        <MapPin className="h-5 w-5" />
+                      <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-white shadow-md overflow-hidden">
+                        {company.logo_url ? (
+                          <img 
+                            src={company.logo_url} 
+                            alt={`${company.name} logo`}
+                            className="h-full w-full object-contain p-1"
+                          />
+                        ) : (
+                          <MapPin className="h-5 w-5 text-blue-600" />
+                        )}
                       </span>
                       <span className="capitalize">{location.name}</span>
                     </CardTitle>
