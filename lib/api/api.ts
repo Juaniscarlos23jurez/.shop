@@ -1,4 +1,4 @@
-import { ApiResponse, UserProfile, ProfileApiUser, BusinessHour, Membership, Coupon, CouponCreateInput, CouponUpdateInput, CouponValidationRequest, CouponValidationResponse, CouponAssignmentRequest, CouponAssignByMembershipRequest, CompanyPaymentMethod, CompanyPaymentMethodCreateInput, CompanyPaymentMethodUpdateInput, CompanyReview, CompanyReviewStats, ReviewStatus } from '@/types/api';
+import { ApiResponse, UserProfile, ProfileApiUser, BusinessHour, Membership, Coupon, CouponCreateInput, CouponUpdateInput, CouponValidationRequest, CouponValidationResponse, CouponAssignmentRequest, CouponAssignByMembershipRequest, CompanyPaymentMethod, CompanyPaymentMethodCreateInput, CompanyPaymentMethodUpdateInput, CompanyReview, CompanyReviewStats, ReviewStatus, InventoryMovementType, InventoryMovementsListResponse } from '@/types/api';
 import { Product, ProductListResponse, ProductResponse, ProductCreateInput, ProductUpdateInput } from '@/types/product';
 import { Category, CategoryCreateInput, CategoryUpdateInput, CategoryResponse, CategoryListResponse } from '@/types/category';
 import { ordersApi } from './orders';
@@ -135,6 +135,43 @@ export const api = {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ status }),
+      }).then(handleResponse);
+    },
+  },
+
+  inventory: {
+    /**
+     * Kardex / Inventory Movements (authenticated)
+     * GET /api/companies/{companyId}/inventory/movements
+     */
+    async listMovements(
+      companyId: string | number,
+      token: string,
+      filters: {
+        location_id?: number | string;
+        product_id?: number | string;
+        sale_id?: number | string;
+        type?: InventoryMovementType;
+        from_date?: string; // YYYY-MM-DD
+        to_date?: string; // YYYY-MM-DD
+        per_page?: number;
+        page?: number;
+      } = {}
+    ): Promise<ApiResponse<InventoryMovementsListResponse>> {
+      const search = new URLSearchParams();
+      if (filters.location_id !== undefined) search.set('location_id', String(filters.location_id));
+      if (filters.product_id !== undefined) search.set('product_id', String(filters.product_id));
+      if (filters.sale_id !== undefined) search.set('sale_id', String(filters.sale_id));
+      if (filters.type) search.set('type', String(filters.type));
+      if (filters.from_date) search.set('from_date', filters.from_date);
+      if (filters.to_date) search.set('to_date', filters.to_date);
+      if (filters.per_page !== undefined) search.set('per_page', String(filters.per_page));
+      if (filters.page !== undefined) search.set('page', String(filters.page));
+
+      const url = `${BASE_URL}/api/companies/${companyId}/inventory/movements${search.toString() ? `?${search.toString()}` : ''}`;
+      return fetch(url, {
+        method: 'GET',
+        headers: getAuthHeader(token),
       }).then(handleResponse);
     },
   },

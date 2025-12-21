@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Plus, Minus, ShoppingCart } from 'lucide-react';
 import { useAuth } from "@/contexts/AuthContext";
-import { api } from "@/lib/api/api";
+import { api, BASE_URL } from "@/lib/api/api";
 import { ordersApi } from "@/lib/api/orders";
 import { PaymentModal } from "@/components/pos/PaymentModal";
 import { useToast } from "@/hooks/use-toast";
@@ -98,6 +98,24 @@ export default function PuntoVentaPage() {
   const [salesTotal, setSalesTotal] = useState(0);
   const salesPerPage = 15;
 
+  const getProductLocationPivot = (product: any) => {
+    const loc = Array.isArray(product?.locations) ? product.locations[0] : null;
+    return loc?.pivot || null;
+  };
+
+  const getAvailableStock = (product: any): number => {
+    const pivot = getProductLocationPivot(product);
+    return Number(pivot?.stock) || 0;
+  };
+
+  const isProductAvailableForSale = (product: any): boolean => {
+    const trackStock = Boolean(product?.track_stock);
+    if (!trackStock) return true;
+    const pivot = getProductLocationPivot(product);
+    const isAvailable = pivot?.is_available !== false;
+    return isAvailable && getAvailableStock(product) > 0;
+  };
+
   // Define fetchSalesHistory here
   const fetchSalesHistory = async () => {
     if (!token || !companyId || locationId === null) return;
@@ -145,44 +163,50 @@ export default function PuntoVentaPage() {
     }
   }, []);
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        setLoading(true);
-        if (!token || !companyId) {
-          return;
-        }
-        const response = await api.products.getProducts(companyId, token || '', 1, 100);
-        if (response?.data) {
-          // Normalizar diferentes formas de respuesta para asegurar un array
-          const root: any = response.data;
-          const normalized: PosProduct[] = Array.isArray(root?.data)
-            ? root.data
-            : Array.isArray(root?.products)
-              ? root.products
-              : Array.isArray(root)
-                ? root
-                : Array.isArray((root?.data as any)?.products)
-                  ? (root.data as any).products
-                  : [];
-          setProducts(normalized);
-        } else {
-          setProducts([]);
-        }
-      } catch (error) {
-        console.error('Error fetching products:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (token && companyId) {
-      fetchProducts();
-    } else {
+  const fetchProducts = useCallback(async () => {
+    if (!companyId || locationId === null) {
       // Evitar spinner infinito si aún no tenemos credenciales completas
       setLoading(false);
+      return;
     }
-  }, [token, companyId]);
+
+    try {
+      setLoading(true);
+      const response = await fetch(`${BASE_URL}/api/public/locations/${locationId}/products`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error('[POS] Error fetching products by location:', data);
+        setProducts([]);
+        return;
+      }
+
+      const root: any = data?.data ?? data;
+      const normalized: PosProduct[] = Array.isArray(root)
+        ? root
+        : Array.isArray(root?.data)
+          ? root.data
+          : Array.isArray(root?.products)
+            ? root.products
+            : [];
+
+      setProducts(normalized);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [companyId, locationId]);
+
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
 
   // Cargar historial cuando el tab esté activo o cambie la página/ubicación
   useEffect(() => {
@@ -263,6 +287,21 @@ export default function PuntoVentaPage() {
   const addToCart = (product: PosProduct) => {
     setCart(prevCart => {
       const existingItem = prevCart.find(item => item.id === product.id);
+
+      const trackStock = Boolean((product as any)?.track_stock);
+      if (trackStock) {
+        const availableStock = getAvailableStock(product);
+        const currentQty = existingItem?.quantity || 0;
+        if (!isProductAvailableForSale(product) || currentQty + 1 > availableStock) {
+          toast({
+            title: 'Stock insuficiente',
+            description: `Disponible: ${availableStock} unidad(es)`,
+            variant: 'destructive',
+          });
+          return prevCart;
+        }
+      }
+
       if (existingItem) {
         return prevCart.map(item =>
           item.id === product.id 
@@ -382,6 +421,9 @@ export default function PuntoVentaPage() {
       // Limpiar el carrito y cerrar el modal
       setCart([]);
       setOrderDescription('');
+
+      // Refrescar inventario para que los cards sean reactivos
+      await fetchProducts();
       
       const discountMessage = discountApplied > 0 ? ` | Descuento: $${discountApplied.toFixed(2)}` : '';
       const pointsMessage = pointsEarnedFromAPI > 0 ? ` | +${pointsEarnedFromAPI} puntos` : '';
@@ -567,10 +609,19 @@ export default function PuntoVentaPage() {
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {filteredProducts.map((product) => (
+                    (() => {
+                      const available = isProductAvailableForSale(product);
+                      const trackStock = Boolean((product as any)?.track_stock);
+                      const stock = trackStock ? getAvailableStock(product) : null;
+
+                      return (
                     <div 
                       key={product.id} 
-                      className="border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
-                      onClick={() => addToCart(product)}
+                      className={`border rounded-lg p-4 transition-shadow ${available ? 'hover:shadow-md cursor-pointer' : 'opacity-60 cursor-not-allowed'}`}
+                      onClick={() => {
+                        if (!available) return;
+                        addToCart(product);
+                      }}
                     >
                       <div className="aspect-square bg-gray-100 rounded-md mb-2 flex items-center justify-center">
                         {product.image_url ? (
@@ -586,7 +637,14 @@ export default function PuntoVentaPage() {
                       <h3 className="font-medium truncate">{product.name}</h3>
                       <p className="text-sm text-gray-500">{product.sku}</p>
                       <p className="font-bold mt-1">${parseFloat(product.price).toFixed(2)}</p>
+                      {trackStock && (
+                        <p className={`mt-1 text-xs ${stock && stock > 0 ? 'text-slate-600' : 'text-red-600 font-semibold'}`}>
+                          Stock: {stock}
+                        </p>
+                      )}
                     </div>
+                      );
+                    })()
                   ))}
                 </div>
               )}

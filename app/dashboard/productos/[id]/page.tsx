@@ -1,16 +1,20 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Edit, Edit2, Package, Clock, Wrench } from 'lucide-react';
+import { ArrowLeft, Edit, Package, Clock, Wrench, PlusCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { deleteProduct } from '@/lib/api/products';
 import { toast } from '@/components/ui/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency } from '@/lib/utils/currency';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { api } from '@/lib/api/api';
 
 export default function DetalleProductoPage() {
   const router = useRouter();
@@ -18,45 +22,48 @@ export default function DetalleProductoPage() {
   const { token, user } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [product, setProduct] = useState<any>(null);
+  const [isStockModalOpen, setIsStockModalOpen] = useState(false);
+  const [selectedLocationId, setSelectedLocationId] = useState<number | null>(null);
+  const [stockToAdd, setStockToAdd] = useState<string>('');
+  const [isUpdatingStock, setIsUpdatingStock] = useState(false);
   
+  const fetchProduct = useCallback(async () => {
+    if (!token || !id) return;
+    
+    try {
+      setIsLoading(true);
+      
+      const response = await fetch(`https://laravel-pkpass-backend-development-pfaawl.laravel.cloud/api/products/${id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+        },
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        // If data is an array, take the first item, otherwise use the data directly
+        const productData = Array.isArray(data.data) ? data.data[0] : data.data;
+        setProduct(productData);
+      } else {
+        throw new Error('No se pudo obtener la información del producto');
+      }
+    } catch (error) {
+      console.error('Error fetching product:', error);
+      toast({
+        title: 'Error',
+        description: 'No se pudo cargar la información del producto',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [id, token]);
+
   // Fetch product data on component mount
   useEffect(() => {
-    const fetchProduct = async () => {
-      if (!token || !id) return;
-      
-      try {
-        setIsLoading(true);
-        
-        // Fetch product data directly
-        const response = await fetch(`https://laravel-pkpass-backend-development-pfaawl.laravel.cloud/api/products/${id}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/json',
-          },
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          // If data is an array, take the first item, otherwise use the data directly
-          const productData = Array.isArray(data.data) ? data.data[0] : data.data;
-          setProduct(productData);
-        } else {
-          throw new Error('No se pudo obtener la información del producto');
-        }
-      } catch (error) {
-        console.error('Error fetching product:', error);
-        toast({
-          title: 'Error',
-          description: 'No se pudo cargar la información del producto',
-          variant: 'destructive',
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
     fetchProduct();
-  }, [id, token]);
+  }, [fetchProduct]);
 
   const getTypeLabel = (type: string) => {
     switch (type) {
@@ -126,7 +133,62 @@ export default function DetalleProductoPage() {
   }
 
   const { label: typeLabel, icon: typeIcon } = getTypeLabel(product.product_type);
-  const totalStock = product.locations?.reduce((sum: number, loc: any) => sum + (Number(loc.stock) || 0), 0) || 0;
+  const totalStock = product.locations?.reduce(
+    (sum: number, loc: any) => sum + (Number(loc?.pivot?.stock) || 0),
+    0
+  ) || 0;
+
+  const handleSubmitStock = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!user?.company_id || !token || !id) return;
+    const stockAmount = Number(stockToAdd);
+
+    if (!selectedLocationId || Number.isNaN(stockAmount) || stockAmount <= 0) {
+      toast({
+        title: 'Datos incompletos',
+        description: 'Selecciona la ubicación y la cantidad que deseas agregar.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      setIsUpdatingStock(true);
+      const location = product.locations.find((loc: any) => loc.id === selectedLocationId);
+      const currentStock = Number(location?.pivot?.stock) || 0;
+      const newStockTotal = currentStock + stockAmount;
+
+      const response = await api.products.updateProductStock(
+        String(user.company_id),
+        String(id),
+        selectedLocationId,
+        newStockTotal,
+        token
+      );
+
+      if (!response.success) {
+        throw new Error(response.message || 'No se pudo actualizar el stock');
+      }
+
+      toast({
+        title: 'Stock actualizado',
+        description: `Ahora hay ${newStockTotal} unidades en ${location?.name || 'la ubicación seleccionada'}.`,
+      });
+
+      setIsStockModalOpen(false);
+      setStockToAdd('');
+      await fetchProduct();
+    } catch (error) {
+      console.error('Error al actualizar stock:', error);
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'No se pudo actualizar el stock',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsUpdatingStock(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -208,19 +270,47 @@ export default function DetalleProductoPage() {
           {product.product_type === 'physical' && product.locations?.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle>Inventario por Ubicación</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Inventario por Ubicación</CardTitle>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedLocationId(null);
+                      setStockToAdd('');
+                      setIsStockModalOpen(true);
+                    }}
+                  >
+                    <PlusCircle className="h-4 w-4 mr-2" />
+                    Agregar stock
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   {product.locations.map((location: any) => (
-                    <div key={location.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div key={location.id} className="flex flex-col gap-3 p-3 border rounded-lg md:flex-row md:items-center md:justify-between">
                       <div>
                         <h4 className="font-medium text-slate-900">{location.name}</h4>
-                        <p className="text-sm text-slate-500">Disponible: {location.stock || 0} unidades</p>
+                        <p className="text-sm text-slate-500">Disponible: {Number(location?.pivot?.stock) || 0} unidades</p>
                       </div>
-                      <Badge variant={location.is_available ? 'default' : 'secondary'}>
-                        {location.is_available ? 'Disponible' : 'No disponible'}
-                      </Badge>
+                      <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+                        <Badge variant={location?.pivot?.is_available ? 'default' : 'secondary'}>
+                          {location?.pivot?.is_available ? 'Disponible' : 'No disponible'}
+                        </Badge>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedLocationId(location.id);
+                            setStockToAdd('');
+                            setIsStockModalOpen(true);
+                          }}
+                        >
+                          <PlusCircle className="h-4 w-4 mr-2" />
+                          Agregar cantidad
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -293,6 +383,65 @@ export default function DetalleProductoPage() {
           </Card>
         </div>
       </div>
+      <Dialog open={isStockModalOpen} onOpenChange={setIsStockModalOpen}>
+        <DialogContent>
+          <form onSubmit={handleSubmitStock}>
+            <DialogHeader>
+              <DialogTitle>Agregar stock</DialogTitle>
+              <DialogDescription>
+                Incrementa la cantidad disponible en una sucursal específica.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="location">Ubicación</Label>
+                <select
+                  id="location"
+                  value={selectedLocationId ? String(selectedLocationId) : ''}
+                  onChange={(e) => setSelectedLocationId(e.target.value ? Number(e.target.value) : null)}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  required
+                >
+                  <option value="">Selecciona una ubicación</option>
+                  {product.locations?.map((location: any) => (
+                    <option key={location.id} value={location.id}>
+                      {location.name} (Stock actual: {Number(location?.pivot?.stock) || 0})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="stockToAdd">Cantidad a agregar</Label>
+                <Input
+                  id="stockToAdd"
+                  type="number"
+                  min="1"
+                  className="appearance-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  value={stockToAdd}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === '') {
+                      setStockToAdd('');
+                      return;
+                    }
+                    const numericValue = Math.max(0, Number(value));
+                    setStockToAdd(Number.isNaN(numericValue) ? '' : numericValue.toString());
+                  }}
+                  required
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setIsStockModalOpen(false)} disabled={isUpdatingStock}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={isUpdatingStock}>
+                {isUpdatingStock ? 'Actualizando...' : 'Guardar'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

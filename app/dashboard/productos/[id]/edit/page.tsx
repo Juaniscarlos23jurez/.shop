@@ -30,6 +30,7 @@ export default function EditarProductoPage() {
   const [companyId, setCompanyId] = useState<string | null>(null);
   const [locations, setLocations] = useState<Array<{id: number, name: string}>>([]);
   const [selectedLocations, setSelectedLocations] = useState<number[]>([]);
+  const [locationStocks, setLocationStocks] = useState<Record<number, number>>({});
   const [product, setProduct] = useState<Partial<Product>>({});
   const [productType, setProductType] = useState<'physical' | 'made_to_order' | 'service'>('physical');
   const [categories, setCategories] = useState<Category[]>([]);
@@ -40,6 +41,34 @@ export default function EditarProductoPage() {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isQuoted, setIsQuoted] = useState(false);
+
+  const handleLocationToggle = (locationId: number, checked: boolean) => {
+    setSelectedLocations((prev) => {
+      if (checked) {
+        if (prev.includes(locationId)) return prev;
+        return [...prev, locationId];
+      }
+      return prev.filter((id) => id !== locationId);
+    });
+
+    setLocationStocks((prev) => {
+      if (checked) {
+        return {
+          ...prev,
+          [locationId]: prev[locationId] ?? 0,
+        };
+      }
+      const { [locationId]: _removed, ...rest } = prev;
+      return rest;
+    });
+  };
+
+  const handleLocationStockChange = (locationId: number, value: number) => {
+    setLocationStocks((prev) => ({
+      ...prev,
+      [locationId]: value >= 0 ? value : 0,
+    }));
+  };
   
   // Fetch product data, company and locations on component mount
   useEffect(() => {
@@ -73,14 +102,26 @@ export default function EditarProductoPage() {
           }
           setProduct(productData);
           setProductType(productData.product_type);
+          if (Array.isArray(productData.locations)) {
+            const initialStocks: Record<number, number> = {};
+            const locationIds: number[] = [];
+            productData.locations.forEach((loc: any) => {
+              if (loc?.id) {
+                locationIds.push(loc.id);
+                initialStocks[loc.id] = Number(loc?.pivot?.stock ?? loc?.stock ?? 0);
+              }
+            });
+            if (productData.product_type === 'physical') {
+              setLocationStocks(initialStocks);
+            }
+            setSelectedLocations(locationIds);
+          }
           // Initialize quoted state if backend indicates price_on_request or no price for service
           try {
             const quoted = !!(productData.price_on_request || (productData.product_type === 'service' && (!productData.price || Number(productData.price) === 0)));
             setIsQuoted(quoted);
           } catch {}
-          if (productData.locations && productData.locations.length > 0) {
-            setSelectedLocations(productData.locations.map((loc: any) => loc.id));
-          }
+          
         } else {
           throw new Error('No se pudo cargar el producto');
         }
@@ -223,6 +264,13 @@ export default function EditarProductoPage() {
     try {
       const formData = new FormData(e.target as HTMLFormElement);
 
+      // Debug: dump relevant form values
+      try {
+        console.log('[EditarProducto] productType:', productType);
+        console.log('[EditarProducto] selectedLocations:', selectedLocations);
+        console.log('[EditarProducto] form stock (name="stock"):', formData.get('stock'));
+      } catch {}
+
       // Lead time conversion (minutes/hours/days -> days)
       const leadTimeValue = parseFloat((formData.get('lead_time') as string) || '0');
       const leadTimeUnit = (formData.get('lead_time_unit') as string) || 'days';
@@ -238,17 +286,15 @@ export default function EditarProductoPage() {
             return Math.max(1, Math.ceil(value));
         }
       };
-      // Get stock data from form inputs
-      const stockData: Record<string, number> = {};
+      // Build per-location stock map (physical only)
+      const stockData: Record<number, number> = {};
       if (productType === 'physical') {
         selectedLocations.forEach((locId) => {
-          const stockInput = document.querySelector(
-            `input[name="stock-${locId}"]`
-          ) as HTMLInputElement | null;
-          if (stockInput) {
-            stockData[locId] = parseInt(stockInput.value) || 0;
-          }
+          stockData[locId] = Number(locationStocks[locId]) || 0;
         });
+        try {
+          console.log('[EditarProducto] stockData resolved:', stockData);
+        } catch {}
       }
       
       const updateData: any = {
@@ -283,6 +329,7 @@ export default function EditarProductoPage() {
       try {
         console.log('[EditarProducto] category_id:', formData.get('category_id'));
         console.log('[EditarProducto] category_ids:', formData.get('category_id') ? [parseInt(formData.get('category_id') as string)] : []);
+        console.log('[EditarProducto] locations payload:', updateData.locations);
         console.log('[EditarProducto] updateData to send:', JSON.stringify(updateData, null, 2));
       } catch (logErr) {
         // ignore JSON stringify circular errors
@@ -485,21 +532,6 @@ export default function EditarProductoPage() {
                     </div>
                   )}
                   
-                  {productType === 'physical' && (
-                    <div className="space-y-2">
-                      <Label htmlFor="stock">Stock Total</Label>
-                      <Input 
-                        id="stock" 
-                        name="stock" 
-                        type="number" 
-                        min="0" 
-                        defaultValue={(product as any).stock || 0}
-                        placeholder="0" 
-                        required 
-                      />
-                    </div>
-                  )}
-                  
                   {productType === 'made_to_order' && (
                     <div className="space-y-2">
                       <Label htmlFor="lead_time">Tiempo de Entrega</Label>
@@ -528,88 +560,87 @@ export default function EditarProductoPage() {
                   )}
                 </div>
                 
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="category_id">Categoría</Label>
-                    <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-                      <DialogTrigger asChild>
-                        <Button type="button" size="sm" className="h-8 bg-primary text-primary-foreground hover:bg-primary/90">
-                          <Plus className="h-4 w-4 mr-1" />
-                          Nueva Categoría
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Crear Nueva Categoría</DialogTitle>
-                          <DialogDescription>
-                            Agrega una nueva categoría para organizar tus productos
-                          </DialogDescription>
-                        </DialogHeader>
-                        <div className="space-y-4 py-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="new-category-name">Nombre *</Label>
-                            <Input
-                              id="new-category-name"
-                              placeholder="Ej: Bebidas"
-                              value={newCategoryName}
-                              onChange={(e) => setNewCategoryName(e.target.value)}
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="new-category-description">Descripción</Label>
-                            <Textarea
-                              id="new-category-description"
-                              placeholder="Descripción de la categoría (opcional)"
-                              value={newCategoryDescription}
-                              onChange={(e) => setNewCategoryDescription(e.target.value)}
-                              rows={3}
-                            />
-                          </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="category_id">Categoría</Label>
+                  <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+                    <DialogTrigger asChild>
+                      <Button type="button" size="sm" className="h-8 bg-primary text-primary-foreground hover:bg-primary/90">
+                        <Plus className="h-4 w-4 mr-1" />
+                        Nueva Categoría
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Crear Nueva Categoría</DialogTitle>
+                        <DialogDescription>
+                          Agrega una nueva categoría para organizar tus productos
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="new-category-name">Nombre *</Label>
+                          <Input
+                            id="new-category-name"
+                            placeholder="Ej: Bebidas"
+                            value={newCategoryName}
+                            onChange={(e) => setNewCategoryName(e.target.value)}
+                          />
                         </div>
-                        <DialogFooter>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => {
-                              setIsModalOpen(false);
-                              setNewCategoryName('');
-                              setNewCategoryDescription('');
-                            }}
-                            disabled={isCreatingCategory}
-                          >
-                            Cancelar
-                          </Button>
-                          <Button
-                            type="button"
-                            onClick={handleCreateCategory}
-                            disabled={isCreatingCategory || !newCategoryName.trim()}
-                          >
-                            {isCreatingCategory ? 'Creando...' : 'Crear Categoría'}
-                          </Button>
-                        </DialogFooter>
-                      </DialogContent>
-                    </Dialog>
-                  </div>
-                  <select
-                    id="category_id"
-                    name="category_id"
-                    defaultValue={(() => {
-                      const firstCatId = (product as any)?.categories?.[0]?.id;
-                      return firstCatId ? String(firstCatId) : '';
-                    })()}
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    <option value="">Selecciona una categoría</option>
-                    {categories
-                      .filter(cat => cat.is_active)
-                      .sort((a, b) => a.order - b.order)
-                      .map((category) => (
-                        <option key={category.id} value={String(category.id)}>
-                          {category.name}
-                        </option>
-                      ))}
-                  </select>
+                        <div className="space-y-2">
+                          <Label htmlFor="new-category-description">Descripción</Label>
+                          <Textarea
+                            id="new-category-description"
+                            placeholder="Descripción de la categoría (opcional)"
+                            value={newCategoryDescription}
+                            onChange={(e) => setNewCategoryDescription(e.target.value)}
+                            rows={3}
+                          />
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => {
+                            setIsModalOpen(false);
+                            setNewCategoryName('');
+                            setNewCategoryDescription('');
+                          }}
+                          disabled={isCreatingCategory}
+                        >
+                          Cancelar
+                        </Button>
+                        <Button
+                          type="button"
+                          onClick={handleCreateCategory}
+                          disabled={isCreatingCategory || !newCategoryName.trim()}
+                        >
+                          {isCreatingCategory ? 'Creando...' : 'Crear Categoría'}
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
                 </div>
+                <select
+                  id="category_id"
+                  name="category_id"
+                  defaultValue={(() => {
+                    const firstCatId = (product as any)?.categories?.[0]?.id;
+                    return firstCatId ? String(firstCatId) : '';
+                  })()}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <option value="">Selecciona una categoría</option>
+                  {categories
+                    .filter(cat => cat.is_active)
+                    .sort((a, b) => a.order - b.order)
+                    .map((category) => (
+                      <option key={category.id} value={String(category.id)}>
+                        {category.name}
+                      </option>
+                    ))}
+                </select>
               </div>
               
               <div className="space-y-2">
@@ -617,23 +648,19 @@ export default function EditarProductoPage() {
                 <div className="space-y-2 max-h-40 overflow-y-auto p-2 border rounded-md">
                   {locations.length > 0 ? (
                     locations.map((location) => {
-                      const productLocation = product.locations?.find(loc => loc.id === location.id);
-                      const stock = productLocation?.stock || 0;
-                      
+                      const productLocation = (product.locations as any)?.find((loc: any) => loc.id === location.id);
+                      const fallbackStock = Number(productLocation?.pivot?.stock ?? productLocation?.stock ?? 0);
+                      const isSelected = selectedLocations.includes(location.id);
+                      const currentStock = locationStocks[location.id] ?? fallbackStock;
+
                       return (
                         <div key={location.id} className="space-y-2">
                           <div className="flex items-center space-x-2">
                             <input
                               type="checkbox"
                               id={`location-${location.id}`}
-                              checked={selectedLocations.includes(location.id)}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setSelectedLocations([...selectedLocations, location.id]);
-                                } else {
-                                  setSelectedLocations(selectedLocations.filter(id => id !== location.id));
-                                }
-                              }}
+                              checked={isSelected}
+                              onChange={(e) => handleLocationToggle(location.id, e.target.checked)}
                               className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
                             />
                             <Label htmlFor={`location-${location.id}`} className="text-sm font-medium leading-none">
@@ -641,7 +668,7 @@ export default function EditarProductoPage() {
                             </Label>
                           </div>
                           
-                          {productType === 'physical' && selectedLocations.includes(location.id) && (
+                          {productType === 'physical' && isSelected && (
                             <div className="ml-6 mb-2">
                               <Label htmlFor={`stock_${location.id}`} className="text-xs text-muted-foreground">
                                 Stock en {location.name}:
@@ -651,7 +678,8 @@ export default function EditarProductoPage() {
                                 name={`stock_${location.id}`}
                                 type="number"
                                 min="0"
-                                defaultValue={stock}
+                                value={currentStock}
+                                onChange={(e) => handleLocationStockChange(location.id, Number(e.target.value))}
                                 className="h-8 text-sm"
                               />
                             </div>
@@ -676,6 +704,7 @@ export default function EditarProductoPage() {
                 />
                 <Label htmlFor="is_active">Producto activo</Label>
               </div>
+            </div>
             </CardContent>
           </Card>
 

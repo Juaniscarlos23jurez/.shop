@@ -18,6 +18,58 @@ export interface BusinessHour {
   updated_at: string;
 }
 
+export interface LaravelPaginator<T> {
+  current_page: number;
+  data: T[];
+  first_page_url?: string;
+  from: number | null;
+  last_page: number;
+  last_page_url?: string;
+  next_page_url: string | null;
+  path?: string;
+  per_page: number;
+  prev_page_url: string | null;
+  to: number | null;
+  total: number;
+}
+
+export type InventoryMovementType = 'sale' | 'adjustment' | 'transfer' | string;
+
+export interface InventoryMovement {
+  id: number;
+  company_id: number;
+  location_id: number;
+  product_id: number;
+  sale_id?: number | null;
+  type: InventoryMovementType;
+  quantity_change: number;
+  stock_before?: number | null;
+  stock_after?: number | null;
+  notes?: string | null;
+  created_at: string;
+  updated_at: string;
+  product?: {
+    id: number;
+    name: string;
+    price?: string;
+    image_url?: string | null;
+    track_stock?: boolean;
+    product_type?: string;
+  };
+  location?: {
+    id: number;
+    name: string;
+  };
+  sale?: {
+    id: number;
+    location_id: number;
+    total?: string;
+    created_at: string;
+  };
+}
+
+export type InventoryMovementsListResponse = LaravelPaginator<InventoryMovement>;
+
 export type ReviewStatus = 'pending' | 'approved' | 'rejected';
 
 export interface CompanyReview {
