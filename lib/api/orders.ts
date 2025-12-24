@@ -190,7 +190,18 @@ export const ordersApi = {
         url: response.url,
         errorBody: errorText
       });
-      throw new Error(`Failed to fetch orders (${response.status}: ${response.statusText})`);
+      
+      // Try to parse error as JSON if possible
+      let errorData: { message?: string } | { rawError: string } = {};
+      try {
+        const parsed = JSON.parse(errorText);
+        errorData = parsed;
+      } catch (e) {
+        // If not JSON, use raw text
+        errorData = { rawError: errorText };
+      }
+      
+      throw new Error(`Failed to fetch orders (${response.status}: ${response.statusText})${'message' in errorData && errorData.message ? ` - ${errorData.message}` : ''}`);
     }
 
     return response.json();

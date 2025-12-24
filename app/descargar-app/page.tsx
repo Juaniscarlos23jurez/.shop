@@ -1,5 +1,5 @@
 export const metadata = {
-  title: "Descargar App | Fideliza+",
+  title: "Descargar App | Fynlink+",
   description:
     "Escanea y descarga la app para acumular puntos, canjear cupones y seguir a tu comercio favorito.",
 }
@@ -87,7 +87,7 @@ export default function DescargarAppPage() {
                     </svg>
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-gray-900">Fideliza+</p>
+                    <p className="text-sm font-semibold text-gray-900">Fynlink+</p>
                     <p className="text-xs text-gray-500">Puntos • Cupones • Promociones</p>
                   </div>
                 </div>
@@ -155,7 +155,7 @@ export default function DescargarAppPage() {
       {/* Footer */}
       <footer className="py-8">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-xs text-gray-500">
-          © {new Date().getFullYear()} Fideliza+. Todos los derechos reservados.
+          © {new Date().getFullYear()} Fynlink+. Todos los derechos reservados.
         </div>
       </footer>
     </main>

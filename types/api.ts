@@ -33,7 +33,7 @@ export interface LaravelPaginator<T> {
   total: number;
 }
 
-export type InventoryMovementType = 'sale' | 'adjustment' | 'transfer' | string;
+export type InventoryMovementType = 'sale' | 'purchase' | 'adjustment' | 'transfer';
 
 export interface InventoryMovement {
   id: number;
@@ -43,18 +43,27 @@ export interface InventoryMovement {
   sale_id?: number | null;
   type: InventoryMovementType;
   quantity_change: number;
-  stock_before?: number | null;
-  stock_after?: number | null;
+  stock_before: number;
+  stock_after: number;
+  metadata?: {
+    source?: string;
+    reason?: string;
+    sale_item?: {
+      quantity: number;
+      unit_price: string;
+    };
+  };
+  reference?: string | null;
   notes?: string | null;
   created_at: string;
   updated_at: string;
   product?: {
     id: number;
     name: string;
-    price?: string;
+    price: string;
     image_url?: string | null;
-    track_stock?: boolean;
-    product_type?: string;
+    track_stock: boolean;
+    product_type: string;
   };
   location?: {
     id: number;

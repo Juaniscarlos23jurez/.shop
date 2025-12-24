@@ -25,21 +25,41 @@ async function forward(req: Request, path: string) {
     init.body = body
   }
 
-  const res = await fetch(targetUrl, init)
-  const data = await res.arrayBuffer()
+  try {
+    const res = await fetch(targetUrl, init)
+    const data = await res.arrayBuffer()
 
-  const response = new NextResponse(data, {
-    status: res.status,
-  })
-
-  // Mirror important headers
-  res.headers.forEach((value, key) => {
-    if (key.toLowerCase() === 'content-type') {
-      response.headers.set('content-type', value)
+    // Log backend errors for debugging
+    if (!res.ok) {
+      const errorText = new TextDecoder().decode(data)
+      console.error('Backend Error Response:', {
+        status: res.status,
+        statusText: res.statusText,
+        url: targetUrl,
+        errorBody: errorText
+      })
     }
-  })
 
-  return response
+    const response = new NextResponse(data, {
+      status: res.status,
+    })
+
+    // Mirror important headers
+    res.headers.forEach((value, key) => {
+      if (key.toLowerCase() === 'content-type') {
+        response.headers.set('content-type', value)
+      }
+    })
+
+    return response
+  } catch (error) {
+    console.error('Proxy forward error:', {
+      targetUrl,
+      method: req.method,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    })
+    throw error
+  }
 }
 
 export async function GET(
@@ -48,7 +68,16 @@ export async function GET(
 ) {
   const { path } = await context.params
   const joinedPath = path.join('/')
-  return forward(req, joinedPath)
+  
+  try {
+    return forward(req, joinedPath)
+  } catch (error) {
+    console.error('Proxy GET Error for path:', joinedPath, error)
+    return NextResponse.json(
+      { error: 'Proxy request failed', details: error instanceof Error ? error.message : 'Unknown error' },
+      { status: 500 }
+    )
+  }
 }
 
 export async function POST(

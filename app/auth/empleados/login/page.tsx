@@ -59,7 +59,7 @@ export default function EmployeeLoginPage() {
                     <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
                   </svg>
                 </div>
-                <span className="text-xl font-bold text-gray-900">Fideliza+ Empleados</span>
+                <span className="text-xl font-bold text-gray-900">Fynlink+ Empleados</span>
               </div>
             </Link>
             

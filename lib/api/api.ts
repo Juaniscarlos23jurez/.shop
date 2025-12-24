@@ -1,4 +1,26 @@
-import { ApiResponse, UserProfile, ProfileApiUser, BusinessHour, Membership, Coupon, CouponCreateInput, CouponUpdateInput, CouponValidationRequest, CouponValidationResponse, CouponAssignmentRequest, CouponAssignByMembershipRequest, CompanyPaymentMethod, CompanyPaymentMethodCreateInput, CompanyPaymentMethodUpdateInput, CompanyReview, CompanyReviewStats, ReviewStatus, InventoryMovementType, InventoryMovementsListResponse } from '@/types/api';
+import { 
+  ApiResponse, 
+  LaravelPaginator, 
+  InventoryMovement,
+  InventoryMovementType,
+  InventoryMovementsListResponse,
+  ReviewStatus,
+  CompanyReview,
+  CompanyReviewStats,
+  ProfileApiUser,
+  BusinessHour,
+  CompanyPaymentMethod,
+  CompanyPaymentMethodCreateInput,
+  CompanyPaymentMethodUpdateInput,
+  Membership,
+  Coupon,
+  CouponCreateInput,
+  CouponUpdateInput,
+  CouponValidationRequest,
+  CouponValidationResponse,
+  CouponAssignmentRequest,
+  CouponAssignByMembershipRequest
+} from '@/types/api';
 import { Product, ProductListResponse, ProductResponse, ProductCreateInput, ProductUpdateInput } from '@/types/product';
 import { Category, CategoryCreateInput, CategoryUpdateInput, CategoryResponse, CategoryListResponse } from '@/types/category';
 import { ordersApi } from './orders';
@@ -2139,25 +2161,51 @@ export const api = {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       };
-
-      const url = `${BASE_URL}/api/companies/${companyId}/products/reorder`;
-      const body = JSON.stringify({ items });
       
-     
-      try {
-        const response = await fetch(url, {
+      return fetch(
+        `${BASE_URL}/api/companies/${companyId}/products/reorder`,
+        {
           method: 'PUT',
           headers,
-          body,
-        });
-    
-        const result = await handleResponse(response);
-         
-        return result;
-      } catch (err) {
-        console.error('[API reorderProducts] EXCEPTION:', err);
-        throw err;
+          body: JSON.stringify({ items }),
+        }
+      ).then(handleResponse);
+    },
+
+    /**
+     * Get inventory movements (kardex) for a company
+     */
+    async getInventoryMovements(
+      companyId: string,
+      token: string,
+      options?: {
+        per_page?: number;
+        page?: number;
+        from_date?: string;
+        to_date?: string;
+        product_id?: string | number;
+        location_id?: string | number;
+        type?: 'sale' | 'purchase' | 'adjustment' | 'transfer';
       }
+    ): Promise<ApiResponse<LaravelPaginator<InventoryMovement>>> {
+      const params = new URLSearchParams();
+      
+      if (options?.per_page) params.append('per_page', String(options.per_page));
+      if (options?.page) params.append('page', String(options.page));
+      if (options?.from_date) params.append('from_date', options.from_date);
+      if (options?.to_date) params.append('to_date', options.to_date);
+      if (options?.product_id) params.append('product_id', String(options.product_id));
+      if (options?.location_id) params.append('location_id', String(options.location_id));
+      if (options?.type) params.append('type', options.type);
+      
+      const url = params.toString() 
+        ? `${BASE_URL}/api/companies/${companyId}/inventory/movements?${params.toString()}`
+        : `${BASE_URL}/api/companies/${companyId}/inventory/movements`;
+      
+      return fetch(url, {
+        method: 'GET',
+        headers: getAuthHeader(token),
+      }).then(handleResponse);
     },
   },
 

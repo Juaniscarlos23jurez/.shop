@@ -1595,20 +1595,20 @@ export default function HomePage() {
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-10">
               <h2 className="text-4xl font-black text-[#0f172a] mb-4">
-                Preguntas frecuentes sobre Fideliza+
+                Preguntas frecuentes sobre Fynlink+
               </h2>
               <p className="text-[#64748b] text-xl max-w-2xl mx-auto">
-                Resolvemos las dudas más comunes sobre programas de lealtad, CRM y la plataforma Fideliza+
+                Resolvemos las dudas más comunes sobre programas de lealtad, CRM y la plataforma Fynlink+
               </p>
             </div>
 
             <div className="space-y-4">
               <div className="border border-gray-200 rounded-2xl p-5 bg-white shadow-sm">
                 <h3 className="text-lg md:text-xl font-semibold text-[#0f172a] mb-2">
-                  ¿Qué es Fideliza+ y para qué tipo de negocios está pensado?
+                  ¿Qué es Fynlink+ y para qué tipo de negocios está pensado?
                 </h3>
                 <p className="text-[#64748b] text-base leading-relaxed">
-                  Fideliza+ es una plataforma de fidelización y CRM diseñada para pequeños y medianos negocios que quieren aumentar sus ventas recurrentes. Es ideal para cafeterías, restaurantes, tiendas de ropa, spas, farmacias y cualquier comercio que quiera premiar a sus clientes frecuentes con puntos, cupones y beneficios exclusivos.
+                  Fynlink+ es una plataforma de fidelización y CRM diseñada para pequeños y medianos negocios que quieren aumentar sus ventas recurrentes. Es ideal para cafeterías, restaurantes, tiendas de ropa, spas, farmacias y cualquier comercio que quiera premiar a sus clientes frecuentes con puntos, cupones y beneficios exclusivos.
                 </p>
               </div>
 
@@ -1617,13 +1617,13 @@ export default function HomePage() {
                   ¿Necesito una app o página web propia para usar el programa de lealtad?
                 </h3>
                 <p className="text-[#64748b] text-base leading-relaxed">
-                  No. Al contratar Fideliza+ obtienes tu propio sitio web de lealtad con catálogo de productos y un perfil para tus clientes. Además, ellos pueden guardar su tarjeta digital en Apple Wallet y Google Wallet, sin necesidad de que tú desarrolles una app desde cero.
+                  No. Al contratar Fynlink+ obtienes tu propio sitio web de lealtad con catálogo de productos y un perfil para tus clientes. Además, ellos pueden guardar su tarjeta digital en Apple Wallet y Google Wallet, sin necesidad de que tú desarrolles una app desde cero.
                 </p>
               </div>
 
               <div className="border border-gray-200 rounded-2xl p-5 bg-white shadow-sm">
                 <h3 className="text-lg md:text-xl font-semibold text-[#0f172a] mb-2">
-                  ¿Cómo se integra Fideliza+ con mi punto de venta o sistema actual?
+                  ¿Cómo se integra Fynlink+ con mi punto de venta o sistema actual?
                 </h3>
                 <p className="text-[#64748b] text-base leading-relaxed">
                   Puedes registrar compras y puntos directamente desde el panel web o nuestro POS en la nube. Si ya cuentas con un sistema de punto de venta, nuestro equipo puede apoyarte con la integración vía API para que los puntos se asignen automáticamente en cada ticket.
@@ -1641,7 +1641,7 @@ export default function HomePage() {
 
               <div className="border border-gray-200 rounded-2xl p-5 bg-white shadow-sm">
                 <h3 className="text-lg md:text-xl font-semibold text-[#0f172a] mb-2">
-                  ¿Cómo me ayuda Fideliza+ a vender más usando WhatsApp?
+                  ¿Cómo me ayuda Fynlink+ a vender más usando WhatsApp?
                 </h3>
                 <p className="text-[#64748b] text-base leading-relaxed">
                   Puedes segmentar a tus mejores clientes y enviarles campañas por WhatsApp con cupones personalizados, recordatorios de puntos por vencer y promociones especiales para días de baja afluencia. Todo queda registrado para que veas qué campañas generan más ventas.
@@ -1650,7 +1650,7 @@ export default function HomePage() {
 
               <div className="border border-gray-200 rounded-2xl p-5 bg-white shadow-sm">
                 <h3 className="text-lg md:text-xl font-semibold text-[#0f172a] mb-2">
-                  ¿Cuánto cuesta Fideliza+ y qué incluye cada plan?
+                  ¿Cuánto cuesta Fynlink+ y qué incluye cada plan?
                 </h3>
                 <p className="text-[#64748b] text-base leading-relaxed">
                   Contamos con planes mensuales y anuales que se adaptan al tamaño de tu negocio. En todos los planes tienes acceso al programa de puntos, cupones digitales, dashboard de analíticas y soporte. En los planes superiores se incluye multi-sucursal, POS avanzado y acceso a la API. Puedes revisar los detalles en la sección de precios.
@@ -1848,10 +1848,10 @@ export default function HomePage() {
                 <svg className="h-6 w-6 text-white" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
                 </svg>
-                <span className="text-white font-bold">Fideliza+</span>
+                <span className="text-white font-bold">Fynlink+</span>
               </div>
               <p className="text-[#94a3b8] text-sm">
-                &copy; {new Date().getFullYear()} Fideliza+. Todos los derechos reservados.
+                &copy; {new Date().getFullYear()} Fynlink+. Todos los derechos reservados.
               </p>
             </div>
           </div>

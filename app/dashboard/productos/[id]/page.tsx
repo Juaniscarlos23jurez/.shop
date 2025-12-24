@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { api } from '@/lib/api/api';
+import { InventoryMovements } from '@/components/inventory/inventory-movements';
 
 export default function DetalleProductoPage() {
   const router = useRouter();
@@ -317,8 +318,17 @@ export default function DetalleProductoPage() {
               </CardContent>
             </Card>
           )}
+          
+          {/* Inventory Movements - Only for physical products that track stock */}
+          {product.product_type === 'physical' && product.track_stock && token && (
+            <InventoryMovements
+              companyId={user?.company_id || ''}
+              productId={product.id}
+              token={token}
+            />
+          )}
         </div>
-
+        
         <div className="space-y-6">
           <Card>
             <CardHeader>

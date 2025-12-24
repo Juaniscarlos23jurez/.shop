@@ -52,6 +52,7 @@ const adminSidebarItems: SidebarItem[] = [
  
   // Core business
   { icon: Package, label: "Productos", href: "/dashboard/productos" },
+  { icon: Package, label: "Stock", href: "/dashboard/stock" },
   { icon: ShoppingCart, label: "Punto de Venta", href: "/dashboard/pos" },
   { icon: Clock4, label: "Órdenes Pendientes", href: "/dashboard/ordenes-pendientes" },
  //{ icon: MessageSquare, label: "WhatsApp", href: "/dashboard/whatsapp" },
