@@ -20,6 +20,7 @@ import { Category } from '@/types/category';
 import { api } from '@/lib/api/api';
 import { storage } from '@/lib/firebase';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { CategorySelect } from '@/components/products/CategorySelect';
 
 export default function EditarProductoPage() {
   const router = useRouter();
@@ -622,30 +623,22 @@ export default function EditarProductoPage() {
                     </DialogContent>
                   </Dialog>
                 </div>
-                <select
-                  id="category_id"
+                <CategorySelect
+                  categories={categories}
                   name="category_id"
+                  placeholder="Selecciona una categoría"
+                  valueKey="id"
                   defaultValue={(() => {
                     const firstCatId = (product as any)?.categories?.[0]?.id;
                     return firstCatId ? String(firstCatId) : '';
                   })()}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <option value="">Selecciona una categoría</option>
-                  {categories
-                    .filter(cat => cat.is_active)
-                    .sort((a, b) => a.order - b.order)
-                    .map((category) => (
-                      <option key={category.id} value={String(category.id)}>
-                        {category.name}
-                      </option>
-                    ))}
-                </select>
+                  triggerClassName="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                />
               </div>
               
               <div className="space-y-2">
                 <Label>Ubicaciones Disponibles</Label>
-                <div className="space-y-2 max-h-40 overflow-y-auto p-2 border rounded-md">
+                <div className="space-y-4 p-3 border rounded-md">
                   {locations.length > 0 ? (
                     locations.map((location) => {
                       const productLocation = (product.locations as any)?.find((loc: any) => loc.id === location.id);

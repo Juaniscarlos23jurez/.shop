@@ -19,6 +19,7 @@ import { Category } from '@/types/category';
 import { toast } from '@/components/ui/use-toast';
 import { storage } from '@/lib/firebase';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { CategorySelect } from '@/components/products/CategorySelect';
 
 export default function NuevoProductoPage() {
   const router = useRouter();
@@ -27,6 +28,7 @@ export default function NuevoProductoPage() {
   const [companyId, setCompanyId] = useState<string | null>(null);
   const [locations, setLocations] = useState<Array<{id: number, name: string}>>([]);
   const [selectedLocations, setSelectedLocations] = useState<number[]>([]);
+  const [locationStocks, setLocationStocks] = useState<Record<number, number>>({});
   const [productType, setProductType] = useState('physical'); // 'physical', 'made_to_order', or 'service'
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -189,6 +191,35 @@ export default function NuevoProductoPage() {
     }
   };
 
+  const handleLocationToggle = (locationId: number, checked: boolean) => {
+    setSelectedLocations((prev) => {
+      if (checked) {
+        if (prev.includes(locationId)) return prev;
+        return [...prev, locationId];
+      }
+      return prev.filter((id) => id !== locationId);
+    });
+
+    setLocationStocks((prev) => {
+      if (checked) {
+        if (prev[locationId] !== undefined) return prev;
+        return {
+          ...prev,
+          [locationId]: 0,
+        };
+      }
+      const { [locationId]: _, ...rest } = prev;
+      return rest;
+    });
+  };
+
+  const handleLocationStockChange = (locationId: number, value: number) => {
+    setLocationStocks((prev) => ({
+      ...prev,
+      [locationId]: value >= 0 ? value : 0,
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!token) {
@@ -252,7 +283,7 @@ export default function NuevoProductoPage() {
         locations: selectedLocations.map(id => ({
           id,
           is_available: true,
-          ...(productType === 'physical' && { stock: 0 }) // Add stock for physical products
+          ...(productType === 'physical' && { stock: Number(locationStocks[id]) || 0 })
         }))
       };
 
@@ -396,12 +427,7 @@ export default function NuevoProductoPage() {
                       </div>
                     </div>
                   )}
-                  {productType === 'physical' && (
-                    <div className="space-y-2">
-                      <Label htmlFor="stock">Stock Inicial</Label>
-                      <Input id="stock" name="stock" type="number" min="0" placeholder="0" required />
-                    </div>
-                  )}
+                  
                   {productType === 'made_to_order' && (
                     <div className="space-y-2">
                       <Label htmlFor="lead_time">Tiempo de Entrega</Label>
@@ -434,7 +460,11 @@ export default function NuevoProductoPage() {
                     <Label htmlFor="category">Categoría</Label>
                     <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
                       <DialogTrigger asChild>
-                        <Button type="button" variant="outline" size="sm" className="h-8">
+                        <Button
+                          type="button"
+                          size="sm"
+                          className="h-8 bg-primary text-primary-foreground hover:bg-primary/90"
+                        >
                           <Plus className="h-4 w-4 mr-1" />
                           Nueva Categoría
                         </Button>
@@ -491,48 +521,58 @@ export default function NuevoProductoPage() {
                       </DialogContent>
                     </Dialog>
                   </div>
-                  <select
-                    id="category"
+                  <CategorySelect
+                    categories={categories}
                     name="category"
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    <option value="">Selecciona una categoría</option>
-                    {categories
-                      .filter(cat => cat.is_active)
-                      .sort((a, b) => a.order - b.order)
-                      .map((category) => (
-                        <option key={category.id} value={category.slug}>
-                          {category.name}
-                        </option>
-                      ))}
-                  </select>
+                    placeholder="Selecciona una categoría"
+                    valueKey="slug"
+                    triggerClassName="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  />
                 </div>
               </div>
               
               <div className="space-y-2">
                 <Label>Ubicaciones Disponibles</Label>
-                <div className="space-y-2 max-h-40 overflow-y-auto p-2 border rounded-md">
+                <div className="space-y-4 p-3 border rounded-md">
                   {locations.length > 0 ? (
-                    locations.map((location) => (
-                      <div key={location.id} className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          id={`location-${location.id}`}
-                          checked={selectedLocations.includes(location.id)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedLocations([...selectedLocations, location.id]);
-                            } else {
-                              setSelectedLocations(selectedLocations.filter(id => id !== location.id));
-                            }
-                          }}
-                          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                        />
-                        <Label htmlFor={`location-${location.id}`} className="text-sm font-medium leading-none">
-                          {location.name}
-                        </Label>
-                      </div>
-                    ))
+                    locations.map((location) => {
+                      const isSelected = selectedLocations.includes(location.id);
+                      const currentStock = locationStocks[location.id] ?? 0;
+
+                      return (
+                        <div key={location.id} className="space-y-2">
+                          <div className="flex items-center space-x-2">
+                            <input
+                              type="checkbox"
+                              id={`location-${location.id}`}
+                              checked={isSelected}
+                              onChange={(e) => handleLocationToggle(location.id, e.target.checked)}
+                              className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                            />
+                            <Label htmlFor={`location-${location.id}`} className="text-sm font-medium leading-none">
+                              {location.name}
+                            </Label>
+                          </div>
+
+                          {productType === 'physical' && isSelected && (
+                            <div className="ml-6 mb-2">
+                              <Label htmlFor={`stock_${location.id}`} className="text-xs text-muted-foreground">
+                                Stock en {location.name}:
+                              </Label>
+                              <Input
+                                id={`stock_${location.id}`}
+                                name={`stock_${location.id}`}
+                                type="number"
+                                min="0"
+                                value={currentStock}
+                                onChange={(e) => handleLocationStockChange(location.id, Number(e.target.value))}
+                                className="h-8 text-sm"
+                              />
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })
                   ) : (
                     <p className="text-sm text-muted-foreground">No hay ubicaciones disponibles</p>
                   )}

@@ -183,7 +183,14 @@ export const ordersApi = {
     });
 
     if (!response.ok) {
-      throw new Error('Failed to fetch orders');
+      const errorText = await response.text();
+      console.error('Orders API Error:', {
+        status: response.status,
+        statusText: response.statusText,
+        url: response.url,
+        errorBody: errorText
+      });
+      throw new Error(`Failed to fetch orders (${response.status}: ${response.statusText})`);
     }
 
     return response.json();

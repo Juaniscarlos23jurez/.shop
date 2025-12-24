@@ -14,7 +14,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { storage } from "@/lib/firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import * as Lucide from "lucide-react";
-const { Megaphone, Sparkles, LayoutTemplate, MousePointerClick } = Lucide as any;
+const { Megaphone, Sparkles, LayoutTemplate, MousePointerClick, Palette } = Lucide as any;
 
 export default function ComponentesPlaygroundPage() {
   const { token, user } = useAuth();
@@ -48,6 +48,13 @@ export default function ComponentesPlaygroundPage() {
   const [ticketFooterMessage, setTicketFooterMessage] = useState("Gracias por tu compra");
   const [ticketAccentColor, setTicketAccentColor] = useState("#000000");
   const [ticketLogoUrl, setTicketLogoUrl] = useState<string | null>(null);
+
+  // Custom design colors state
+  const [cartButtonColor, setCartButtonColor] = useState("#059669"); // emerald-600 por defecto
+  const [cartIconColor, setCartIconColor] = useState("#ffffff"); // blanco por defecto
+  const [navigationBarColor, setNavigationBarColor] = useState("#1f2937"); // gray-800 por defecto
+  const [downloadAppColor, setDownloadAppColor] = useState("#3b82f6"); // blue-500 por defecto
+  const [backgroundColor, setBackgroundColor] = useState("#f9fafb"); // gray-50 por defecto
 
   // Loading / saving state
   const [loadingSettings, setLoadingSettings] = useState(false);
@@ -87,6 +94,13 @@ export default function ComponentesPlaygroundPage() {
             if (typeof settings.popup_button_label === "string") setPopupButtonLabel(settings.popup_button_label);
             if (typeof settings.popup_button_url === "string") setPopupButtonUrl(settings.popup_button_url);
             if (typeof settings.popup_button_color === "string") setPopupButtonColor(settings.popup_button_color);
+
+            // Cargar colores de diseño personalizado
+            if (typeof settings.cart_button_color === "string") setCartButtonColor(settings.cart_button_color);
+            if (typeof settings.cart_icon_color === "string") setCartIconColor(settings.cart_icon_color);
+            if (typeof settings.navigation_bar_color === "string") setNavigationBarColor(settings.navigation_bar_color);
+            if (typeof settings.download_app_color === "string") setDownloadAppColor(settings.download_app_color);
+            if (typeof settings.background_color === "string") setBackgroundColor(settings.background_color);
           }
         }
       } catch (e) {
@@ -188,6 +202,12 @@ export default function ComponentesPlaygroundPage() {
         popup_button_label: popupButtonLabel,
         popup_button_url: popupButtonUrl,
         popup_button_color: popupButtonColor,
+        // Colores de diseño personalizado
+        cart_button_color: cartButtonColor,
+        cart_icon_color: cartIconColor,
+        navigation_bar_color: navigationBarColor,
+        download_app_color: downloadAppColor,
+        background_color: backgroundColor,
       };
 
       console.log("[UI Settings] Enviando payload a api.uiSettings.upsert", payload);
@@ -239,11 +259,218 @@ export default function ComponentesPlaygroundPage() {
         </div>
       </div>
 
-      <Tabs defaultValue="componentes" className="mt-4">
+      <Tabs defaultValue="custom-design" className="mt-4">
         <TabsList>
+          <TabsTrigger value="custom-design">Custom Diseño</TabsTrigger>
           <TabsTrigger value="componentes">Componentes</TabsTrigger>
           <TabsTrigger value="ticket">Diseño de ticket</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="custom-design" className="mt-4">
+          <div className="grid gap-6 lg:grid-cols-1">
+            {/* Custom Design Configuration */}
+            <Card className="border-dashed">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Palette className="h-5 w-5 text-purple-600" />
+                  Personalización de colores
+                </CardTitle>
+                <CardDescription>
+                  Configura los colores de los elementos principales de tu tienda. Estos colores se aplicarán a botones, banners y otros elementos visuales.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                  {/* Botón Agregar al Carrito */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <div 
+                        className="w-6 h-6 rounded"
+                        style={{ backgroundColor: cartButtonColor }}
+                      />
+                      <label className="font-medium text-sm">Botón "Agregar al carrito"</label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={cartButtonColor}
+                        onChange={(e) => setCartButtonColor(e.target.value)}
+                        className="h-8 w-8 cursor-pointer rounded border border-input bg-background p-1"
+                      />
+                      <Input
+                        value={cartButtonColor}
+                        onChange={(e) => setCartButtonColor(e.target.value)}
+                        className="text-xs"
+                        placeholder="#059669"
+                      />
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Color principal del botón para agregar productos
+                    </div>
+                  </div>
+
+                  {/* Icono del Carrito */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <div 
+                        className="w-6 h-6 rounded border"
+                        style={{ backgroundColor: cartIconColor }}
+                      />
+                      <label className="font-medium text-sm">Icono del carrito</label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={cartIconColor}
+                        onChange={(e) => setCartIconColor(e.target.value)}
+                        className="h-8 w-8 cursor-pointer rounded border border-input bg-background p-1"
+                      />
+                      <Input
+                        value={cartIconColor}
+                        onChange={(e) => setCartIconColor(e.target.value)}
+                        className="text-xs"
+                        placeholder="#ffffff"
+                      />
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Color del icono dentro del botón del carrito
+                    </div>
+                  </div>
+
+                  {/* Barra de Navegación */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <div 
+                        className="w-6 h-6 rounded"
+                        style={{ backgroundColor: navigationBarColor }}
+                      />
+                      <label className="font-medium text-sm">Barra de navegación</label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={navigationBarColor}
+                        onChange={(e) => setNavigationBarColor(e.target.value)}
+                        className="h-8 w-8 cursor-pointer rounded border border-input bg-background p-1"
+                      />
+                      <Input
+                        value={navigationBarColor}
+                        onChange={(e) => setNavigationBarColor(e.target.value)}
+                        className="text-xs"
+                        placeholder="#1f2937"
+                      />
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Color de fondo del menú de navegación
+                    </div>
+                  </div>
+
+                  {/* Botón Descargar App */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <div 
+                        className="w-6 h-6 rounded"
+                        style={{ backgroundColor: downloadAppColor }}
+                      />
+                      <label className="font-medium text-sm">Botón "Descargar app"</label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={downloadAppColor}
+                        onChange={(e) => setDownloadAppColor(e.target.value)}
+                        className="h-8 w-8 cursor-pointer rounded border border-input bg-background p-1"
+                      />
+                      <Input
+                        value={downloadAppColor}
+                        onChange={(e) => setDownloadAppColor(e.target.value)}
+                        className="text-xs"
+                        placeholder="#3b82f6"
+                      />
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Color del botón para descargar la aplicación
+                    </div>
+                  </div>
+
+                  {/* Color de Fondo */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <div 
+                        className="w-6 h-6 rounded border"
+                        style={{ backgroundColor: backgroundColor }}
+                      />
+                      <label className="font-medium text-sm">Color de fondo</label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={backgroundColor}
+                        onChange={(e) => setBackgroundColor(e.target.value)}
+                        className="h-8 w-8 cursor-pointer rounded border border-input bg-background p-1"
+                      />
+                      <Input
+                        value={backgroundColor}
+                        onChange={(e) => setBackgroundColor(e.target.value)}
+                        className="text-xs"
+                        placeholder="#f9fafb"
+                      />
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Color de fondo general de la tienda
+                    </div>
+                  </div>
+                </div>
+
+                {/* Vista previa */}
+                <div className="mt-8 p-6 border rounded-lg" style={{ backgroundColor: backgroundColor }}>
+                  <div className="space-y-4">
+                    {/* Preview de navegación */}
+                    <div 
+                      className="p-4 rounded-lg text-white"
+                      style={{ backgroundColor: navigationBarColor }}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium">Mi Tienda</span>
+                        <div className="flex items-center gap-2">
+                          <div 
+                            className="p-2 rounded"
+                            style={{ backgroundColor: cartButtonColor }}
+                          >
+                            <svg 
+                              className="w-5 h-5" 
+                              style={{ color: cartIconColor }}
+                              fill="currentColor" 
+                              viewBox="0 0 20 20"
+                            >
+                              <path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z"/>
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Preview de botones */}
+                    <div className="flex flex-wrap gap-4">
+                      <button 
+                        className="px-4 py-2 rounded-lg text-white font-medium"
+                        style={{ backgroundColor: cartButtonColor }}
+                      >
+                        Agregar al carrito
+                      </button>
+                      <button 
+                        className="px-4 py-2 rounded-lg text-white font-medium"
+                        style={{ backgroundColor: downloadAppColor }}
+                      >
+                        Descargar app
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
 
         <TabsContent value="componentes" className="mt-4">
           <div className="grid gap-6 lg:grid-cols-2">

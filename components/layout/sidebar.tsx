@@ -34,9 +34,19 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useState, useLayoutEffect, useEffect } from 'react'; // Import useState, useLayoutEffect and useEffect
 import { ordersApi } from "@/lib/api/orders";
 import { api } from "@/lib/api/api";
+import { notificationService } from "@/lib/notifications";
+import { NotificationToast, useNotificationToast } from "@/components/notifications/NotificationToast";
+
+interface SidebarItem {
+  icon: any;
+  label: string;
+  href: string;
+  isCollapsible?: boolean;
+  subItems?: SidebarItem[];
+}
 
 // Admin sidebar items (shown for non-employee users)
-const adminSidebarItems = [
+const adminSidebarItems: SidebarItem[] = [
   // Main sections
   { icon: Home, label: "Dashboard", href: "/dashboard" },
  
@@ -123,7 +133,7 @@ const adminSidebarItems = [
 ];
 
 // Employee sidebar items (only Point of Sale)
-const employeeSidebarItems = [
+const employeeSidebarItems: SidebarItem[] = [
   { icon: ShoppingCart, label: "Punto de Venta", href: "/dashboard/pos" }
 ];
 
@@ -131,6 +141,9 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
   const { user, token, logout, isEmployee, userRole } = useAuth();
   const router = useRouter();
   const pathname = usePathname() || '';
+  
+  // Notification toast hook
+  const { notifications, showOrderNotification, dismissNotification } = useNotificationToast();
   
   // Use different sidebar items based on user role
   const isSales = userRole === 'employee_sales';
@@ -179,6 +192,8 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
 
   const [pendingOrdersCount, setPendingOrdersCount] = useState<number | null>(null);
   const [companySlug, setCompanySlug] = useState<string | null>(null);
+  const [hasNewOrderNotification, setHasNewOrderNotification] = useState(false);
+  const [isNotificationMuted, setIsNotificationMuted] = useState(false);
 
   const slugifyCompanyName = (name: string) => {
     return name
@@ -201,21 +216,57 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
         });
 
         if (response.success && response.data) {
-          const pagination = (response.data as any).data || response.data;
+          const pagination = response.data;
+          const ordersArray = pagination.data || [];
           const total = typeof pagination.total === 'number'
             ? pagination.total
-            : Array.isArray(pagination)
-            ? pagination.length
+            : Array.isArray(ordersArray)
+            ? ordersArray.length
             : 0;
+          
+          // Check if we have new orders (count increased)
+          const previousCount = pendingOrdersCount || 0;
           setPendingOrdersCount(total);
+          
+          // Play notification sound if there are pending orders (not muted)
+          if (total > 0 && !isNotificationMuted) {
+            notificationService.playNotificationSound();
+            
+            // Show toast notification for pending orders
+            if (pathname !== '/dashboard/ordenes-pendientes') {
+              const latestOrder = Array.isArray(ordersArray) && ordersArray.length > 0 ? ordersArray[0] : null;
+              
+              showOrderNotification({
+                id: latestOrder?.id?.toString() || 'pending',
+                customer_name: latestOrder?.user?.name || 'Cliente',
+                total: latestOrder?.total || '0.00'
+              });
+            }
+          }
+          
+          // If count increased and we're not already on the orders page, show notification indicator
+          if (total > previousCount && pathname !== '/dashboard/ordenes-pendientes') {
+            setHasNewOrderNotification(true);
+            
+            // Auto-hide the notification indicator after 5 seconds
+            setTimeout(() => {
+              setHasNewOrderNotification(false);
+            }, 5000);
+          }
         }
       } catch (error) {
-        console.error('[Sidebar] Error fetching pending orders count', error);
+        console.error('[Sidebar] Error fetching pending orders count:', error);
+        // Don't throw error, just log it to prevent breaking the UI
       }
     };
 
     fetchPendingOrdersCount();
-  }, [user?.company_id, token]);
+    
+    // Set up polling for new orders every 20 seconds
+    const interval = setInterval(fetchPendingOrdersCount, 20000);
+    
+    return () => clearInterval(interval);
+  }, [user?.company_id, token, pathname, isNotificationMuted]); // Removed pendingOrdersCount from dependencies
 
   // Fetch company slug for the public link
   useEffect(() => {
@@ -391,9 +442,30 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
             >
               <item.icon className={`h-5 w-5 ${isCollapsed ? 'mr-0' : 'mr-3'}`} />
               <span className={`${isCollapsed ? 'hidden' : ''}`}>{item.label}</span>
-              {!isCollapsed && item.href === '/dashboard/ordenes-pendientes' && pendingOrdersCount !== null && (
+              {!isCollapsed && item.href === '/dashboard/ordenes-pendientes' && (
                 <span className="ml-auto inline-flex items-center justify-center rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
                   {pendingOrdersCount}
+                </span>
+              )}
+              {!isCollapsed && item.href === '/dashboard/ordenes-pendientes' && hasNewOrderNotification && (
+                <span className="ml-2">
+                  <BellIcon className="h-4 w-4 text-emerald-600 animate-pulse" />
+                </span>
+              )}
+              {!isCollapsed && item.href === '/dashboard/ordenes-pendientes' && pendingOrdersCount && pendingOrdersCount > 0 && (
+                <span
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsNotificationMuted(!isNotificationMuted);
+                  }}
+                  className="ml-2 p-1 rounded hover:bg-slate-100 transition-colors cursor-pointer"
+                  title={isNotificationMuted ? "Activar sonido" : "Silenciar notificaciones"}
+                >
+                  {isNotificationMuted ? (
+                    <BellIcon className="h-4 w-4 text-slate-400" />
+                  ) : (
+                    <BellIcon className="h-4 w-4 text-emerald-600" />
+                  )}
                 </span>
               )}
             </Button>
@@ -432,6 +504,9 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
           <span className={`${isCollapsed ? 'hidden' : ''}`}>Cerrar sesión</span>
         </Button>
       </div>
+      
+      {/* Notification Toast */}
+      <NotificationToast notifications={notifications} onDismiss={dismissNotification} />
     </div>
   );
 }

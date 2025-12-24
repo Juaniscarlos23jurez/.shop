@@ -76,7 +76,7 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="flex h-screen bg-slate-50">
+    <div className="flex h-screen bg-slate-50 overflow-hidden">
       {isMobile ? (
         <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
           <SheetTrigger asChild>
@@ -112,9 +112,11 @@ export default function DashboardLayout({
         <Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
       )}
       
-      <main className="flex-1 overflow-y-auto p-6 transition-all duration-300">
-        {children}
-      </main>
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <main className="flex-1 overflow-y-auto p-6 transition-all duration-300">
+          {children}
+        </main>
+      </div>
       
       <FeedbackButton />
     </div>

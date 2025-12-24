@@ -5,6 +5,7 @@ import { api } from '@/lib/api/api';
 import { ApiResponse, LoginResponse, UserProfile } from '@/types/api';
 import { getFcmBrowserToken, auth, isFirebaseConfigured } from '@/lib/firebase';
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { notificationService } from '@/lib/notifications';
 
 interface AuthContextType {
   user: UserProfile | null;
@@ -78,6 +79,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 ? String(derivedCompanyId)
                 : undefined,
             });
+
+            // Initialize notifications after successful authentication
+            if (typeof window !== 'undefined') {
+              notificationService.initialize().catch(error => {
+                console.warn('Failed to initialize notification service:', error);
+              });
+            }
           } else {
             // If we can't get user data with the token, clear it
             localStorage.removeItem('token');
@@ -116,6 +124,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         firebase_email: userData.email,
         firebase_name: userData.name || userData.email.split('@')[0],
         company_id: userData.company_id || undefined,
+      });
+    }
+
+    // Initialize notifications after successful login
+    if (typeof window !== 'undefined') {
+      notificationService.initialize().catch(error => {
+        console.warn('Failed to initialize notification service:', error);
       });
     }
   };
@@ -207,10 +222,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               const fcmToken = await getFcmBrowserToken();
               console.log('[FCM] Token obtenido desde getFcmBrowserToken:', fcmToken);
               if (fcmToken) {
-                console.log('[FCM] Enviando token FCM al backend vía PUT /api/proxy/api/auth/profile/fcm-token');
-                const putResponse = await api.auth.updateFcmToken(access_token, fcmToken);
-                console.log('[FCM] Respuesta de updateFcmToken:', putResponse);
-              } else {
+                 const putResponse = await api.auth.updateFcmToken(access_token, fcmToken);
+               } else {
                 console.warn('[FCM] No se obtuvo token FCM (puede que el usuario haya negado permisos o haya fallado algo).');
               }
             } catch (err) {

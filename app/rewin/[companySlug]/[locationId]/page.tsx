@@ -23,6 +23,8 @@ import { PointsSection } from '@/components/shop/PointsSection';
 import { PromotionsSection } from '@/components/shop/PromotionsSection';
 import { CatalogCard } from '@/components/shop/CatalogCard';
 import { WalletSection } from '@/components/shop/WalletSection';
+import { CommentSheet } from '@/components/shop/CommentSheet';
+import { MessageSquare } from 'lucide-react';
 
 declare global {
   interface Window {
@@ -130,6 +132,7 @@ function PublicLocationProductsPageContent() {
   const [uiSettings, setUiSettings] = useState<any>(null);
   const [popupOpen, setPopupOpen] = useState(false);
   const [initialProductId, setInitialProductId] = useState<string | null>(null);
+  const [commentSheetOpen, setCommentSheetOpen] = useState(false);
 
   const trackAnalyticsEvent = (eventName: string, params: Record<string, any>) => {
     if (typeof window === 'undefined' || !window.gtag) {
@@ -927,6 +930,16 @@ function PublicLocationProductsPageContent() {
                       size="sm"
                       variant="outline"
                       className="flex items-center gap-2 text-xs sm:text-sm"
+                      onClick={() => setCommentSheetOpen(true)}
+                    >
+                      <MessageSquare className="h-4 w-4" />
+                      <span>Comentar</span>
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="flex items-center gap-2 text-xs sm:text-sm"
                       onClick={() => {
                         if (typeof window === 'undefined') return;
                         const baseText = `${company?.name || location.name} - ${company?.description || 'Mira esta sucursal en Rewin'}`;
@@ -1301,6 +1314,12 @@ function PublicLocationProductsPageContent() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <CommentSheet
+        isOpen={commentSheetOpen}
+        onClose={() => setCommentSheetOpen(false)}
+        companyId={company?.id || ''}
+      />
     </div>
   );
 }
