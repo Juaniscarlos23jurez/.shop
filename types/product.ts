@@ -1,8 +1,8 @@
 export type Product = {
-  id?: string;
+  id: number | string;
   name: string;
   description: string;
-  price: number;
+  price: number | string;
   product_type: 'physical' | 'made_to_order' | 'service';
   track_stock?: boolean;
   is_active: boolean;
@@ -21,10 +21,17 @@ export type ProductLocation = {
 };
 
 export type ProductListResponse = {
-  data: Product[];
-  current_page: number;
-  last_page: number;
-  total: number;
+  products: Product[];
+  products_pagination: {
+    current_page: number;
+    last_page: number;
+    total: number;
+    from: number;
+    to: number;
+    per_page: number;
+  };
+  categories: any[];
+  point_rule: any;
 };
 
 export type ProductResponse = {

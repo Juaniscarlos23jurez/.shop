@@ -47,9 +47,27 @@ export default function StockPage() {
       setLoadingProducts(true);
       const response = await api.products.getProducts(user.company_id, token);
       
+      console.log('Products API Response:', response);
+      console.log('Response data:', response.data);
+      
+      console.log('Products state:', products);
+      console.log('Loading products:', loadingProducts);
+      console.log('Products length:', products.length);
+      
       if (response.success && response.data) {
-        const productsData = Array.isArray(response.data) ? response.data : response.data.data || [];
-        setProducts(Array.isArray(productsData) ? productsData.filter((p: Product) => p.track_stock) : []);
+        const productsData = (response.data as any).data.products || [];
+        console.log('Products array:', productsData);
+        console.log('Products array length:', productsData?.length);
+        
+        if (productsData && productsData.length > 0) {
+          console.log('First product:', productsData[0]);
+          console.log('First product track_stock:', productsData[0].track_stock);
+        }
+        
+        const filteredProducts = Array.isArray(productsData) ? productsData.filter((p: Product) => p.track_stock) : [];
+        console.log('Filtered products:', filteredProducts);
+        console.log('Setting products state to:', filteredProducts);
+        setProducts(filteredProducts);
       }
     } catch (error) {
       console.error('Error fetching products:', error);
@@ -247,15 +265,22 @@ export default function StockPage() {
                   <SelectItem value="all">Todos los productos</SelectItem>
                   {loadingProducts ? (
                     <SelectItem value="loading" disabled>Cargando...</SelectItem>
-                  ) : (
+                  ) : products.length > 0 ? (
                     products.map((product) => (
                       <SelectItem key={product.id} value={String(product.id)}>
                         {product.name}
                       </SelectItem>
                     ))
+                  ) : (
+                    <SelectItem value="none" disabled>No hay productos</SelectItem>
                   )}
                 </SelectContent>
               </Select>
+              {products.length > 0 && (
+                <p className="text-xs text-slate-500 mt-1">
+                  {products.length} producto(s) encontrado(s)
+                </p>
+              )}
             </div>
             <div>
               <Label htmlFor="search">Buscar</Label>
