@@ -19,18 +19,21 @@ interface Follower {
   customer_name: string;
   customer_email: string;
   customer_phone?: string;
-  customer_email_verified?: boolean;
+  customer_email_verified?: number;
   customer_login_provider?: string;
   customer_fcm_token?: string;
-  has_push_notifications_enabled?: boolean;
+  customer_profile_photo_path?: string;
+  has_push_notifications_enabled?: number;
   customer_since: string;
   following_since: string;
+  points_balance: number;
+  total_points_earned: number;
+  total_points_spent: number;
   membership_id: number | null;
   membership_name: string | null;
   membership_description: string | null;
   membership_price: string | null;
   has_active_membership: number; // 0 or 1
-  points?: number; // Points for the customer
 }
 
 interface ApiResponseData {
@@ -46,15 +49,13 @@ interface ApiResponseData {
   followers: Follower[];
 }
 
-interface ApiResponseWrapper {
-  status: string;
-  data: ApiResponseData;
-  message?: string;
-}
-
 interface ApiResponse {
   success: boolean;
-  data: ApiResponseWrapper;
+  data: {
+    status: string;
+    data: ApiResponseData;
+    message?: string;
+  };
   status: number;
   statusText: string;
   message?: string;
@@ -95,8 +96,8 @@ export default function ClientesPage() {
         console.log('API Response:', response);
         
         if (response && response.success && response.data) {
-          // The API returns data directly without the wrapper structure
-          const responseData = response.data as unknown as ApiResponseData;
+          // The API returns data with the wrapper structure
+          const responseData = response.data.data as ApiResponseData;
           console.log('API Response Data:', responseData);
           
           setData(responseData);
@@ -330,7 +331,7 @@ export default function ClientesPage() {
                     <td className="py-4 px-4">
                       <div className="flex items-center gap-3">
                         <Avatar className="h-10 w-10">
-                          <AvatarImage src="/placeholder-user.jpg" alt={client.customer_name} />
+                          <AvatarImage src={client.customer_profile_photo_path || "/placeholder-user.jpg"} alt={client.customer_name} />
                           <AvatarFallback>
                             {client.customer_name.split(' ').map(n => n[0]).join('').toUpperCase()}
                           </AvatarFallback>
@@ -338,7 +339,7 @@ export default function ClientesPage() {
                         <div>
                           <div className="font-medium flex items-center gap-2">
                             {client.customer_name}
-                            {client.customer_email_verified === true && (
+                            {client.customer_email_verified === 1 && (
                               <CheckCircle className="h-4 w-4 text-green-500" />
                             )}
                           </div>
@@ -354,11 +355,11 @@ export default function ClientesPage() {
                           )}
                           <div className="flex items-center gap-2 mt-1">
                             <Badge variant="secondary" className="text-xs">
-                              {client.customer_login_provider === 'google' && '🇬 Google'}
-                              {client.customer_login_provider === 'apple' && '🍎 Apple'}
+                              {client.customer_login_provider === 'google.com' && '🇬 Google'}
+                              {client.customer_login_provider === 'apple.com' && '🍎 Apple'}
                               {!client.customer_login_provider && '📧 Email'}
                             </Badge>
-                            {client.customer_fcm_token ? (
+                            {client.has_push_notifications_enabled === 1 ? (
                               <Badge variant="outline" className="text-xs text-green-600 border-green-600">
                                 <Smartphone className="h-3 w-3 mr-1" />
                                 Notificaciones
@@ -396,7 +397,7 @@ export default function ClientesPage() {
                     </td>
                     <td className="py-4 px-4 text-right">
                       <div className="font-medium">
-                        {client.points || '0'}
+                        {client.points_balance || 0}
                       </div>
                     </td>
                     <td className="py-4 px-4 text-right">
