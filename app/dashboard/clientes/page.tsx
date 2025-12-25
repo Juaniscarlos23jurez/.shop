@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Search, Filter, ArrowUpDown, Mail, Phone, User, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
+import { Plus, Search, Filter, ArrowUpDown, Mail, Phone, User, Calendar as CalendarIcon, Loader2, CheckCircle, XCircle, Smartphone, Shield } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -19,6 +19,10 @@ interface Follower {
   customer_name: string;
   customer_email: string;
   customer_phone?: string;
+  customer_email_verified?: boolean;
+  customer_login_provider?: string;
+  customer_fcm_token?: string;
+  has_push_notifications_enabled?: boolean;
   customer_since: string;
   following_since: string;
   membership_id: number | null;
@@ -87,21 +91,15 @@ export default function ClientesPage() {
         
         console.log('Using token:', token.substring(0, 10) + '...');
         
-        const response = await api.userCompanies.getFollowers(token) as ApiResponse;
+        const response = await api.userCompanies.getFollowers(token);
         console.log('API Response:', response);
         
         if (response && response.success && response.data) {
-          const responseData = response.data as ApiResponseWrapper;
+          // The API returns data directly without the wrapper structure
+          const responseData = response.data as unknown as ApiResponseData;
           console.log('API Response Data:', responseData);
           
-          if (responseData.status === 'success') {
-            console.log('Successfully loaded followers:', responseData.data);
-            setData(responseData.data);
-          } else {
-            const errorMsg = responseData.message || response.message || 'Error al cargar los datos de los clientes';
-            console.error('API Error:', errorMsg);
-            setError(errorMsg);
-          }
+          setData(responseData);
         } else {
           const errorMsg = response?.message || 'Error al procesar la respuesta del servidor';
           console.error('API Error:', errorMsg);
@@ -338,7 +336,12 @@ export default function ClientesPage() {
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <div className="font-medium">{client.customer_name}</div>
+                          <div className="font-medium flex items-center gap-2">
+                            {client.customer_name}
+                            {client.customer_email_verified === true && (
+                              <CheckCircle className="h-4 w-4 text-green-500" />
+                            )}
+                          </div>
                           <div className="text-sm text-muted-foreground flex items-center gap-1">
                             <Mail className="h-3 w-3" />
                             {client.customer_email}
@@ -349,6 +352,24 @@ export default function ClientesPage() {
                               {client.customer_phone}
                             </div>
                           )}
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge variant="secondary" className="text-xs">
+                              {client.customer_login_provider === 'google' && '🇬 Google'}
+                              {client.customer_login_provider === 'apple' && '🍎 Apple'}
+                              {!client.customer_login_provider && '📧 Email'}
+                            </Badge>
+                            {client.customer_fcm_token ? (
+                              <Badge variant="outline" className="text-xs text-green-600 border-green-600">
+                                <Smartphone className="h-3 w-3 mr-1" />
+                                Notificaciones
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-xs text-gray-500">
+                                <XCircle className="h-3 w-3 mr-1" />
+                                Sin notificaciones
+                              </Badge>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </td>

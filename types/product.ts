@@ -12,6 +12,8 @@ export type Product = {
   locations: ProductLocation[];
   created_at?: string;
   updated_at?: string;
+  sku?: string;
+  lead_time_days?: number;
 };
 
 export type ProductLocation = {

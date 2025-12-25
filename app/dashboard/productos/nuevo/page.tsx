@@ -61,7 +61,7 @@ export default function NuevoProductoPage() {
         }
 
         // Fetch categories
-        await fetchCategories();
+        await fetchCategories(resolvedCompanyId);
       } catch (error) {
         console.error('Error:', error);
         toast({
@@ -132,11 +132,12 @@ export default function NuevoProductoPage() {
     }
   };
 
-  const fetchCategories = async () => {
-    if (!token) return;
+  const fetchCategories = async (companyIdParam?: string) => {
+    const id = companyIdParam || companyId;
+    if (!token || !id) return;
     
     try {
-      const response = await api.categories.getCategories(token);
+      const response = await api.categories.getCategories(id, token);
       setCategories(response.data || []);
     } catch (error) {
       console.error('Error fetching categories:', error);
@@ -146,7 +147,12 @@ export default function NuevoProductoPage() {
   };
 
   const handleCreateCategory = async () => {
-    if (!token || !newCategoryName.trim()) {
+    console.log('handleCreateCategory called');
+    console.log('token:', !!token);
+    console.log('companyId:', companyId);
+    console.log('newCategoryName:', newCategoryName);
+    
+    if (!token || !companyId || !newCategoryName.trim()) {
       toast({
         title: 'Error',
         description: 'El nombre de la categoría es requerido',
@@ -159,6 +165,7 @@ export default function NuevoProductoPage() {
     
     try {
       await api.categories.createCategory(
+        companyId,
         {
           name: newCategoryName,
           description: newCategoryDescription || undefined,

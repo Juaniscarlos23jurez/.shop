@@ -467,7 +467,10 @@ export const api = {
         customer_name: string;
         customer_email: string;
         customer_phone?: string;
+        customer_email_verified: boolean;
+        customer_login_provider?: string;
         customer_fcm_token?: string;
+        has_push_notifications_enabled: boolean;
         customer_profile_photo_path?: string;
         customer_since: string;
         following_since: string;
@@ -2214,8 +2217,8 @@ export const api = {
     /**
      * Get all categories
      */
-    async getCategories(token: string): Promise<CategoryListResponse> {
-      const response = await fetch(`${BASE_URL}/api/categories`, {
+    async getCategories(companyId: string | number, token: string): Promise<CategoryListResponse> {
+      const response = await fetch(`${BASE_URL}/api/companies/${companyId}/categories`, {
         method: 'GET',
         headers: getAuthHeader(token),
       });
@@ -2234,10 +2237,11 @@ export const api = {
      * Create a new category
      */
     async createCategory(
+      companyId: string | number,
       data: CategoryCreateInput,
       token: string
     ): Promise<CategoryResponse> {
-      const response = await fetch(`${BASE_URL}/api/categories`, {
+      const response = await fetch(`${BASE_URL}/api/companies/${companyId}/categories`, {
         method: 'POST',
         headers: {
           ...getAuthHeader(token),
@@ -2260,10 +2264,11 @@ export const api = {
      * Get a specific category
      */
     async getCategory(
+      companyId: string | number,
       categoryId: string | number,
       token: string
     ): Promise<CategoryResponse> {
-      const response = await fetch(`${BASE_URL}/api/categories/${categoryId}`, {
+      const response = await fetch(`${BASE_URL}/api/companies/${companyId}/categories/${categoryId}`, {
         method: 'GET',
         headers: getAuthHeader(token),
       });
@@ -2281,11 +2286,12 @@ export const api = {
      * Update a category
      */
     async updateCategory(
+      companyId: string | number,
       categoryId: string | number,
       data: CategoryUpdateInput,
       token: string
     ): Promise<CategoryResponse> {
-      const response = await fetch(`${BASE_URL}/api/categories/${categoryId}`, {
+      const response = await fetch(`${BASE_URL}/api/companies/${companyId}/categories/${categoryId}`, {
         method: 'PUT',
         headers: {
           ...getAuthHeader(token),
@@ -2307,10 +2313,11 @@ export const api = {
      * Delete a category
      */
     async deleteCategory(
+      companyId: string | number,
       categoryId: string | number,
       token: string
     ): Promise<{ status: string; message: string }> {
-      const response = await fetch(`${BASE_URL}/api/categories/${categoryId}`, {
+      const response = await fetch(`${BASE_URL}/api/companies/${companyId}/categories/${categoryId}`, {
         method: 'DELETE',
         headers: getAuthHeader(token),
       });

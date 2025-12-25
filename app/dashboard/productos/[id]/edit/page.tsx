@@ -134,7 +134,7 @@ export default function EditarProductoPage() {
         }
 
         // Fetch categories
-        await fetchCategories();
+        await fetchCategories(resolvedCompanyId);
       } catch (error) {
         console.error('Error:', error);
         toast({
@@ -188,11 +188,22 @@ export default function EditarProductoPage() {
     }
   };
 
-  const fetchCategories = async () => {
-    if (!token) return;
+  const fetchCategories = async (companyIdParam?: string) => {
+    const id = companyIdParam || companyId;
+    console.log('fetchCategories called');
+    console.log('token:', !!token);
+    console.log('companyId:', id);
+    
+    if (!token || !id) {
+      console.log('Missing token or companyId, returning early');
+      return;
+    }
     
     try {
-      const response = await api.categories.getCategories(token);
+      console.log('Fetching categories for companyId:', id);
+      
+      const response = await api.categories.getCategories(id, token);
+      console.log('Categories response:', response);
       setCategories(response.data || []);
     } catch (error) {
       console.error('Error fetching categories:', error);
@@ -202,7 +213,12 @@ export default function EditarProductoPage() {
   };
 
   const handleCreateCategory = async () => {
-    if (!token || !newCategoryName.trim()) {
+    console.log('handleCreateCategory called');
+    console.log('token:', !!token);
+    console.log('companyId:', companyId);
+    console.log('newCategoryName:', newCategoryName);
+    
+    if (!token || !companyId || !newCategoryName.trim()) {
       toast({
         title: 'Error',
         description: 'El nombre de la categoría es requerido',
@@ -215,6 +231,7 @@ export default function EditarProductoPage() {
     
     try {
       await api.categories.createCategory(
+        companyId,
         {
           name: newCategoryName,
           description: newCategoryDescription || undefined,
