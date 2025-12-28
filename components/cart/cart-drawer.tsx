@@ -114,7 +114,19 @@ export function CartDrawer({ open, onClose, locationPhone, locationName }: CartD
       >
         <div className="h-full flex flex-col">
           <SheetHeader className={`px-6 pt-6 ${isMobile ? 'pb-2' : ''}`}>
-            <SheetTitle>Carrito de Compras</SheetTitle>
+            <div className="flex items-center justify-between pr-8">
+              <SheetTitle>Carrito de Compras</SheetTitle>
+              {items.length > 0 && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={handleShareCart}
+                >
+                  <Share2 className="h-5 w-5" />
+                </Button>
+              )}
+            </div>
           </SheetHeader>
 
           <div className="flex-1 overflow-y-auto px-6 py-4">
@@ -250,21 +262,8 @@ export function CartDrawer({ open, onClose, locationPhone, locationName }: CartD
                 >
                   Proceder al Pago por WhatsApp
                 </Button>
-                <Button
-                  variant="outline"
-                  className="w-full flex items-center justify-center gap-2"
-                  onClick={handleShareCart}
-                >
-                  <Share2 className="h-4 w-4" />
-                  Compartir Carrito
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={clearCart}
-                >
-                  Vaciar Carrito
-                </Button>
+
+
               </div>
             </div>
           )}
