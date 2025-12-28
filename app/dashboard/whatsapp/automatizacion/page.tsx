@@ -44,12 +44,19 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api/api";
 import { FlowTemplate, FlowStep } from "@/types/whatsapp";
+import SetupGuard from "@/components/whatsapp/SetupGuard";
 
 export default function WhatsAppAutomatizacion() {
   const router = useRouter();
   const { user, token } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
+  const [setupLoading, setSetupLoading] = useState(true);
+  const [setupStatus, setSetupStatus] = useState({
+    step1: false,
+    token: false,
+    phone: false
+  });
   const [flows, setFlows] = useState<FlowTemplate[]>([]);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingFlow, setEditingFlow] = useState<FlowTemplate | null>(null);
@@ -63,8 +70,36 @@ export default function WhatsAppAutomatizacion() {
   const [currentStep, setCurrentStep] = useState(0);
 
   useEffect(() => {
+    fetchSetupStatus();
     fetchFlows();
   }, []);
+
+  const fetchSetupStatus = async () => {
+    if (!user?.company_id || !token) return;
+
+    try {
+      setSetupLoading(true);
+      const response = await fetch(`/api/proxy/api/companies/${user.company_id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      const result = await response.json();
+      if (result.success && result.data) {
+        const company = result.data;
+        setSetupStatus({
+          step1: Boolean(company.whatsapp_webhook_configured),
+          token: Boolean(company.has_whatsapp_access_token),
+          phone: Boolean(company.whatsapp_phone_number_id)
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching setup status:', error);
+    } finally {
+      setSetupLoading(false);
+    }
+  };
 
   const fetchFlows = async () => {
     if (!user?.company_id || !token) return;
@@ -324,10 +359,25 @@ export default function WhatsAppAutomatizacion() {
     </Card>
   );
 
-  if (loading) {
+  const setupComplete = setupStatus.step1 && setupStatus.token && setupStatus.phone;
+
+  if (loading || setupLoading) {
     return (
       <div className="flex-1 flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-green-600"></div>
+      </div>
+    );
+  }
+
+  if (!setupComplete) {
+    return (
+      <div className="flex-1 flex items-center justify-center p-8">
+        <SetupGuard
+          step1Completed={setupStatus.step1}
+          step2TokenStored={setupStatus.token}
+          step2PhoneLinked={setupStatus.phone}
+          onGoToSettings={() => router.push('/dashboard/whatsapp/configuracion')}
+        />
       </div>
     );
   }

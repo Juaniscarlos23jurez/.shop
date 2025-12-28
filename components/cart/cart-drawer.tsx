@@ -35,26 +35,26 @@ export function CartDrawer({ open, onClose, locationPhone, locationName }: CartD
 
   const handleShareCart = () => {
     if (typeof window === 'undefined' || items.length === 0) return
-    
+
     // Codificar items del carrito en la URL
     const cartData = items.map(item => ({
       id: item.id,
       q: item.quantity, // quantity abreviado para URL más corta
     }))
     const cartParam = encodeURIComponent(JSON.stringify(cartData))
-    
+
     // Obtener URL base sin query params
     const baseUrl = window.location.href.split('#')[0].split('?')[0]
     const shareUrl = `${baseUrl}?cart=${cartParam}`
-    
+
     const shareText = `Mira mi carrito de compras en ${locationName || 'esta tienda'} - Total: $${totalFormatted}`
-    
+
     const shareData: ShareData = {
       title: `Carrito de ${locationName || 'Tienda'}`,
       text: shareText,
       url: shareUrl,
     }
-    
+
     if (navigator && (navigator as any).share) {
       (navigator as any).share(shareData).catch(() => {
         // Si falla el share nativo, copiar al portapapeles
@@ -72,23 +72,27 @@ export function CartDrawer({ open, onClose, locationPhone, locationName }: CartD
     const waPhone = formatPhoneToWhatsApp(locationPhone)
 
     const lines: string[] = []
-    lines.push(`Pedido de ${customerName || 'Cliente'}`)
-    if (locationName) lines.push(`Sucursal: ${locationName}`)
+    lines.push(`👋 ¡Hola! Quisiera realizar un pedido:`)
     lines.push('')
-    lines.push('Productos:')
+    lines.push(`👤 *Cliente:* ${customerName || 'Cliente'}`)
+    if (locationName) lines.push(`📍 *Sucursal:* ${locationName}`)
+    lines.push('')
+    lines.push('📦 *Productos:*')
     for (const item of items) {
       const subtotal = (item.price * item.quantity).toFixed(2)
-      lines.push(`- ${item.name} x${item.quantity} • $${item.price.toFixed(2)} = $${subtotal}`)
+      lines.push(`• ${item.name} x${item.quantity} - $${subtotal}`)
     }
     lines.push('')
-    lines.push(`Total: $${totalFormatted}`)
-    lines.push(`Método de pago: ${paymentMethod === 'cash' ? 'Efectivo' : 'SPEI'}`)
+    lines.push(`💰 *Total:* $${totalFormatted}`)
+    lines.push(`💳 *Método de pago:* ${paymentMethod === 'cash' ? 'Efectivo' : 'SPEI'}`)
+    lines.push('')
+    lines.push('¡Muchas gracias!')
 
     const message = encodeURIComponent(lines.join('\n'))
     const url = waPhone
       ? `https://wa.me/${waPhone}?text=${message}`
       : `https://wa.me/?text=${message}`
-    
+
     if (typeof window !== 'undefined') {
       window.open(url, '_blank')
     }
@@ -96,7 +100,7 @@ export function CartDrawer({ open, onClose, locationPhone, locationName }: CartD
 
   return (
     <Sheet open={open} onOpenChange={(isOpen) => { if (!isOpen) onClose() }}>
-      <SheetContent 
+      <SheetContent
         side={isMobile ? 'bottom' as const : 'right' as const}
         className={
           isMobile
@@ -109,7 +113,7 @@ export function CartDrawer({ open, onClose, locationPhone, locationName }: CartD
           <SheetHeader className={`px-6 pt-6 ${isMobile ? 'pb-2' : ''}`}>
             <SheetTitle>Carrito de Compras</SheetTitle>
           </SheetHeader>
-          
+
           <div className="flex-1 overflow-y-auto px-6 py-4">
             {items.length === 0 ? (
               <div className="text-center text-gray-500 py-8">
@@ -208,8 +212,8 @@ export function CartDrawer({ open, onClose, locationPhone, locationName }: CartD
                 <p>${totalFormatted}</p>
               </div>
               <div className="space-y-2">
-                <Button 
-                  className="w-full bg-emerald-500 hover:bg-emerald-600 text-white" 
+                <Button
+                  className="w-full bg-emerald-500 hover:bg-emerald-600 text-white"
                   onClick={() => {
                     if (typeof window !== 'undefined' && (window as any).gtag) {
                       (window as any).gtag('event', 'click_proceder_pago_whatsapp', {

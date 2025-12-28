@@ -47,6 +47,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api/api";
+import SetupGuard from "@/components/whatsapp/SetupGuard";
 
 interface Campaign {
   id: string;
@@ -73,6 +74,12 @@ export default function WhatsAppCampanas() {
   const { user, token } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
+  const [setupLoading, setSetupLoading] = useState(true);
+  const [setupStatus, setSetupStatus] = useState({
+    step1: false,
+    token: false,
+    phone: false,
+  });
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [templates, setTemplates] = useState<WhatsAppTemplate[]>([]);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -86,9 +93,37 @@ export default function WhatsAppCampanas() {
   });
 
   useEffect(() => {
+    fetchSetupStatus();
     fetchCampaigns();
     fetchTemplates();
   }, []);
+
+  const fetchSetupStatus = async () => {
+    if (!user?.company_id || !token) return;
+
+    try {
+      setSetupLoading(true);
+      const response = await fetch(`/api/proxy/api/companies/${user.company_id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const result = await response.json();
+      if (result.success && result.data) {
+        const company = result.data;
+        setSetupStatus({
+          step1: Boolean(company.whatsapp_webhook_configured),
+          token: Boolean(company.has_whatsapp_access_token),
+          phone: Boolean(company.whatsapp_phone_number_id),
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching setup status:', error);
+    } finally {
+      setSetupLoading(false);
+    }
+  };
 
   const fetchCampaigns = async () => {
     if (!user?.company_id || !token) return;
@@ -403,10 +438,25 @@ export default function WhatsAppCampanas() {
     </Card>
   );
 
-  if (loading) {
+  const setupComplete = setupStatus.step1 && setupStatus.token && setupStatus.phone;
+
+  if (loading || setupLoading) {
     return (
       <div className="flex-1 flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-green-600"></div>
+      </div>
+    );
+  }
+
+  if (!setupComplete) {
+    return (
+      <div className="flex-1 flex items-center justify-center p-8">
+        <SetupGuard
+          step1Completed={setupStatus.step1}
+          step2TokenStored={setupStatus.token}
+          step2PhoneLinked={setupStatus.phone}
+          onGoToSettings={() => router.push('/dashboard/whatsapp/configuracion')}
+        />
       </div>
     );
   }
@@ -517,7 +567,11 @@ export default function WhatsAppCampanas() {
           <CardContent>
             <div className="text-2xl font-bold">{campaigns.length}</div>
             <p className="text-xs text-muted-foreground">
-              {campaigns.filter(c => c.status === 'active').length} activas
+              {
+                campaigns.filter((c) => ['draft', 'scheduled', 'sending'].includes(c.status))
+                  .length
+              }{" "}
+              activas
             </p>
           </CardContent>
         </Card>

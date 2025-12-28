@@ -23,6 +23,7 @@ interface AppliedCoupon extends Coupon {
 }
 
 type PaymentMethod = 'cash' | 'card' | 'transfer' | 'points';
+type DeliveryMethod = 'pickup' | 'delivery';
 
 interface CustomerPoints {
   pointsEarned: number;
@@ -59,6 +60,7 @@ interface PaymentModalProps {
     userId?: string;
     pointsEarned?: number;
     note?: string;
+    deliveryMethod: DeliveryMethod;
   }) => void;
 }
 
@@ -75,6 +77,7 @@ export function PaymentModal({ isOpen, onClose, total, onPaymentComplete }: Paym
   const { toast } = useToast();
   const { token, user } = useAuth();
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash');
+  const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>('pickup');
   const [cashAmount, setCashAmount] = useState('');
   const [change, setChange] = useState(0);
   const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
@@ -108,10 +111,10 @@ export function PaymentModal({ isOpen, onClose, total, onPaymentComplete }: Paym
         console.log('PaymentModal: No token available');
         return;
       }
-      
+
       // Try to get company_id from multiple sources
       let resolvedCompanyId: string | number | undefined = user?.company_id as any;
-      
+
       if (!resolvedCompanyId) {
         console.log('PaymentModal: No company_id in user, trying to fetch from API');
         try {
@@ -131,18 +134,18 @@ export function PaymentModal({ isOpen, onClose, total, onPaymentComplete }: Paym
       } else {
         setCompanyId(resolvedCompanyId);
       }
-      
+
       if (!resolvedCompanyId) {
         console.log('PaymentModal: Could not resolve company_id');
         return;
       }
-      
+
       // Fetch point rules
       try {
         console.log('PaymentModal: Fetching point rules for company:', resolvedCompanyId);
         const response = await pointRulesApi.getPointRules(resolvedCompanyId, token);
         console.log('PaymentModal: Point rules response:', response);
-        
+
         if (response.success && response.data) {
           setPointRules(response.data);
           console.log('PaymentModal: Point rules loaded:', response.data);
@@ -168,7 +171,7 @@ export function PaymentModal({ isOpen, onClose, total, onPaymentComplete }: Paym
           try {
             setIsLoadingCoupons(true);
             const response = await api.coupons.getCoupons(String(companyId), token);
-            
+
             if (response.success && response.data?.data?.data) {
               // Filter only public, active coupons
               const publicCoupons = response.data.data.data.filter((coupon: Coupon) => {
@@ -198,7 +201,7 @@ export function PaymentModal({ isOpen, onClose, total, onPaymentComplete }: Paym
         setIsLoadingCoupons(true);
         console.log('PaymentModal: Fetching user coupons for customer:', customer.id);
         const response = await api.coupons.getUserCoupons(String(companyId), String(customer.id), token);
-        
+
         if (response.success && response.data?.coupons) {
           setCoupons(response.data.coupons);
           console.log('PaymentModal: User coupons loaded:', response.data.coupons);
@@ -225,7 +228,7 @@ export function PaymentModal({ isOpen, onClose, total, onPaymentComplete }: Paym
       setPointsEarned(calculatePoints(selectedCoupon ? discountedTotal : total));
     }
   }, [customer, total, pointRules, selectedCoupon, discountedTotal]);
-  
+
   // Update discounted total when total or selected coupon changes
   useEffect(() => {
     if (selectedCoupon) {
@@ -238,19 +241,19 @@ export function PaymentModal({ isOpen, onClose, total, onPaymentComplete }: Paym
       setDiscountedTotal(total);
     }
   }, [total, selectedCoupon?.id]); // Only depend on the coupon ID, not the entire coupon object
-  
+
   const calculateDiscountedTotal = (coupon: Coupon, currentTotal: number) => {
     let discount = 0;
-    
+
     if (coupon.type === 'fixed_amount' && coupon.discount_amount) {
-      discount = typeof coupon.discount_amount === 'string' 
-        ? parseFloat(coupon.discount_amount) 
+      discount = typeof coupon.discount_amount === 'string'
+        ? parseFloat(coupon.discount_amount)
         : coupon.discount_amount;
     } else if (coupon.type === 'percentage' && coupon.discount_percentage) {
       discount = (currentTotal * coupon.discount_percentage) / 100;
     }
     // For free_shipping, we don't modify the total here as it's handled separately
-    
+
     return Math.max(0, currentTotal - discount);
   };
 
@@ -281,16 +284,16 @@ export function PaymentModal({ isOpen, onClose, total, onPaymentComplete }: Paym
 
       if (response.success && response.data?.valid && response.data.coupon) {
         const { coupon, discount_amount, final_subtotal } = response.data;
-        
+
         setSelectedCoupon({
           ...coupon,
           discountAmount: discount_amount || 0,
           finalAmount: final_subtotal || total
         });
-        
+
         setDiscountedTotal(final_subtotal || total);
         setCouponCode('');
-        
+
         toast({
           title: 'Cupón aplicado',
           description: `Se aplicó el cupón ${code} con un descuento de $${(discount_amount || 0).toFixed(2)}`,
@@ -318,11 +321,11 @@ export function PaymentModal({ isOpen, onClose, total, onPaymentComplete }: Paym
   const applyCoupon = async (coupon: Coupon) => {
     await applyCouponByCode(coupon.code);
   };
-  
+
   const removeCoupon = useCallback(() => {
     setSelectedCoupon(null);
     setDiscountedTotal(total);
-    
+
     toast({
       title: 'Cupón eliminado',
       description: 'El cupón ha sido eliminado',
@@ -333,20 +336,20 @@ export function PaymentModal({ isOpen, onClose, total, onPaymentComplete }: Paym
     console.log('🔵 PaymentModal: handleCustomerSelected called');
     console.log('🔵 Selected customer:', selectedCustomer);
     console.log('🔵 Customer points:', selectedCustomer.points);
-    
+
     setCustomer(selectedCustomer);
     setCustomerPointsBalance(selectedCustomer.points);
     const points = calculatePoints(total);
     setPointsEarned(points);
-    
+
     console.log('🔵 Customer state set with points:', selectedCustomer.points);
     console.log('🔵 Points to be earned:', points);
-    
+
     toast({
       title: 'Cliente seleccionado',
       description: `${selectedCustomer.name} - ${selectedCustomer.points} puntos actuales. Ganará ${points.toFixed(1)} puntos`,
     });
-    
+
     // Optionally fetch fresh data in the background
     if (token) {
       setIsLoadingPoints(true);
@@ -422,7 +425,7 @@ export function PaymentModal({ isOpen, onClose, total, onPaymentComplete }: Paym
 
   const calculatePoints = (total: number): number => {
     if (pointRules.length === 0 || total <= 0) return 0;
-    
+
     // Find the active rule (you can add date validation here if needed)
     const activeRule = pointRules.find(rule => {
       const now = new Date();
@@ -430,18 +433,18 @@ export function PaymentModal({ isOpen, onClose, total, onPaymentComplete }: Paym
       const endsAt = new Date(rule.ends_at);
       return now >= startsAt && now <= endsAt;
     });
-    
+
     if (!activeRule) {
       console.log('No active point rule found');
       return 0;
     }
-    
+
     // Calculate points based on the rule: (total / spend_amount) * points
     const spendAmount = parseFloat(activeRule.spend_amount);
     const earnedPoints = (total / spendAmount) * activeRule.points;
-    
+
     console.log(`Calculating points: $${total} / $${spendAmount} * ${activeRule.points} = ${earnedPoints.toFixed(1)} points`);
-    
+
     // Return with one decimal place
     return Math.round(earnedPoints * 10) / 10;
   };
@@ -464,15 +467,15 @@ export function PaymentModal({ isOpen, onClose, total, onPaymentComplete }: Paym
 
   const handleSubmit = async () => {
     const currentTotal = selectedCoupon ? discountedTotal : total;
-    console.log('PaymentModal: handleSubmit called', { 
-      paymentMethod, 
-      customer, 
+    console.log('PaymentModal: handleSubmit called', {
+      paymentMethod,
+      customer,
       total,
       discountedTotal,
       selectedCoupon,
       currentTotal
     });
-    
+
     if (paymentMethod === 'cash' && (!cashAmount || parseFloat(cashAmount) < currentTotal)) {
       toast({
         title: 'Error',
@@ -491,7 +494,7 @@ export function PaymentModal({ isOpen, onClose, total, onPaymentComplete }: Paym
         });
         return;
       }
-      
+
       if (customer.points < total) {
         toast({
           title: 'Error',
@@ -517,6 +520,7 @@ export function PaymentModal({ isOpen, onClose, total, onPaymentComplete }: Paym
         userId: customer?.id,
         pointsEarned: paymentMethod === 'points' ? -currentTotal : (customer ? pointsEarned : undefined),
         note: note || undefined,
+        deliveryMethod: deliveryMethod,
         couponCode: selectedCoupon?.code,
         coupon: selectedCoupon ? {
           id: selectedCoupon.id,
@@ -525,15 +529,16 @@ export function PaymentModal({ isOpen, onClose, total, onPaymentComplete }: Paym
           type: selectedCoupon.type
         } : undefined
       };
-      
+
       console.log('PaymentModal: Calling onPaymentComplete with:', paymentData);
-      
+
       await onPaymentComplete(paymentData);
-      
+
       console.log('PaymentModal: onPaymentComplete finished successfully');
-      
+
       // Reset form
       setPaymentMethod('cash');
+      setDeliveryMethod('pickup');
       setCashAmount('');
       setChange(0);
       setCustomer(null);
@@ -569,7 +574,7 @@ export function PaymentModal({ isOpen, onClose, total, onPaymentComplete }: Paym
         <div className="space-y-4">
           <div className="space-y-2">
             <Label className="text-base font-semibold">Seleccionar Cliente</Label>
-            <CustomerSearch 
+            <CustomerSearch
               onSelect={handleCustomerSelected}
               onClear={handleCustomerCleared}
               selectedCustomer={customer}
@@ -646,8 +651,8 @@ export function PaymentModal({ isOpen, onClose, total, onPaymentComplete }: Paym
         <div className="grid gap-4 py-4">
           <div className="space-y-2">
             <Label>Método de Pago</Label>
-            <RadioGroup 
-              value={paymentMethod} 
+            <RadioGroup
+              value={paymentMethod}
               onValueChange={(value) => setPaymentMethod(value as PaymentMethod)}
               className="grid grid-cols-4 gap-4 mt-2"
             >
@@ -679,10 +684,10 @@ export function PaymentModal({ isOpen, onClose, total, onPaymentComplete }: Paym
                 </Label>
               </div>
               <div>
-                <RadioGroupItem 
-                  value="points" 
-                  id="points" 
-                  className="peer sr-only" 
+                <RadioGroupItem
+                  value="points"
+                  id="points"
+                  className="peer sr-only"
                   disabled={!customer || customer.points < total}
                 />
                 <Label
@@ -695,6 +700,34 @@ export function PaymentModal({ isOpen, onClose, total, onPaymentComplete }: Paym
                       {customer.points} pts
                     </span>
                   )}
+                </Label>
+              </div>
+            </RadioGroup>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Tipo de Orden</Label>
+            <RadioGroup
+              value={deliveryMethod}
+              onValueChange={(value) => setDeliveryMethod(value as DeliveryMethod)}
+              className="grid grid-cols-2 gap-4 mt-2"
+            >
+              <div>
+                <RadioGroupItem value="pickup" id="pickup" className="peer sr-only" />
+                <Label
+                  htmlFor="pickup"
+                  className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer text-center"
+                >
+                  <span>Recoger en tienda</span>
+                </Label>
+              </div>
+              <div>
+                <RadioGroupItem value="delivery" id="delivery" className="peer sr-only" />
+                <Label
+                  htmlFor="delivery"
+                  className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer text-center"
+                >
+                  <span>Enviar a domicilio</span>
                 </Label>
               </div>
             </RadioGroup>
@@ -757,7 +790,7 @@ export function PaymentModal({ isOpen, onClose, total, onPaymentComplete }: Paym
             <div className="flex items-center justify-between">
               <Label className="font-normal">Cupón de descuento</Label>
             </div>
-            
+
             {!selectedCoupon ? (
               <div className="space-y-2">
                 {/* Manual coupon code input */}
@@ -777,7 +810,7 @@ export function PaymentModal({ isOpen, onClose, total, onPaymentComplete }: Paym
                     {isValidatingCoupon ? 'Validando...' : 'Aplicar'}
                   </Button>
                 </div>
-                
+
                 {/* Available coupons dropdown */}
                 {coupons.length > 0 && (
                   <div className="relative">
@@ -789,8 +822,8 @@ export function PaymentModal({ isOpen, onClose, total, onPaymentComplete }: Paym
                     </div>
                   </div>
                 )}
-                
-                <Select 
+
+                <Select
                   onValueChange={(value) => {
                     const coupon = coupons.find(c => c.id === parseInt(value));
                     if (coupon) applyCoupon(coupon);
@@ -803,8 +836,8 @@ export function PaymentModal({ isOpen, onClose, total, onPaymentComplete }: Paym
                   <SelectContent>
                     {coupons.length > 0 ? (
                       coupons.map((coupon) => (
-                        <SelectItem 
-                          key={coupon.id} 
+                        <SelectItem
+                          key={coupon.id}
                           value={coupon.id.toString()}
                           className="flex flex-col items-start"
                         >
@@ -839,9 +872,9 @@ export function PaymentModal({ isOpen, onClose, total, onPaymentComplete }: Paym
                     <span className="ml-1">-${selectedCoupon.discountAmount.toFixed(2)}</span>
                   )}
                 </div>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={removeCoupon}
                   className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
                 >
@@ -849,20 +882,20 @@ export function PaymentModal({ isOpen, onClose, total, onPaymentComplete }: Paym
                 </Button>
               </div>
             )}
-            
+
             <div className="border-t pt-4 space-y-2">
               <div className="flex justify-between">
                 <span>Subtotal:</span>
                 <span>${total.toFixed(2)}</span>
               </div>
-              
+
               {selectedCoupon && selectedCoupon.discountAmount > 0 && (
                 <div className="flex justify-between text-green-600 dark:text-green-400">
                   <span>Descuento ({selectedCoupon.code}):</span>
                   <span>-${selectedCoupon.discountAmount.toFixed(2)}</span>
                 </div>
               )}
-              
+
               <div className="flex justify-between font-medium pt-2 border-t">
                 <span>Total a Pagar:</span>
                 <div className="flex items-center gap-2">
@@ -884,7 +917,7 @@ export function PaymentModal({ isOpen, onClose, total, onPaymentComplete }: Paym
           <Button variant="outline" onClick={onClose}>
             Cancelar
           </Button>
-          <Button 
+          <Button
             onClick={handleSubmit}
             disabled={
               (paymentMethod === 'cash' && (isNaN(parseFloat(cashAmount)) || parseFloat(cashAmount) < (selectedCoupon ? discountedTotal : total))) ||

@@ -24,12 +24,19 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api/api";
+import SetupGuard from "@/components/whatsapp/SetupGuard";
 
 export default function WhatsAppDashboard() {
   const router = useRouter();
   const { user, token } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
+  const [setupLoading, setSetupLoading] = useState(true);
+  const [setupStatus, setSetupStatus] = useState({
+    step1: false,
+    token: false,
+    phone: false,
+  });
   const [testingConnection, setTestingConnection] = useState(false);
   const [stats, setStats] = useState({
     messagesSentToday: 0,
@@ -43,8 +50,36 @@ export default function WhatsAppDashboard() {
   });
 
   useEffect(() => {
+    fetchSetupStatus();
     fetchDashboardData();
   }, []);
+
+  const fetchSetupStatus = async () => {
+    if (!user?.company_id || !token) return;
+
+    try {
+      setSetupLoading(true);
+      const response = await fetch(`/api/proxy/api/companies/${user.company_id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const result = await response.json();
+      if (result.success && result.data) {
+        const company = result.data;
+        setSetupStatus({
+          step1: Boolean(company.whatsapp_webhook_configured),
+          token: Boolean(company.has_whatsapp_access_token),
+          phone: Boolean(company.whatsapp_phone_number_id),
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching setup status:', error);
+    } finally {
+      setSetupLoading(false);
+    }
+  };
 
   const fetchDashboardData = async () => {
     if (!user?.company_id || !token) return;
@@ -142,10 +177,25 @@ export default function WhatsAppDashboard() {
     </Card>
   );
 
-  if (loading) {
+  const setupComplete = setupStatus.step1 && setupStatus.token && setupStatus.phone;
+
+  if (loading || setupLoading) {
     return (
       <div className="flex-1 flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-green-600"></div>
+      </div>
+    );
+  }
+
+  if (!setupComplete) {
+    return (
+      <div className="flex-1 flex items-center justify-center p-8">
+        <SetupGuard
+          step1Completed={setupStatus.step1}
+          step2TokenStored={setupStatus.token}
+          step2PhoneLinked={setupStatus.phone}
+          onGoToSettings={() => router.push('/dashboard/whatsapp/configuracion')}
+        />
       </div>
     );
   }
