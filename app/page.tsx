@@ -1222,6 +1222,107 @@ export default function HomePage() {
           </div>
         </section>
 
+        {/* WhatsApp Experience Section */}
+        <section id="whatsapp-orders" className="py-24 bg-white overflow-hidden">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-20">
+              <div className="inline-flex items-center space-x-2 bg-green-100 text-green-700 text-sm font-bold px-4 py-2 rounded-full mb-6">
+                <span>💬</span>
+                <span>VENTAS POR WHATSAPP</span>
+              </div>
+              <h2 className="text-4xl md:text-5xl font-black text-[#0f172a] mb-6">
+                Tus clientes compran, <br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-500 to-emerald-600">
+                  tú recibes el pedido por WhatsApp
+                </span>
+              </h2>
+              <p className="text-[#64748b] text-xl max-w-2xl mx-auto">
+                Olvídate de tomar pedidos manualmente. Ofrece una experiencia de compra profesional que termina directamente en tu chat.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
+              {/* Image 1: Cart/Checkout */}
+              <div className="relative group">
+                <div className="absolute -top-10 -left-10 w-40 h-40 bg-green-100 rounded-full blur-3xl opacity-50 transition-all duration-500 group-hover:scale-150"></div>
+                <div className="relative mx-auto h-[580px] w-[280px] sm:h-[640px] sm:w-[320px] rounded-[3.5rem] border-[12px] border-gray-900 bg-black shadow-2xl overflow-hidden transform -rotate-1 hover:rotate-0 transition-all duration-500 hover:scale-[1.02]">
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-7 bg-gray-900 rounded-b-3xl z-20 flex items-center justify-center">
+                    <div className="w-16 h-1 bg-gray-800 rounded-full"></div>
+                  </div>
+                  <div className="absolute inset-0 bg-white">
+                    <img
+                      src="/IMG_0375.PNG"
+                      alt="Carrito de compras y métodos de pago"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                </div>
+                <div className="mt-8 text-center px-4">
+                  <h3 className="text-2xl font-bold text-[#0f172a] mb-3">1. El cliente personaliza su pedido</h3>
+                  <p className="text-[#64748b] leading-relaxed">
+                    Desde tu catálogo digital, el cliente agrega productos al carrito, elige si prefiere entrega a domicilio o recoger en tienda, y selecciona su método de pago.
+                  </p>
+                </div>
+              </div>
+
+              {/* Image 2: WhatsApp Chat */}
+              <div className="relative group">
+                <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-blue-100 rounded-full blur-3xl opacity-50 transition-all duration-500 group-hover:scale-150"></div>
+                <div className="relative mx-auto h-[580px] w-[280px] sm:h-[640px] sm:w-[320px] rounded-[3.5rem] border-[12px] border-gray-900 bg-black shadow-2xl overflow-hidden transform rotate-1 hover:rotate-0 transition-all duration-500 hover:scale-[1.02]">
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-7 bg-gray-900 rounded-b-3xl z-20 flex items-center justify-center">
+                    <div className="w-16 h-1 bg-gray-800 rounded-full"></div>
+                  </div>
+                  <div className="absolute inset-0 bg-white">
+                    <img
+                      src="/img_0136-2.png"
+                      alt="Conversación de WhatsApp con el pedido"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                </div>
+                <div className="mt-8 text-center px-4">
+                  <h3 className="text-2xl font-bold text-[#0f172a] mb-3">2. Tú recibes el pedido listo</h3>
+                  <p className="text-[#64748b] leading-relaxed">
+                    Recibes automáticamente un mensaje de WhatsApp con el resumen detallado, ubicación de Google Maps (si es envío) y el comprobante de pago adjunto.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-24 grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="bg-gray-50 p-8 rounded-3xl border border-gray-100 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                <div className="w-12 h-12 bg-green-100 rounded-2xl flex items-center justify-center mb-6">
+                  <svg className="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h4 className="text-xl font-bold text-[#0f172a] mb-3">Ahorra tiempo valioso</h4>
+                <p className="text-[#64748b]">Elimina el "pimponeo" de mensajes. Recibe toda la información necesaria en un solo envío y procesa más pedidos en menos tiempo.</p>
+              </div>
+
+              <div className="bg-gray-50 p-8 rounded-3xl border border-gray-100 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                <div className="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center mb-6">
+                  <svg className="w-6 h-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h4 className="text-xl font-bold text-[#0f172a] mb-3">Precisión total</h4>
+                <p className="text-[#64748b]">Los pedidos llegan sin errores. Sin confusiones de productos, precios o direcciones. Lo que el cliente ve es lo que tú recibes.</p>
+              </div>
+
+              <div className="bg-gray-50 p-8 rounded-3xl border border-gray-100 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                <div className="w-12 h-12 bg-purple-100 rounded-2xl flex items-center justify-center mb-6">
+                  <svg className="w-6 h-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                  </svg>
+                </div>
+                <h4 className="text-xl font-bold text-[#0f172a] mb-3">Imagen Profesional</h4>
+                <p className="text-[#64748b]">Tus clientes perciben un negocio moderno y organizado, lo que genera confianza y fomenta la recompra inmediata.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Plans Section */}
         <section id="pricing" className="py-16 bg-gray-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -1418,7 +1519,7 @@ export default function HomePage() {
         <section id="custom-plan" className="py-20 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white relative overflow-hidden">
           {/* Background Pattern */}
           <div className="absolute inset-0 bg-grid-white/5 [mask-image:linear-gradient(0deg,white,transparent)]"></div>
-          
+
           <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
               <div className="inline-flex items-center space-x-2 bg-purple-500/20 text-purple-200 text-base font-medium px-4 py-2 rounded-full mb-6 backdrop-blur-sm border border-purple-400/20">
@@ -1430,7 +1531,7 @@ export default function HomePage() {
                 <span className="block text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">Personalizado</span>
               </h2>
               <p className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
-                Todo el poder de Fynlink+ pero con tu propia marca, tu propia app y sistema independiente. 
+                Todo el poder de Fynlink+ pero con tu propia marca, tu propia app y sistema independiente.
                 Perfecto para franquicias y empresas que quieren completa autonomía.
               </p>
             </div>
@@ -1454,7 +1555,7 @@ export default function HomePage() {
                       </div>
                     </div>
                   </div>
-                  
+
                   {/* Background Phone */}
                   <div className="absolute -right-8 top-8 w-64 h-[520px] bg-black rounded-[3rem] p-3 shadow-xl opacity-60 transform -rotate-6">
                     <div className="absolute top-3 left-1/2 -translate-x-1/2 w-28 h-5 bg-black rounded-full flex items-center justify-center z-10">
