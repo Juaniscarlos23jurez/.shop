@@ -1,32 +1,45 @@
 "use client";
 
 import { 
-  Home, 
-  BarChart3, 
-  Package, 
-  MessageSquare, 
-  Users, 
-  PieChart, 
-  Settings, 
-  Activity, 
-  Building2, 
-  GitBranch,
-  Ticket as TicketIcon,
-  Gift as GiftIcon,
-  Bell as BellIcon,
-  Crown as CrownIcon,
+  Menu,
+  X,
+  ChevronDown,
+  Home,
+  Users,
+  UserCheck,
+  Building,
+  FileText,
+  TrendingUp,
+  CreditCard,
+  Settings,
+  Package,
   ShoppingCart,
+  MessageSquare,
+  BarChart3,
+  Bot,
+  Megaphone,
+  SettingsIcon,
+  PieChart,
+  Store,
+  Receipt,
+  DollarSign,
+  Bell,
+  User,
+  LogOut,
+  ChevronLeft,
+  Shield,
   Clock4,
   CreditCard as CreditCardIcon,
-  ChevronLeft, // Import ChevronLeft icon
-  ChevronDown, // Import ChevronDown icon
-  Phone as PhoneIcon, // Rename Phone to PhoneIcon to avoid conflict
-  Smartphone, // Import Smartphone icon
-  Megaphone, // Import Megaphone icon
-  Book, // Import Book icon
-  Store, // Import Store icon
+  Phone as PhoneIcon,
+  Ticket as TicketIcon,
+  Gift as GiftIcon,
+  Crown as CrownIcon,
+  Smartphone,
+  Book,
+  Building2,
+  GitBranch,
+  Activity
 } from 'lucide-react';
-import { LogOut as LogOutIcon } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
@@ -55,7 +68,6 @@ const adminSidebarItems: SidebarItem[] = [
   { icon: Package, label: "Stock", href: "/dashboard/stock" },
   { icon: ShoppingCart, label: "Punto de Venta", href: "/dashboard/pos" },
   { icon: Clock4, label: "Órdenes Pendientes", href: "/dashboard/ordenes-pendientes" },
- //{ icon: MessageSquare, label: "WhatsApp", href: "/dashboard/whatsapp" },
   { icon: CreditCardIcon, label: "Metodos de cobro", href: "/dashboard/stripe" },
 
   // Clientes Section
@@ -95,10 +107,26 @@ const adminSidebarItems: SidebarItem[] = [
     isCollapsible: true, // Custom property to mark as collapsible
     subItems: [
       { icon: TicketIcon, label: "Promociones", href: "/dashboard/promociones" },
-      { icon: BellIcon, label: "Notificaciones", href: "/dashboard/notificaciones" },
+      { icon: Bell, label: "Notificaciones", href: "/dashboard/notificaciones" },
       { icon: Megaphone, label: "Anuncios", href: "/dashboard/anuncios" }, // Changed from MessageSquare
       { icon: Book, label: "Comentarios", href: "/dashboard/comentarios" }, // Changed from MessageSquare
      ]
+  },
+
+  // WhatsApp Section
+  { 
+    icon: MessageSquare, 
+    label: "WhatsApp", 
+    href: "#", 
+    isCollapsible: true, 
+    subItems: [
+      { icon: BarChart3, label: "Dashboard", href: "/dashboard/whatsapp" },
+      { icon: MessageSquare, label: "Inbox", href: "/dashboard/whatsapp/inbox" },
+      { icon: Bot, label: "Automatización", href: "/dashboard/whatsapp/automatizacion" },
+      { icon: Megaphone, label: "Campañas", href: "/dashboard/whatsapp/campanas" },
+      { icon: SettingsIcon, label: "Configuración", href: "/dashboard/whatsapp/configuracion" },
+      { icon: Shield, label: "Monitor", href: "/dashboard/whatsapp/monitor" },
+    ]
   },
 
   // Componentes playground
@@ -155,6 +183,14 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
     const appSection = adminSidebarItems.find(item => item.label === 'App');
     if (appSection && appSection.subItems) {
       return appSection.subItems.some(subItem => pathname.startsWith(subItem.href));
+    }
+    return false;
+  });
+
+  const [isWhatsAppSectionExpanded, setIsWhatsAppSectionExpanded] = useState(() => {
+    const whatsappSection = adminSidebarItems.find(item => item.label === 'WhatsApp');
+    if (whatsappSection && whatsappSection.subItems) {
+      return whatsappSection.subItems.some(subItem => pathname.startsWith(subItem.href));
     }
     return false;
   });
@@ -366,15 +402,13 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
             return (
               <div key={index} className="space-y-2">
                 <Button
-                  variant={isAnySubItemActive ? "default" : "ghost"}
-                  className={`w-full justify-start h-11 ${isCollapsed ? 'px-2' : ''} ${ 
-                    isAnySubItemActive
-                      ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/25 hover:bg-emerald-600"
-                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
-                  }`}
+                  variant="ghost"
+                  className={`w-full justify-start h-11 ${isCollapsed ? 'px-2' : ''} text-slate-600 hover:text-slate-900 hover:bg-slate-100`}
                   onClick={() => {
                     if (item.label === 'App') {
                       setIsAppSectionExpanded(!isAppSectionExpanded);
+                    } else if (item.label === 'WhatsApp') {
+                      setIsWhatsAppSectionExpanded(!isWhatsAppSectionExpanded);
                     } else if (item.label === 'Clientes') {
                       setIsClientesSectionExpanded(!isClientesSectionExpanded);
                     } else if (item.label === 'Empleados') {
@@ -391,6 +425,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
                   {!isCollapsed && (
                     <ChevronDown className={`ml-auto h-4 w-4 transition-transform duration-200 ${ 
                       (item.label === 'App' && isAppSectionExpanded) || 
+                      (item.label === 'WhatsApp' && isWhatsAppSectionExpanded) ||
                       (item.label === 'Clientes' && isClientesSectionExpanded) ||
                       (item.label === 'Empleados' && isEmpleadosSectionExpanded) ||
                       (item.label === 'Compañía' && isCompaniaSectionExpanded) ||
@@ -401,13 +436,15 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
                 </Button>
                 {!isCollapsed && 
                  ((item.label === 'App' && isAppSectionExpanded) || 
+                  (item.label === 'WhatsApp' && isWhatsAppSectionExpanded) ||
                   (item.label === 'Clientes' && isClientesSectionExpanded) ||
                   (item.label === 'Empleados' && isEmpleadosSectionExpanded) ||
                   (item.label === 'Compañía' && isCompaniaSectionExpanded) ||
                   (item.label === 'Reportes' && isReportesSectionExpanded)) && (
                   <div className="ml-6 space-y-2">
                     {item.subItems?.map((subItem, subIndex) => {
-                      const isSubItemActive = pathname.startsWith(subItem.href);
+                      const isSubItemActive = pathname === subItem.href || 
+                           (subItem.href !== '/dashboard/whatsapp' && pathname.startsWith(subItem.href));
                       return (
                         <Button
                           key={subIndex}
@@ -450,7 +487,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
               )}
               {!isCollapsed && item.href === '/dashboard/ordenes-pendientes' && hasNewOrderNotification && (
                 <span className="ml-2">
-                  <BellIcon className="h-4 w-4 text-emerald-600 animate-pulse" />
+                  <Bell className="h-4 w-4 text-emerald-600 animate-pulse" />
                 </span>
               )}
               {!isCollapsed && item.href === '/dashboard/ordenes-pendientes' && pendingOrdersCount && pendingOrdersCount > 0 && (
@@ -463,9 +500,9 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
                   title={isNotificationMuted ? "Activar sonido" : "Silenciar notificaciones"}
                 >
                   {isNotificationMuted ? (
-                    <BellIcon className="h-4 w-4 text-slate-400" />
+                    <Bell className="h-4 w-4 text-slate-400" />
                   ) : (
-                    <BellIcon className="h-4 w-4 text-emerald-600" />
+                    <Bell className="h-4 w-4 text-emerald-600" />
                   )}
                 </span>
               )}
@@ -501,7 +538,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
             router.push('/auth/login');
           }}
         >
-          <LogOutIcon className={`h-4 w-4 ${isCollapsed ? 'mr-0' : 'mr-2'}`} />
+          <LogOut className="h-4 w-4" />
           <span className={`${isCollapsed ? 'hidden' : ''}`}>Cerrar sesión</span>
         </Button>
       </div>

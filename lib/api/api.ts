@@ -2581,6 +2581,331 @@ export const pointRulesApi = {
       }).then(handleResponse);
     },
   },
+
+  // WhatsApp API
+  whatsapp: {
+    // Dashboard and Stats
+    async getStats(
+      companyId: string,
+      token: string,
+      period?: '24h' | '7d' | '30d'
+    ): Promise<ApiResponse<any>> {
+      const params = period ? `?period=${period}` : '';
+      return fetch(`/api/proxy/api/whatsapp/companies/${companyId}/stats${params}`, {
+        headers: getAuthHeader(token),
+      }).then(handleResponse);
+    },
+
+    // Business Profile
+    async getBusinessProfile(
+      companyId: string,
+      token: string
+    ): Promise<ApiResponse<any>> {
+      return fetch(`/api/proxy/api/whatsapp/companies/${companyId}/business-profile`, {
+        headers: getAuthHeader(token),
+      }).then(handleResponse);
+    },
+
+    // Settings
+    async getSettings(
+      companyId: string,
+      token: string
+    ): Promise<ApiResponse<any>> {
+      return fetch(`/api/proxy/api/whatsapp/companies/${companyId}/settings`, {
+        headers: getAuthHeader(token),
+      }).then(handleResponse);
+    },
+
+    async updateSettings(
+      companyId: string,
+      data: {
+        access_token?: string;
+        phone_id?: string;
+        webhook_url?: string;
+        verify_token?: string;
+      },
+      token: string
+    ): Promise<ApiResponse<any>> {
+      return fetch(`/api/proxy/api/whatsapp/companies/${companyId}/settings`, {
+        method: 'PUT',
+        headers: {
+          ...getAuthHeader(token),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      }).then(handleResponse);
+    },
+
+    async syncTemplates(
+      companyId: string,
+      token: string
+    ): Promise<ApiResponse<any>> {
+      return fetch(`/api/proxy/api/whatsapp/companies/${companyId}/settings/sync-templates`, {
+        method: 'POST',
+        headers: getAuthHeader(token),
+      }).then(handleResponse);
+    },
+
+    async testConnection(
+      companyId: string,
+      token: string
+    ): Promise<ApiResponse<any>> {
+      return fetch(`/api/proxy/api/whatsapp/companies/${companyId}/test`, {
+        method: 'POST',
+        headers: getAuthHeader(token),
+      }).then(handleResponse);
+    },
+
+    // Templates
+    async getTemplates(
+      companyId: string,
+      token: string
+    ): Promise<ApiResponse<any>> {
+      return fetch(`/api/proxy/api/whatsapp/companies/${companyId}/templates`, {
+        headers: getAuthHeader(token),
+      }).then(handleResponse);
+    },
+
+    // Contacts/Interactions
+    async getContacts(
+      companyId: string,
+      token: string,
+      options?: {
+        search?: string;
+        status?: 'all' | 'unread' | 'active_flow';
+        page?: number;
+        per_page?: number;
+      }
+    ): Promise<ApiResponse<any>> {
+      const params = new URLSearchParams();
+      if (options?.search) params.append('search', options.search);
+      if (options?.status) params.append('status', options.status);
+      if (options?.page) params.append('page', options.page.toString());
+      if (options?.per_page) params.append('per_page', options.per_page.toString());
+
+      return fetch(`/api/proxy/api/whatsapp/companies/${companyId}/contacts?${params.toString()}`, {
+        headers: getAuthHeader(token),
+      }).then(handleResponse);
+    },
+
+    async getMessages(
+      companyId: string,
+      contactId: string,
+      token: string,
+      options?: {
+        page?: number;
+        per_page?: number;
+      }
+    ): Promise<ApiResponse<any>> {
+      const params = new URLSearchParams();
+      if (options?.page) params.append('page', options.page.toString());
+      if (options?.per_page) params.append('per_page', options.per_page.toString());
+
+      return fetch(`/api/proxy/api/whatsapp/companies/${companyId}/contacts/${contactId}/messages?${params.toString()}`, {
+        headers: getAuthHeader(token),
+      }).then(handleResponse);
+    },
+
+    async sendMessage(
+      companyId: string,
+      contactId: string,
+      data: {
+        content: string;
+        type?: 'text' | 'template';
+        templateId?: string;
+        templateVariables?: Record<string, string>;
+      },
+      token: string
+    ): Promise<ApiResponse<any>> {
+      return fetch(`/api/proxy/api/whatsapp/companies/${companyId}/contacts/${contactId}/messages`, {
+        method: 'POST',
+        headers: {
+          ...getAuthHeader(token),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      }).then(handleResponse);
+    },
+
+    async markAsRead(
+      companyId: string,
+      interactionId: string,
+      token: string
+    ): Promise<ApiResponse<any>> {
+      return fetch(`/api/proxy/api/whatsapp/companies/${companyId}/interactions/${interactionId}/read`, {
+        method: 'POST',
+        headers: getAuthHeader(token),
+      }).then(handleResponse);
+    },
+
+    // Flows
+    async getFlows(
+      companyId: string,
+      token: string
+    ): Promise<ApiResponse<any>> {
+      return fetch(`/api/proxy/api/whatsapp/companies/${companyId}/flows`, {
+        headers: getAuthHeader(token),
+      }).then(handleResponse);
+    },
+
+    async createFlow(
+      companyId: string,
+      data: {
+        name: string;
+        description: string;
+        trigger: 'manual' | 'first_message' | 'keyword' | 'post_purchase' | 'abandoned_cart';
+        triggerKeywords?: string[];
+        steps: any[];
+        isActive: boolean;
+      },
+      token: string
+    ): Promise<ApiResponse<any>> {
+      return fetch(`/api/proxy/api/whatsapp/companies/${companyId}/flows`, {
+        method: 'POST',
+        headers: {
+          ...getAuthHeader(token),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      }).then(handleResponse);
+    },
+
+    async updateFlow(
+      companyId: string,
+      flowId: string,
+      data: Partial<any>,
+      token: string
+    ): Promise<ApiResponse<any>> {
+      return fetch(`/api/proxy/api/whatsapp/companies/${companyId}/flows/${flowId}`, {
+        method: 'PATCH',
+        headers: {
+          ...getAuthHeader(token),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      }).then(handleResponse);
+    },
+
+    async deleteFlow(
+      companyId: string,
+      flowId: string,
+      token: string
+    ): Promise<ApiResponse<any>> {
+      return fetch(`/api/proxy/api/whatsapp/companies/${companyId}/flows/${flowId}`, {
+        method: 'DELETE',
+        headers: getAuthHeader(token),
+      }).then(handleResponse);
+    },
+
+    async triggerFlow(
+      companyId: string,
+      contactId: string,
+      flowId: string,
+      token: string
+    ): Promise<ApiResponse<any>> {
+      return fetch(`/api/proxy/api/whatsapp/companies/${companyId}/contacts/${contactId}/flows/${flowId}/trigger`, {
+        method: 'POST',
+        headers: getAuthHeader(token),
+      }).then(handleResponse);
+    },
+
+    // Campaigns
+    async getCampaigns(
+      companyId: string,
+      token: string,
+      options?: {
+        status?: 'draft' | 'scheduled' | 'sending' | 'completed' | 'paused' | 'failed';
+        page?: number;
+        per_page?: number;
+      }
+    ): Promise<ApiResponse<any>> {
+      const params = new URLSearchParams();
+      if (options?.status) params.append('status', options.status);
+      if (options?.page) params.append('page', options.page.toString());
+      if (options?.per_page) params.append('per_page', options.per_page.toString());
+
+      return fetch(`/api/proxy/api/whatsapp/companies/${companyId}/campaigns?${params.toString()}`, {
+        headers: getAuthHeader(token),
+      }).then(handleResponse);
+    },
+
+    async createCampaign(
+      companyId: string,
+      data: {
+        name: string;
+        description: string;
+        templateId: string;
+        recipientType: 'all' | 'customers' | 'vip' | 'new';
+        scheduledAt?: string;
+      },
+      token: string
+    ): Promise<ApiResponse<any>> {
+      return fetch(`/api/proxy/api/whatsapp/companies/${companyId}/campaigns`, {
+        method: 'POST',
+        headers: {
+          ...getAuthHeader(token),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      }).then(handleResponse);
+    },
+
+    async sendCampaign(
+      companyId: string,
+      campaignId: string,
+      token: string
+    ): Promise<ApiResponse<any>> {
+      return fetch(`/api/proxy/api/whatsapp/companies/${companyId}/campaigns/${campaignId}/send`, {
+        method: 'POST',
+        headers: getAuthHeader(token),
+      }).then(handleResponse);
+    },
+
+    async pauseCampaign(
+      companyId: string,
+      campaignId: string,
+      token: string
+    ): Promise<ApiResponse<any>> {
+      return fetch(`/api/proxy/api/whatsapp/companies/${companyId}/campaigns/${campaignId}/pause`, {
+        method: 'POST',
+        headers: getAuthHeader(token),
+      }).then(handleResponse);
+    },
+
+    async getCampaignStats(
+      companyId: string,
+      campaignId: string,
+      token: string
+    ): Promise<ApiResponse<any>> {
+      return fetch(`/api/proxy/api/whatsapp/companies/${companyId}/campaigns/${campaignId}/stats`, {
+        headers: getAuthHeader(token),
+      }).then(handleResponse);
+    },
+
+    // Sessions (for QR connection)
+    async createSession(
+      companyId: string,
+      token: string
+    ): Promise<ApiResponse<any>> {
+      return fetch(`/api/proxy/api/whatsapp/sessions`, {
+        method: 'POST',
+        headers: {
+          ...getAuthHeader(token),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ company_id: companyId }),
+      }).then(handleResponse);
+    },
+
+    async getSessionStatus(
+      companyId: string,
+      token: string
+    ): Promise<ApiResponse<any>> {
+      return fetch(`/api/proxy/api/whatsapp/sessions/status?company_id=${companyId}`, {
+        headers: getAuthHeader(token),
+      }).then(handleResponse);
+    },
+  },
 };
 
 // Company API with point rules
