@@ -21,6 +21,7 @@ export function CartDrawer({ open, onClose, locationPhone, locationName }: CartD
   const { items, removeItem, updateQuantity, total, clearCart } = useCart()
   const [customerName, setCustomerName] = useState('')
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'spei'>('cash')
+  const [deliveryMethod, setDeliveryMethod] = useState<'pickup' | 'delivery'>('pickup')
   const isMobile = useIsMobile()
 
   const totalFormatted = useMemo(() => total.toFixed(2), [total])
@@ -72,26 +73,28 @@ export function CartDrawer({ open, onClose, locationPhone, locationName }: CartD
     const waPhone = formatPhoneToWhatsApp(locationPhone)
 
     const lines: string[] = []
-    lines.push(`👋 ¡Hola! Quisiera realizar un pedido:`)
+    lines.push(`Hola! Quisiera realizar un pedido:`)
     lines.push('')
-    lines.push(`👤 *Cliente:* ${customerName || 'Cliente'}`)
-    if (locationName) lines.push(`📍 *Sucursal:* ${locationName}`)
+    lines.push(`*Cliente:* ${customerName || 'Cliente'}`)
+    if (locationName) lines.push(`*Sucursal:* ${locationName}`)
     lines.push('')
-    lines.push('📦 *Productos:*')
+    lines.push('*Productos:*')
     for (const item of items) {
       const subtotal = (item.price * item.quantity).toFixed(2)
-      lines.push(`• ${item.name} x${item.quantity} - $${subtotal}`)
+      lines.push(`- ${item.name} x${item.quantity} - $${subtotal}`)
     }
     lines.push('')
-    lines.push(`💰 *Total:* $${totalFormatted}`)
-    lines.push(`💳 *Método de pago:* ${paymentMethod === 'cash' ? 'Efectivo' : 'SPEI'}`)
+    lines.push(`*Total:* $${totalFormatted}`)
+    lines.push(`*Metodo de pago:* ${paymentMethod === 'cash' ? 'Efectivo' : 'SPEI'}`)
+    lines.push(`*Tipo de entrega:* ${deliveryMethod === 'pickup' ? 'Recoger en tienda' : 'Envio a domicilio'}`)
     lines.push('')
-    lines.push('¡Muchas gracias!')
+    lines.push('Muchas gracias!')
 
-    const message = encodeURIComponent(lines.join('\n'))
+    const text = lines.join('\r\n')
+    const message = encodeURIComponent(text)
     const url = waPhone
-      ? `https://wa.me/${waPhone}?text=${message}`
-      : `https://wa.me/?text=${message}`
+      ? `https://api.whatsapp.com/send?phone=${waPhone}&text=${message}`
+      : `https://api.whatsapp.com/send?text=${message}`
 
     if (typeof window !== 'undefined') {
       window.open(url, '_blank')
@@ -185,7 +188,6 @@ export function CartDrawer({ open, onClose, locationPhone, locationName }: CartD
                   onChange={(e) => setCustomerName(e.target.value)}
                 />
               </div>
-
               {/* Payment method */}
               <div className="space-y-2">
                 <label className="text-sm font-medium">Método de pago</label>
@@ -203,6 +205,27 @@ export function CartDrawer({ open, onClose, locationPhone, locationName }: CartD
                     onClick={() => setPaymentMethod('spei')}
                   >
                     SPEI
+                  </Button>
+                </div>
+              </div>
+
+              {/* Delivery method */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Tipo de entrega</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    variant={deliveryMethod === 'pickup' ? 'default' : 'outline'}
+                    className={deliveryMethod === 'pickup' ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''}
+                    onClick={() => setDeliveryMethod('pickup')}
+                  >
+                    Recoger
+                  </Button>
+                  <Button
+                    variant={deliveryMethod === 'delivery' ? 'default' : 'outline'}
+                    className={deliveryMethod === 'delivery' ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''}
+                    onClick={() => setDeliveryMethod('delivery')}
+                  >
+                    Envío
                   </Button>
                 </div>
               </div>
@@ -246,7 +269,7 @@ export function CartDrawer({ open, onClose, locationPhone, locationName }: CartD
             </div>
           )}
         </div>
-      </SheetContent>
-    </Sheet>
+      </SheetContent >
+    </Sheet >
   )
 }
