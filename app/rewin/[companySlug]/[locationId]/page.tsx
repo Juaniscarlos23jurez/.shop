@@ -355,7 +355,13 @@ function PublicLocationProductsPageContent() {
     let currentCompany = hasCompany ? cachedCompany!.data : null;
     let currentLocation = hasLocation ? cachedLocation!.data : null;
 
-    if (hasCompany) setCompany(cachedCompany!.data);
+    if (hasCompany) {
+      if (currentCompany && currentCompany.slug && currentCompany.slug !== companySlug) {
+        router.push(`/rewin/${companySlug}`);
+        return;
+      }
+      setCompany(cachedCompany!.data);
+    }
     if (hasLocation) setLocation(cachedLocation!.data as PublicCompanyLocation);
 
     if (hasItems) {
@@ -417,6 +423,14 @@ function PublicLocationProductsPageContent() {
 
             setLocation(loc as PublicCompanyLocation);
             setCompany(comp);
+
+            // Verify if the location belongs to the company slug in the URL
+            if (comp && comp.slug && comp.slug !== companySlug) {
+              console.error(`Slug mismatch: URL has ${companySlug}, but location belongs to ${comp.slug}`);
+              router.push(`/rewin/${companySlug}`);
+              return;
+            }
+
             setCache(`${baseKey}:location`, loc as PublicCompanyLocation);
             setCache(`${baseKey}:company`, comp);
 
@@ -620,13 +634,45 @@ function PublicLocationProductsPageContent() {
     setFilteredItems(filtered);
   }, [items, selectedCategory, searchQuery]);
 
+  const renderNotFound = (message: string) => (
+    <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center px-6 py-16 relative overflow-hidden">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(16,185,129,0.18),_transparent_55%)] pointer-events-none" />
+      <div className="relative max-w-xl w-full text-center space-y-6">
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 text-emerald-300 text-sm font-semibold tracking-wide uppercase">
+          <MapPin className="h-4 w-4" />
+          Ubicación no disponible
+        </div>
+        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl px-8 py-10 space-y-4 shadow-[0_25px_120px_rgba(16,185,129,0.25)]">
+          <h1 className="text-3xl font-semibold">{message}</h1>
+          <p className="text-base text-white/70 leading-relaxed">
+            Puede que la sucursal haya cambiado de nombre, ya no esté activa o el enlace esté incompleto.
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
+            <Link
+              href={companySlug ? `/rewin/${companySlug}` : '/'}
+              className="inline-flex items-center justify-center px-5 py-2.5 rounded-full bg-emerald-500 text-white font-medium hover:bg-emerald-400 transition-colors"
+            >
+              Ver otras sucursales
+            </Link>
+            <button
+              onClick={() => router.back()}
+              className="inline-flex items-center justify-center px-5 py-2.5 rounded-full border border-white/20 text-white font-medium hover:bg-white/10 transition-colors"
+            >
+              Regresar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   if (loading) {
     return <div className="flex justify-center items-center h-screen text-lg">Cargando productos de la sucursal...</div>;
   }
 
 
   if (error && typeof error === 'string' && error.toLowerCase().includes('location not found')) {
-    return <div className="flex justify-center items-center h-screen text-lg">Sucursal no encontrada.</div>;
+    return renderNotFound('No encontramos esta sucursal.');
   }
 
   if (error) {
@@ -634,7 +680,7 @@ function PublicLocationProductsPageContent() {
   }
 
   if (!location) {
-    return <div className="flex justify-center items-center h-screen text-lg">Sucursal no encontrada.</div>;
+    return renderNotFound('Sucursal no encontrada.');
   }
 
 
@@ -665,7 +711,7 @@ function PublicLocationProductsPageContent() {
       {/* Follow Button (Left Side) */}
       {user && company && (
         <div className="fixed top-16 left-6 z-50">
-         
+
 
           {/* Botón Descargar app solo en móvil, debajo del botón Seguir */}
           <div className="mt-3 sm:hidden">
@@ -843,7 +889,7 @@ function PublicLocationProductsPageContent() {
                       img.style.display = 'none';
                     }}
                   />
-                  
+
                   {/* Follow Button */}
                   {user && company && (
                     <Button
@@ -877,7 +923,7 @@ function PublicLocationProductsPageContent() {
               {/* Location Info */}
               <div className="flex-1">
                 <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
-                  {location.name}
+                  {company?.name} <span className="text-gray-400 font-normal text-xl sm:text-2xl">| {location.name}</span>
                 </h1>
                 {company?.description && (
                   <p className="text-gray-600 mb-4">{company.description}</p>

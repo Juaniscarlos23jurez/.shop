@@ -342,13 +342,6 @@ export default function PaymentMethodsPage() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <Alert>
-                  <AlertTitle>Importante</AlertTitle>
-                  <AlertDescription>
-                    En un SaaS, cada compañía tiene sus propias llaves. Nunca guardes la <span className="font-semibold">Secret Key</span> en el cliente. Usa una API segura y almacénala cifrada en el servidor (BD/secret store).
-                  </AlertDescription>
-                </Alert>
-
                 <div className="space-y-2">
                   <Label htmlFor="pk">Publishable Key</Label>
                   <Input
@@ -374,7 +367,7 @@ export default function PaymentMethodsPage() {
 
                 <Separator className="my-2" />
 
-                
+
               </CardContent>
             </Card>
           </div>

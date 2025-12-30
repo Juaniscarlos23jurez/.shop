@@ -22,8 +22,10 @@ export interface RegisterData {
 }
 
 export interface LoginData {
-    email: string;
-    password: string;
+    email?: string;
+    password?: string;
+    idToken?: string;
+    provider?: string;
     fcm_token?: string;
     device_platform?: string;
 }

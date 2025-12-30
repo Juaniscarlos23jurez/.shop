@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
+import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { publicWebApiClient } from '@/lib/api/public-web';
 import { PublicCompany, PublicCompanyLocation, Announcement, PublicItem, BusinessHour } from '@/types/api';
@@ -45,6 +46,7 @@ export default function PublicCompanyPage() {
   const [error, setError] = useState<string | null>(null);
   const [companyMarker, setCompanyMarker] = useState<{ lat: number; lng: number } | null>(null);
   const [user, setUser] = useState<any>(null);
+  const primaryLocationId = locations[0]?.id;
 
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
   const hasApiKey = Boolean(apiKey);
@@ -319,12 +321,14 @@ export default function PublicCompanyPage() {
               <span>Descargar app</span>
             </Button>
 
-            <Button className="gap-3 shadow-xl bg-white text-emerald-600 hover:bg-gray-50 hover:text-emerald-700 border-2 border-emerald-100 rounded-full h-16 px-6 text-lg font-semibold">
-              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <Link href={primaryLocationId ? `/rewin/${companySlug}/${primaryLocationId}/auth/login` : `/rewin/${companySlug}/auth/login`}>
+              <Button className="gap-3 shadow-xl bg-white text-emerald-600 hover:bg-gray-50 hover:text-emerald-700 border-2 border-emerald-100 rounded-full h-16 px-6 text-lg font-semibold">
+                <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
 </svg>
-              <span>Iniciar Sesión</span>
-            </Button>
+                <span>Iniciar Sesión</span>
+              </Button>
+            </Link>
           </>
         )}
       </div>
