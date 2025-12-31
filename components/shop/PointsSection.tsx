@@ -1,16 +1,27 @@
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import * as Lucide from 'lucide-react';
-const { Award, TrendingUp, History, ShoppingBag, Calendar, Loader2 } = Lucide as any;
-import { Button } from "@/components/ui/button";
+const { Award, History, ShoppingBag, Calendar, Loader2, TrendingUp, Gift } = Lucide as any;
 import { clientAuthApi } from '@/lib/api/client-auth';
 import { Badge } from "@/components/ui/badge";
 
-interface PointsSectionProps {
-    companyId?: number;
+interface PointRule {
+    id: number;
+    company_id: number;
+    spend_amount: string | number;
+    points: number;
+    is_active: boolean;
+    starts_at?: string | null;
+    ends_at?: string | null;
+    metadata?: any;
 }
 
-export function PointsSection({ companyId }: PointsSectionProps) {
+interface PointsSectionProps {
+    companyId?: number;
+    pointRules?: PointRule[] | null;
+}
+
+export function PointsSection({ companyId, pointRules }: PointsSectionProps) {
     const [pointsBalance, setPointsBalance] = useState<number>(0);
     const [purchases, setPurchases] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -66,6 +77,24 @@ export function PointsSection({ companyId }: PointsSectionProps) {
         );
     }
 
+    // Get active point rule
+    const getActivePointRule = (): PointRule | null => {
+        if (!pointRules || pointRules.length === 0) return null;
+        const now = new Date();
+        const activeRules = pointRules
+            .filter((rule) => rule?.is_active !== false)
+            .filter((rule) => {
+                const startsOk = !rule.starts_at || new Date(rule.starts_at) <= now;
+                const endsOk = !rule.ends_at || new Date(rule.ends_at) >= now;
+                return startsOk && endsOk;
+            });
+        return activeRules.length > 0 ? activeRules[0] : null;
+    };
+
+    const activeRule = getActivePointRule();
+    const spendAmount = activeRule ? (typeof activeRule.spend_amount === 'string' ? parseFloat(activeRule.spend_amount) : activeRule.spend_amount) : 0;
+    const pointsEarned = activeRule ? activeRule.points : 0;
+
     return (
         <div className="pb-24 space-y-6">
             {/* Points Summary Card */}
@@ -86,6 +115,62 @@ export function PointsSection({ companyId }: PointsSectionProps) {
 
                 </CardContent>
             </Card>
+
+            {/* Points Earning Rules */}
+            {activeRule && (
+                <Card className="border-2 border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 overflow-hidden shadow-lg">
+                    <CardContent className="p-6">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="bg-amber-500 p-3 rounded-xl">
+                                <TrendingUp className="h-6 w-6 text-white" />
+                            </div>
+                            <div>
+                                <h3 className="font-bold text-xl text-gray-900">¿Cómo gano puntos?</h3>
+                                <p className="text-sm text-gray-600">Gana puntos con cada compra</p>
+                            </div>
+                        </div>
+
+                        <div className="bg-white rounded-xl p-5 shadow-sm border border-amber-100">
+                            <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center gap-3">
+                                    <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 text-white rounded-full h-14 w-14 flex items-center justify-center font-bold text-lg shadow-md">
+                                        +{pointsEarned}
+                                    </div>
+                                    <div>
+                                        <p className="font-bold text-2xl text-emerald-600">{pointsEarned} puntos</p>
+                                        <p className="text-sm text-gray-600">por cada ${spendAmount} pesos</p>
+                                    </div>
+                                </div>
+                                <Gift className="h-8 w-8 text-amber-500" />
+                            </div>
+
+                            {/* Progress visualization */}
+                            <div className="mt-4 pt-4 border-t border-gray-100">
+                                <p className="text-xs text-gray-500 mb-2 font-medium">Ejemplo:</p>
+                                <div className="space-y-2">
+                                    {[100, 200, 500].map((amount) => {
+                                        const earnedPoints = Math.round((amount / spendAmount) * pointsEarned * 10) / 10;
+                                        return (
+                                            <div key={amount} className="flex items-center justify-between text-sm">
+                                                <span className="text-gray-700">Compra de ${amount}</span>
+                                                <span className="font-semibold text-emerald-600">= +{earnedPoints} pts</span>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        </div>
+
+                        {activeRule.metadata?.nota && (
+                            <div className="mt-4 p-3 bg-amber-100 rounded-lg border border-amber-200">
+                                <p className="text-sm text-amber-800">
+                                    <strong>Nota:</strong> {activeRule.metadata.nota}
+                                </p>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            )}
 
 
 

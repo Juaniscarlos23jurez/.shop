@@ -5,22 +5,29 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import * as Lucide from "lucide-react";
-const { Package, Phone, Share2, X } = Lucide as any;
+const { Package, Phone, Share2, X, ShoppingCart, Gift } = Lucide as any;
 import { formatCurrency } from "@/lib/utils/currency";
 import { useCart } from "@/lib/cart-context";
-import { PublicItem } from "@/types/api";
+import { PublicItem, PointRule } from "@/types/api";
 
 interface CatalogCardProps {
   item: PublicItem;
   locationId: number;
   phone?: string;
   initialOpen?: boolean;
+  pointRules?: PointRule[] | null;
+  userPoints?: number | null;
 }
 
-export function CatalogCard({ item, locationId, phone, initialOpen = false }: CatalogCardProps) {
+export function CatalogCard({ item, locationId, phone, initialOpen = false, pointRules, userPoints }: CatalogCardProps) {
   const { items, addItem, updateQuantity } = useCart();
   const isService = item.product_type === "service";
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [resolvedPoints, setResolvedPoints] = useState<number | null | undefined>(userPoints);
+
+  useEffect(() => {
+    setResolvedPoints(userPoints);
+  }, [userPoints]);
 
   // Debug: Log item data on mount
   useEffect(() => {
@@ -70,6 +77,95 @@ export function CatalogCard({ item, locationId, phone, initialOpen = false }: Ca
     const cleanPhone = phone.replace(/\D/g, "");
     const message = encodeURIComponent(`Hola, me interesa el servicio: ${item.name}`);
     window.open(`https://wa.me/${cleanPhone}?text=${message}`, "_blank");
+  };
+
+  const parseNumber = (value: number | string | null | undefined) => {
+    if (value === null || value === undefined) return null;
+    if (typeof value === "number") return value;
+    const parsed = parseFloat(value);
+    return Number.isNaN(parsed) ? null : parsed;
+  };
+
+  const getActivePointRule = (): PointRule | null => {
+    if (!pointRules || pointRules.length === 0) return null;
+    const now = new Date();
+    const candidates = pointRules
+      .filter((rule) => rule?.is_active !== false)
+      .filter((rule) => {
+        const startsOk = !rule.starts_at || new Date(rule.starts_at) <= now;
+        const endsOk = !rule.ends_at || new Date(rule.ends_at) >= now;
+        return startsOk && endsOk;
+      })
+      .map((rule) => {
+        const spendAmount = parseNumber(rule.spend_amount);
+        const pointsForRule = parseNumber(rule.points);
+        if (!spendAmount || !pointsForRule || spendAmount <= 0 || pointsForRule <= 0) return null;
+        return { rule, ratio: pointsForRule / spendAmount };
+      })
+      .filter(Boolean) as Array<{ rule: PointRule; ratio: number }>;
+
+    if (!candidates.length) return null;
+
+    return candidates.reduce((best, candidate) => (candidate.ratio > best.ratio ? candidate : best)).rule;
+  };
+
+  const activeRule = getActivePointRule();
+  const estimatedPoints = (() => {
+    if (!activeRule || isService) return 0;
+    const spendAmount = parseNumber(activeRule.spend_amount);
+    const pointsForRule = parseNumber(activeRule.points);
+    if (!spendAmount || !pointsForRule || spendAmount <= 0 || pointsForRule <= 0) return 0;
+    const subtotal = typeof item.price === "number" ? item.price : parseFloat(String(item.price));
+    if (!subtotal || subtotal <= 0) return 0;
+    return Math.round(((subtotal / spendAmount) * pointsForRule) * 10) / 10;
+  })();
+
+  const redeemPoints = typeof item.points === "number" && item.points > 0 ? item.points : null;
+  const userLoyaltyPoints = typeof resolvedPoints === "number" && resolvedPoints >= 0 ? resolvedPoints : null;
+  const progressPercent =
+    redeemPoints && userLoyaltyPoints !== null && redeemPoints > 0
+      ? Math.min(100, (userLoyaltyPoints / redeemPoints) * 100)
+      : 0;
+  const pointsNeeded =
+    redeemPoints && userLoyaltyPoints !== null ? Math.max(0, redeemPoints - userLoyaltyPoints) : null;
+  const canRedeem = redeemPoints !== null && userLoyaltyPoints !== null && userLoyaltyPoints >= redeemPoints;
+
+  const renderRedemptionProgress = (variant: "card" | "modal" = "card") => {
+    if (!redeemPoints || userLoyaltyPoints === null) return null;
+    const wrapperClasses =
+      variant === "card"
+        ? "mt-3 rounded-2xl border border-purple-100 bg-white px-4 py-3 shadow-sm"
+        : "mb-6 rounded-2xl border border-purple-100 bg-purple-50 px-6 py-4";
+    const progressBg = variant === "card" ? "bg-gray-100" : "bg-white/70";
+
+    return (
+      <div className={wrapperClasses}>
+        <div className="flex items-center gap-2 text-purple-700 font-semibold text-sm">
+          <Gift className="h-4 w-4" />
+          <span>{redeemPoints} pts para gratis</span>
+        </div>
+        <div className="mt-3">
+          <div className="flex items-center justify-between text-xs text-purple-600 font-medium mb-1">
+            <span>{userLoyaltyPoints} pts</span>
+            <span>{redeemPoints} pts</span>
+          </div>
+          <div className={`h-2 rounded-full ${progressBg} overflow-hidden`}>
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-purple-500 to-purple-700 transition-all duration-300"
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
+        </div>
+        <p
+          className={`text-sm mt-3 ${canRedeem ? "text-emerald-600 font-semibold" : "text-gray-600"
+            }`}
+        >
+          {canRedeem
+            ? "🎉 ¡Este producto lo puedes pagar con tus puntos!"
+            : `Te faltan ${pointsNeeded} puntos`}
+        </p>
+      </div>
+    );
   };
 
   return (
@@ -124,6 +220,8 @@ export function CatalogCard({ item, locationId, phone, initialOpen = false }: Ca
                   </span>
                 </div>
               )}
+
+              {renderRedemptionProgress("card")}
 
               {item.description && (
                 <p className="text-sm md:text-base text-gray-600 leading-relaxed line-clamp-3">
@@ -276,6 +374,34 @@ export function CatalogCard({ item, locationId, phone, initialOpen = false }: Ca
                       {item.description}
                     </p>
                   </div>
+                )}
+
+                {/* Points earning for this purchase */}
+                {!isService && estimatedPoints > 0 && (
+                  <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-6 py-4 shadow-sm">
+                    <div className="flex items-center gap-2 text-amber-700 font-semibold text-sm">
+                      <ShoppingCart className="h-4 w-4" />
+                      <span>+{estimatedPoints} puntos al comprar</span>
+                    </div>
+                    <div className="mt-3">
+                      <div className="h-2 rounded-full bg-amber-100 overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-amber-400 to-orange-500 transition-all duration-300"
+                          style={{ width: '100%' }}
+                        />
+                      </div>
+                    </div>
+                    <p className="text-sm mt-3 text-amber-800">
+                      🎁 Gana <strong>{estimatedPoints} puntos</strong> de lealtad con esta compra
+                    </p>
+                  </div>
+                )}
+
+                {typeof item.points === "number" && item.points > 0 && (
+                  <>
+
+                    {renderRedemptionProgress("modal")}
+                  </>
                 )}
 
                 <div className="flex flex-col gap-3 pt-4 pb-2">

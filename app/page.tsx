@@ -528,111 +528,225 @@ export default function HomePage() {
 
       <main>
         {/* Hero Section */}
-        <section className="relative bg-gradient-to-br from-green-50 via-white to-green-50 overflow-hidden">
-          <div className="absolute inset-0 bg-grid-gray-100 [mask-image:linear-gradient(0deg,white,transparent)]"></div>
-          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28">
-            <div className="text-center max-w-4xl mx-auto">
-              <div className="inline-flex items-center space-x-2 bg-green-50 text-green-700 text-base font-medium px-4 py-2 rounded-full mb-6">
-                <span className="text-xl">✨</span>
-                <span>Plataforma de fidelización #1 en Latinoamérica</span>
+        <section className="relative pt-16 pb-12 md:pt-24 md:pb-20 overflow-hidden bg-white">
+          {/* Enhanced Background Atmosphere */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full -z-10">
+            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-green-50 rounded-full blur-[120px] opacity-60"></div>
+            <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-50 rounded-full blur-[120px] opacity-60"></div>
+          </div>
+
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center max-w-4xl mx-auto mb-16">
+              <div className="inline-flex items-center space-x-2 bg-gradient-to-r from-green-50 to-emerald-50 text-green-700 text-sm font-bold px-4 py-2 rounded-full mb-8 border border-green-100 shadow-sm animate-fade-in">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                </span>
+                <span>Plataforma #1 de Lealtad en LATAM</span>
               </div>
-              <h1 className="text-5xl tracking-tight font-extrabold text-gray-900 sm:text-6xl md:text-7xl leading-tight md:leading-[1.15] pt-2 md:pt-4 pb-4 md:pb-6">
-                <span className="block">Fideliza a tus clientes</span>
-                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-emerald-500">y haz crecer tu negocio</span>
+
+              <h1 className="text-5xl md:text-7xl font-black text-[#0f172a] tracking-tight mb-8 leading-[1.1]">
+                Gestiona con <span className="text-green-600">Fynlink+</span> <br />
+                Conecta con <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">Rewin</span>
               </h1>
-              <p className="mt-6 max-w-2xl mx-auto text-xl text-gray-600 leading-relaxed">
-                La plataforma todo en uno para crear programas de fidelización que tus clientes amarán. Aumenta las ventas recurrentes, mejora la retención y construye relaciones duraderas con tus clientes.
+
+              <p className="mt-8 max-w-2xl mx-auto text-xl text-[#64748b] leading-relaxed">
+                El ecosistema completo para negocios modernos. Tú controlas todo desde tu panel
+                <span className="text-[#0f172a] font-bold"> Fynlink+</span> y tus clientes disfrutan de la mejor experiencia en la app
+                <span className="text-blue-600 font-bold"> Rewin</span>.
               </p>
-              <div className="mt-8 flex flex-col sm:flex-row justify-center gap-4">
+
+              <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
                 <Link href="#contact" className="w-full sm:w-auto">
-                  <Button size="lg" className="w-full sm:w-auto bg-[#22c55e] hover:bg-green-600 text-white shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 transform">
-                    Hablar con ventas
+                  <Button size="lg" className="w-full h-14 px-8 bg-[#22c55e] hover:bg-green-600 text-white text-lg font-bold rounded-2xl shadow-[0_20px_40px_-12px_rgba(34,197,94,0.35)] hover:shadow-[0_20px_40px_-12px_rgba(34,197,94,0.45)] hover:-translate-y-1 transition-all duration-300">
+                    Empezar ahora — Es gratis
                   </Button>
                 </Link>
                 <Link href={CALENDLY_URL} className="w-full sm:w-auto" target="_blank" rel="noopener noreferrer">
-                  <Button size="lg" variant="outline" className="w-full sm:w-auto border-gray-300 text-gray-700 hover:bg-gray-50">
-                    Agendar demo
+                  <Button size="lg" variant="outline" className="w-full h-14 px-8 border-2 border-gray-200 text-[#0f172a] text-lg font-bold rounded-2xl hover:bg-gray-50 transition-all duration-300">
+                    Ver demo en vivo
                   </Button>
                 </Link>
               </div>
-              <div className="mt-8 flex items-center justify-center space-x-6 text-sm text-gray-500">
-                <div className="flex items-center">
-                  <div className="flex -space-x-2">
-                    {[1, 2, 3].map((i) => (
-                      <div key={i} className="h-8 w-8 rounded-full border-2 border-white bg-gray-200 overflow-hidden">
-                        <div className="w-full h-full bg-gray-300"></div>
-                      </div>
-                    ))}
+
+              <div className="mt-12 flex flex-col items-center justify-center space-y-4">
+                <div className="flex -space-x-3">
+                  {[
+                    "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=64&h=64&q=80",
+                    "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=64&h=64&q=80",
+                    "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=64&h=64&q=80",
+                    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=64&h=64&q=80"
+                  ].map((url, i) => (
+                    <img
+                      key={i}
+                      src={url}
+                      className="h-10 w-10 rounded-full border-4 border-white object-cover shadow-sm"
+                      alt="Negocio cliente"
+                    />
+                  ))}
+                  <div className="h-10 w-10 rounded-full border-4 border-white bg-green-100 flex items-center justify-center text-[10px] font-black text-green-700 shadow-sm uppercase">
+                    +120
                   </div>
-                  <span className="ml-3 text-base">+120 negocios confían en nosotros</span>
                 </div>
+                <p className="text-sm font-bold text-gray-500 uppercase tracking-widest">
+                  Marcas que están creciendo con nosotros
+                </p>
               </div>
             </div>
-          </div>
-          <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
-            <div className="flex justify-center">
-              <div className="w-full max-w-5xl">
-                {/* MacBook mockup */}
-                <div className="relative">
-                  {/* Screen */}
-                  <div className="relative mx-auto w-full max-w-4xl">
-                    <div className="relative rounded-[1.5rem] bg-gradient-to-b from-gray-800 to-gray-900 p-3 shadow-2xl">
-                      {/* Top bezel with camera */}
-                      <div className="relative h-6 flex items-center justify-center rounded-t-xl bg-black">
-                        <div className="absolute top-2 left-1/2 transform -translate-x-1/2 w-2 h-2 rounded-full bg-gray-700" />
-                      </div>
 
-                      {/* Screen content */}
-                      <div className="relative bg-black rounded-b-xl overflow-hidden">
-                        <div className="relative w-full" style={{ paddingTop: '62.5%' }}>
-                          <video
-                            src="/dashboard.mp4"
-                            className="absolute inset-0 w-full h-full object-contain rounded-b-xl"
-                            autoPlay
-                            muted
-                            loop
-                            playsInline
-                            onError={handleVideoError}
-                          />
-                        </div>
-                      </div>
+            {/* Main Visual: Fynlink+ Dashboard Mockup */}
+            <div className="mt-20 relative max-w-7xl mx-auto">
+              {/* Floating Badge above laptop */}
+              <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-white/80 backdrop-blur-md border border-gray-100 px-4 py-2 rounded-xl shadow-lg z-10 flex items-center space-x-2">
+                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                <span className="text-xs font-black text-[#0f172a] uppercase tracking-wider">Tu Panel Central: Fynlink+</span>
+              </div>
+
+              <div className="relative">
+                {/* Floating Cards (better top/bottom order) */}
+
+                {/* Top Left: Discount/Offers */}
+                <div className="absolute -left-20 top-6 hidden lg:block bg-white p-5 rounded-3xl shadow-2xl border border-gray-100 max-w-[210px] animate-bounce z-20 transition-all hover:scale-110" style={{ animationDuration: '3.5s' }}>
+                  <div className="w-10 h-10 bg-orange-100 rounded-2xl flex items-center justify-center mb-3 text-orange-600">
+                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                    </svg>
+                  </div>
+                  <div className="text-sm font-black text-[#0f172a]">Ofertas Flash</div>
+                  <p className="text-[10px] text-gray-500 mt-1">Promociona tus productos o servicios de rebaja fácilmente.</p>
+                </div>
+
+                {/* Top Center: Stripe Payments */}
+                <div className="absolute left-1/2 -translate-x-1/2 -top-8 hidden lg:block transform bg-white p-5 rounded-3xl shadow-2xl border border-gray-100 max-w-[210px] animate-bounce z-20 transition-all hover:scale-110" style={{ animationDuration: '4.2s' }}>
+                  <div className="w-10 h-10 bg-indigo-100 rounded-2xl flex items-center justify-center mb-3 text-indigo-600">
+                    <Image
+                      src="/stripe.svg"
+                      alt="Stripe logo"
+                      width={24}
+                      height={24}
+                      className="w-6 h-6"
+                    />
+                  </div>
+                  <div className="text-sm font-black text-[#0f172a]">Cobro por Stripe</div>
+                  <p className="text-[10px] text-gray-500 mt-1">Procesa pagos seguros con tarjetas y wallets digitales.</p>
+                </div>
+
+                {/* Top Right: Monthly Growth */}
+                <div className="absolute -right-20 top-6 hidden lg:block bg-white p-6 rounded-3xl shadow-2xl border border-gray-100 max-w-[210px] animate-bounce z-20 transition-all hover:scale-110" style={{ animationDuration: '4s' }}>
+                  <div className="text-green-600 font-black text-2xl mb-1">↑ 24%</div>
+                  <div className="text-sm font-bold text-[#0f172a]">Crecimiento Mensual</div>
+                  <p className="text-[10px] text-gray-500 mt-2">Envía notificaciones, crea cupones y analiza resultados.</p>
+                </div>
+
+                {/* Bottom Left: Push Notifications */}
+                <div className="absolute -left-20 bottom-6 hidden lg:block bg-white p-5 rounded-3xl shadow-2xl border border-gray-100 max-w-[210px] animate-bounce z-20 transition-all hover:scale-110" style={{ animationDuration: '5s' }}>
+                  <div className="w-10 h-10 bg-red-100 rounded-2xl flex items-center justify-center mb-3 text-red-600">
+                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                    </svg>
+                  </div>
+                  <div className="text-sm font-black text-[#0f172a]">Notificaciones</div>
+                  <p className="text-[10px] text-gray-500 mt-1">Llega directo al celular de tus clientes con alertas.</p>
+                </div>
+
+                {/* Bottom Center: WhatsApp Integration */}
+                <div className="absolute left-1/2 -translate-x-1/2 bottom-0 hidden lg:block transform bg-white p-5 rounded-3xl shadow-2xl border border-gray-100 max-w-[210px] animate-bounce z-20 transition-all hover:scale-110" style={{ animationDuration: '5.3s' }}>
+                  <div className="w-10 h-10 bg-emerald-100 rounded-2xl flex items-center justify-center mb-3 text-[#25D366]">
+                    <svg
+                      className="w-6 h-6"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                    >
+                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                    </svg>
+                  </div>
+                  <div className="text-sm font-black text-[#0f172a]">Integración WhatsApp</div>
+                  <p className="text-[10px] text-gray-500 mt-1">Automatiza conversaciones y respuestas desde Rewin.</p>
+                </div>
+
+                {/* Bottom Right: Coupons */}
+                <div className="absolute -right-20 bottom-4 hidden lg:block bg-white p-5 rounded-3xl shadow-2xl border border-gray-100 max-w-[210px] animate-bounce z-20 transition-all hover:scale-110" style={{ animationDuration: '4.5s' }}>
+                  <div className="flex items-center space-x-2 mb-2">
+                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                      </svg>
+                    </div>
+                    <div className="text-xs font-black text-[#0f172a]">Cupones</div>
+                  </div>
+                  <p className="text-[10px] text-gray-500">Manda cupones personalizados a tus clientes en segundos.</p>
+                </div>
+
+                {/* MacBook Mockup with Base */}
+                <div className="relative mx-auto w-full max-w-6xl xl:max-w-7xl">
+                  <div className="absolute inset-0 bg-green-500/10 blur-3xl rounded-full scale-110 -z-10 group-hover:scale-125 transition-transform duration-700"></div>
+
+                  {/* Screen part */}
+                  <div className="relative rounded-[1.5rem] bg-gradient-to-b from-gray-800 to-gray-900 p-3 shadow-2xl border-t border-white/20">
+                    <div className="relative h-6 flex items-center justify-center rounded-t-xl bg-black">
+                      <div className="absolute top-2 left-1/2 transform -translate-x-1/2 w-2 h-2 rounded-full bg-gray-700" />
+                    </div>
+                    <div className="relative bg-black rounded-b-xl overflow-hidden aspect-[21/10] sm:aspect-[16/9]">
+                      <video
+                        src="/dashboard.mp4"
+                        className="absolute inset-0 w-full h-full object-cover object-top"
+                        autoPlay
+                        muted
+                        loop
+                        playsInline
+                        onError={handleVideoError}
+                      />
                     </div>
                   </div>
 
-                  {/* Base/Keyboard */}
-                  <div className="relative mx-auto mt-1 w-full max-w-5xl">
-                    <div className="h-8 rounded-b-[2rem] bg-gradient-to-b from-gray-300 to-gray-400 shadow-lg">
+                  {/* Base/Keyboard part */}
+                  <div className="relative mx-auto mt-1 w-full max-w-[95%]">
+                    <div className="h-4 sm:h-8 rounded-b-[2rem] bg-gradient-to-b from-gray-300 via-gray-400 to-gray-500 shadow-xl">
                       <div className="flex items-center justify-center h-full">
                         {/* Trackpad */}
-                        <div className="w-20 h-3 rounded-md bg-gray-500/30 border border-gray-400/50" />
+                        <div className="w-24 sm:w-32 h-2 sm:h-4 rounded-b-lg bg-gray-500/30 border-x border-b border-gray-400/50 shadow-inner" />
                       </div>
                     </div>
                   </div>
-
-                  {/* Shadow under laptop */}
-                  <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 w-3/4 h-8 bg-black/10 rounded-full blur-xl" />
                 </div>
               </div>
+
+              {/* MacBook Shadow */}
+              <div className="mt-8 h-4 w-3/4 mx-auto bg-black/10 blur-2xl rounded-full"></div>
             </div>
           </div>
-
         </section>
 
         {/* Video Demo Section */}
-        <section id="video-demo" className="py-16 bg-white">
+        <section id="video-demo" className="py-24 bg-gray-50/50">
+
+
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="mb-16 text-center">
-              <h2 className="text-4xl font-black text-[#0f172a] mb-4">
-                Descubre cómo funciona Rewin+
+            <div className="mb-20 text-center">
+              <div className="inline-flex items-center space-x-2 bg-blue-50 text-blue-700 text-xs font-black px-3 py-1 rounded-full mb-4 uppercase tracking-widest border border-blue-100">
+                <span>App & Web</span>
+              </div>
+              <h2 className="text-4xl md:text-5xl font-black text-[#0f172a] mb-6">
+                Tu marca en el bolsillo <br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
+                  de tus clientes con Rewin
+                </span>
               </h2>
-              <p className="text-[#64748b] text-xl max-w-2xl mx-auto">
-                Ofrece a tus clientes una experiencia completa en móvil (app) y web
+              <p className="text-[#64748b] text-xl max-w-3xl mx-auto leading-relaxed">
+                Tus clientes acceden a <span className="text-[#0f172a] font-bold">Rewin</span> desde su móvil para ver su saldo de puntos,
+                descubrir recompensas y comprar tus productos en segundos.
               </p>
             </div>
 
             {/* Web Section */}
             <div className="mb-24">
-              <h3 className="text-3xl font-bold text-[#0f172a] mb-8">Web</h3>
+              <div className="flex items-center space-x-4 mb-12">
+                <div className="h-px flex-1 bg-gray-200"></div>
+                <h3 className="text-2xl font-black text-[#0f172a] uppercase tracking-tighter bg-white px-4">Acceso Web & APP</h3>
+                <div className="h-px flex-1 bg-gray-200"></div>
+              </div>
+
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
                 {/* iPhone Mockup with wallet.mp4 */}
                 <div className="flex justify-center lg:justify-start">
@@ -738,7 +852,12 @@ export default function HomePage() {
 
             {/* Mobile Section */}
             <div className="mb-16">
-              <h3 className="text-3xl font-bold text-[#0f172a] mb-8">App Móvil iOS/Android</h3>
+              <div className="flex items-center space-x-4 mb-12">
+                <div className="h-px flex-1 bg-gray-200"></div>
+                <h3 className="text-2xl font-black text-[#0f172a] uppercase tracking-tighter bg-gray-50 px-4">App Móvil Nativa</h3>
+                <div className="h-px flex-1 bg-gray-200"></div>
+              </div>
+
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
                 {/* Features bullets */}
                 <div className="space-y-8">
@@ -897,7 +1016,7 @@ export default function HomePage() {
         </section>
 
         {/* Testimonials Section */}
-        <section id="testimonials" className="py-16 bg-gray-50">
+        <section id="testimonials" className="py-16 bg-gray-50" >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
               <h2 className="text-4xl font-black text-[#0f172a] mb-4">
@@ -1021,7 +1140,7 @@ export default function HomePage() {
         </section>
 
         {/* Features Section */}
-        <section id="features" className="py-16 bg-white">
+        <section id="features" className="py-16 bg-white" >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
               <h2 className="text-4xl font-black text-[#0f172a] mb-4">
@@ -1053,7 +1172,7 @@ export default function HomePage() {
         </section>
 
         {/* Software Empresarial Todo-en-Uno */}
-        <section className="py-16 bg-gradient-to-br from-blue-50 via-white to-purple-50">
+        <section className="py-16 bg-gradient-to-br from-blue-50 via-white to-purple-50" >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
               <h2 className="text-4xl font-black text-[#0f172a] mb-4">
@@ -1224,7 +1343,7 @@ export default function HomePage() {
         </section>
 
         {/* WhatsApp Experience Section */}
-        <section id="whatsapp-orders" className="py-24 bg-white overflow-hidden">
+        <section id="whatsapp-orders" className="py-24 bg-white overflow-hidden" >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-20">
               <div className="inline-flex items-center space-x-2 bg-green-100 text-green-700 text-sm font-bold px-4 py-2 rounded-full mb-6">
@@ -1291,13 +1410,32 @@ export default function HomePage() {
             </div>
 
             {/* Video Demo Stripe - Side by Side Content */}
-            <div className="mt-24 max-w-4xl mx-auto px-4 relative">
-              <div className="absolute top-1/2 left-1/4 -translate-y-1/2 -translate-x-1/2 w-64 h-64 bg-green-50 rounded-full blur-[100px] opacity-60 -z-10"></div>
+            <div className="mt-24 max-w-5xl mx-auto px-4 relative">
+              {/* Background Decorative Elements */}
+              <div className="absolute top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2 w-[120%] h-[120%] bg-gradient-to-tr from-green-50/50 via-white to-blue-50/50 rounded-full blur-[120px] -z-20"></div>
+
+              {/* Floating Money/Cards Icons */}
+              <div className="absolute -top-10 -left-10 w-24 h-24 text-green-200/40 transform -rotate-12 animate-pulse hidden lg:block -z-10">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M3 6h18v12H3V6zm1 1v10h16V7H4zm2 2h2v1H6V9zm0 2h2v1H6v-1zm10-2h2v1h-2V9zm0 2h2v1h-2v-1zM7 13.5c0-.828.672-1.5 1.5-1.5s1.5.672 1.5 1.5-.672 1.5-1.5 1.5-1.5-.672-1.5-1.5zm7 0c0-.828.672-1.5 1.5-1.5s1.5.672 1.5 1.5-.672 1.5-1.5 1.5-1.5-.672-1.5-1.5z" />
+                </svg>
+              </div>
+              <div className="absolute -bottom-10 -right-10 w-32 h-32 text-blue-200/40 transform rotate-12 animate-bounce hidden lg:block -z-10" style={{ animationDuration: '4s' }}>
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z" />
+                </svg>
+              </div>
+              <div className="absolute top-1/4 right-0 w-16 h-16 text-yellow-200/40 animate-pulse hidden lg:block -z-10">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm1-13h-2v5H7v2h4v5h2v-5h4v-2h-4V7z" />
+                </svg>
+              </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
                 {/* Left side: Video */}
-                <div className="relative order-2 md:order-1">
-                  <div className="relative rounded-2xl overflow-hidden shadow-[0_20px_40px_-12px_rgba(0,0,0,0.12)] border-4 border-white bg-white mx-auto max-w-[280px]">
+                <div className="relative order-2 md:order-1 group">
+                  <div className="absolute inset-0 bg-green-500/20 blur-3xl rounded-full scale-75 group-hover:scale-100 transition-transform duration-700 -z-10"></div>
+                  <div className="relative rounded-[2.5rem] overflow-hidden shadow-[0_32px_64px_-16px_rgba(0,0,0,0.2)] border-[8px] border-gray-900 bg-black mx-auto max-w-[280px] transform transition-all duration-500 group-hover:scale-[1.03] group-hover:-rotate-1">
                     <video
                       className="w-full h-auto"
                       autoPlay
@@ -1310,25 +1448,45 @@ export default function HomePage() {
                     </video>
 
                     {/* Floating Badge */}
-                    <div className="absolute bottom-3 right-3 bg-white/90 backdrop-blur-md px-2.5 py-1 rounded-full shadow-lg border border-gray-100 flex items-center space-x-1.5">
-                      <div className="w-1 h-1 bg-green-500 rounded-full animate-pulse"></div>
-                      <span className="text-[8px] font-bold text-gray-800 uppercase tracking-tighter">Demo</span>
+                    <div className="absolute bottom-4 right-4 bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-full shadow-lg border border-gray-100 flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                      <span className="text-[10px] font-black text-gray-800 uppercase tracking-wider">Checkout Vivo</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Right side: Text */}
                 <div className="text-center md:text-left order-1 md:order-2">
-                  <span className="text-green-600 font-bold tracking-wider text-[10px] uppercase mb-3 block">Experiencia de Pago</span>
-                  <h3 className="text-3xl font-black text-[#0f172a] mb-4">
-                    Pagos rápidos con Stripe
+                  <div className="inline-flex items-center space-x-2 bg-green-50 px-3 py-1 rounded-full mb-6 border border-green-100">
+                    <span className="flex h-2 w-2 rounded-full bg-green-500"></span>
+                    <span className="text-green-700 font-bold tracking-wider text-[11px] uppercase">Experiencia de Pago</span>
+                  </div>
+                  <h3 className="text-4xl font-black text-[#0f172a] mb-6 leading-tight">
+                    Pagos rápidos <br />
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
+                      con Stripe 💳
+                    </span>
                   </h3>
-                  <p className="text-[#64748b] text-base leading-relaxed max-w-md mx-auto md:mx-0">
-                    Tus clientes pueden pagar con tarjeta de crédito, débito, Apple Pay o Google Pay en segundos. Una experiencia de pago fluida que aumenta la conversión de tu negocio.
+                  <p className="text-[#64748b] text-lg leading-relaxed max-w-md mx-auto md:mx-0">
+                    Tus clientes pueden pagar con tarjeta de crédito, débito, Apple Pay o Google Pay en segundos.
+                    <span className="block mt-4 text-[#0f172a] font-medium">Una experiencia de pago fluida que elimina la fricción y aumenta la conversión de tu negocio en tiempo real.</span>
                   </p>
+
+                  <div className="mt-8 flex flex-wrap justify-center md:justify-start gap-4">
+                    <div className="flex flex-col items-center md:items-start">
+                      <div className="text-2xl font-bold text-[#0f172a]">2s</div>
+                      <div className="text-xs text-[#64748b] uppercase font-bold tracking-tighter">Promedio de pago</div>
+                    </div>
+                    <div className="w-px h-10 bg-gray-200 hidden sm:block"></div>
+                    <div className="flex flex-col items-center md:items-start">
+                      <div className="text-2xl font-bold text-[#0f172a]">+35%</div>
+                      <div className="text-xs text-[#64748b] uppercase font-bold tracking-tighter">Conversión</div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
+
 
             <div className="mt-32 grid grid-cols-1 md:grid-cols-3 gap-8">
               <div className="bg-gray-50 p-8 rounded-3xl border border-gray-100 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
@@ -1369,7 +1527,7 @@ export default function HomePage() {
         <PricingSection />
 
         {/* FAQ Section */}
-        <section id="faq" className="py-16 bg-white">
+        <section id="faq" className="py-16 bg-white" >
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-10">
               <h2 className="text-4xl font-black text-[#0f172a] mb-4">
@@ -1460,7 +1618,7 @@ export default function HomePage() {
       </main>
 
       {/* CTA Section */}
-      <section className="bg-[#22c55e] py-12">
+      <section className="bg-[#22c55e] py-12" >
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
             ¿Hablamos de tu estrategia de lealtad?
@@ -1488,7 +1646,7 @@ export default function HomePage() {
       </section>
 
       {/* Contact Section */}
-      <section id="contact" className="py-16 bg-white">
+      <section id="contact" className="py-16 bg-white" >
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-10">
             <h2 className="text-4xl font-black text-[#0f172a] mb-4">Conecta con nuestro equipo</h2>

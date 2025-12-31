@@ -402,6 +402,7 @@ export interface PublicItem {
   name: string;
   description?: string;
   price: number;
+  points?: number;
   image_url?: string;
   category?: string;
   product_type?: string;
@@ -446,11 +447,12 @@ export interface PublicCompanyLocation {
 export interface PointRule {
   id: number;
   company_id: string;
-  spend_amount: number;
-  points: number;
+  spend_amount: number | string;
+  points: number | string;
   is_active: boolean;
-  starts_at: string;
-  ends_at: string | null;
+  starts_at?: string | null;
+  ends_at?: string | null;
+  metadata?: Record<string, any> | null;
 }
 
 export interface BusinessType {

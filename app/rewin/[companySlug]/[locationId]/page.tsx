@@ -133,6 +133,7 @@ function PublicLocationProductsPageContent() {
   const [popupOpen, setPopupOpen] = useState(false);
   const [initialProductId, setInitialProductId] = useState<string | null>(null);
   const [commentSheetOpen, setCommentSheetOpen] = useState(false);
+  const [userPoints, setUserPoints] = useState<number>(0);
 
   const trackAnalyticsEvent = (eventName: string, params: Record<string, any>) => {
     if (typeof window === 'undefined' || !window.gtag) {
@@ -322,6 +323,29 @@ function PublicLocationProductsPageContent() {
     checkFollow();
   }, [user, company]);
 
+  // Get user points when user and company are available
+  useEffect(() => {
+    const getUserPoints = async () => {
+      if (!user || !company) return;
+
+      const token = localStorage.getItem('customer_token');
+      if (!token) return;
+
+      try {
+        const res = await clientAuthApi.getFollowedCompanies(token);
+        if (res.success && Array.isArray(res.data)) {
+          const currentCompany = res.data.find((c: any) => String(c.id) === String(company.id));
+          if (currentCompany && typeof currentCompany.points_balance === 'number') {
+            setUserPoints(currentCompany.points_balance);
+          }
+        }
+      } catch (e) {
+        console.error("Error getting user points", e);
+      }
+    };
+    getUserPoints();
+  }, [user, company]);
+
   const handleLogout = () => {
     localStorage.removeItem('customer_token');
     localStorage.removeItem('customer_info');
@@ -376,14 +400,14 @@ function PublicLocationProductsPageContent() {
 
     if (hasAnns) setAnnouncements(cachedAnns!.data);
 
+    // Check if we need to fetch point_rules even if we have company cached
+    const needsPointRules = currentCompany && (!currentCompany.point_rules || currentCompany.point_rules.length === 0);
+
     // If we have core data (location, company, items), we can stop loading
     if (hasLocation && hasCompany && hasItems) {
       setLoading(false);
-      // If we have everything including announcements, we can skip fetch entirely
-      // Or maybe we still want to fetch announcements if they are missing?
-      // Let's say if we have core data, we don't block UI.
-      // But we might still want to fetch missing parts in background.
-      if (hasAnns) return;
+      // If we have everything including announcements and point_rules, we can skip fetch entirely
+      if (hasAnns && !needsPointRules) return;
     }
 
     // 2) Fetch missing data
@@ -460,6 +484,7 @@ function PublicLocationProductsPageContent() {
                 name: p.name,
                 description: p.description ?? '',
                 price: typeof p.price === 'string' ? parseFloat(p.price) : (p.price ?? 0),
+                points: typeof p.points === 'string' ? parseFloat(p.points) : p.points ?? undefined,
                 image_url: p.image_url ?? undefined,
                 category: Array.isArray(p.categories) && p.categories.length > 0 ? p.categories[0]?.name : undefined,
                 product_type: p.product_type,
@@ -508,6 +533,29 @@ function PublicLocationProductsPageContent() {
             } catch (e) {
               console.warn('Announcements fetch error', e);
             }
+          }
+        }
+
+        // Fetch Company Details with point_rules if we have company ID and don't have point_rules yet
+        const comp = currentCompany;
+        const companyId = comp && (comp.id || comp.company_id);
+        if (companyId && (!comp.point_rules || comp.point_rules.length === 0)) {
+          try {
+            console.log('🔄 Fetching company point rules for company:', companyId);
+            const companyDetailsRes = await publicWebApiClient.getCompanyById(String(companyId));
+            if (companyDetailsRes.success && companyDetailsRes.data) {
+              const fullCompanyData = (companyDetailsRes.data as any).data || companyDetailsRes.data;
+              // Merge point_rules into current company data
+              const updatedCompany = {
+                ...comp,
+                point_rules: fullCompanyData.point_rules || [],
+              };
+              setCompany(updatedCompany);
+              setCache(`${baseKey}:company`, updatedCompany);
+              console.log('✅ Point rules loaded:', updatedCompany.point_rules);
+            }
+          } catch (e) {
+            console.warn('Could not fetch company point rules', e);
           }
         }
 
@@ -1180,6 +1228,8 @@ function PublicLocationProductsPageContent() {
                           locationId={Number(location.id)}
                           phone={(location as any)?.phone ?? company?.phone}
                           initialOpen={initialProductId === String(item.id)}
+                          pointRules={company?.point_rules || null}
+                          userPoints={userPoints}
                         />
                       ))}
                     </div>
@@ -1194,7 +1244,7 @@ function PublicLocationProductsPageContent() {
 
         {activeSection === 'points' && (
           user ? (
-            <PointsSection companyId={company?.id} />
+            <PointsSection companyId={company?.id} pointRules={company?.point_rules || null} />
           ) : (
             <div className="pb-16">
               <Card>
