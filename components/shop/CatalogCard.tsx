@@ -56,6 +56,7 @@ export function CatalogCard({ item, locationId, phone, initialOpen = false, poin
       name: item.name,
       description: item.description || "",
       price: typeof item.price === "number" ? item.price : 0,
+      points: typeof item.points === "number" ? item.points : undefined, // Loyalty points value for redemption
       product_type: "made_to_order" as const,
       is_active: true,
       category: item.category || "",

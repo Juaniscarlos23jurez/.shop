@@ -53,6 +53,7 @@ interface PaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
   total: number;
+  totalPointsRequired?: number; // Total points needed to pay with points (sum of item.points in cart)
   onPaymentComplete: (paymentData: {
     method: PaymentMethod;
     amount: number;
@@ -73,7 +74,7 @@ interface PointRule {
   ends_at: string;
 }
 
-export function PaymentModal({ isOpen, onClose, total, onPaymentComplete }: PaymentModalProps) {
+export function PaymentModal({ isOpen, onClose, total, totalPointsRequired, onPaymentComplete }: PaymentModalProps) {
   const { toast } = useToast();
   const { token, user } = useAuth();
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash');
@@ -495,10 +496,11 @@ export function PaymentModal({ isOpen, onClose, total, onPaymentComplete }: Paym
         return;
       }
 
-      if (customer.points < total) {
+      const customerPoints = customerPointsBalance !== null ? customerPointsBalance : customer.points;
+      if (!totalPointsRequired || customerPoints < totalPointsRequired) {
         toast({
           title: 'Error',
-          description: `Puntos insuficientes. El cliente tiene ${customer.points} puntos y necesita ${total.toFixed(1)} puntos`,
+          description: `Puntos insuficientes. El cliente tiene ${customerPoints} puntos y necesita ${totalPointsRequired || 0} puntos`,
           variant: 'destructive'
         });
         return;
@@ -518,7 +520,7 @@ export function PaymentModal({ isOpen, onClose, total, onPaymentComplete }: Paym
         amount: paymentMethod === 'cash' ? parseFloat(cashAmount) : currentTotal,
         change: paymentMethod === 'cash' ? change : undefined,
         userId: customer?.id,
-        pointsEarned: paymentMethod === 'points' ? -currentTotal : (customer ? pointsEarned : undefined),
+        pointsEarned: paymentMethod === 'points' ? -(totalPointsRequired || 0) : (customer ? pointsEarned : undefined),
         note: note || undefined,
         deliveryMethod: deliveryMethod,
         couponCode: selectedCoupon?.code,
@@ -683,25 +685,41 @@ export function PaymentModal({ isOpen, onClose, total, onPaymentComplete }: Paym
                   <span>Transferencia</span>
                 </Label>
               </div>
-              <div>
-                <RadioGroupItem
-                  value="points"
-                  id="points"
-                  className="peer sr-only"
-                  disabled={!customer || customer.points < total}
-                />
-                <Label
-                  htmlFor="points"
-                  className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <span>Puntos</span>
-                  {customer && (
-                    <span className="text-xs text-muted-foreground mt-1">
-                      {customer.points} pts
-                    </span>
-                  )}
-                </Label>
-              </div>
+              {/* Points payment option - only show if there are redeemable products and customer has enough points */}
+              {totalPointsRequired && totalPointsRequired > 0 && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className={!customer || (customerPointsBalance !== null ? customerPointsBalance : (customer?.points || 0)) < totalPointsRequired ? 'opacity-50' : ''}>
+                        <RadioGroupItem
+                          value="points"
+                          id="points"
+                          className="peer sr-only"
+                          disabled={!customer || (customerPointsBalance !== null ? customerPointsBalance : (customer?.points || 0)) < totalPointsRequired}
+                        />
+                        <Label
+                          htmlFor="points"
+                          className={`flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-purple-500 [&:has([data-state=checked])]:border-purple-500 ${!customer || (customerPointsBalance !== null ? customerPointsBalance : (customer?.points || 0)) < totalPointsRequired ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                        >
+                          <span className="text-purple-600 font-semibold">Puntos</span>
+                          <span className="text-xs text-muted-foreground mt-1">
+                            {totalPointsRequired} pts
+                          </span>
+                        </Label>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {!customer ? (
+                        <p>Selecciona un cliente para pagar con puntos</p>
+                      ) : (customerPointsBalance !== null ? customerPointsBalance : (customer?.points || 0)) < totalPointsRequired ? (
+                        <p>Puntos insuficientes. Necesita {totalPointsRequired} pts, tiene {customerPointsBalance !== null ? customerPointsBalance : customer?.points || 0} pts</p>
+                      ) : (
+                        <p>Pagar con {totalPointsRequired} puntos</p>
+                      )}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
             </RadioGroup>
           </div>
 
@@ -733,28 +751,33 @@ export function PaymentModal({ isOpen, onClose, total, onPaymentComplete }: Paym
             </RadioGroup>
           </div>
 
-          {paymentMethod === 'points' && customer && (
+          {paymentMethod === 'points' && customer && totalPointsRequired && (
             <div className="space-y-2">
-              <div className="p-4 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
+              <div className="p-4 bg-purple-50 dark:bg-purple-950 border border-purple-200 dark:border-purple-800 rounded-lg">
                 <div className="flex justify-between items-center mb-2">
                   <span className="font-medium">Puntos disponibles:</span>
-                  <span className="text-lg font-bold">{customer.points} pts</span>
+                  <span className="text-lg font-bold text-purple-600">{customerPointsBalance !== null ? customerPointsBalance : customer.points} pts</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="font-medium">Total a pagar:</span>
-                  <span className="text-lg font-bold">${total.toFixed(2)}</span>
+                  <span className="font-medium">Puntos a usar:</span>
+                  <span className="text-lg font-bold text-purple-700">{totalPointsRequired} pts</span>
                 </div>
-                <div className="mt-3 pt-3 border-t">
+                <div className="mt-3 pt-3 border-t border-purple-200">
                   <div className="flex justify-between items-center">
                     <span className="font-medium">Puntos después del pago:</span>
-                    <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
-                      {(customer.points - total).toFixed(1)} pts
+                    <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
+                      {((customerPointsBalance !== null ? customerPointsBalance : customer.points) - totalPointsRequired).toFixed(0)} pts
                     </span>
                   </div>
                 </div>
-                {customer.points < total && (
+                {(customerPointsBalance !== null ? customerPointsBalance : customer.points) < totalPointsRequired && (
                   <div className="mt-3 p-2 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded text-sm text-red-600 dark:text-red-400">
-                    Puntos insuficientes. Necesitas {(total - customer.points).toFixed(1)} puntos más.
+                    Puntos insuficientes. Necesitas {(totalPointsRequired - (customerPointsBalance !== null ? customerPointsBalance : customer.points)).toFixed(0)} puntos más.
+                  </div>
+                )}
+                {(customerPointsBalance !== null ? customerPointsBalance : customer.points) >= totalPointsRequired && (
+                  <div className="mt-3 p-2 bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800 rounded text-sm text-emerald-600 dark:text-emerald-400">
+                    ✓ ¡Este pedido se puede pagar con tus puntos!
                   </div>
                 )}
               </div>

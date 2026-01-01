@@ -8,6 +8,7 @@ interface CartItem extends Omit<Product, 'description' | 'imageUrl' | 'category'
   id: string
   image_url?: string
   quantity: number
+  points?: number // Loyalty points value for redemption
 }
 
 interface CartContextType {

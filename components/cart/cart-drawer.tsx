@@ -4,7 +4,7 @@ import React, { useState, useMemo } from 'react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 import * as Lucide from 'lucide-react'
-const { Minus, Plus, Trash2, Share2 } = Lucide as any
+const { Minus, Plus, Trash2, Share2, Gift } = Lucide as any
 import { useCart } from '@/lib/cart-context'
 import Image from 'next/image'
 import { Input } from '@/components/ui/input'
@@ -15,16 +15,51 @@ interface CartDrawerProps {
   onClose: () => void
   locationPhone?: string
   locationName?: string
+  userPoints?: number | null
 }
 
-export function CartDrawer({ open, onClose, locationPhone, locationName }: CartDrawerProps) {
+export function CartDrawer({ open, onClose, locationPhone, locationName, userPoints }: CartDrawerProps) {
   const { items, removeItem, updateQuantity, total, clearCart } = useCart()
   const [customerName, setCustomerName] = useState('')
-  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'spei'>('cash')
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'spei' | 'points'>('cash')
   const [deliveryMethod, setDeliveryMethod] = useState<'pickup' | 'delivery'>('pickup')
   const isMobile = useIsMobile()
 
   const totalFormatted = useMemo(() => total.toFixed(2), [total])
+
+  // Calculate total points required for cart items
+  const totalPointsRequired = useMemo(() => {
+    const pts = items.reduce((acc, item) => {
+      const itemPoints = typeof (item as any).points === 'number' ? (item as any).points : 0
+      return acc + (itemPoints * item.quantity)
+    }, 0)
+    console.log('[CartDrawer] totalPointsRequired calculation:', {
+      items: items.map(i => ({ name: i.name, points: (i as any).points, quantity: i.quantity })),
+      calculatedTotal: pts
+    });
+    return pts
+  }, [items])
+
+  // Check if user can pay with points
+  const canPayWithPoints = useMemo(() => {
+    const result = totalPointsRequired > 0 &&
+      typeof userPoints === 'number' &&
+      userPoints >= totalPointsRequired
+
+    console.log('[CartDrawer] canPayWithPoints check:', {
+      totalPointsRequired,
+      userPoints,
+      userPointsType: typeof userPoints,
+      result
+    });
+    return result
+  }, [totalPointsRequired, userPoints])
+
+  // Points remaining after payment
+  const pointsAfterPayment = useMemo(() => {
+    if (typeof userPoints !== 'number') return 0
+    return userPoints - totalPointsRequired
+  }, [userPoints, totalPointsRequired])
 
   function formatPhoneToWhatsApp(phone?: string): string | undefined {
     if (!phone) return undefined
@@ -84,8 +119,14 @@ export function CartDrawer({ open, onClose, locationPhone, locationName }: CartD
       lines.push(`- ${item.name} x${item.quantity} - $${subtotal}`)
     }
     lines.push('')
-    lines.push(`*Total:* $${totalFormatted}`)
-    lines.push(`*Metodo de pago:* ${paymentMethod === 'cash' ? 'Efectivo' : 'SPEI'}`)
+
+    if (paymentMethod === 'points') {
+      lines.push(`*Total:* ${totalPointsRequired} puntos`)
+      lines.push(`*Metodo de pago:* Puntos de lealtad`)
+    } else {
+      lines.push(`*Total:* $${totalFormatted}`)
+      lines.push(`*Metodo de pago:* ${paymentMethod === 'cash' ? 'Efectivo' : 'SPEI'}`)
+    }
     lines.push(`*Tipo de entrega:* ${deliveryMethod === 'pickup' ? 'Recoger en tienda' : 'Envio a domicilio'}`)
     lines.push('')
     lines.push('Muchas gracias!')
@@ -188,22 +229,11 @@ export function CartDrawer({ open, onClose, locationPhone, locationName }: CartD
 
           {items.length > 0 && (
             <div className={`border-t px-6 py-4 space-y-4 ${isMobile ? 'pb-[calc(env(safe-area-inset-bottom,0px)+16px)]' : ''}`}>
-              {/* Buyer info */}
-              <div className="space-y-2">
-                <label htmlFor="customer-name" className="text-sm font-medium">
-                  Nombre del cliente (opcional)
-                </label>
-                <Input
-                  id="customer-name"
-                  placeholder="Ej. Juan Pérez"
-                  value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                />
-              </div>
+
               {/* Payment method */}
               <div className="space-y-2">
                 <label className="text-sm font-medium">Método de pago</label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className={`grid gap-2 ${canPayWithPoints ? 'grid-cols-3' : 'grid-cols-2'}`}>
                   <Button
                     variant={paymentMethod === 'cash' ? 'default' : 'outline'}
                     className={paymentMethod === 'cash' ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''}
@@ -218,8 +248,71 @@ export function CartDrawer({ open, onClose, locationPhone, locationName }: CartD
                   >
                     SPEI
                   </Button>
+                  {/* Debug Info for User - remove later */}
+                  {(() => {
+                    console.log('[CartDrawer Render] canPayWithPoints:', canPayWithPoints, {
+                      totalPointsRequired,
+                      userPoints,
+                      paymentMethod,
+                      itemsWithPoints: items.map(i => ({ name: i.name, points: (i as any).points }))
+                    });
+                    return null;
+                  })()}
+                  {canPayWithPoints && (
+                    <Button
+                      variant={paymentMethod === 'points' ? 'default' : 'outline'}
+                      className={paymentMethod === 'points' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'border-purple-300 text-purple-700'}
+                      onClick={() => setPaymentMethod('points')}
+                    >
+                      <Gift className="h-4 w-4 mr-1" />
+                      Puntos
+                    </Button>
+                  )}
                 </div>
               </div>
+
+              {/* Points payment info */}
+              {paymentMethod === 'points' && canPayWithPoints && (
+                <div className="rounded-xl bg-purple-50 border border-purple-200 p-4 space-y-2">
+                  <div className="flex items-center gap-2 text-purple-700 font-semibold">
+                    <Gift className="h-5 w-5" />
+                    <span>Pago con Puntos</span>
+                  </div>
+                  <div className="space-y-1 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Tus puntos:</span>
+                      <span className="font-semibold text-purple-600">{userPoints} pts</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Puntos a usar:</span>
+                      <span className="font-semibold text-purple-700">{totalPointsRequired} pts</span>
+                    </div>
+                    <div className="flex justify-between pt-2 border-t border-purple-200">
+                      <span className="text-gray-600">Puntos restantes:</span>
+                      <span className="font-semibold text-emerald-600">{pointsAfterPayment} pts</span>
+                    </div>
+                  </div>
+                  <p className="text-xs text-purple-600 mt-2">
+                    🎉 ¡Canjea tus puntos por este pedido!
+                  </p>
+                </div>
+              )}
+
+              {/* Show points option hint if user has points but not enough */}
+              {(() => {
+                const showHint = totalPointsRequired > 0 && typeof userPoints === 'number' && !canPayWithPoints && userPoints > 0;
+                if (showHint) {
+                  console.log('[CartDrawer Hint] User has points but not enough:', { userPoints, totalPointsRequired });
+                }
+                return showHint ? (
+                  <div className="rounded-xl bg-amber-50 border border-amber-200 p-3">
+                    <p className="text-xs text-amber-700">
+                      💡 Te faltan <strong>{totalPointsRequired - (userPoints || 0)}</strong> puntos para pagar con puntos.
+                      Tienes {userPoints} pts, necesitas {totalPointsRequired} pts.
+                    </p>
+                  </div>
+                ) : null;
+              })()}
 
               {/* Delivery method */}
               <div className="space-y-2">
@@ -244,23 +337,29 @@ export function CartDrawer({ open, onClose, locationPhone, locationName }: CartD
 
               <div className="flex justify-between text-base font-medium">
                 <p>Total</p>
-                <p>${totalFormatted}</p>
+                {paymentMethod === 'points' ? (
+                  <p className="text-purple-600">{totalPointsRequired} pts</p>
+                ) : (
+                  <p>${totalFormatted}</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Button
-                  className="w-full bg-emerald-500 hover:bg-emerald-600 text-white"
+                  className={`w-full ${paymentMethod === 'points' ? 'bg-purple-500 hover:bg-purple-600' : 'bg-emerald-500 hover:bg-emerald-600'} text-white`}
                   onClick={() => {
                     if (typeof window !== 'undefined' && (window as any).gtag) {
                       (window as any).gtag('event', 'click_proceder_pago_whatsapp', {
                         event_category: 'checkout',
-                        event_label: 'Proceder al Pago por WhatsApp',
-                        value: total,
+                        event_label: paymentMethod === 'points' ? 'Pago con Puntos' : 'Proceder al Pago por WhatsApp',
+                        value: paymentMethod === 'points' ? totalPointsRequired : total,
                       })
                     }
                     handleCheckout()
                   }}
                 >
-                  Proceder al Pago por WhatsApp
+                  {paymentMethod === 'points'
+                    ? `Canjear ${totalPointsRequired} Puntos por WhatsApp`
+                    : 'Proceder al Pago por WhatsApp'}
                 </Button>
 
 

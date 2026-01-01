@@ -1355,6 +1355,7 @@ function PublicLocationProductsPageContent() {
         onClose={() => setCartOpen(false)}
         locationPhone={(location as any)?.phone ?? company?.phone}
         locationName={location?.name}
+        userPoints={userPoints}
       />
 
       <BottomNav activeSection={activeSection} onSectionChange={setActiveSection} />
