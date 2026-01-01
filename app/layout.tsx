@@ -1,16 +1,59 @@
 import type { Metadata } from 'next'
+import Script from 'next/script'
 import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
 import { AuthProvider } from '@/contexts/AuthContext'
-import './globals.css'
-import Script from 'next/script'
 import { GA4PageViewTracker } from '@/components/analytics/GA4PageViewTracker'
 import { CookieConsent } from '@/components/cookie-consent'
+import './globals.css'
+
+const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.fynlink.shop').replace(/\/$/, '')
 
 export const metadata: Metadata = {
-  title: 'Fideliza',
-  description: 'haz crecer tu negocio',
-  generator: 'Fideliza',
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: 'Fynlink+ | Plataforma de fidelización todo en uno',
+    template: '%s | Fynlink+',
+  },
+  description:
+    'Fynlink+ te ayuda a fidelizar clientes, lanzar programas de recompensas y hacer crecer tu negocio desde un solo dashboard.',
+  keywords: ['fynlink', 'fidelización', 'programa de puntos', 'crm', 'negocios locales', 'lealtad'],
+  applicationName: 'Fynlink+',
+  creator: 'Fynlink',
+  publisher: 'Fynlink',
+  alternates: {
+    canonical: '/',
+  },
+  openGraph: {
+    type: 'website',
+    url: siteUrl,
+    siteName: 'Fynlink+',
+    title: 'Fynlink+ | Plataforma de fidelización todo en uno',
+    description:
+      'Centraliza tus cupones, recompensas y campañas de lealtad para convertir clientes en fans de tu marca.',
+    images: [
+      {
+        url: `${siteUrl}/logorewa.png`,
+        width: 1200,
+        height: 630,
+        alt: 'Fynlink+ Dashboard',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    site: '@fynlink',
+    creator: '@fynlink',
+    title: 'Fynlink+ | Plataforma de fidelización todo en uno',
+    description:
+      'Centraliza tus cupones, recompensas y campañas de lealtad para convertir clientes en fans de tu marca.',
+    images: [`${siteUrl}/logorewa.png`],
+  },
+  icons: {
+    icon: '/logorewa.png',
+    shortcut: '/logorewa.png',
+    apple: '/logorewa.png',
+  },
 }
 
 export default function RootLayout({
