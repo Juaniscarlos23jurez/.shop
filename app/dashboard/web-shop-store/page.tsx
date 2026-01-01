@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import * as Lucide from "lucide-react";
 const { Monitor, TrendingUp, Users, Eye, Clock, Zap, MapPin, Smartphone, Tablet } = Lucide as any;
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { useAuth } from "@/contexts/AuthContext";
+import { api } from "@/lib/api/api";
 
 // Tipos
 type TimeSeriesData = {
@@ -46,21 +48,74 @@ type DeviceBreakdown = {
   tablet: number;
 };
 
-// Lista de páginas disponibles
-const AVAILABLE_PAGES = [
-  "/rewin/miel-de-sol/1",
-  "/rewin/miel-de-sol/2",
-  "/rewin/cafe-aroma/1",
-];
+// Lista de páginas disponibles será cargada dinámicamente
+// const AVAILABLE_PAGES = ...
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
 export default function WebShopStorePage() {
-  const [selectedPage, setSelectedPage] = useState<string>(AVAILABLE_PAGES[0]);
+  const { token } = useAuth();
+  const [selectedPage, setSelectedPage] = useState<string>("");
+  const [availableLocations, setAvailableLocations] = useState<any[]>([]);
+  const [companySlug, setCompanySlug] = useState<string>("");
   const [dateRange, setDateRange] = useState<'7d' | '30d' | '90d' | 'all' | 'custom'>('7d');
   const [customStartDate, setCustomStartDate] = useState<string>('');
   const [customEndDate, setCustomEndDate] = useState<string>('');
-  
+
+  // Cargar sucursales y slug de la compañía
+  useEffect(() => {
+    if (!token) return;
+
+    const loadCompanyData = async () => {
+      try {
+        console.log('[WebShopStore] Iniciando carga de datos...');
+        const [compRes, locRes] = await Promise.all([
+          api.userCompanies.get(token),
+          api.userCompanies.getLocations(token)
+        ]);
+
+        console.log('[WebShopStore] Company Response:', compRes);
+        console.log('[WebShopStore] Locations Response:', locRes);
+
+        let slug = "";
+        if (compRes.success && compRes.data) {
+          const d = compRes.data as any;
+          // Extraer slug con múltiples fallbacks según la estructura del API
+          slug = d.company?.slug || d.data?.company?.slug || d.slug || d.data?.slug || "";
+          console.log('[WebShopStore] Slug detectado:', slug);
+          if (slug) setCompanySlug(slug);
+        }
+
+        if (locRes.success && locRes.data) {
+          const d = locRes.data as any;
+          // Extraer locations: puede venir en .locations, .data.locations, o ser el array directo en .data
+          const fetchedLocations = d.locations || d.data?.locations || (Array.isArray(d) ? d : (Array.isArray(d.data) ? d.data : []));
+
+          console.log('[WebShopStore] Sucursales detectadas:', fetchedLocations.length, fetchedLocations);
+          setAvailableLocations(fetchedLocations);
+
+          // Si hay sucursales y slug, seleccionar la primera por defecto
+          if (fetchedLocations.length > 0 && slug) {
+            const firstPage = `/rewin/${slug}/${fetchedLocations[0].id}`;
+            console.log('[WebShopStore] Seleccionando página inicial:', firstPage);
+            setSelectedPage(firstPage);
+          }
+        } else if (locRes.success && (locRes as any).locations) {
+          // Caso borde donde locations está en la raíz del response
+          const fetchedLocations = (locRes as any).locations;
+          setAvailableLocations(fetchedLocations);
+          if (fetchedLocations.length > 0 && slug) {
+            setSelectedPage(`/rewin/${slug}/${fetchedLocations[0].id}`);
+          }
+        }
+      } catch (err) {
+        console.error("[WebShopStore] Error al cargar datos de la tienda web:", err);
+      }
+    };
+
+    loadCompanyData();
+  }, [token]);
+
   // Estados para datos del API
   const [pageMetrics, setPageMetrics] = useState<TimeSeriesData[]>([]);
   const [totalMetrics, setTotalMetrics] = useState<TotalMetrics | null>(null);
@@ -71,6 +126,9 @@ export default function WebShopStorePage() {
   const [allEvents, setAllEvents] = useState<{ name: string; count: number; percent: number }[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Cache para evitar re-consultas innecesarias
+  const [analyticsCache, setAnalyticsCache] = useState<Record<string, any>>({});
 
   // Calcular el count de checkout desde allEvents como fallback
   const checkoutEventFromList = allEvents.find(e => e.name === 'click_proceder_pago_whatsapp');
@@ -88,7 +146,7 @@ export default function WebShopStorePage() {
   };
 
   // Calcular fechas según el rango seleccionado
-  const getDateRange = () => {
+  const getDateRangeParams = () => {
     if (dateRange === 'custom' && customStartDate && customEndDate) {
       return { startDate: customStartDate, endDate: customEndDate };
     }
@@ -97,18 +155,10 @@ export default function WebShopStorePage() {
     const start = new Date();
 
     switch (dateRange) {
-      case '7d':
-        start.setDate(end.getDate() - 7);
-        break;
-      case '30d':
-        start.setDate(end.getDate() - 30);
-        break;
-      case '90d':
-        start.setDate(end.getDate() - 90);
-        break;
-      case 'all':
-        start.setFullYear(end.getFullYear() - 1);
-        break;
+      case '7d': start.setDate(end.getDate() - 7); break;
+      case '30d': start.setDate(end.getDate() - 30); break;
+      case '90d': start.setDate(end.getDate() - 90); break;
+      case 'all': start.setFullYear(end.getFullYear() - 1); break;
     }
 
     return {
@@ -120,11 +170,31 @@ export default function WebShopStorePage() {
   // Fetch data from API
   useEffect(() => {
     const fetchAnalytics = async () => {
+      if (!selectedPage) return;
+
+      const { startDate, endDate } = getDateRangeParams();
+      const cacheKey = `${selectedPage}-${startDate}-${endDate}`;
+
+      // Intentar cargar desde cache primero
+      if (analyticsCache[cacheKey]) {
+        console.log('[Analytics Cache] Usando datos cacheados para:', cacheKey);
+        const cached = analyticsCache[cacheKey];
+        setPageMetrics(cached.pageMetrics);
+        setTotalMetrics(cached.totalMetrics);
+        setRealtimeData(cached.realtimeData);
+        setLocations(cached.locations);
+        setDeviceBreakdown(cached.deviceBreakdown);
+        setCheckoutWhatsappCount(cached.checkoutWhatsappCount);
+        setAllEvents(cached.allEvents);
+        setLoading(false);
+        setError(null);
+        return;
+      }
+
       setLoading(true);
       setError(null);
 
       try {
-        const { startDate, endDate } = getDateRange();
         const params = new URLSearchParams({
           pagePath: selectedPage,
           startDate,
@@ -138,6 +208,8 @@ export default function WebShopStorePage() {
 
         const data = await response.json();
         console.log('[Frontend Debug] API Response:', data);
+
+        // Actualizar estados
         setPageMetrics(data.pageMetrics || []);
         setTotalMetrics(data.totalMetrics);
         setRealtimeData(data.realtimeData);
@@ -145,6 +217,18 @@ export default function WebShopStorePage() {
         setDeviceBreakdown(data.deviceBreakdown || { desktop: 0, mobile: 0, tablet: 0 });
         setCheckoutWhatsappCount(data.checkoutWhatsappCount || 0);
         setAllEvents(data.allEvents || []);
+
+        // Guardar en cache
+        setAnalyticsCache(prev => ({
+          ...prev,
+          [cacheKey]: {
+            ...data,
+            pageMetrics: data.pageMetrics || [],
+            locations: data.locations || [],
+            deviceBreakdown: data.deviceBreakdown || { desktop: 0, mobile: 0, tablet: 0 },
+            allEvents: data.allEvents || []
+          }
+        }));
       } catch (err: any) {
         setError(err.message || 'Error desconocido');
         console.error('Error fetching analytics:', err);
@@ -154,7 +238,7 @@ export default function WebShopStorePage() {
     };
 
     fetchAnalytics();
-  }, [selectedPage, dateRange, customStartDate, customEndDate]);
+  }, [selectedPage, dateRange, customStartDate, customEndDate, analyticsCache]);
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
@@ -191,11 +275,14 @@ export default function WebShopStorePage() {
                 <SelectValue placeholder="Selecciona una página" />
               </SelectTrigger>
               <SelectContent>
-                {AVAILABLE_PAGES.map((page) => (
-                  <SelectItem key={page} value={page} className="text-base">
-                    {page}
-                  </SelectItem>
-                ))}
+                {availableLocations.map((loc) => {
+                  const path = `/rewin/${companySlug}/${loc.id}`;
+                  return (
+                    <SelectItem key={loc.id} value={path} className="text-base">
+                      {loc.name} ({path})
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
 
@@ -248,41 +335,37 @@ export default function WebShopStorePage() {
           <div className="flex flex-col items-end gap-2 md:flex-row md:items-center md:gap-3">
             <button
               onClick={() => setDateRange('7d')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                dateRange === '7d'
-                  ? 'bg-emerald-600 text-white'
-                  : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
-              }`}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${dateRange === '7d'
+                ? 'bg-emerald-600 text-white'
+                : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+                }`}
             >
               Últimos 7 días
             </button>
             <button
               onClick={() => setDateRange('30d')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                dateRange === '30d'
-                  ? 'bg-emerald-600 text-white'
-                  : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
-              }`}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${dateRange === '30d'
+                ? 'bg-emerald-600 text-white'
+                : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+                }`}
             >
               Últimos 30 días
             </button>
             <button
               onClick={() => setDateRange('90d')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                dateRange === '90d'
-                  ? 'bg-emerald-600 text-white'
-                  : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
-              }`}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${dateRange === '90d'
+                ? 'bg-emerald-600 text-white'
+                : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+                }`}
             >
               Últimos 90 días
             </button>
             <button
               onClick={() => setDateRange('custom')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                dateRange === 'custom'
-                  ? 'bg-emerald-600 text-white'
-                  : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
-              }`}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${dateRange === 'custom'
+                ? 'bg-emerald-600 text-white'
+                : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+                }`}
             >
               Personalizado
             </button>
@@ -569,8 +652,8 @@ export default function WebShopStorePage() {
                 <div className="text-center">
                   <div className="text-6xl font-bold text-emerald-600 mb-2">{finalCheckoutCount}</div>
                   <p className="text-sm text-emerald-700">
-                    {finalCheckoutCount === 0 
-                      ? "No hay clicks registrados en este período" 
+                    {finalCheckoutCount === 0
+                      ? "No hay clicks registrados en este período"
                       : "Clicks totales en el período seleccionado"}
                   </p>
                   {checkoutEventFromList && checkoutWhatsappCount === 0 && (
@@ -599,26 +682,23 @@ export default function WebShopStorePage() {
                 {allEvents.map((event, idx) => (
                   <div
                     key={`${event.name}-${idx}`}
-                    className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${
-                      event.name === 'click_proceder_pago_whatsapp'
-                        ? 'border-emerald-300 bg-emerald-50 hover:bg-emerald-100'
-                        : 'border-slate-200 bg-slate-50 hover:bg-slate-100'
-                    }`}
+                    className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${event.name === 'click_proceder_pago_whatsapp'
+                      ? 'border-emerald-300 bg-emerald-50 hover:bg-emerald-100'
+                      : 'border-slate-200 bg-slate-50 hover:bg-slate-100'
+                      }`}
                   >
                     <div className="flex items-center gap-3 flex-1">
-                      <div className={`flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold ${
-                        event.name === 'click_proceder_pago_whatsapp'
-                          ? 'bg-emerald-200 text-emerald-700'
-                          : 'bg-slate-200 text-slate-600'
-                      }`}>
+                      <div className={`flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold ${event.name === 'click_proceder_pago_whatsapp'
+                        ? 'bg-emerald-200 text-emerald-700'
+                        : 'bg-slate-200 text-slate-600'
+                        }`}>
                         {idx + 1}
                       </div>
                       <div className="flex-1">
-                        <p className={`font-medium text-sm ${
-                          event.name === 'click_proceder_pago_whatsapp'
-                            ? 'text-emerald-900'
-                            : 'text-slate-900'
-                        }`}>
+                        <p className={`font-medium text-sm ${event.name === 'click_proceder_pago_whatsapp'
+                          ? 'text-emerald-900'
+                          : 'text-slate-900'
+                          }`}>
                           {event.name}
                         </p>
                       </div>

@@ -20,10 +20,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Plus, X } from "lucide-react"
+import { Plus, X, MessageSquarePlus } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
-export function FeedbackButton() {
+export function FeedbackButton({ variant = "floating" }: { variant?: "floating" | "navbar" }) {
   const [isOpen, setIsOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [screenshot, setScreenshot] = useState<File | null>(null)
@@ -39,7 +39,7 @@ export function FeedbackButton() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!formData.type || !formData.message) {
       toast({
         title: "Error",
@@ -50,17 +50,17 @@ export function FeedbackButton() {
     }
 
     setIsSubmitting(true)
-    
+
     try {
       // Here you would send the feedback to your backend
       // For now, we'll simulate it with a timeout
       await new Promise(resolve => setTimeout(resolve, 1000))
-      
+
       toast({
         title: "¡Gracias por tu feedback!",
         description: "Hemos recibido tu mensaje y lo revisaremos pronto.",
       })
-      
+
       // Reset form
       setFormData({
         type: "",
@@ -106,7 +106,7 @@ export function FeedbackButton() {
       // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
         toast({
-          title: "Error", 
+          title: "Error",
           description: "La imagen no debe ser mayor a 5MB",
           variant: "destructive"
         })
@@ -114,7 +114,7 @@ export function FeedbackButton() {
       }
 
       setScreenshot(file)
-      
+
       // Create preview
       const reader = new FileReader()
       reader.onloadend = () => {
@@ -130,16 +130,26 @@ export function FeedbackButton() {
   }
 
   return (
-    <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50">
+    <div className={variant === "floating" ? "fixed top-4 left-1/2 transform -translate-x-1/2 z-50" : "relative"}>
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogTrigger asChild>
-          <Button
-            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 rounded-full px-6 py-3 flex items-center gap-2"
-            size="sm"
-          >
-            <Plus className="w-4 h-4" />
-            <span className="font-medium">Feedback</span>
-          </Button>
+          {variant === "floating" ? (
+            <Button
+              className="bg-purple-600 hover:bg-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 rounded-full px-6 py-3 flex items-center gap-2"
+              size="sm"
+            >
+              <Plus className="w-4 h-4" />
+              <span className="font-medium">Feedback</span>
+            </Button>
+          ) : (
+            <Button
+              className="bg-purple-600 hover:bg-purple-700 text-white flex items-center gap-2 px-3 py-2 rounded-full transition-colors duration-200"
+              size="sm"
+            >
+              <MessageSquarePlus className="w-4 h-4" />
+              <span className="font-medium hidden sm:inline">Feedback.</span>
+            </Button>
+          )}
         </DialogTrigger>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
@@ -151,7 +161,7 @@ export function FeedbackButton() {
               Ayúdanos a mejorar Fynlink+ compartiendo tus ideas, reportando problemas o sugiriendo mejoras.
             </DialogDescription>
           </DialogHeader>
-          
+
           <form onSubmit={handleSubmit} className="space-y-4 mt-4">
             <div className="space-y-2">
               <Label htmlFor="type">Tipo de Feedback *</Label>
@@ -237,7 +247,7 @@ export function FeedbackButton() {
                     </Button>
                   )}
                 </div>
-                
+
                 {screenshotPreview && (
                   <div className="mt-3">
                     <p className="text-sm text-gray-600 mb-2">Vista previa:</p>
@@ -250,7 +260,7 @@ export function FeedbackButton() {
                     </div>
                   </div>
                 )}
-                
+
                 <p className="text-xs text-gray-500">
                   Formatos aceptados: JPG, PNG, GIF. Máximo 5MB.
                 </p>

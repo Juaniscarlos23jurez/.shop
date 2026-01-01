@@ -60,29 +60,160 @@ export async function GET(req: NextRequest) {
 
     const client = getAnalyticsClient();
 
-    // 1. Obtener métricas totales para el período
-    const [totalResponse] = await client.runReport({
-      property: `properties/${propertyId}`,
-      dateRanges: [{ startDate, endDate }],
-      dimensions: [],
-      metrics: [
-        { name: "screenPageViews" },
-        { name: "activeUsers" },
-        { name: "userEngagementDuration" },
-        { name: "eventCount" },
-        { name: "conversions" },
-      ],
-      dimensionFilter: {
-        filter: {
-          fieldName: "pagePath",
-          stringFilter: {
-            matchType: "BEGINS_WITH",
-            value: pagePath,
+    // Grouping all GA4 requests to run in parallel for performance
+    const [
+      totalMetricsRes,
+      timeSeriesRes,
+      locationsRes,
+      devicesRes,
+      checkoutEventAllRes,
+      checkoutEventRes,
+      allEventsRes,
+      realtime30MinRes,
+      realtime5MinRes,
+      realtimeSourcesRes,
+      realtimeEventsRes
+    ] = await Promise.all([
+      // 1. Totals
+      client.runReport({
+        property: `properties/${propertyId}`,
+        dateRanges: [{ startDate, endDate }],
+        metrics: [
+          { name: "screenPageViews" },
+          { name: "activeUsers" },
+          { name: "userEngagementDuration" },
+          { name: "eventCount" },
+          { name: "conversions" },
+        ],
+        dimensionFilter: {
+          filter: {
+            fieldName: "pagePath",
+            stringFilter: { matchType: "BEGINS_WITH", value: pagePath },
           },
         },
-      },
-    });
+      }),
+      // 2. TimeSeries
+      client.runReport({
+        property: `properties/${propertyId}`,
+        dateRanges: [{ startDate, endDate }],
+        dimensions: [{ name: "date" }],
+        metrics: [
+          { name: "screenPageViews" },
+          { name: "activeUsers" },
+          { name: "eventCount" },
+        ],
+        dimensionFilter: {
+          filter: {
+            fieldName: "pagePath",
+            stringFilter: { matchType: "BEGINS_WITH", value: pagePath },
+          },
+        },
+        orderBys: [{ dimension: { dimensionName: "date" }, desc: false }],
+      }),
+      // 3. Locations
+      client.runReport({
+        property: `properties/${propertyId}`,
+        dateRanges: [{ startDate, endDate }],
+        dimensions: [{ name: "city" }, { name: "country" }],
+        metrics: [{ name: "activeUsers" }, { name: "screenPageViews" }],
+        dimensionFilter: {
+          filter: {
+            fieldName: "pagePath",
+            stringFilter: { matchType: "BEGINS_WITH", value: pagePath },
+          },
+        },
+        orderBys: [{ metric: { metricName: "screenPageViews" }, desc: true }],
+        limit: 10,
+      }),
+      // 4. Devices
+      client.runReport({
+        property: `properties/${propertyId}`,
+        dateRanges: [{ startDate, endDate }],
+        dimensions: [{ name: "deviceCategory" }],
+        metrics: [{ name: "activeUsers" }],
+        dimensionFilter: {
+          filter: {
+            fieldName: "pagePath",
+            stringFilter: { matchType: "BEGINS_WITH", value: pagePath },
+          },
+        },
+      }),
+      // 5. Checkout Event All Pages
+      client.runReport({
+        property: `properties/${propertyId}`,
+        dateRanges: [{ startDate, endDate }],
+        dimensions: [{ name: "eventName" }, { name: "pagePath" }],
+        metrics: [{ name: "eventCount" }],
+        dimensionFilter: {
+          filter: {
+            fieldName: "eventName",
+            stringFilter: { matchType: "EXACT", value: "click_proceder_pago_whatsapp" },
+          },
+        },
+      }),
+      // 6. Checkout Event Filtered
+      client.runReport({
+        property: `properties/${propertyId}`,
+        dateRanges: [{ startDate, endDate }],
+        dimensions: [{ name: "eventName" }],
+        metrics: [{ name: "eventCount" }],
+        dimensionFilter: {
+          andGroup: {
+            expressions: [
+              { filter: { fieldName: "pagePath", stringFilter: { matchType: "BEGINS_WITH", value: pagePath } } },
+              { filter: { fieldName: "eventName", stringFilter: { matchType: "EXACT", value: "click_proceder_pago_whatsapp" } } },
+            ],
+          },
+        },
+      }),
+      // 7. All Events
+      client.runReport({
+        property: `properties/${propertyId}`,
+        dateRanges: [{ startDate, endDate }],
+        dimensions: [{ name: "eventName" }],
+        metrics: [{ name: "eventCount" }],
+        dimensionFilter: {
+          filter: {
+            fieldName: "pagePath",
+            stringFilter: { matchType: "BEGINS_WITH", value: pagePath },
+          },
+        },
+        orderBys: [{ metric: { metricName: "eventCount" }, desc: true }],
+        limit: 20,
+      }),
+      // 8-11 Realtime
+      client.runRealtimeReport({
+        property: `properties/${propertyId}`,
+        metrics: [{ name: "activeUsers" }],
+        minuteRanges: [{ name: "0-30 minutes ago", startMinutesAgo: 30, endMinutesAgo: 0 }],
+      }).catch(() => [null]), // Graceful fail for realtime
+      client.runRealtimeReport({
+        property: `properties/${propertyId}`,
+        metrics: [{ name: "activeUsers" }],
+        minuteRanges: [{ name: "0-5 minutes ago", startMinutesAgo: 5, endMinutesAgo: 0 }],
+      }).catch(() => [null]),
+      client.runRealtimeReport({
+        property: `properties/${propertyId}`,
+        dimensions: [{ name: "sessionSource" }],
+        metrics: [{ name: "activeUsers" }],
+        minuteRanges: [{ name: "0-30 minutes ago", startMinutesAgo: 30, endMinutesAgo: 0 }],
+        limit: 5,
+        orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }],
+      }).catch(() => [null]),
+      client.runRealtimeReport({
+        property: `properties/${propertyId}`,
+        dimensions: [{ name: "eventName" }],
+        metrics: [{ name: "eventCount" }],
+        minuteRanges: [{ name: "0-30 minutes ago", startMinutesAgo: 30, endMinutesAgo: 0 }],
+        limit: 5,
+        orderBys: [{ metric: { metricName: "eventCount" }, desc: true }],
+      }).catch(() => [null]),
+    ]);
 
+    // --- Process Responses ---
+
+    // 1. Totals
+    const [totalResponse] = totalMetricsRes;
     let totalMetrics = null;
     if (totalResponse.rows && totalResponse.rows.length > 0) {
       const row = totalResponse.rows[0];
@@ -105,29 +236,8 @@ export async function GET(req: NextRequest) {
       };
     }
 
-    // 2. Obtener serie temporal (métricas por día)
-    const [timeSeriesResponse] = await client.runReport({
-      property: `properties/${propertyId}`,
-      dateRanges: [{ startDate, endDate }],
-      dimensions: [{ name: "date" }],
-      metrics: [
-        { name: "screenPageViews" },
-        { name: "activeUsers" },
-        { name: "eventCount" },
-      ],
-      dimensionFilter: {
-        filter: {
-          fieldName: "pagePath",
-          stringFilter: {
-            matchType: "BEGINS_WITH",
-            value: pagePath,
-          },
-        },
-      },
-      orderBys: [{ dimension: { dimensionName: "date" }, desc: false }],
-    });
-
-    // Procesar la respuesta para llenar los días faltantes con ceros
+    // 2. TimeSeries
+    const [timeSeriesResponse] = timeSeriesRes;
     const dataMap = new Map();
     timeSeriesResponse.rows?.forEach((row) => {
       const dateStr = row.dimensionValues?.[0]?.value || "";
@@ -152,12 +262,7 @@ export async function GET(req: NextRequest) {
 
       pageMetrics = allDates.map((dateObj) => {
         const date = format(dateObj, 'yyyy-MM-dd');
-        const metrics = dataMap.get(date) || { views: 0, users: 0, events: 0 };
-
-        return {
-          date,
-          ...metrics
-        };
+        return { date, ...(dataMap.get(date) || { views: 0, users: 0, events: 0 }) };
       });
     } catch (e) {
       console.error("Error generating date range:", e);
@@ -177,28 +282,8 @@ export async function GET(req: NextRequest) {
       }) || [];
     }
 
-    // 3. Obtener ubicaciones (ciudades)
-    const [locationsResponse] = await client.runReport({
-      property: `properties/${propertyId}`,
-      dateRanges: [{ startDate, endDate }],
-      dimensions: [{ name: "city" }, { name: "country" }],
-      metrics: [
-        { name: "activeUsers" },
-        { name: "screenPageViews" },
-      ],
-      dimensionFilter: {
-        filter: {
-          fieldName: "pagePath",
-          stringFilter: {
-            matchType: "BEGINS_WITH",
-            value: pagePath,
-          },
-        },
-      },
-      orderBys: [{ metric: { metricName: "screenPageViews" }, desc: true }],
-      limit: 10,
-    });
-
+    // 3. Locations
+    const [locationsResponse] = locationsRes;
     const locations =
       locationsResponse.rows?.map((row) => ({
         city: row.dimensionValues?.[0]?.value || "Unknown",
@@ -207,23 +292,8 @@ export async function GET(req: NextRequest) {
         views: parseInt(row.metricValues?.[1]?.value || "0"),
       })) || [];
 
-    // 4. Obtener dispositivos
-    const [devicesResponse] = await client.runReport({
-      property: `properties/${propertyId}`,
-      dateRanges: [{ startDate, endDate }],
-      dimensions: [{ name: "deviceCategory" }],
-      metrics: [{ name: "activeUsers" }],
-      dimensionFilter: {
-        filter: {
-          fieldName: "pagePath",
-          stringFilter: {
-            matchType: "BEGINS_WITH",
-            value: pagePath,
-          },
-        },
-      },
-    });
-
+    // 4. Devices
+    const [devicesResponse] = devicesRes;
     const deviceBreakdown = {
       desktop: 0,
       mobile: 0,
@@ -240,55 +310,12 @@ export async function GET(req: NextRequest) {
     });
 
     // 5. Obtener evento específico de checkout WhatsApp (SIN filtro de página primero)
-    const [checkoutEventAllPagesResponse] = await client.runReport({
-      property: `properties/${propertyId}`,
-      dateRanges: [{ startDate, endDate }],
-      dimensions: [{ name: "eventName" }, { name: "pagePath" }],
-      metrics: [{ name: "eventCount" }],
-      dimensionFilter: {
-        filter: {
-          fieldName: "eventName",
-          stringFilter: {
-            matchType: "EXACT",
-            value: "click_proceder_pago_whatsapp",
-          },
-        },
-      },
-    });
+    const [checkoutEventAllPagesResponse] = checkoutEventAllRes;
 
     console.log('[Analytics Debug] Checkout Event (All Pages):', JSON.stringify(checkoutEventAllPagesResponse.rows, null, 2));
 
     // Ahora con filtro de página
-    const [checkoutEventResponse] = await client.runReport({
-      property: `properties/${propertyId}`,
-      dateRanges: [{ startDate, endDate }],
-      dimensions: [{ name: "eventName" }],
-      metrics: [{ name: "eventCount" }],
-      dimensionFilter: {
-        andGroup: {
-          expressions: [
-            {
-              filter: {
-                fieldName: "pagePath",
-                stringFilter: {
-                  matchType: "BEGINS_WITH",
-                  value: pagePath,
-                },
-              },
-            },
-            {
-              filter: {
-                fieldName: "eventName",
-                stringFilter: {
-                  matchType: "EXACT",
-                  value: "click_proceder_pago_whatsapp",
-                },
-              },
-            },
-          ],
-        },
-      },
-    });
+    const [checkoutEventResponse] = checkoutEventRes;
 
     const checkoutWhatsappCount = parseInt(
       checkoutEventResponse.rows?.[0]?.metricValues?.[0]?.value || "0"
@@ -299,23 +326,7 @@ export async function GET(req: NextRequest) {
     console.log('[Analytics Debug] Page Path filter:', pagePath);
 
     // 6. Obtener todos los eventos del período
-    const [allEventsResponse] = await client.runReport({
-      property: `properties/${propertyId}`,
-      dateRanges: [{ startDate, endDate }],
-      dimensions: [{ name: "eventName" }],
-      metrics: [{ name: "eventCount" }],
-      dimensionFilter: {
-        filter: {
-          fieldName: "pagePath",
-          stringFilter: {
-            matchType: "BEGINS_WITH",
-            value: pagePath,
-          },
-        },
-      },
-      orderBys: [{ metric: { metricName: "eventCount" }, desc: true }],
-      limit: 20,
-    });
+    const [allEventsResponse] = allEventsRes;
 
     const totalEvents = allEventsResponse.rows?.reduce(
       (sum, row) => sum + parseInt(row.metricValues?.[0]?.value || "0"),
@@ -362,47 +373,27 @@ export async function GET(req: NextRequest) {
 
     // 7. Obtener datos en tiempo real (últimos 30 minutos)
     let realtimeData = null;
-    try {
-      const [realtimeResponse] = await client.runRealtimeReport({
-        property: `properties/${propertyId}`,
-        dimensions: [],
-        metrics: [{ name: "activeUsers" }],
-        minuteRanges: [{ name: "0-30 minutes ago", startMinutesAgo: 30, endMinutesAgo: 0 }],
-      });
+    const [realtimeResponse] = realtime30MinRes || [null];
+    const [realtime5MinResponse] = realtime5MinRes || [null];
+    const [realtimeSourcesResponse] = realtimeSourcesRes || [null];
+    const [realtimeEventsResponse] = realtimeEventsRes || [null];
 
+    if (realtimeResponse) { // Check if realtime data was successfully fetched
       const activeUsersLast30Min = parseInt(
         realtimeResponse.rows?.[0]?.metricValues?.[0]?.value || "0"
       );
 
-      // Últimos 5 minutos
-      const [realtime5MinResponse] = await client.runRealtimeReport({
-        property: `properties/${propertyId}`,
-        dimensions: [],
-        metrics: [{ name: "activeUsers" }],
-        minuteRanges: [{ name: "0-5 minutes ago", startMinutesAgo: 5, endMinutesAgo: 0 }],
-      });
-
       const activeUsersLast5Min = parseInt(
-        realtime5MinResponse.rows?.[0]?.metricValues?.[0]?.value || "0"
+        realtime5MinResponse?.rows?.[0]?.metricValues?.[0]?.value || "0"
       );
 
-      // Top sources en tiempo real
-      const [realtimeSourcesResponse] = await client.runRealtimeReport({
-        property: `properties/${propertyId}`,
-        dimensions: [{ name: "sessionSource" }],
-        metrics: [{ name: "activeUsers" }],
-        minuteRanges: [{ name: "0-30 minutes ago", startMinutesAgo: 30, endMinutesAgo: 0 }],
-        limit: 5,
-        orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }],
-      });
-
-      const totalRealtimeUsers = realtimeSourcesResponse.rows?.reduce(
+      const totalRealtimeUsers = realtimeSourcesResponse?.rows?.reduce(
         (sum, row) => sum + parseInt(row.metricValues?.[0]?.value || "0"),
         0
       ) || 1;
 
       const topSources =
-        realtimeSourcesResponse.rows?.map((row) => {
+        realtimeSourcesResponse?.rows?.map((row) => {
           const users = parseInt(row.metricValues?.[0]?.value || "0");
           return {
             source: row.dimensionValues?.[0]?.value || "Unknown",
@@ -411,23 +402,13 @@ export async function GET(req: NextRequest) {
           };
         }) || [];
 
-      // Top events en tiempo real
-      const [realtimeEventsResponse] = await client.runRealtimeReport({
-        property: `properties/${propertyId}`,
-        dimensions: [{ name: "eventName" }],
-        metrics: [{ name: "eventCount" }],
-        minuteRanges: [{ name: "0-30 minutes ago", startMinutesAgo: 30, endMinutesAgo: 0 }],
-        limit: 5,
-        orderBys: [{ metric: { metricName: "eventCount" }, desc: true }],
-      });
-
-      const totalRealtimeEvents = realtimeEventsResponse.rows?.reduce(
+      const totalRealtimeEvents = realtimeEventsResponse?.rows?.reduce(
         (sum, row) => sum + parseInt(row.metricValues?.[0]?.value || "0"),
         0
       ) || 1;
 
       const topEvents =
-        realtimeEventsResponse.rows?.map((row) => {
+        realtimeEventsResponse?.rows?.map((row) => {
           const count = parseInt(row.metricValues?.[0]?.value || "0");
           return {
             name: row.dimensionValues?.[0]?.value || "Unknown",
@@ -442,9 +423,6 @@ export async function GET(req: NextRequest) {
         topSources,
         topEvents,
       };
-    } catch (realtimeError) {
-      console.error("Error fetching realtime data:", realtimeError);
-      // Si falla el realtime, continuamos sin esos datos
     }
 
     const responsePayload = {
