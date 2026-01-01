@@ -16,8 +16,19 @@ export const metadata: Metadata = {
     template: '%s | Fynlink+',
   },
   description:
-    'Fynlink+ te ayuda a fidelizar clientes, lanzar programas de recompensas y hacer crecer tu negocio desde un solo dashboard.',
-  keywords: ['fynlink', 'fidelización', 'programa de puntos', 'crm', 'negocios locales', 'lealtad'],
+    'Fynlink+ ofrece pedidos ilimitados por WhatsApp, punto de venta, chatbot con IA, sucursales, puntos, cupones y campañas para fidelizar clientes desde un solo dashboard.',
+  keywords: [
+    'fynlink',
+    'fynlink+',
+    'fidelización de clientes',
+    'programa de puntos digital',
+    'crm para negocios locales',
+    'marketing de lealtad',
+    'software de recompensas',
+    'club de clientes',
+    'retención de clientes',
+    'puntajes y cupones',
+  ],
   applicationName: 'Fynlink+',
   creator: 'Fynlink',
   publisher: 'Fynlink',
@@ -30,7 +41,7 @@ export const metadata: Metadata = {
     siteName: 'Fynlink+',
     title: 'Fynlink+ | Plataforma de fidelización todo en uno',
     description:
-      'Centraliza tus cupones, recompensas y campañas de lealtad para convertir clientes en fans de tu marca.',
+      'Centraliza pedidos por WhatsApp, POS, chatbot con IA, puntos, cupones, campañas de email y analíticas para convertir clientes en fans de tu marca.',
     images: [
       {
         url: `${siteUrl}/logorewa.png`,
@@ -46,7 +57,7 @@ export const metadata: Metadata = {
     creator: '@fynlink',
     title: 'Fynlink+ | Plataforma de fidelización todo en uno',
     description:
-      'Centraliza tus cupones, recompensas y campañas de lealtad para convertir clientes en fans de tu marca.',
+      'Centraliza pedidos por WhatsApp, POS, chatbot con IA, puntos, cupones, campañas de email y analíticas para convertir clientes en fans de tu marca.',
     images: [`${siteUrl}/logorewa.png`],
   },
   icons: {
