@@ -16,9 +16,10 @@ interface CartDrawerProps {
   locationPhone?: string
   locationName?: string
   userPoints?: number | null
+  userName?: string
 }
 
-export function CartDrawer({ open, onClose, locationPhone, locationName, userPoints }: CartDrawerProps) {
+export function CartDrawer({ open, onClose, locationPhone, locationName, userPoints, userName }: CartDrawerProps) {
   const { items, removeItem, updateQuantity, total, clearCart } = useCart()
   const [customerName, setCustomerName] = useState('')
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'spei' | 'points'>('cash')
@@ -30,7 +31,8 @@ export function CartDrawer({ open, onClose, locationPhone, locationName, userPoi
   // Calculate total points required for cart items
   const totalPointsRequired = useMemo(() => {
     const pts = items.reduce((acc, item) => {
-      const itemPoints = typeof (item as any).points === 'number' ? (item as any).points : 0
+      const pointsVal = (item as any).points;
+      const itemPoints = typeof pointsVal === 'number' ? pointsVal : (typeof pointsVal === 'string' ? parseFloat(pointsVal) : 0)
       return acc + (itemPoints * item.quantity)
     }, 0)
     console.log('[CartDrawer] totalPointsRequired calculation:', {
@@ -110,7 +112,7 @@ export function CartDrawer({ open, onClose, locationPhone, locationName, userPoi
     const lines: string[] = []
     lines.push(`Hola! Quisiera realizar un pedido:`)
     lines.push('')
-    lines.push(`*Cliente:* ${customerName || 'Cliente'}`)
+    lines.push(`*Cliente:* ${userName || customerName || 'Cliente'}`)
     if (locationName) lines.push(`*Sucursal:* ${locationName}`)
     lines.push('')
     lines.push('*Productos:*')

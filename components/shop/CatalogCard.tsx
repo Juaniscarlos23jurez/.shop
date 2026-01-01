@@ -55,8 +55,8 @@ export function CatalogCard({ item, locationId, phone, initialOpen = false, poin
       id: String(item.id),
       name: item.name,
       description: item.description || "",
-      price: typeof item.price === "number" ? item.price : 0,
-      points: typeof item.points === "number" ? item.points : undefined, // Loyalty points value for redemption
+      price: typeof item.price === "number" ? item.price : (typeof item.price === "string" ? parseFloat(item.price) : 0),
+      points: typeof item.points === "number" ? item.points : (typeof item.points === "string" ? parseFloat(item.points) : undefined), // Loyalty points value for redemption
       product_type: "made_to_order" as const,
       is_active: true,
       category: item.category || "",
@@ -255,7 +255,7 @@ export function CatalogCard({ item, locationId, phone, initialOpen = false, poin
                       handleAdd();
                     }}
                   >
-                    Agregar al carrito
+                    Agregar
                   </Button>
 
                 </div>
@@ -428,7 +428,7 @@ export function CatalogCard({ item, locationId, phone, initialOpen = false, poin
                         handleAdd();
                       }}
                     >
-                      Agregar al carrito
+                      Agregar
                     </Button>
                   )}
                   <Button

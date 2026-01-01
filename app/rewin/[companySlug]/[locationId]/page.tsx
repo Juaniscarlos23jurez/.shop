@@ -1356,6 +1356,7 @@ function PublicLocationProductsPageContent() {
         locationPhone={(location as any)?.phone ?? company?.phone}
         locationName={location?.name}
         userPoints={userPoints}
+        userName={user?.name}
       />
 
       <BottomNav activeSection={activeSection} onSectionChange={setActiveSection} />
