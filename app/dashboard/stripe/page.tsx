@@ -363,7 +363,7 @@ export default function PaymentMethodsPage() {
                   />
                 </div>
 
-                <Button onClick={handleSaveStripe} className="w-full">Guardar llaves (demo)</Button>
+                <Button onClick={handleSaveStripe} className="w-full">Guardar llaves</Button>
 
                 <Separator className="my-2" />
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { ordersApi } from '@/lib/api/orders';
 import { api } from '@/lib/api/api';
@@ -86,7 +86,11 @@ interface PendingOrdersResponse {
 type OrderStatus = 'pending' | 'accepted' | 'preparing' | 'ready' | 'completed';
 
 export default function PendingOrdersPage() {
-  const { user, token } = useAuth();
+  // Use robust hook usage to prevent "is not iterable" destructuring errors
+  const authContext = useAuth();
+  const user = authContext?.user;
+  const token = authContext?.token;
+
   const [ordersByStatus, setOrdersByStatus] = useState<Record<OrderStatus, Order[]>>({
     pending: [],
     accepted: [],
@@ -117,14 +121,23 @@ export default function PendingOrdersPage() {
         }
         if (token && !resolvedCompanyId) {
           console.log('[PendingOrdersPage] Resolving companyId via /auth/profile/company');
-          const res = await api.userCompanies.get(token);
-          const cData: any = res?.data;
-          const derived = cData?.id ?? cData?.company?.id ?? cData?.data?.id;
-          if (derived) {
-            setResolvedCompanyId(String(derived));
-            console.log('[PendingOrdersPage] Resolved companyId from API', { derived: String(derived) });
-          } else {
-            console.warn('[PendingOrdersPage] Could not resolve companyId from API response', { cData });
+          try {
+            // Access api safely
+            if (!api || !api.userCompanies) {
+              console.error('[PendingOrdersPage] API not initialized correctly');
+              return;
+            }
+            const res = await api.userCompanies.get(token);
+            const cData: any = res?.data;
+            const derived = cData?.id ?? cData?.company?.id ?? cData?.data?.id;
+            if (derived) {
+              setResolvedCompanyId(String(derived));
+              console.log('[PendingOrdersPage] Resolved companyId from API', { derived: String(derived) });
+            } else {
+              console.warn('[PendingOrdersPage] Could not resolve companyId from API response', { cData });
+            }
+          } catch (innerErr) {
+            console.error('[PendingOrdersPage] API call failed', innerErr);
           }
         }
       } catch (e) {
@@ -150,6 +163,8 @@ export default function PendingOrdersPage() {
         companyId: idToUse,
         tokenPresent: Boolean(token),
       });
+      // Allow loading to finish if we can't fetch so user isn't stuck
+      if (!token) setLoading(false);
     }
   }, [companyId, resolvedCompanyId, token]);
 
@@ -161,7 +176,7 @@ export default function PendingOrdersPage() {
       setLoading(true);
       setError(null);
       console.log('[PendingOrdersPage] Fetching orders by status', { companyId: idToUse });
-      
+
       const statuses: OrderStatus[] = ['pending', 'accepted', 'preparing', 'ready', 'completed'];
       const newOrdersByStatus: Record<OrderStatus, Order[]> = {
         pending: [],
@@ -179,7 +194,7 @@ export default function PendingOrdersPage() {
             per_page: 50
           });
           console.log(`[PendingOrdersPage] Fetched ${status} orders:`, response);
-          
+
           if (response.success && response.data) {
             const ordersData = response.data.data || response.data;
             newOrdersByStatus[status] = Array.isArray(ordersData) ? ordersData : [];
@@ -209,7 +224,7 @@ export default function PendingOrdersPage() {
       setError(null);
       const order = ordersByStatus.pending.find(o => o.id === orderId);
       console.log('[PendingOrdersPage] Approving order', { orderId, companyId, paymentMethod: order?.payment_method });
-      
+
       // For SPEI payments, mark as paid (payment_status changes to paid, status stays pending for kitchen)
       if (order?.payment_method === 'spei') {
         await ordersApi.updatePaymentStatus(String(companyId), orderId, 'paid', undefined, token);
@@ -230,9 +245,9 @@ export default function PendingOrdersPage() {
           accepted: [...prev.accepted, { ...order!, status: 'accepted' }]
         }));
       }
-      
+
       setSuccessMessage(`Orden #${orderId} aprobada exitosamente`);
-      
+
       setTimeout(() => setSuccessMessage(null), 3000);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error al aprobar la orden';
@@ -257,7 +272,7 @@ export default function PendingOrdersPage() {
         ...prev,
         pending: prev.pending.filter(o => o.id !== orderId)
       }));
-      
+
       setTimeout(() => setSuccessMessage(null), 3000);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error al rechazar la orden';
@@ -277,7 +292,7 @@ export default function PendingOrdersPage() {
       console.log('[PendingOrdersPage] Changing order status', { orderId, newStatus });
       await ordersApi.updateOrderStatus(String(companyId), orderId, newStatus, token);
       console.log('[PendingOrdersPage] Order status changed', { orderId, newStatus });
-      
+
       // Find the order in current tab
       const order = ordersByStatus[activeTab].find(o => o.id === orderId);
       if (!order) return;
@@ -289,7 +304,7 @@ export default function PendingOrdersPage() {
         updated[newStatus as OrderStatus] = [...updated[newStatus as OrderStatus], { ...order, status: newStatus }];
         return updated;
       });
-      
+
       setSuccessMessage(`Estado actualizado a ${getStatusLabel(newStatus)}`);
       setTimeout(() => setSuccessMessage(null), 3000);
     } catch (err) {
@@ -328,13 +343,17 @@ export default function PendingOrdersPage() {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('es-MX', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    try {
+      return new Date(dateString).toLocaleDateString('es-MX', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (e) {
+      return dateString;
+    }
   };
 
   const getPaymentMethodLabel = (method: string) => {
@@ -355,6 +374,17 @@ export default function PendingOrdersPage() {
     return methods[method] || method;
   };
 
+  const statusTabs = useMemo(() => [
+    { status: 'pending' as OrderStatus, label: 'Pendientes', color: 'yellow' },
+    { status: 'accepted' as OrderStatus, label: 'Aceptadas', color: 'blue' },
+    { status: 'preparing' as OrderStatus, label: 'Preparando', color: 'purple' },
+    { status: 'ready' as OrderStatus, label: 'Listas', color: 'green' },
+    { status: 'completed' as OrderStatus, label: 'Completadas', color: 'emerald' }
+  ], []);
+
+  // Safe access to current orders
+  const currentOrders = Array.isArray(ordersByStatus[activeTab]) ? ordersByStatus[activeTab] : [];
+
   if (loading) {
     console.log('[PendingOrdersPage] Rendering loading state');
     return (
@@ -367,15 +397,8 @@ export default function PendingOrdersPage() {
     );
   }
 
-  const statusTabs: Array<{ status: OrderStatus; label: string; color: string }> = [
-    { status: 'pending', label: 'Pendientes', color: 'yellow' },
-    { status: 'accepted', label: 'Aceptadas', color: 'blue' },
-    { status: 'preparing', label: 'Preparando', color: 'purple' },
-    { status: 'ready', label: 'Listas', color: 'green' },
-    { status: 'completed', label: 'Completadas', color: 'emerald' }
-  ];
+  console.log('[PendingOrdersPage] Rendering main view', { ordersByStatus, activeTab, Count: currentOrders.length });
 
-  console.log('[PendingOrdersPage] Rendering main view', { ordersByStatus, hasError: Boolean(error) });
   return (
     <div className="p-8 max-w-7xl mx-auto">
       {/* Header */}
@@ -407,13 +430,12 @@ export default function PendingOrdersPage() {
           <button
             key={status}
             onClick={() => setActiveTab(status)}
-            className={`px-4 py-2 font-medium transition-colors whitespace-nowrap ${
-              activeTab === status
+            className={`px-4 py-2 font-medium transition-colors whitespace-nowrap ${activeTab === status
                 ? 'text-emerald-600 border-b-2 border-emerald-600'
                 : 'text-slate-600 hover:text-slate-900'
-            }`}
+              }`}
           >
-            {label} ({ordersByStatus[status].length})
+            {label} ({ordersByStatus[status]?.length || 0})
           </button>
         ))}
       </div>
@@ -434,7 +456,7 @@ export default function PendingOrdersPage() {
       )}
 
       {/* Orders List */}
-      {ordersByStatus[activeTab].length === 0 ? (
+      {currentOrders.length === 0 ? (
         <Card className="border-2 border-dashed">
           <CardContent className="pt-12 text-center">
             <Package className="h-12 w-12 text-slate-300 mx-auto mb-4" />
@@ -448,7 +470,7 @@ export default function PendingOrdersPage() {
         </Card>
       ) : (
         <div className="space-y-4">
-          {ordersByStatus[activeTab].map((order: Order) => (
+          {currentOrders.map((order: Order) => (
             <Card key={order.id} className="hover:shadow-lg transition-shadow">
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
@@ -474,9 +496,8 @@ export default function PendingOrdersPage() {
                     {getStatusLabel(order.status)}
                   </span>
                   {order.payment_status && (
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      order.payment_status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                    }`}>
+                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${order.payment_status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                      }`}>
                       Pago: {order.payment_status === 'paid' ? 'Pagado' : 'Pendiente'}
                     </span>
                   )}
@@ -486,9 +507,9 @@ export default function PendingOrdersPage() {
                 <div className="pb-4 border-b">
                   <p className="text-sm text-slate-500 mb-2">Cliente</p>
                   <div className="space-y-1">
-                    <p className="font-semibold text-slate-900">{order.user.name}</p>
-                    <p className="text-sm text-slate-600">{order.user.email}</p>
-                    <p className="text-sm text-slate-600">{order.user.phone}</p>
+                    <p className="font-semibold text-slate-900">{order.user?.name || 'Cliente desconocido'}</p>
+                    <p className="text-sm text-slate-600">{order.user?.email}</p>
+                    <p className="text-sm text-slate-600">{order.user?.phone}</p>
                   </div>
                 </div>
 
@@ -532,7 +553,7 @@ export default function PendingOrdersPage() {
                 <div className="pb-4 border-b">
                   <p className="text-sm text-slate-500 mb-3">Productos</p>
                   <div className="space-y-3">
-                    {order.items.map((item) => (
+                    {order.items?.map((item) => (
                       <div key={item.id} className="flex items-center justify-between gap-4 text-sm">
                         <div className="flex items-center gap-3 min-w-0">
                           {item.product?.image_url ? (
@@ -546,14 +567,14 @@ export default function PendingOrdersPage() {
                             <div className="h-12 w-12 rounded bg-slate-100 border flex items-center justify-center text-slate-400">IMG</div>
                           )}
                           <div className="min-w-0">
-                            <p className="font-semibold text-slate-900 truncate">{item.product.name}</p>
+                            <p className="font-semibold text-slate-900 truncate">{item.product?.name || 'Producto eliminado'}</p>
                             <p className="text-slate-600">
-                              Cantidad: {item.quantity} × ${parseFloat(item.unit_price).toFixed(2)}
+                              Cantidad: {item.quantity} × ${parseFloat(item.unit_price || '0').toFixed(2)}
                             </p>
                           </div>
                         </div>
                         <p className="font-semibold text-slate-900 whitespace-nowrap">
-                          ${parseFloat(item.subtotal).toFixed(2)}
+                          ${parseFloat(item.subtotal || '0').toFixed(2)}
                         </p>
                       </div>
                     ))}
@@ -564,9 +585,9 @@ export default function PendingOrdersPage() {
                 <div className="space-y-2 pb-4 border-b">
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-600">Subtotal:</span>
-                    <span className="font-semibold">${parseFloat(order.subtotal).toFixed(2)}</span>
+                    <span className="font-semibold">${parseFloat(order.subtotal || '0').toFixed(2)}</span>
                   </div>
-                  {parseFloat(order.discount_amount) > 0 && (
+                  {parseFloat(order.discount_amount || '0') > 0 && (
                     <div className="flex justify-between text-sm text-green-600">
                       <span>Descuento:</span>
                       <span className="font-semibold">-${parseFloat(order.discount_amount).toFixed(2)}</span>
@@ -574,11 +595,11 @@ export default function PendingOrdersPage() {
                   )}
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-600">Impuesto:</span>
-                    <span className="font-semibold">${parseFloat(order.tax).toFixed(2)}</span>
+                    <span className="font-semibold">${parseFloat(order.tax || '0').toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-lg font-bold pt-2">
                     <span>Total:</span>
-                    <span className="text-emerald-600">${parseFloat(order.total).toFixed(2)}</span>
+                    <span className="text-emerald-600">${parseFloat(order.total || '0').toFixed(2)}</span>
                   </div>
                 </div>
 
@@ -694,7 +715,7 @@ export default function PendingOrdersPage() {
       )}
 
       {/* Info boxes for different tabs */}
-      {activeTab === 'pending' && ordersByStatus[activeTab].length > 0 && (
+      {activeTab === 'pending' && currentOrders.length > 0 && (
         <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
           <p className="text-sm text-yellow-700">
             ⚠️ Revisa y aprueba o rechaza las órdenes pendientes
@@ -702,7 +723,7 @@ export default function PendingOrdersPage() {
         </div>
       )}
 
-      {activeTab !== 'pending' && activeTab !== 'completed' && ordersByStatus[activeTab].length > 0 && (
+      {activeTab !== 'pending' && activeTab !== 'completed' && currentOrders.length > 0 && (
         <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
           <p className="text-sm text-blue-700">
             💡 Usa el selector en cada orden para cambiar su estado de preparación
@@ -710,7 +731,7 @@ export default function PendingOrdersPage() {
         </div>
       )}
 
-      {activeTab === 'completed' && ordersByStatus[activeTab].length > 0 && (
+      {activeTab === 'completed' && currentOrders.length > 0 && (
         <div className="mt-6 p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
           <p className="text-sm text-emerald-700">
             ✓ Órdenes completadas. Usa el selector para cambiar estado si es necesario
