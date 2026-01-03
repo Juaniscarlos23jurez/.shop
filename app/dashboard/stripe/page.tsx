@@ -18,6 +18,9 @@ export default function PaymentMethodsPage() {
   // Stripe
   const [publishableKey, setPublishableKey] = useState("");
   const [secretKey, setSecretKey] = useState("");
+  const [companyId, setCompanyId] = useState<string | null>(user?.company_id ? String(user.company_id) : null);
+  const [stripeEditMode, setStripeEditMode] = useState(false);
+  const [stripeSaving, setStripeSaving] = useState(false);
   // SPEI
   const [spei, setSpei] = useState({
     display_name: "Transferencia SPEI",
@@ -43,10 +46,32 @@ export default function PaymentMethodsPage() {
   const [loading, setLoading] = useState(false);
   const [initializing, setInitializing] = useState(true);
 
-  const handleSaveStripe = () => {
-    // NOTE: Demo only. Do not store secrets in the client.
-    // SaaS: keys belong to each company/tenant. Store them server-side (DB or secret store), not in env files.
-    alert("Demo: Guarda las llaves por compañía en el servidor (BD/secret store) mediante una API segura. No las guardes en el cliente.");
+  const handleSaveStripe = async () => {
+    if (!token) {
+      alert('Necesitas iniciar sesión para guardar las llaves.');
+      return;
+    }
+    const resolvedCompanyId = companyId ?? (user?.company_id ? String(user.company_id) : null);
+    if (!resolvedCompanyId) {
+      alert('No se encontró la compañía para guardar las llaves.');
+      return;
+    }
+
+    try {
+      setStripeSaving(true);
+      const payload: Record<string, string | null> = {
+        stripe_publishable_key: publishableKey || null,
+        stripe_secret_key: secretKey || null,
+      };
+      await api.companies.updateCompany(resolvedCompanyId, payload as any, token);
+      setCompanyId(resolvedCompanyId);
+      setStripeEditMode(false);
+    } catch (error) {
+      console.error('Error guardando llaves de Stripe', error);
+      alert('No se pudieron guardar las llaves. Intenta de nuevo.');
+    } finally {
+      setStripeSaving(false);
+    }
   };
 
   const handleSaveSpei = async () => {
@@ -162,6 +187,10 @@ export default function PaymentMethodsPage() {
         if (isMounted) {
           setPublishableKey(company.stripe_publishable_key ?? '');
           setSecretKey(company.stripe_secret_key ?? '');
+          const resolvedId = company.id ?? company.company_id ?? company.data?.id;
+          if (resolvedId) {
+            setCompanyId(String(resolvedId));
+          }
         }
       } catch (error) {
         console.error('[PaymentMethodsPage] Error loading Stripe keys', error);
@@ -377,6 +406,7 @@ export default function PaymentMethodsPage() {
                     id="pk"
                     placeholder="pk_live_..."
                     value={publishableKey}
+                    disabled={!stripeEditMode && Boolean((publishableKey && publishableKey.length) || (secretKey && secretKey.length))}
                     onChange={(e) => setPublishableKey(e.target.value)}
                   />
                 </div>
@@ -388,11 +418,26 @@ export default function PaymentMethodsPage() {
                     type="password"
                     placeholder="sk_live_..."
                     value={secretKey}
+                    disabled={!stripeEditMode && Boolean((publishableKey && publishableKey.length) || (secretKey && secretKey.length))}
                     onChange={(e) => setSecretKey(e.target.value)}
                   />
                 </div>
 
-                <Button onClick={handleSaveStripe} className="w-full">Guardar llaves</Button>
+                <Button
+                  onClick={
+                    Boolean((publishableKey && publishableKey.length) || (secretKey && secretKey.length)) && !stripeEditMode
+                      ? () => setStripeEditMode(true)
+                      : handleSaveStripe
+                  }
+                  className="w-full"
+                  disabled={stripeSaving}
+                >
+                  {Boolean((publishableKey && publishableKey.length) || (secretKey && secretKey.length)) && !stripeEditMode
+                    ? 'Editar llaves'
+                    : stripeSaving
+                    ? 'Guardando...'
+                    : 'Guardar llaves'}
+                </Button>
 
                 <Separator className="my-2" />
 
