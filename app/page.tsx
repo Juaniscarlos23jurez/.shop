@@ -274,6 +274,70 @@ export default function HomePage() {
           </div>
         </div>
       )
+    },
+    {
+      icon: (
+        <svg className="h-6 w-6 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+        </svg>
+      ),
+      title: "WhatsApp Automático",
+      description: "Automatiza pedidos y atención al cliente directamente en WhatsApp.",
+      visual: (
+        <div className="relative w-full h-32 bg-emerald-50/50 rounded-xl flex items-center justify-center overflow-hidden group-hover:bg-emerald-50 transition-colors">
+          <div className="bg-white border border-emerald-100 rounded-xl shadow-sm w-44 p-3 space-y-2">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center">
+                <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" /></svg>
+              </div>
+              <div className="h-1.5 w-16 bg-gray-200 rounded"></div>
+            </div>
+            <div className="bg-emerald-50 rounded-lg p-2 flex gap-2 items-center">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+              <div className="h-1 w-12 bg-emerald-200 rounded"></div>
+            </div>
+            <div className="flex justify-end">
+              <div className="bg-gray-50 rounded-lg p-2 w-24">
+                <div className="h-1 w-16 bg-gray-200 rounded mb-1"></div>
+                <div className="h-1 w-8 bg-gray-100 rounded"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )
+    },
+    {
+      icon: (
+        <svg className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+      ),
+      title: "Pasarelas de Pago",
+      description: "Acepta tarjetas de crédito, débito y transferencias de forma segura con Stripe.",
+      visual: (
+        <div className="relative w-full h-32 bg-blue-50/50 rounded-xl flex items-center justify-center overflow-hidden group-hover:bg-blue-50 transition-colors">
+          <div className="bg-white border border-blue-100 rounded-xl shadow-sm w-44 p-3 space-y-3">
+            <div className="flex justify-between items-center">
+              <div className="h-1.5 w-12 bg-gray-200 rounded"></div>
+              <div className="flex gap-1">
+                <div className="w-4 h-2.5 bg-blue-600 rounded-sm"></div>
+                <div className="w-4 h-2.5 bg-orange-400 rounded-sm"></div>
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <div className="h-2 w-full bg-gray-100 rounded"></div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="h-2 w-full bg-gray-100 rounded"></div>
+                <div className="h-2 w-full bg-gray-100 rounded"></div>
+              </div>
+            </div>
+            <div className="flex items-center gap-1 text-[8px] text-blue-600 font-bold justify-center border border-blue-100 rounded-lg py-1">
+              <svg className="w-2 h-2" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" /></svg>
+              PAGO SEGURO
+            </div>
+          </div>
+        </div>
+      )
     }
   ]
 
@@ -629,6 +693,21 @@ export default function HomePage() {
                   </div>
                   <div className="text-sm font-black text-[#0f172a]">Cobro por Stripe</div>
                   <p className="text-[10px] text-gray-500 mt-1">Procesa pagos seguros con tarjetas y wallets digitales.</p>
+                </div>
+
+                {/* Top Center-Right: Mercado Pago */}
+                <div className="absolute left-[65%] -top-12 hidden lg:block transform bg-white p-5 rounded-3xl shadow-2xl border border-gray-100 max-w-[210px] animate-bounce z-20 transition-all hover:scale-110" style={{ animationDuration: '3.8s' }}>
+                  <div className="w-10 h-10 bg-blue-50 rounded-2xl flex items-center justify-center mb-3">
+                    <Image
+                      src="/mercado.png"
+                      alt="Mercado Pago logo"
+                      width={32}
+                      height={32}
+                      className="w-8 h-8 object-contain"
+                    />
+                  </div>
+                  <div className="text-sm font-black text-[#0f172a]">Mercado Pago</div>
+                  <p className="text-[10px] text-gray-500 mt-1">Acepta tarjetas de crédito, débito y efectivo en OXXO.</p>
                 </div>
 
                 {/* Top Right: Monthly Growth */}
@@ -1292,7 +1371,7 @@ export default function HomePage() {
                 </div>
               </Card>
 
-              {/* Analíticas & Cobro Card */}
+              {/* Analíticas & Membresía Card */}
               <Card className="p-8 border border-gray-100 rounded-2xl bg-white shadow-lg">
                 <div className="space-y-6">
                   <div>
@@ -1305,21 +1384,7 @@ export default function HomePage() {
                       <h3 className="text-2xl font-bold text-[#0f172a]">Analíticas</h3>
                     </div>
                     <p className="text-[#64748b] text-base">
-                      Visitantes y perspectivas comerciales
-                    </p>
-                  </div>
-
-                  <div className="border-t border-gray-200 pt-6">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center">
-                        <svg className="h-6 w-6 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                        </svg>
-                      </div>
-                      <h3 className="text-2xl font-bold text-[#0f172a]">Cobro con Link</h3>
-                    </div>
-                    <p className="text-[#64748b] text-base">
-                      Recibe tus pagos pendientes más rápido
+                      Gráficas de ventas, visitantes y perspectivas comerciales en tiempo real.
                     </p>
                   </div>
 
@@ -1330,11 +1395,74 @@ export default function HomePage() {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
                         </svg>
                       </div>
-                      <h3 className="text-2xl font-bold text-[#0f172a]">Membresía</h3>
+                      <h3 className="text-2xl font-bold text-[#0f172a]">Membresías</h3>
                     </div>
                     <p className="text-[#64748b] text-base">
-                      Incentiva las compras repetidas con crédito de recompensa
+                      Crea planes de suscripción y crédito de recompensa para tus clientes más fieles.
                     </p>
+                  </div>
+                </div>
+              </Card>
+
+              {/* Pasarelas de Pago Card */}
+              <Card className="p-8 border border-gray-100 rounded-2xl bg-white shadow-lg">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-12 h-12 rounded-xl bg-indigo-100 flex items-center justify-center">
+                    <svg className="h-6 w-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-3xl font-bold text-[#0f172a]">Pagos Modernos</h3>
+                </div>
+                <p className="text-[#64748b] text-lg mb-6">
+                  Acepta múltiples formas de pago y liquida tus ventas al instante.
+                </p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-gray-50 rounded-xl p-4 flex flex-col items-center justify-center gap-2 hover:bg-indigo-50 transition-colors border border-gray-100">
+                    <Image src="/stripe.svg" alt="Stripe" width={40} height={40} className="h-6 w-auto" />
+                    <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Cards & Wallets</span>
+                  </div>
+                  <div className="bg-gray-50 rounded-xl p-4 flex flex-col items-center justify-center gap-2 hover:bg-blue-50 transition-colors border border-gray-100">
+                    <Image src="/mercado.png" alt="Mercado Pago" width={40} height={40} className="h-6 w-auto object-contain" />
+                    <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Saldo MP</span>
+                  </div>
+                  <div className="col-span-2 bg-orange-50 rounded-xl p-4 flex items-center justify-between border border-orange-100">
+                    <div className="flex items-center gap-3">
+                      <Image src="/oxxo.png" alt="OXXO" width={40} height={40} className="h-5 w-auto object-contain" />
+                      <span className="text-sm font-bold text-orange-700">Efectivo en OXXO</span>
+                    </div>
+                    <span className="text-[9px] font-black text-orange-600 bg-white px-2 py-1 rounded-full border border-orange-200 uppercase">Referencia</span>
+                  </div>
+                </div>
+              </Card>
+
+              {/* CRM & WhatsApp Card */}
+              <Card className="p-8 border border-gray-100 rounded-2xl bg-white shadow-lg">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center">
+                    <svg className="h-6 w-6 text-emerald-600" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-3xl font-bold text-[#0f172a]">WhatsApp Pro</h3>
+                </div>
+                <p className="text-[#64748b] text-lg mb-6">
+                  Vende por WhatsApp de forma profesional y automatizada.
+                </p>
+                <div className="bg-emerald-50 rounded-xl p-6 border border-emerald-100">
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm text-xs">🤖</div>
+                      <p className="text-gray-700 font-medium">Chatbot con IA para pedidos</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm text-xs">📲</div>
+                      <p className="text-gray-700 font-medium">Notificaciones push ilimitadas</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm text-xs">📊</div>
+                      <p className="text-gray-700 font-medium">Historial de chats en CRM</p>
+                    </div>
                   </div>
                 </div>
               </Card>
@@ -1482,6 +1610,127 @@ export default function HomePage() {
                       <div className="text-2xl font-bold text-[#0f172a]">+35%</div>
                       <div className="text-xs text-[#64748b] uppercase font-bold tracking-tighter">Conversión</div>
                     </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Mercado Pago Section */}
+              <div className="mt-32 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+                {/* Left side: Text */}
+                <div className="text-center md:text-left">
+                  <div className="inline-flex items-center space-x-2 bg-blue-50 px-3 py-1 rounded-full mb-6 border border-blue-100">
+                    <span className="flex h-2 w-2 rounded-full bg-blue-500"></span>
+                    <span className="text-blue-700 font-bold tracking-wider text-[11px] uppercase">Más Opciones de Pago</span>
+                  </div>
+                  <h3 className="text-4xl font-black text-[#0f172a] mb-6 leading-tight">
+                    Todo México paga <br />
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-sky-600">
+                      con Mercado Pago 💸
+                    </span>
+                  </h3>
+                  <p className="text-[#64748b] text-lg leading-relaxed max-w-md mx-auto md:mx-0">
+                    Ofrece a tus clientes la facilidad de pagar como ellos prefieran: con su saldo de Mercado Pago, tarjetas de crédito, débito o <span className="text-orange-600 font-bold">efectivo en cualquier OXXO</span>.
+                  </p>
+
+                  <div className="mt-10 flex flex-wrap justify-center md:justify-start gap-6">
+                    <div className="flex flex-col items-center md:items-start group">
+                      <div className="w-16 h-10 flex items-center justify-center grayscale group-hover:grayscale-0 transition-all">
+                        <Image src="/mercado.png" alt="Mercado Pago" width={60} height={30} className="object-contain" />
+                      </div>
+                      <span className="text-[10px] font-black text-gray-400 mt-2 uppercase tracking-widest">Mercado Pago</span>
+                    </div>
+                    <div className="flex flex-col items-center md:items-start group">
+                      <div className="w-16 h-10 flex items-center justify-center grayscale group-hover:grayscale-0 transition-all">
+                        <Image src="/oxxo.png" alt="OXXO" width={60} height={30} className="object-contain" />
+                      </div>
+                      <span className="text-[10px] font-black text-gray-400 mt-2 uppercase tracking-widest">Efectivo</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right side: Visual Display */}
+                <div className="relative group p-4">
+                  <div className="absolute inset-0 bg-blue-500/10 blur-3xl rounded-full scale-75 group-hover:scale-100 transition-transform duration-700 -z-10"></div>
+                  <Card className="bg-white border-none shadow-2xl rounded-[2.5rem] overflow-hidden transform group-hover:rotate-1 transition-transform duration-500">
+                    <div className="bg-blue-600 p-6 flex justify-between items-center text-white">
+                      <div>
+                        <p className="text-xs opacity-80 font-bold uppercase tracking-widest">Total a pagar</p>
+                        <p className="text-3xl font-black">$450.00 MXN</p>
+                      </div>
+                      <Image src="/mercado.png" alt="MP" width={40} height={40} className="brightness-0 invert object-contain h-8 w-auto" />
+                    </div>
+                    <div className="p-8 space-y-4">
+                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100 group-hover:border-blue-200 transition-colors">
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center">
+                            <span className="text-xl">💳</span>
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-gray-900">Tarjeta Guardada</p>
+                            <p className="text-[10px] text-gray-500 leading-none mt-1">Visa •••• 4582</p>
+                          </div>
+                        </div>
+                        <div className="w-4 h-4 rounded-full border-2 border-blue-600 flex items-center justify-center">
+                          <div className="w-2 h-2 rounded-full bg-blue-600"></div>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between p-4 bg-white rounded-2xl border border-gray-100">
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center">
+                            <Image src="/oxxo.png" alt="OXXO" width={30} height={30} className="object-contain h-5 w-auto" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-gray-900">Efectivo en OXXO</p>
+                            <p className="text-[10px] text-gray-500 leading-none mt-1">Pago referenciado</p>
+                          </div>
+                        </div>
+                        <div className="w-4 h-4 rounded-full border-2 border-gray-200"></div>
+                      </div>
+                      <Button className="w-full h-14 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-2xl mt-4 shadow-lg shadow-blue-200">
+                        Pagar ahora
+                      </Button>
+                    </div>
+                  </Card>
+                </div>
+              </div>
+
+              <div className="mt-10 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white rounded-3xl px-8 py-10 shadow-2xl border border-white/10">
+                <p className="text-sm uppercase tracking-[0.35em] text-emerald-300 font-black mb-3">
+                  Pasarelas activadas en México
+                </p>
+                <h4 className="text-3xl md:text-4xl font-black leading-tight mb-4">
+                  Stripe + Mercado Pago funcionando hoy mismo
+                </h4>
+                <p className="text-slate-200 text-lg md:text-xl max-w-4xl mx-auto leading-relaxed">
+                  Cobra con tarjetas de crédito, débito, wallets y pagos en efectivo. Mercado Pago habilita referenciados en <span className="font-semibold text-white">OXXO</span> y saldo MP,
+                  mientras que Stripe procesa Apple Pay, Google Pay y pagos en sucursal. Ambas pasarelas conviven en tu tienda para que ningún cliente se quede sin pagar.
+                </p>
+                <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
+                  <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+                    <p className="text-xs font-black tracking-widest text-emerald-200 uppercase mb-2">Tarjetas</p>
+                    <p className="text-base text-slate-100">Visa, Mastercard y AMEX con Stripe y Mercado Pago.</p>
+                  </div>
+                  <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+                    <p className="text-xs font-black tracking-widest text-emerald-200 uppercase mb-2">Efectivo / OXXO</p>
+                    <p className="text-base text-slate-100">Genera referencias para OXXO y pagos offline sin fricción.</p>
+                  </div>
+                  <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+                    <p className="text-xs font-black tracking-widest text-emerald-200 uppercase mb-2">Wallets</p>
+                    <p className="text-base text-slate-100">Apple Pay, Google Pay y saldo Mercado Pago listos para usar.</p>
+                  </div>
+                </div>
+                <div className="mt-6 flex flex-wrap items-center justify-center gap-6">
+                  <div className="bg-white rounded-xl px-4 py-2 flex items-center gap-2 shadow-lg">
+                    <Image src="/stripe.svg" alt="Stripe" width={60} height={24} className="h-4 w-auto" />
+                    <span className="text-xs font-black text-slate-700 uppercase tracking-widest">Stripe México</span>
+                  </div>
+                  <div className="bg-white rounded-xl px-4 py-2 flex items-center gap-2 shadow-lg">
+                    <Image src="/mercado.png" alt="Mercado Pago" width={60} height={24} className="h-4 w-auto object-contain" />
+                    <span className="text-xs font-black text-slate-700 uppercase tracking-widest">Mercado Pago MX</span>
+                  </div>
+                  <div className="bg-white rounded-xl px-4 py-2 flex items-center gap-2 shadow-lg">
+                    <Image src="/oxxo.png" alt="OXXO" width={60} height={24} className="h-4 w-auto object-contain" />
+                    <span className="text-xs font-black text-slate-700 uppercase tracking-widest">Pagos en OXXO</span>
                   </div>
                 </div>
               </div>

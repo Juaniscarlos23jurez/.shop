@@ -36,10 +36,10 @@ export function PricingSection({ activePlanId }: { activePlanId?: number | strin
             id: 1, // Assume 1 for Premium
             name: 'Premium',
             subtitle: 'Para emprendedores independientes',
-            price: '247',
+            price: '300',
             period: 'mes',
-            yearlyPrice: '2223',
-            yearlyMonthly: '185',
+            yearlyPrice: '2700',
+            yearlyMonthly: '225',
             description: 'Todo en Basic, además:',
             features: [
                 'Productos ilimitados',
@@ -63,16 +63,17 @@ export function PricingSection({ activePlanId }: { activePlanId?: number | strin
             ],
             cta: 'Obtener Premium',
             popular: true,
-            badge: '🎁 Dominio gratis - Oferta limitada'
+            badge: '🎁 Dominio gratis - Oferta limitada',
+            promo: '¡Primer mes por solo $20!'
         },
         {
             id: 2, // Assume 2 for Business
             name: 'Business',
             subtitle: 'Para equipos',
-            price: '650',
+            price: '750',
             period: 'mes',
-            yearlyPrice: '5850',
-            yearlyMonthly: '488',
+            yearlyPrice: '6750',
+            yearlyMonthly: '562.5',
             description: 'Todo en Premium, además:',
             features: [
                 'Productos ilimitados',
@@ -102,146 +103,227 @@ export function PricingSection({ activePlanId }: { activePlanId?: number | strin
             ],
             cta: 'Obtener Business',
             popular: false,
-            badge: '🎁 Dominio gratis - Oferta limitada'
+            badge: '🎁 Dominio gratis - Oferta limitada',
+            promo: '¡Primer mes por solo $20!'
         }
     ];
 
     return (
-        <>
-            <section id="pricing" className="py-16 bg-gray-50">
+        <div className="space-y-0">
+            <section id="pricing" className="py-24 relative overflow-hidden bg-white">
+                {/* Background Atmosphere */}
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full -z-10 overflow-hidden">
+                    <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-50 rounded-full blur-[120px] opacity-60"></div>
+                    <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-green-50 rounded-full blur-[120px] opacity-60"></div>
+                </div>
+
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="text-center mb-12">
-                        <h2 className="text-4xl font-black text-[#0f172a] mb-4">
-                            Precios
+                    <div className="text-center mb-20">
+                        <div className="inline-flex items-center space-x-2 bg-slate-100 text-slate-800 text-xs font-black px-3 py-1 rounded-full mb-6 uppercase tracking-[0.2em] border border-slate-200">
+                            <span>Planes Flexibles</span>
+                        </div>
+                        <h2 className="text-5xl md:text-6xl font-black text-[#0f172a] mb-6 tracking-tight">
+                            Elige el plan ideal para <br />
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-emerald-600">escalar tu negocio</span>
                         </h2>
-                        <div className="flex items-center justify-center gap-4 mb-6">
-                            <span className={`text-lg ${isYearly ? 'text-[#94a3b8]' : 'text-[#0f172a] font-semibold'}`}>
-                                Paga mensualmente
-                            </span>
-                            <label className="relative inline-flex items-center cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    className="sr-only peer"
-                                    checked={isYearly}
-                                    onChange={(e) => setIsYearly(e.target.checked)}
+
+                        {/* Custom Toggle */}
+                        <div className="flex items-center justify-center mt-10">
+                            <div className="bg-slate-100 p-1.5 rounded-2xl flex items-center relative border border-slate-200 shadow-inner">
+                                <button
+                                    onClick={() => setIsYearly(false)}
+                                    className={`relative z-10 px-6 py-2.5 text-sm font-bold rounded-xl transition-all duration-300 ${!isYearly ? 'text-[#0f172a]' : 'text-slate-500 hover:text-slate-700'}`}
+                                >
+                                    Mensual
+                                </button>
+                                <button
+                                    onClick={() => setIsYearly(true)}
+                                    className={`relative z-10 px-6 py-2.5 text-sm font-bold rounded-xl transition-all duration-300 ${isYearly ? 'text-[#22c55e]' : 'text-slate-500 hover:text-slate-700'}`}
+                                >
+                                    Anual
+                                </button>
+                                <div
+                                    className={`absolute top-1.5 bottom-1.5 bg-white rounded-xl shadow-md transition-all duration-300 ease-out z-0 ${isYearly ? 'left-[calc(50%+6px)] right-1.5' : 'left-1.5 right-[calc(50%+6px)]'}`}
                                 />
-                                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#22c55e]"></div>
-                            </label>
-                            <span className={`text-lg ${isYearly ? 'text-[#0f172a] font-semibold' : 'text-[#64748b]'}`}>
-                                Paga anualmente (Ahorra 25%)
-                            </span>
+                                {isYearly && (
+                                    <div className="absolute -top-3 -right-12 bg-green-500 text-white text-[10px] font-black px-2 py-1 rounded-full animate-bounce shadow-lg">
+                                        -25% AHORRO
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto items-stretch">
                         {plans.map((plan, index) => {
                             const isActive = (plan.id === null && (activePlanId === null || activePlanId === undefined)) || (activePlanId !== null && activePlanId !== undefined && String(plan.id) === String(activePlanId));
 
                             return (
                                 <div
                                     key={index}
-                                    className={`relative bg-white rounded-2xl shadow-sm overflow-hidden border ${plan.popular ? 'border-2 border-[#22c55e] transform scale-105 z-10' : 'border-gray-200'
+                                    className={`group relative bg-white rounded-[2.5rem] p-8 transition-all duration-500 flex flex-col h-full border ${plan.popular
+                                        ? 'border-green-200 shadow-[0_32px_64px_-16px_rgba(34,197,94,0.15)] ring-4 ring-green-50/50 scale-[1.02] z-10'
+                                        : 'border-slate-100 shadow-[0_20px_40px_-16px_rgba(0,0,0,0.05)] hover:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] hover:-translate-y-2'
                                         }`}
                                 >
-                                    {plan.popular && (
-                                        <div className="absolute top-0 right-0 bg-[#22c55e] text-white text-xs font-bold px-3 py-1 rounded-bl-lg">
-                                            MÁS POPULAR
-                                        </div>
-                                    )}
-                                    <div className="p-6">
-                                        <h3 className="text-3xl font-bold text-gray-900 mb-1">{plan.name}</h3>
-                                        <p className="text-base text-gray-600 mb-4">{plan.subtitle}</p>
-                                        <div className="mb-4">
+                                    <div className="mb-8">
+                                        <h3 className="text-2xl font-black text-slate-900 mb-2">{plan.name}</h3>
+                                        <p className="text-slate-500 font-medium text-sm leading-relaxed">{plan.subtitle}</p>
+                                    </div>
+
+                                    <div className="mb-8">
+                                        {plan.promo && (
+                                            <div className="inline-flex items-center px-4 py-1.5 rounded-full text-[11px] font-black bg-emerald-50 text-emerald-600 border border-emerald-100 mb-4 animate-pulse uppercase tracking-wider">
+                                                ★ {plan.promo}
+                                            </div>
+                                        )}
+
+                                        <div className="h-24 flex flex-col justify-end">
                                             {plan.price === '0' ? (
                                                 <div className="flex items-baseline">
-                                                    <span className="text-5xl font-bold text-gray-900">$0</span>
+                                                    <span className="text-6xl font-black text-slate-900 tracking-tight">$0</span>
+                                                    <span className="ml-2 text-slate-400 font-bold uppercase text-xs tracking-widest">MXN</span>
                                                 </div>
                                             ) : (
                                                 <>
-                                                    <div className="flex flex-col items-start gap-1 transition-all duration-200">
-                                                        {isYearly ? (
-                                                            <>
-                                                                {/* Modo anual: mostrar el total del año en grande (con descuento) */}
-                                                                <div className="flex items-baseline">
-                                                                    <span className="text-5xl font-bold text-gray-900">
-                                                                        ${plan.yearlyPrice}
-                                                                    </span>
-                                                                    <span className="ml-2 text-gray-500">MXN/año</span>
-                                                                </div>
-                                                                <div className="text-base text-gray-600">
-                                                                    {`Equivale a $${(Number(plan.yearlyPrice) / 12).toFixed(2)}/mes`}
-                                                                </div>
-                                                            </>
-                                                        ) : (
-                                                            <>
-                                                                {/* Modo mensual: mostrar precio por mes y debajo el total anual pagando mes a mes */}
-                                                                <div className="flex items-baseline">
-                                                                    <span className="text-5xl font-bold text-gray-900">
-                                                                        ${plan.price}
-                                                                    </span>
-                                                                    <span className="ml-2 text-gray-500">MXN/{plan.period}</span>
-                                                                </div>
-                                                                <div className="text-base text-gray-600">
-                                                                    {`${Number(plan.price) * 12} / año pagando mes a mes`}
-                                                                </div>
-                                                            </>
-                                                        )}
-                                                    </div>
+                                                    {isYearly ? (
+                                                        <div className="space-y-1">
+                                                            <div className="flex items-baseline">
+                                                                <span className="text-5xl font-black text-slate-900 tracking-tight">
+                                                                    ${new Intl.NumberFormat().format(Number(plan.yearlyPrice))}
+                                                                </span>
+                                                                <span className="ml-2 text-slate-400 font-bold uppercase text-[10px] tracking-widest">MXN/año</span>
+                                                            </div>
+                                                            <div className="text-xs font-bold text-green-600 flex items-center gap-1.5">
+                                                                <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
+                                                                {`Equivale a $${plan.yearlyMonthly}/mes`}
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="space-y-1">
+                                                            <div className="flex items-baseline">
+                                                                <span className="text-6xl font-black text-slate-900 tracking-tight">
+                                                                    ${plan.price}
+                                                                </span>
+                                                                <span className="ml-2 text-slate-400 font-bold uppercase text-[10px] tracking-widest">MXN/mes</span>
+                                                            </div>
+                                                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                                                {`$${Number(plan.price) * 12} / año pagando mes a mes`}
+                                                            </div>
+                                                        </div>
+                                                    )}
                                                 </>
                                             )}
                                         </div>
-                                        <p className="text-gray-700 text-base font-medium mb-4">{plan.description}</p>
-                                        <ul className="space-y-3 mb-8">
-                                            {plan.features.map((feature, i) => {
-                                                const isHighlight = feature.includes('Puntos') ||
-                                                    feature.includes('Cupones') ||
-                                                    feature.includes('Notificaciones push') ||
-                                                    feature.includes('correos') ||
-                                                    feature.includes('Promociones') ||
-                                                    feature.includes('Membresía');
-                                                return (
-                                                    <li key={i} className="flex items-center">
-                                                        <svg className={`h-5 w-5 ${isHighlight ? 'text-purple-500' : 'text-green-500'} mr-2`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                    </div>
+                                    <ul className="space-y-3 mb-10 flex-grow">
+                                        {plan.features.map((feature, i) => {
+                                            const isHighlight = feature.includes('Puntos') ||
+                                                feature.includes('Cupones') ||
+                                                feature.includes('Notificaciones push') ||
+                                                feature.includes('correos') ||
+                                                feature.includes('Promociones') ||
+                                                feature.includes('Membresía');
+                                            return (
+                                                <li key={i} className="flex items-start group/item">
+                                                    <div className={`mt-1 flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center mr-3 transition-colors ${isHighlight
+                                                        ? 'bg-purple-100 text-purple-600'
+                                                        : 'bg-green-100 text-green-600'
+                                                        }`}>
+                                                        <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                                                         </svg>
-                                                        <span className={`${isHighlight ? 'text-purple-700 font-bold' : 'text-gray-700'} text-base`}>{feature}</span>
-                                                    </li>
-                                                );
-                                            })}
-                                        </ul>
-                                        <Link href="#contact">
+                                                    </div>
+                                                    <span className={`text-sm leading-tight transition-colors ${isHighlight
+                                                        ? 'text-purple-700 font-bold'
+                                                        : 'text-slate-600 group-hover/item:text-slate-900'
+                                                        }`}>
+                                                        {feature}
+                                                    </span>
+                                                </li>
+                                            );
+                                        })}
+                                    </ul>
+
+                                    <div className="mt-auto space-y-4">
+                                        <Link href="#contact" className="block w-full">
                                             <Button
                                                 disabled={isActive}
-                                                className={`w-full mb-4 text-base font-semibold rounded-xl shadow-sm transition-all duration-200 ${isActive
-                                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                className={`w-full py-7 text-base font-black rounded-2xl transition-all duration-300 ${isActive
+                                                    ? 'bg-slate-100 text-slate-400 cursor-not-allowed border-none'
                                                     : plan.popular
-                                                        ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white hover:from-emerald-600 hover:to-emerald-700 shadow-md hover:shadow-lg hover:-translate-y-0.5'
-                                                        : 'bg-white border border-gray-300 text-gray-800 hover:bg-gray-50 hover:border-gray-400'
+                                                        ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 shadow-[0_20px_40px_-12px_rgba(34,197,94,0.35)] hover:shadow-[0_20px_40px_-12px_rgba(34,197,94,0.45)] hover:-translate-y-1'
+                                                        : 'bg-[#0f172a] text-white hover:bg-slate-800 shadow-xl hover:-translate-y-1'
                                                     }`}
                                             >
-                                                {isActive ? 'Activo' : plan.cta}
+                                                {isActive ? 'PLAN ACTIVO' : plan.cta.toUpperCase()}
                                             </Button>
                                         </Link>
-                                        {plan.badge && (
-                                            <div className="text-sm text-center text-green-600 font-medium mb-2">
-                                                {plan.badge}
+
+                                        <div className="flex flex-col items-center gap-2">
+                                            {plan.badge && (
+                                                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-green-50 text-green-600 text-[10px] font-black uppercase tracking-wider border border-green-100">
+                                                    <span>{plan.badge}</span>
+                                                </div>
+                                            )}
+                                            <div className="text-center space-y-1">
+                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                                    {plan.price !== '0' && '✓ Incluye 25% OFF el 1er año'}
+                                                </p>
+                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-tight">
+                                                    Sin compromisos • Cancela cuando quieras
+                                                </p>
                                             </div>
-                                        )}
-                                        <p className="text-sm text-center text-gray-500">
-                                            {plan.price !== '0' && 'Obtén un 25% de dscto. el 1er año'}<br />
-                                            Cancela en cualquier momento
-                                        </p>
+                                        </div>
                                     </div>
                                 </div>
                             );
                         })}
                     </div>
 
+                    {/* Extras Section */}
+                    <div className="mt-20 max-w-4xl mx-auto">
+                        <div className="group relative bg-slate-50/50 backdrop-blur-sm border border-slate-100 rounded-[2.5rem] p-8 md:p-10">
+                            <h3 className="text-2xl font-black text-[#0f172a] mb-8 flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center font-black">
+                                    +
+                                </div>
+                                Extras & Consumos
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="relative group/extra p-6 bg-white rounded-3xl border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:-translate-y-1">
+                                    <div className="flex items-center justify-between">
+                                        <div className="space-y-1">
+                                            <p className="text-base font-black text-slate-900">WhatsApp adicional</p>
+                                            <p className="text-xs font-medium text-slate-500">Automatizaciones y notificaciones</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-2xl font-black text-emerald-600">$0.05</p>
+                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">por mensaje</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="relative group/extra p-6 bg-white rounded-3xl border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:-translate-y-1">
+                                    <div className="flex items-center justify-between">
+                                        <div className="space-y-1">
+                                            <p className="text-base font-black text-slate-900">Email adicional</p>
+                                            <p className="text-xs font-medium text-slate-500">Campañas y avisos</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-2xl font-black text-emerald-600">$0.01</p>
+                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">por email</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </section>
 
             {/* Custom Plan Section */}
-            <section id="custom-plan" className="py-20 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white relative overflow-hidden">
+            <section id="custom-plan" className="py-24 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white relative overflow-hidden">
                 {/* Background Pattern */}
                 <div className="absolute inset-0 bg-grid-white/5 [mask-image:linear-gradient(0deg,white,transparent)]"></div>
 
@@ -415,6 +497,6 @@ export function PricingSection({ activePlanId }: { activePlanId?: number | strin
                     </div>
                 </div>
             </section>
-        </>
+        </div>
     );
 }
