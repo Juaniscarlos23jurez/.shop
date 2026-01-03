@@ -146,6 +146,35 @@ export default function PaymentMethodsPage() {
     loadMethods();
   }, [token, user?.company_id]);
 
+  // Load Stripe keys from company profile
+  useEffect(() => {
+    if (!token) return;
+
+    let isMounted = true;
+
+    const loadStripeKeys = async () => {
+      try {
+        const res = await api.userCompanies.get(token);
+        const companyData: any = res?.data ?? res;
+        const company = companyData?.data ?? companyData;
+        if (!company) return;
+
+        if (isMounted) {
+          setPublishableKey(company.stripe_publishable_key ?? '');
+          setSecretKey(company.stripe_secret_key ?? '');
+        }
+      } catch (error) {
+        console.error('[PaymentMethodsPage] Error loading Stripe keys', error);
+      }
+    };
+
+    loadStripeKeys();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [token]);
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -330,7 +359,7 @@ export default function PaymentMethodsPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle>Stripe</CardTitle>
-                    <CardDescription>Pagos con tarjeta. Administra las llaves por compañía (SaaS).</CardDescription>
+                    <CardDescription>Pagos con tarjeta. Administra las llaves por compañía</CardDescription>
                   </div>
                   <Link
                     className="text-sm text-emerald-700 hover:text-emerald-800 underline"
