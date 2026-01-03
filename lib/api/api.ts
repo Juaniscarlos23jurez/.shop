@@ -1,6 +1,6 @@
-import { 
-  ApiResponse, 
-  LaravelPaginator, 
+import {
+  ApiResponse,
+  LaravelPaginator,
   InventoryMovement,
   InventoryMovementType,
   InventoryMovementsListResponse,
@@ -105,6 +105,28 @@ export const api = {
     },
   },
 
+  feedback: {
+    /**
+     * Submit feedback for the authenticated company (supports file upload)
+     * POST /api/company/feedback
+     */
+    async submitCompanyFeedback(formData: FormData, token?: string): Promise<ApiResponse<any>> {
+      const headers: Record<string, string> = {
+        'Accept': 'application/json',
+      };
+
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      return fetch(`${BASE_URL}/api/company/feedback`, {
+        method: 'POST',
+        headers,
+        body: formData,
+      }).then(handleResponse);
+    },
+  },
+
   // Reviews/Comments endpoints (authenticated)
   reviews: {
     async list(
@@ -200,7 +222,7 @@ export const api = {
 
   // Authentication methods
   auth: {
-    async login(email: string, password: string): Promise<ApiResponse<{ 
+    async login(email: string, password: string): Promise<ApiResponse<{
       access_token: string;
       token_type: string;
       user: ProfileApiUser;
@@ -211,9 +233,9 @@ export const api = {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
-        body: JSON.stringify({ 
-          email, 
-          password 
+        body: JSON.stringify({
+          email,
+          password
         })
       }).then(handleResponse);
     },
@@ -242,7 +264,7 @@ export const api = {
       }).then(handleResponse);
     },
 
-    async employeeLogin(email: string, password: string): Promise<ApiResponse<{ 
+    async employeeLogin(email: string, password: string): Promise<ApiResponse<{
       access_token: string;
       token_type: string;
       user: ProfileApiUser;
@@ -253,18 +275,18 @@ export const api = {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
-        body: JSON.stringify({ 
-          email, 
-          password 
+        body: JSON.stringify({
+          email,
+          password
         })
       }).then(handleResponse);
     },
 
     async register(
-      name: string, 
-      email: string, 
-      password: string, 
-      password_confirmation: string, 
+      name: string,
+      email: string,
+      password: string,
+      password_confirmation: string,
       phone?: string
     ): Promise<ApiResponse<{
       access_token: string;
@@ -403,8 +425,8 @@ export const api = {
      * Get company followers
      */
     async getFollowers(token: string): Promise<ApiResponse<{
-      company: { 
-        id: number; 
+      company: {
+        id: number;
         name: string;
         owner_id?: number;
       };
@@ -726,12 +748,14 @@ export const api = {
      * Update business hours
      */
     async updateBusinessHours(
-      data: { hours: Array<{
-        day_of_week: string;
-        is_open: boolean;
-        open_time?: string | null;
-        close_time?: string | null;
-      }> },
+      data: {
+        hours: Array<{
+          day_of_week: string;
+          is_open: boolean;
+          open_time?: string | null;
+          close_time?: string | null;
+        }>
+      },
       token: string
     ): Promise<ApiResponse<{ hours: any[] }>> {
       return fetch(`${BASE_URL}/api/companies/business-hours`, {
@@ -744,7 +768,7 @@ export const api = {
     /**
      * Employee Accounts Management
      */
-    
+
     // List employee accounts for a company (supports filters)
     async getEmployeeAccounts(
       companyId: string,
@@ -990,8 +1014,8 @@ export const api = {
         return handleResponse(response);
       } catch (error) {
         console.error('Error in getBusinessHours:', error);
-        return { 
-          success: false, 
+        return {
+          success: false,
           message: 'Network or server error',
           error: error instanceof Error ? error.message : String(error)
         };
@@ -1003,35 +1027,35 @@ export const api = {
         const response = await fetch(`${BASE_URL}/api/companies`, {
           headers: getAuthHeader(token),
         });
-        
+
         console.log('Response status:', response.status);
         const data = await response.json().catch(() => ({}));
         console.log('Raw companies response:', JSON.stringify(data, null, 2));
-        
+
         if (!response.ok) {
           const error = data?.message || 'Failed to fetch companies';
           console.error('API Error:', { status: response.status, error });
           return { success: false, message: error, error: error };
         }
-        
+
         // Check if the response has a data property with an array
         if (data && typeof data === 'object' && 'data' in data) {
-          return { 
-            success: true, 
+          return {
+            success: true,
             data: data.data,
             raw: data
           };
         }
-        
-        return { 
-          success: true, 
+
+        return {
+          success: true,
           data: data,
           raw: data
         };
       } catch (error) {
         console.error('Error in getAllCompanies:', error);
-        return { 
-          success: false, 
+        return {
+          success: false,
           message: 'Network or server error',
           error: error instanceof Error ? error.message : String(error)
         };
@@ -1046,8 +1070,8 @@ export const api = {
         return handleResponse(response);
       } catch (error) {
         console.error('Error in getCompany:', error);
-        return { 
-          success: false, 
+        return {
+          success: false,
           message: 'Network or server error',
           error: error instanceof Error ? error.message : String(error)
         };
@@ -1064,8 +1088,8 @@ export const api = {
         return handleResponse(response);
       } catch (error) {
         console.error('Error in createCompany:', error);
-        return { 
-          success: false, 
+        return {
+          success: false,
           message: 'Network or server error',
           error: error instanceof Error ? error.message : String(error)
         };
@@ -1086,8 +1110,8 @@ export const api = {
         return handleResponse(response);
       } catch (error) {
         console.error('Error in updateCompany:', error);
-        return { 
-          success: false, 
+        return {
+          success: false,
           message: 'Network or server error',
           error: error instanceof Error ? error.message : String(error)
         };
@@ -1104,8 +1128,8 @@ export const api = {
         return handleResponse(response);
       } catch (error) {
         console.error('Error in updateBusinessHours:', error);
-        return { 
-          success: false, 
+        return {
+          success: false,
           message: 'Network or server error',
           error: error instanceof Error ? error.message : String(error)
         };
@@ -1117,12 +1141,36 @@ export const api = {
         const response = await fetch(`/api/proxy/api/companies/${companyId}/locations`, {
           headers: getAuthHeader(token),
         });
-        
+
         return handleResponse(response);
       } catch (error) {
         console.error('Error in getCompanyLocations:', error);
-        return { 
-          success: false, 
+        return {
+          success: false,
+          message: 'Network or server error',
+          error: error instanceof Error ? error.message : String(error)
+        };
+      }
+    },
+
+    async getPaymentStats(companyId: string, params: any, token: string): Promise<ApiResponse<any>> {
+      try {
+        const queryParams = new URLSearchParams();
+        if (params?.location_id) queryParams.append('location_id', params.location_id);
+        if (params?.date_from) queryParams.append('date_from', params.date_from);
+        if (params?.date_to) queryParams.append('date_to', params.date_to);
+
+        const queryString = queryParams.toString();
+        const url = `${BASE_URL}/api/companies/${companyId}/payment-stats${queryString ? `?${queryString}` : ''}`;
+
+        const response = await fetch(url, {
+          headers: getAuthHeader(token),
+        });
+        return handleResponse(response);
+      } catch (error) {
+        console.error('Error in getPaymentStats:', error);
+        return {
+          success: false,
           message: 'Network or server error',
           error: error instanceof Error ? error.message : String(error)
         };
@@ -1284,14 +1332,14 @@ export const api = {
       try {
         console.log('[API] GET listFollowers URL:', url);
         console.log('[API] GET listFollowers params:', Object.fromEntries(search.entries()));
-      } catch {}
+      } catch { }
       return fetch(url, {
         method: 'GET',
         headers: getAuthHeader(token),
       }).then(async (response) => {
         try {
           console.log('[API] listFollowers response status:', response.status);
-        } catch {}
+        } catch { }
         return handleResponse(response);
       });
     },
@@ -1342,14 +1390,14 @@ export const api = {
       companyId: string,
       notificationId: string | number,
       token: string
-    ): Promise<ApiResponse<{ 
-      data: { 
-        notification_id: number; 
-        sent_count: number; 
-        failed_count: number; 
-        total_processed: number; 
-        errors: any[] 
-      } 
+    ): Promise<ApiResponse<{
+      data: {
+        notification_id: number;
+        sent_count: number;
+        failed_count: number;
+        total_processed: number;
+        errors: any[]
+      }
     }>> {
       return fetch(`${BASE_URL}/api/companies/${companyId}/notifications/${notificationId}/send-emails`, {
         method: 'POST',
@@ -1486,20 +1534,20 @@ export const api = {
           'Accept': 'application/json',
           'Authorization': `Bearer ${token}`
         };
-        
+
         const response = await fetch(url, {
           method: 'POST',
           headers,
           body: JSON.stringify(locationData),
         });
-        
+
         const result = await handleResponse(response);
         return result;
-        
+
       } catch (error) {
         console.error('Error in createLocation:', error);
-        return { 
-          success: false, 
+        return {
+          success: false,
           message: 'Network or server error',
           error: error instanceof Error ? error.message : String(error)
         };
@@ -1628,7 +1676,7 @@ export const api = {
     async getMemberships(
       companyId: string,
       token: string
-    ): Promise<ApiResponse<{ 
+    ): Promise<ApiResponse<{
       data: {
         data: Membership[];
         current_page: number;
@@ -2050,7 +2098,7 @@ export const api = {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
       };
-      
+
       return fetch(`${BASE_URL}/api/companies/${companyId}/products`, {
         method: 'POST',
         headers,
@@ -2164,7 +2212,7 @@ export const api = {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       };
-      
+
       return fetch(
         `${BASE_URL}/api/companies/${companyId}/products/reorder`,
         {
@@ -2192,7 +2240,7 @@ export const api = {
       }
     ): Promise<ApiResponse<LaravelPaginator<InventoryMovement>>> {
       const params = new URLSearchParams();
-      
+
       if (options?.per_page) params.append('per_page', String(options.per_page));
       if (options?.page) params.append('page', String(options.page));
       if (options?.from_date) params.append('from_date', options.from_date);
@@ -2200,11 +2248,11 @@ export const api = {
       if (options?.product_id) params.append('product_id', String(options.product_id));
       if (options?.location_id) params.append('location_id', String(options.location_id));
       if (options?.type) params.append('type', options.type);
-      
-      const url = params.toString() 
+
+      const url = params.toString()
         ? `${BASE_URL}/api/companies/${companyId}/inventory/movements?${params.toString()}`
         : `${BASE_URL}/api/companies/${companyId}/inventory/movements`;
-      
+
       return fetch(url, {
         method: 'GET',
         headers: getAuthHeader(token),
@@ -2224,7 +2272,7 @@ export const api = {
       });
 
       const data = await response.json();
-      
+
       if (!response.ok) {
         console.error('Categories fetch error:', data);
         throw new Error(data.message || data.error || 'Failed to fetch categories');
@@ -2251,7 +2299,7 @@ export const api = {
       });
 
       const responseData = await response.json();
-      
+
       if (!response.ok) {
         console.error('Category creation error:', responseData);
         throw new Error(responseData.message || responseData.error || 'Failed to create category');
@@ -2274,7 +2322,7 @@ export const api = {
       });
 
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.message || 'Failed to fetch category');
       }
@@ -2301,7 +2349,7 @@ export const api = {
       });
 
       const responseData = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(responseData.message || 'Failed to update category');
       }
@@ -2323,7 +2371,7 @@ export const api = {
       });
 
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.message || 'Failed to delete category');
       }
@@ -2362,12 +2410,12 @@ async function handleResponse(response: Response): Promise<ApiResponse> {
   }
 
   // Handle errors
-  const errorMessage = data?.message || 
-                      data?.error?.message || 
-                      data?.error || 
-                      (typeof data === 'string' ? data : null) ||
-                      response.statusText || 
-                      'An unknown error occurred';
+  const errorMessage = data?.message ||
+    data?.error?.message ||
+    data?.error ||
+    (typeof data === 'string' ? data : null) ||
+    response.statusText ||
+    'An unknown error occurred';
 
   return {
     success: false,
@@ -2405,7 +2453,7 @@ export const pointRulesApi = {
     );
 
     const data = await response.json();
-    
+
     if (!response.ok) {
       throw new Error(data.message || 'Failed to fetch point rules');
     }
@@ -2428,7 +2476,7 @@ export const pointRulesApi = {
     );
 
     const data = await response.json();
-    
+
     if (!response.ok) {
       throw new Error(data.message || 'Failed to fetch point rule');
     }
@@ -2464,7 +2512,7 @@ export const pointRulesApi = {
     );
 
     const data = await response.json();
-    
+
     if (!response.ok) {
       throw new Error(data.message || 'Failed to create point rule');
     }
@@ -2502,7 +2550,7 @@ export const pointRulesApi = {
     );
 
     const data = await response.json();
-    
+
     if (!response.ok) {
       throw new Error(data.message || 'Failed to update point rule');
     }
@@ -2924,7 +2972,7 @@ export const companyApi = {
     );
 
     const data = await response.json();
-    
+
     if (!response.ok) {
       throw new Error(data.message || 'Failed to fetch company details');
     }

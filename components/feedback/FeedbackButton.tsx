@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
@@ -22,6 +22,16 @@ import {
 } from "@/components/ui/select"
 import { Plus, X, MessageSquarePlus } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { api } from "@/lib/api/api"
+import { useAuth } from "@/contexts/AuthContext"
+
+const FEEDBACK_TYPE_LABELS: Record<string, string> = {
+  bug: "Error",
+  feature: "Sugerencia",
+  general: "Comentario general",
+  question: "Pregunta",
+  praise: "Elogio",
+}
 
 export function FeedbackButton({ variant = "floating" }: { variant?: "floating" | "navbar" }) {
   const [isOpen, setIsOpen] = useState(false)
@@ -36,6 +46,11 @@ export function FeedbackButton({ variant = "floating" }: { variant?: "floating" 
     whatsapp: ""
   })
   const { toast } = useToast()
+  const { token } = useAuth()
+  const typeSubmitValue = useMemo(() => {
+    if (!formData.type) return ""
+    return FEEDBACK_TYPE_LABELS[formData.type] || formData.type
+  }, [formData.type])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -49,19 +64,47 @@ export function FeedbackButton({ variant = "floating" }: { variant?: "floating" 
       return
     }
 
+    if (!token) {
+      toast({
+        title: "Sesión requerida",
+        description: "Inicia sesión para poder enviar feedback.",
+        variant: "destructive"
+      })
+      return
+    }
+
+    if (!typeSubmitValue) {
+      toast({
+        title: "Error",
+        description: "Selecciona un tipo de feedback válido",
+        variant: "destructive"
+      })
+      return
+    }
+
     setIsSubmitting(true)
 
     try {
-      // Here you would send the feedback to your backend
-      // For now, we'll simulate it with a timeout
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      const payload = new FormData()
+      payload.append("type", typeSubmitValue)
+      payload.append("message", formData.message.trim())
+
+      if (formData.subject.trim()) payload.append("subject", formData.subject.trim())
+      if (formData.email.trim()) payload.append("email", formData.email.trim())
+      if (formData.whatsapp.trim()) payload.append("whatsapp", formData.whatsapp.trim())
+      if (screenshot) payload.append("screenshot", screenshot)
+
+      const response = await api.feedback.submitCompanyFeedback(payload, token)
+
+      if (!response.success) {
+        throw new Error(response.message || "No pudimos enviar tu feedback")
+      }
 
       toast({
         title: "¡Gracias por tu feedback!",
         description: "Hemos recibido tu mensaje y lo revisaremos pronto.",
       })
 
-      // Reset form
       setFormData({
         type: "",
         subject: "",
@@ -75,7 +118,7 @@ export function FeedbackButton({ variant = "floating" }: { variant?: "floating" 
     } catch (error) {
       toast({
         title: "Error",
-        description: "No pudimos enviar tu feedback. Intenta de nuevo.",
+        description: error instanceof Error ? error.message : "No pudimos enviar tu feedback. Intenta de nuevo.",
         variant: "destructive"
       })
     } finally {

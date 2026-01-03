@@ -154,6 +154,7 @@ const adminSidebarItems: SidebarItem[] = [
     isCollapsible: true,
     subItems: [
       { icon: PieChart, label: "Ventas", href: "/dashboard/reportes" },
+      { icon: DollarSign, label: "Finanzas", href: "/dashboard/finanzas" },
     ]
   },
 
