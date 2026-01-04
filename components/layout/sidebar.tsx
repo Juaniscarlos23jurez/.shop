@@ -38,7 +38,8 @@ import {
   Book,
   Building2,
   GitBranch,
-  Activity
+  Activity,
+  Globe
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -143,8 +144,18 @@ const adminSidebarItems: SidebarItem[] = [
   // Componentes playground
   { icon: PieChart, label: "Componentes", href: "/dashboard/componentes" },
 
-  // Web Shop Store (new top-level item)
-  { icon: Store, label: "Web Shop Store", href: "/dashboard/web-shop-store" },
+  // Web Section
+  {
+    icon: Store,
+    label: "Web",
+    href: "#",
+    isCollapsible: true,
+    subItems: [
+      { icon: Globe, label: "Dominio", href: "/dashboard/web-shop-store/dominios" },
+      { icon: Activity, label: "SEO", href: "/dashboard/web-shop-store/seo" },
+      { icon: BarChart3, label: "Analíticas", href: "/dashboard/web-shop-store/analiticas" },
+    ]
+  },
 
   // Reports Section
   {
@@ -235,6 +246,14 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
     const reportesSection = adminSidebarItems.find(item => item.label === 'Reportes');
     if (reportesSection && reportesSection.subItems) {
       return reportesSection.subItems.some(subItem => pathname.startsWith(subItem.href));
+    }
+    return false;
+  });
+
+  const [isWebSectionExpanded, setIsWebSectionExpanded] = useState(() => {
+    const webSection = adminSidebarItems.find(item => item.label === 'Web');
+    if (webSection && webSection.subItems) {
+      return webSection.subItems.some(subItem => pathname.startsWith(subItem.href));
     }
     return false;
   });
@@ -396,6 +415,8 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
                       setIsCompaniaSectionExpanded(!isCompaniaSectionExpanded);
                     } else if (item.label === 'Reportes') {
                       setIsReportesSectionExpanded(!isReportesSectionExpanded);
+                    } else if (item.label === 'Web') {
+                      setIsWebSectionExpanded(!isWebSectionExpanded);
                     }
                   }}
                 >
@@ -407,7 +428,8 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
                       (item.label === 'Clientes' && isClientesSectionExpanded) ||
                       (item.label === 'Empleados' && isEmpleadosSectionExpanded) ||
                       (item.label === 'Compañía' && isCompaniaSectionExpanded) ||
-                      (item.label === 'Reportes' && isReportesSectionExpanded)
+                      (item.label === 'Reportes' && isReportesSectionExpanded) ||
+                      (item.label === 'Web' && isWebSectionExpanded)
                       ? 'rotate-180' : ''
                       }`} />
                   )}
@@ -418,7 +440,8 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
                     (item.label === 'Clientes' && isClientesSectionExpanded) ||
                     (item.label === 'Empleados' && isEmpleadosSectionExpanded) ||
                     (item.label === 'Compañía' && isCompaniaSectionExpanded) ||
-                    (item.label === 'Reportes' && isReportesSectionExpanded)) && (
+                    (item.label === 'Reportes' && isReportesSectionExpanded) ||
+                    (item.label === 'Web' && isWebSectionExpanded)) && (
                     <div className="ml-6 space-y-2">
                       {item.subItems?.map((subItem, subIndex) => {
                         const isSubItemActive = pathname === subItem.href ||
