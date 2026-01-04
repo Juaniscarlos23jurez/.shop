@@ -65,6 +65,7 @@ export const metadata: Metadata = {
     shortcut: '/logorewa.png',
     apple: '/logorewa.png',
   },
+
 }
 
 export default function RootLayout({
@@ -75,6 +76,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        <meta name='impact-site-verification' content='4b5de0c7-8ebb-4f48-b5da-e458bc9cefd1' />
         <style>{`
 html {
   font-family: ${GeistSans.style.fontFamily};
