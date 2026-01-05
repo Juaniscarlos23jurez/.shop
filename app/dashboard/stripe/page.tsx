@@ -10,12 +10,22 @@ import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { CreditCard as CreditCardIcon, Landmark, WalletCards, Store } from "lucide-react";
+import { CreditCard as CreditCardIcon, Landmark, WalletCards, Store, Lock } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/api/api";
+import { useCompany } from "@/contexts/CompanyContext";
+import { useLockedPlan } from "@/hooks/use-locked-plan";
+import { useRouter } from "next/navigation";
 
 export default function PaymentMethodsPage() {
   const { token, user } = useAuth();
+  const { getPlanName } = useCompany();
+  const { showLockedToast } = useLockedPlan();
+  const router = useRouter();
+
+  const planName = getPlanName();
+  const isBasicPlan = planName === 'Básico';
+
   // Stripe
   const [publishableKey, setPublishableKey] = useState("");
   const [secretKey, setSecretKey] = useState("");
@@ -484,24 +494,30 @@ export default function PaymentMethodsPage() {
         <Card
           role="button"
           tabIndex={0}
-          onClick={() => setStripeModalOpen(true)}
-          onKeyDown={(event) => cardKeyDown(event, () => setStripeModalOpen(true))}
-          className="transition hover:border-emerald-200 hover:shadow"
+          onClick={() => isBasicPlan ? showLockedToast() : setStripeModalOpen(true)}
+          onKeyDown={(event) => cardKeyDown(event, () => isBasicPlan ? showLockedToast() : setStripeModalOpen(true))}
+          className={`transition ${isBasicPlan ? 'opacity-80' : 'hover:border-emerald-200 hover:shadow'}`}
         >
           <CardHeader className="flex flex-row items-start justify-between">
             <div>
-              <CardTitle>Stripe</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                Stripe
+                {isBasicPlan && <Lock className="h-4 w-4 text-slate-400" />}
+              </CardTitle>
               <CardDescription>Pagos con tarjeta conectados a tu cuenta.</CardDescription>
             </div>
             <div
               className="flex items-center gap-2"
-              onClick={(event) => event.stopPropagation()}
+              onClick={(event) => {
+                event.stopPropagation();
+                if (isBasicPlan) showLockedToast();
+              }}
               onMouseDown={(event) => event.stopPropagation()}
             >
               <Switch
                 checked={stripeEnabled}
                 disabled={stripeSaving || initializing}
-                onCheckedChange={handleToggleStripe}
+                onCheckedChange={(checked) => isBasicPlan ? showLockedToast() : handleToggleStripe(checked)}
               />
               <span className="text-sm text-slate-500">{stripeEnabled ? "Activo" : "Inactivo"}</span>
             </div>
@@ -519,12 +535,17 @@ export default function PaymentMethodsPage() {
             <Button
               variant="outline"
               className="w-full"
+              disabled={isBasicPlan}
               onClick={(event) => {
                 event.stopPropagation();
+                if (isBasicPlan) {
+                  showLockedToast();
+                  return;
+                }
                 setStripeModalOpen(true);
               }}
             >
-              Administrar Stripe
+              {isBasicPlan ? "Restringido (Plan Básico)" : "Administrar Stripe"}
             </Button>
           </CardContent>
         </Card>
@@ -532,24 +553,30 @@ export default function PaymentMethodsPage() {
         <Card
           role="button"
           tabIndex={0}
-          onClick={() => setMercadoPagoModalOpen(true)}
-          onKeyDown={(event) => cardKeyDown(event, () => setMercadoPagoModalOpen(true))}
-          className="transition hover:border-emerald-200 hover:shadow"
+          onClick={() => isBasicPlan ? showLockedToast() : setMercadoPagoModalOpen(true)}
+          onKeyDown={(event) => cardKeyDown(event, () => isBasicPlan ? showLockedToast() : setMercadoPagoModalOpen(true))}
+          className={`transition ${isBasicPlan ? 'opacity-80' : 'hover:border-emerald-200 hover:shadow'}`}
         >
           <CardHeader className="flex flex-row items-start justify-between">
             <div>
-              <CardTitle>Mercado Pago</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                Mercado Pago
+                {isBasicPlan && <Lock className="h-4 w-4 text-slate-400" />}
+              </CardTitle>
               <CardDescription>Integra cobros con QR y links de pago.</CardDescription>
             </div>
             <div
               className="flex items-center gap-2"
-              onClick={(event) => event.stopPropagation()}
+              onClick={(event) => {
+                event.stopPropagation();
+                if (isBasicPlan) showLockedToast();
+              }}
               onMouseDown={(event) => event.stopPropagation()}
             >
               <Switch
                 checked={mercadoPagoActive}
                 disabled={loading || initializing}
-                onCheckedChange={handleToggleMercadoPago}
+                onCheckedChange={(checked) => isBasicPlan ? showLockedToast() : handleToggleMercadoPago(checked)}
               />
               <span className="text-sm text-slate-500">{mercadoPagoActive ? "Activo" : "Inactivo"}</span>
             </div>
@@ -569,12 +596,17 @@ export default function PaymentMethodsPage() {
             <Button
               variant="outline"
               className="w-full"
+              disabled={isBasicPlan}
               onClick={(event) => {
                 event.stopPropagation();
+                if (isBasicPlan) {
+                  showLockedToast();
+                  return;
+                }
                 setMercadoPagoModalOpen(true);
               }}
             >
-              Administrar Mercado Pago
+              {isBasicPlan ? "Restringido (Plan Básico)" : "Administrar Mercado Pago"}
             </Button>
           </CardContent>
         </Card>

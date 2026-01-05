@@ -8,6 +8,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/api/api";
+import { CompanyProvider } from "@/contexts/CompanyContext";
 import { usePathname, useRouter } from "next/navigation";
 
 export default function DashboardLayout({
@@ -81,52 +82,54 @@ export default function DashboardLayout({
 
   return (
     <div className="flex flex-col h-screen bg-slate-50 overflow-hidden">
-      {/* Top Bar - Spans full width */}
-      <TopBar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
+      <CompanyProvider>
+        {/* Top Bar - Spans full width */}
+        <TopBar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
 
-      <div className="flex flex-1 overflow-hidden relative">
-        {isMobile ? (
-          <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-            <SheetTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="md:hidden absolute top-4 left-4 z-50 bg-white shadow-md border border-slate-200"
-              >
-                <svg
-                  className="h-6 w-6"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                  aria-hidden="true"
+        <div className="flex flex-1 overflow-hidden relative">
+          {isMobile ? (
+            <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="md:hidden absolute top-4 left-4 z-50 bg-white shadow-md border border-slate-200"
                 >
-                  <path
-                    d="M4 6H20M4 12H20M4 18H20"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="p-0 w-64">
-              <Sidebar
-                isCollapsed={false} // Always show full sidebar in mobile sheet
-                setIsCollapsed={setIsMobileMenuOpen} // Close sheet when an item is clicked
-              />
-            </SheetContent>
-          </Sheet>
-        ) : (
-          <Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
-        )}
+                  <svg
+                    className="h-6 w-6"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M4 6H20M4 12H20M4 18H20"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="p-0 w-64">
+                <Sidebar
+                  isCollapsed={false} // Always show full sidebar in mobile sheet
+                  setIsCollapsed={setIsMobileMenuOpen} // Close sheet when an item is clicked
+                />
+              </SheetContent>
+            </Sheet>
+          ) : (
+            <Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
+          )}
 
-        <main className="flex-1 overflow-y-auto p-6 transition-all duration-300">
-          {children}
-        </main>
-      </div>
+          <main className="flex-1 overflow-y-auto p-6 transition-all duration-300">
+            {children}
+          </main>
+        </div>
 
-      {/* Global Notifications */}
-      <NotificationToast notifications={notifications} onDismiss={dismissNotification} />
+        {/* Global Notifications */}
+        <NotificationToast notifications={notifications} onDismiss={dismissNotification} />
+      </CompanyProvider>
     </div>
   )
 }

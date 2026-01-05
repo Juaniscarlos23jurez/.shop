@@ -68,6 +68,8 @@ export const metadata: Metadata = {
 
 }
 
+import { Toaster } from "@/components/ui/toaster"
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -76,6 +78,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        {/* ... existing head content ... */}
         <meta name='impact-site-verification' content='4b5de0c7-8ebb-4f48-b5da-e458bc9cefd1' />
         <style>{`
 html {
@@ -114,6 +117,7 @@ html {
           <GA4PageViewTracker />
           {children}
           <CookieConsent />
+          <Toaster />
         </AuthProvider>
       </body>
     </html>

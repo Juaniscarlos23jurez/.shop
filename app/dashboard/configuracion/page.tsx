@@ -1,41 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { PricingSection } from "@/components/pricing-section";
-import { useAuth } from "@/contexts/AuthContext";
-import { api } from "@/lib/api/api";
 import { Badge } from "@/components/ui/badge";
+import { useCompany } from "@/contexts/CompanyContext";
 
 export default function ConfiguracionPage() {
-  const { token } = useAuth();
-  const [loading, setLoading] = useState(true);
-  const [companyData, setCompanyData] = useState<any>(null);
-
-  useEffect(() => {
-    async function fetchCompany() {
-      if (!token) return;
-      try {
-        const response = await api.userCompanies.get(token);
-        if (response.success && response.data) {
-          // Adjust based on the structure provided in USER_REQUEST
-          // result shape: { status: "success", data: { ... } }
-          setCompanyData(response.data.data || response.data);
-        }
-      } catch (error) {
-        console.error("Error fetching company:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchCompany();
-  }, [token]);
-
-  const getPlanName = (planId: number | string | null) => {
-    if (planId === null || planId === undefined) return "Básico";
-    if (String(planId) === "1") return "Premium";
-    if (String(planId) === "2") return "Business";
-    return "Personalizado";
-  };
+  const { company, loading, getPlanName } = useCompany();
 
   if (loading) {
     return (
@@ -45,7 +15,7 @@ export default function ConfiguracionPage() {
     );
   }
 
-  const activePlanId = companyData?.company_plan_id || companyData?.plan?.plan_id;
+  const activePlanId = company?.company_plan_id || company?.plan?.plan_id;
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
@@ -58,7 +28,7 @@ export default function ConfiguracionPage() {
           <div className="flex items-center gap-2 bg-green-50 px-4 py-2 rounded-lg border border-green-100">
             <span className="text-sm font-medium text-green-800">Usando el plan:</span>
             <Badge className="bg-green-600 hover:bg-green-700 text-white border-none px-3">
-              {getPlanName(activePlanId)}
+              {getPlanName()}
             </Badge>
           </div>
         </div>

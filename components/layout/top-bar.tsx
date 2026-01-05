@@ -3,12 +3,12 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { LogOut, Bell, Search, MessageSquarePlus, ChevronLeft, ExternalLink } from "lucide-react";
+import { LogOut, ChevronLeft, ExternalLink } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { FeedbackButton } from "@/components/feedback/FeedbackButton";
 import Link from "next/link";
-import { useState, useEffect } from "react";
-import { api } from "@/lib/api/api";
+import { useCompany } from "@/contexts/CompanyContext";
+import { Badge } from "@/components/ui/badge";
 
 interface TopBarProps {
     isCollapsed: boolean;
@@ -16,9 +16,9 @@ interface TopBarProps {
 }
 
 export function TopBar({ isCollapsed, setIsCollapsed }: TopBarProps) {
-    const { user, logout, token } = useAuth();
+    const { user, logout } = useAuth();
+    const { company, getPlanName } = useCompany();
     const router = useRouter();
-    const [companySlug, setCompanySlug] = useState<string | null>(null);
 
     const slugifyCompanyName = (name: string) => {
         return name
@@ -30,21 +30,7 @@ export function TopBar({ isCollapsed, setIsCollapsed }: TopBarProps) {
             .replace(/^-+|-+$/g, '');
     };
 
-    useEffect(() => {
-        const fetchCompanySlug = async () => {
-            try {
-                if (!token) return;
-                const response = await api.userCompanies.get(token);
-                if (response.success && response.data?.data?.name) {
-                    const name = response.data.data.name;
-                    setCompanySlug(slugifyCompanyName(name));
-                }
-            } catch (error) {
-                console.error('[TopBar] Error fetching company slug', error);
-            }
-        };
-        fetchCompanySlug();
-    }, [token]);
+    const companySlug = company?.slug || (company?.name ? slugifyCompanyName(company.name) : null);
 
     const getUserInitials = (name?: string, email?: string) => {
         if (name) {
@@ -60,6 +46,8 @@ export function TopBar({ isCollapsed, setIsCollapsed }: TopBarProps) {
         }
         return 'US';
     };
+
+    const planName = getPlanName();
 
     return (
         <header className="h-20 border-b border-slate-200 bg-white flex items-center justify-between px-6 z-50 shrink-0 shadow-sm transition-all duration-300">
@@ -103,6 +91,14 @@ export function TopBar({ isCollapsed, setIsCollapsed }: TopBarProps) {
 
             {/* Right side: Feedback, Profile, Logout */}
             <div className="flex items-center space-x-2 md:space-x-4">
+                {/* Plan Badge */}
+                <div className="hidden md:flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
+                    <span className="text-xs font-medium text-slate-500">Plan:</span>
+                    <Badge variant="secondary" className="bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 shadow-sm text-xs font-semibold">
+                        {planName}
+                    </Badge>
+                </div>
+
                 {/* Feedback Button */}
                 <FeedbackButton variant="navbar" />
 

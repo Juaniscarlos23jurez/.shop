@@ -39,11 +39,13 @@ import {
   Building2,
   GitBranch,
   Activity,
-  Globe
+  Globe,
+  Lock
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCompany } from "@/contexts/CompanyContext";
 import { useRouter, usePathname } from 'next/navigation';
 import { useState, useLayoutEffect, useEffect } from 'react'; // Import useState, useLayoutEffect and useEffect
 import { ordersApi } from "@/lib/api/orders";
@@ -189,8 +191,14 @@ const employeeSidebarItems: SidebarItem[] = [
   { icon: ShoppingCart, label: "Punto de Venta", href: "/dashboard/pos" }
 ];
 
+import { useToast } from "@/hooks/use-toast";
+import { useLockedPlan } from "@/hooks/use-locked-plan";
+
 export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean, setIsCollapsed: (collapsed: boolean) => void }) {
   const { user, token, logout, isEmployee, userRole } = useAuth();
+  const { getPlanName } = useCompany();
+  const { toast } = useToast();
+  const { showLockedToast } = useLockedPlan();
   const router = useRouter();
   const pathname = usePathname() || '';
 
@@ -446,18 +454,36 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
                       {item.subItems?.map((subItem, subIndex) => {
                         const isSubItemActive = pathname === subItem.href ||
                           (subItem.href !== '/dashboard/whatsapp' && pathname.startsWith(subItem.href));
+
+                        // Check for locked items in Basic Plan
+                        const planName = getPlanName();
+                        const isBasicPlan = planName === 'Básico';
+                        const isLocked = (isBasicPlan && item.label === 'App' && subItem.label !== 'Comentarios') ||
+                          (isBasicPlan && item.label === 'WhatsApp') ||
+                          (isBasicPlan && item.label === 'Clientes' && subItem.label === 'Membresías') ||
+                          (isBasicPlan && item.label === 'Empleados');
+
                         return (
                           <Button
                             key={subIndex}
-                            variant={isSubItemActive ? "default" : "ghost"}
-                            className={`w-full justify-start h-11 ${isSubItemActive
+                            variant={isSubItemActive && !isLocked ? "default" : "ghost"}
+                            className={`w-full justify-start h-11 ${isSubItemActive && !isLocked
                               ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/25 hover:bg-emerald-600"
-                              : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                              : isLocked
+                                ? "text-slate-400 cursor-not-allowed hover:bg-transparent"
+                                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
                               }`}
-                            onClick={() => router.push(subItem.href)}
+                            onClick={() => {
+                              if (isLocked) {
+                                showLockedToast();
+                                return;
+                              }
+                              router.push(subItem.href);
+                            }}
                           >
                             <subItem.icon className="h-5 w-5 mr-3" />
                             <span>{subItem.label}</span>
+                            {isLocked && <Lock className="ml-auto h-4 w-4 opacity-50" />}
                           </Button>
                         );
                       })}
