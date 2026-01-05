@@ -7,7 +7,7 @@ import { GA4PageViewTracker } from '@/components/analytics/GA4PageViewTracker'
 import { CookieConsent } from '@/components/cookie-consent'
 import './globals.css'
 
-const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.fynlink.shop').replace(/\/$/, '')
+const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://fynlink.shop').replace(/\/$/, '')
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
   creator: 'Fynlink',
   publisher: 'Fynlink',
   alternates: {
-    canonical: '/',
+    canonical: './',
   },
   openGraph: {
     type: 'website',

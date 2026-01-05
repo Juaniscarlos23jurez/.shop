@@ -1,6 +1,6 @@
 import type { MetadataRoute } from 'next'
 
-const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://fideliza.mx').replace(/\/$/, '')
+const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://fynlink.shop').replace(/\/$/, '')
 
 const disallowedPaths = ['/api', '/dashboard', '/auth/empleados', '/app', '/rewin', '/user-catalog']
 
