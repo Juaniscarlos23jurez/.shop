@@ -4,12 +4,13 @@ import { useCallback, useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Plus, Minus, ShoppingCart } from 'lucide-react';
+import { Search, Plus, Minus, ShoppingCart, Printer, CheckCircle2, XCircle } from 'lucide-react';
 import { useAuth } from "@/contexts/AuthContext";
 import { api, BASE_URL } from "@/lib/api/api";
 import { ordersApi } from "@/lib/api/orders";
 import { PaymentModal } from "@/components/pos/PaymentModal";
 import { useToast } from "@/hooks/use-toast";
+import { useThermalPrinter } from "@/hooks/use-thermal-printer";
 
 // Tipo local de producto para POS (precio como string)
 type PosProduct = {
@@ -98,6 +99,9 @@ export default function PuntoVentaPage() {
   const [salesPage, setSalesPage] = useState(1);
   const [salesTotal, setSalesTotal] = useState(0);
   const salesPerPage = 15;
+
+  // Printer logic
+  const { isConnected: isPrinterConnected, connect: connectPrinter, disconnect: disconnectPrinter, printTicket, isPrinting } = useThermalPrinter();
 
   const getProductLocationPivot = (product: any) => {
     const loc = Array.isArray(product?.locations) ? product.locations[0] : null;
@@ -440,6 +444,28 @@ export default function PuntoVentaPage() {
         description: `Venta #${saleData?.id || 'N/A'} creada correctamente. Total: $${cartTotal.toFixed(2)}${discountMessage}${pointsMessage}`,
       });
 
+      // Attempt to print ticket if printer is connected
+      if (isPrinterConnected) {
+        // Calculate items total for the ticket to ensure it matches
+        const ticketTotal = saleData?.total ? parseFloat(saleData.total) : cartTotal - discountApplied;
+
+        printTicket({
+          companyName: user?.company_id ? "Ticket de Venta" : "Mi Negocio", // TODO: Fetch real company name if avail
+          items: cart.map(item => ({
+            name: item.name,
+            quantity: item.quantity,
+            price: parseFloat(item.price)
+          })),
+          total: ticketTotal,
+          date: new Date().toLocaleString(),
+          saleId: saleData?.id || 'N/A',
+          paymentMethod: paymentData.method === 'cash' ? 'Efectivo' :
+            paymentData.method === 'card' ? 'Tarjeta' :
+              paymentData.method === 'transfer' ? 'Transferencia' :
+                paymentData.method === 'points' ? 'Puntos' : paymentData.method
+        });
+      }
+
     } catch (error) {
       console.error('Error al procesar el pago:', error);
       toast({
@@ -565,6 +591,18 @@ export default function PuntoVentaPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h2 className="text-3xl font-bold tracking-tight">Punto de Venta</h2>
+          <div className="flex items-center gap-2">
+            <Button
+              variant={isPrinterConnected ? "outline" : "default"}
+              size="sm"
+              onClick={isPrinterConnected ? disconnectPrinter : connectPrinter}
+              className={isPrinterConnected ? "border-green-500 text-green-600 hover:text-green-700 hover:bg-green-50" : ""}
+            >
+              <Printer className="mr-2 h-4 w-4" />
+              {isPrinterConnected ? 'Impresora Conectada' : 'Conectar Impresora'}
+              {isPrinterConnected && <CheckCircle2 className="ml-2 h-3 w-3" />}
+            </Button>
+          </div>
         </div>
         <div className="mt-2 border-b flex gap-2">
           <button
@@ -765,8 +803,8 @@ export default function PuntoVentaPage() {
                   <button
                     onClick={() => setActiveOrderTab('accepted')}
                     className={`px-4 py-2 font-medium transition-colors ${activeOrderTab === 'accepted'
-                        ? 'text-blue-600 border-b-2 border-blue-600'
-                        : 'text-slate-600 hover:text-slate-900'
+                      ? 'text-blue-600 border-b-2 border-blue-600'
+                      : 'text-slate-600 hover:text-slate-900'
                       }`}
                   >
                     Aceptadas ({acceptedOrders.length})
@@ -774,8 +812,8 @@ export default function PuntoVentaPage() {
                   <button
                     onClick={() => setActiveOrderTab('preparing')}
                     className={`px-4 py-2 font-medium transition-colors ${activeOrderTab === 'preparing'
-                        ? 'text-purple-600 border-b-2 border-purple-600'
-                        : 'text-slate-600 hover:text-slate-900'
+                      ? 'text-purple-600 border-b-2 border-purple-600'
+                      : 'text-slate-600 hover:text-slate-900'
                       }`}
                   >
                     Preparando ({preparingOrders.length})
@@ -783,8 +821,8 @@ export default function PuntoVentaPage() {
                   <button
                     onClick={() => setActiveOrderTab('ready')}
                     className={`px-4 py-2 font-medium transition-colors ${activeOrderTab === 'ready'
-                        ? 'text-green-600 border-b-2 border-green-600'
-                        : 'text-slate-600 hover:text-slate-900'
+                      ? 'text-green-600 border-b-2 border-green-600'
+                      : 'text-slate-600 hover:text-slate-900'
                       }`}
                   >
                     Listas ({readyOrders.length})

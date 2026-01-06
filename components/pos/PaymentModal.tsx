@@ -562,392 +562,364 @@ export function PaymentModal({ isOpen, onClose, total, totalPointsRequired, onPa
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[720px] w-full">
-        <DialogHeader>
+
+      <DialogContent className="sm:max-w-[720px] w-full max-h-[95vh] flex flex-col p-0 gap-0 overflow-hidden">
+        <DialogHeader className="px-6 py-4 border-b flex-shrink-0">
           <DialogTitle>Procesar Pago</DialogTitle>
         </DialogHeader>
 
-        <QRScanner
-          isOpen={isQRScannerOpen}
-          onClose={() => setIsQRScannerOpen(false)}
-          onScan={handleQRScanned}
-        />
+        <div className="flex-1 overflow-y-auto px-6 py-4">
+          <QRScanner
+            isOpen={isQRScannerOpen}
+            onClose={() => setIsQRScannerOpen(false)}
+            onScan={handleQRScanned}
+          />
 
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label className="text-base font-semibold">Seleccionar Cliente</Label>
-            <CustomerSearch
-              onSelect={handleCustomerSelected}
-              onClear={handleCustomerCleared}
-              selectedCustomer={customer}
-            />
-            <div className="flex items-center gap-2">
-              <div className="flex-1 border-t" />
-              <span className="text-xs text-muted-foreground">O</span>
-              <div className="flex-1 border-t" />
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label className="text-base font-semibold">Seleccionar Cliente</Label>
+              <CustomerSearch
+                onSelect={handleCustomerSelected}
+                onClear={handleCustomerCleared}
+                selectedCustomer={customer}
+              />
+              <div className="flex items-center gap-2">
+                <div className="flex-1 border-t" />
+                <span className="text-xs text-muted-foreground">O</span>
+                <div className="flex-1 border-t" />
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => setIsQRScannerOpen(true)}
+                className="w-full"
+                type="button"
+                size="sm"
+              >
+                <QrCode className="mr-2 h-4 w-4" />
+                Escanear QR Cliente
+              </Button>
             </div>
-            <Button
-              variant="outline"
-              onClick={() => setIsQRScannerOpen(true)}
-              className="w-full"
-              type="button"
-              size="sm"
-            >
-              <QrCode className="mr-2 h-4 w-4" />
-              Escanear QR Cliente
-            </Button>
-          </div>
 
-          {customer && (
-            <div className="p-4 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h3 className="font-semibold text-green-900 dark:text-green-100">
-                    {customer.name}
-                  </h3>
-                  <p className="text-sm text-green-700 dark:text-green-300">
-                    {customer.email}
-                  </p>
-                  {customer.phone && (
+            {customer && (
+              <div className="p-3 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h3 className="font-semibold text-green-900 dark:text-green-100">
+                      {customer.name}
+                    </h3>
                     <p className="text-sm text-green-700 dark:text-green-300">
-                      {customer.phone}
+                      {customer.email}
                     </p>
-                  )}
-                </div>
-                <div className="text-right">
-                  <p className="text-sm text-green-700 dark:text-green-300">
-                    Puntos actuales: {isLoadingPoints ? (
-                      <span className="inline-block animate-pulse">...</span>
-                    ) : (
+                    {customer.phone && (
+                      <p className="text-sm text-green-700 dark:text-green-300">
+                        {customer.phone}
+                      </p>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm text-green-700 dark:text-green-300">
                       <span className="font-bold">
                         {customerPointsBalance !== null ? customerPointsBalance : customer.points}
-                      </span>
-                    )}
-                  </p>
-                  <p className="text-sm font-semibold text-green-600 dark:text-green-400">
-                    Ganará: +{pointsEarned.toFixed(1)} pts
-                  </p>
-                  {customerPointsBalance !== null && (
-                    <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                      Total después: {(customerPointsBalance + pointsEarned).toFixed(1)} pts
+                      </span> pts
                     </p>
-                  )}
+                    <p className="text-sm font-semibold text-green-600 dark:text-green-400">
+                      +{pointsEarned.toFixed(1)} pts
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
-        </div>
-
-        {/* Notas del vendedor - visible para todos los métodos */}
-        <div className="mt-4 space-y-2">
-          <Label htmlFor="sale-note">Notas</Label>
-          <Textarea
-            id="sale-note"
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder="Agrega instrucciones, comentarios o notas para esta venta..."
-            className="min-h-24"
-          />
-        </div>
-
-        <div className="grid gap-4 py-4">
-          <div className="space-y-2">
-            <Label>Método de Pago</Label>
-            <RadioGroup
-              value={paymentMethod}
-              onValueChange={(value) => setPaymentMethod(value as PaymentMethod)}
-              className="grid grid-cols-4 gap-4 mt-2"
-            >
-              <div>
-                <RadioGroupItem value="cash" id="cash" className="peer sr-only" />
-                <Label
-                  htmlFor="cash"
-                  className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
-                >
-                  <span>Efectivo</span>
-                </Label>
-              </div>
-              <div>
-                <RadioGroupItem value="card" id="card" className="peer sr-only" />
-                <Label
-                  htmlFor="card"
-                  className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
-                >
-                  <span>Tarjeta</span>
-                </Label>
-              </div>
-              <div>
-                <RadioGroupItem value="transfer" id="transfer" className="peer sr-only" />
-                <Label
-                  htmlFor="transfer"
-                  className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
-                >
-                  <span>Transferencia</span>
-                </Label>
-              </div>
-              {/* Points payment option - only show if there are redeemable products and customer has enough points */}
-              {totalPointsRequired && totalPointsRequired > 0 && (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div className={!customer || (customerPointsBalance !== null ? customerPointsBalance : (customer?.points || 0)) < totalPointsRequired ? 'opacity-50' : ''}>
-                        <RadioGroupItem
-                          value="points"
-                          id="points"
-                          className="peer sr-only"
-                          disabled={!customer || (customerPointsBalance !== null ? customerPointsBalance : (customer?.points || 0)) < totalPointsRequired}
-                        />
-                        <Label
-                          htmlFor="points"
-                          className={`flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-purple-500 [&:has([data-state=checked])]:border-purple-500 ${!customer || (customerPointsBalance !== null ? customerPointsBalance : (customer?.points || 0)) < totalPointsRequired ? 'cursor-not-allowed' : 'cursor-pointer'}`}
-                        >
-                          <span className="text-purple-600 font-semibold">Puntos</span>
-                          <span className="text-xs text-muted-foreground mt-1">
-                            {totalPointsRequired} pts
-                          </span>
-                        </Label>
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      {!customer ? (
-                        <p>Selecciona un cliente para pagar con puntos</p>
-                      ) : (customerPointsBalance !== null ? customerPointsBalance : (customer?.points || 0)) < totalPointsRequired ? (
-                        <p>Puntos insuficientes. Necesita {totalPointsRequired} pts, tiene {customerPointsBalance !== null ? customerPointsBalance : customer?.points || 0} pts</p>
-                      ) : (
-                        <p>Pagar con {totalPointsRequired} puntos</p>
-                      )}
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              )}
-            </RadioGroup>
+            )}
           </div>
 
-          <div className="space-y-2">
-            <Label>Tipo de Orden</Label>
-            <RadioGroup
-              value={deliveryMethod}
-              onValueChange={(value) => setDeliveryMethod(value as DeliveryMethod)}
-              className="grid grid-cols-2 gap-4 mt-2"
-            >
-              <div>
-                <RadioGroupItem value="pickup" id="pickup" className="peer sr-only" />
-                <Label
-                  htmlFor="pickup"
-                  className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer text-center"
-                >
-                  <span>Recoger en tienda</span>
-                </Label>
-              </div>
-              <div>
-                <RadioGroupItem value="delivery" id="delivery" className="peer sr-only" />
-                <Label
-                  htmlFor="delivery"
-                  className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer text-center"
-                >
-                  <span>Enviar a domicilio</span>
-                </Label>
-              </div>
-            </RadioGroup>
+          {/* Notas del vendedor */}
+          <div className="mt-4 space-y-2">
+            <Label htmlFor="sale-note">Notas</Label>
+            <Textarea
+              id="sale-note"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Notas de la venta..."
+              className="min-h-[60px]"
+            />
           </div>
 
-          {paymentMethod === 'points' && customer && totalPointsRequired && (
+          <div className="grid gap-4 py-4">
             <div className="space-y-2">
-              <div className="p-4 bg-purple-50 dark:bg-purple-950 border border-purple-200 dark:border-purple-800 rounded-lg">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="font-medium">Puntos disponibles:</span>
-                  <span className="text-lg font-bold text-purple-600">{customerPointsBalance !== null ? customerPointsBalance : customer.points} pts</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="font-medium">Puntos a usar:</span>
-                  <span className="text-lg font-bold text-purple-700">{totalPointsRequired} pts</span>
-                </div>
-                <div className="mt-3 pt-3 border-t border-purple-200">
-                  <div className="flex justify-between items-center">
-                    <span className="font-medium">Puntos después del pago:</span>
-                    <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
-                      {((customerPointsBalance !== null ? customerPointsBalance : customer.points) - totalPointsRequired).toFixed(0)} pts
-                    </span>
-                  </div>
-                </div>
-                {(customerPointsBalance !== null ? customerPointsBalance : customer.points) < totalPointsRequired && (
-                  <div className="mt-3 p-2 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded text-sm text-red-600 dark:text-red-400">
-                    Puntos insuficientes. Necesitas {(totalPointsRequired - (customerPointsBalance !== null ? customerPointsBalance : customer.points)).toFixed(0)} puntos más.
-                  </div>
-                )}
-                {(customerPointsBalance !== null ? customerPointsBalance : customer.points) >= totalPointsRequired && (
-                  <div className="mt-3 p-2 bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800 rounded text-sm text-emerald-600 dark:text-emerald-400">
-                    ✓ ¡Este pedido se puede pagar con tus puntos!
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {paymentMethod === 'cash' && (
-            <div className="space-y-2">
-              <Label htmlFor="cashAmount">Efectivo Recibido</Label>
-              <Input
-                id="cashAmount"
-                type="number"
-                value={cashAmount}
-                onChange={(e) => calculateChange(e.target.value)}
-                placeholder="0.00"
-                min={total}
-                step="0.01"
-              />
-              {change >= 0 && (
-                <div className="text-sm text-muted-foreground">
-                  Cambio: ${change.toFixed(2)}
-                </div>
-              )}
-              {change < 0 && (
-                <div className="text-sm text-red-500">
-                  El monto es menor al total
-                </div>
-              )}
-            </div>
-          )}
-
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <Label className="font-normal">Cupón de descuento</Label>
-            </div>
-
-            {!selectedCoupon ? (
-              <div className="space-y-2">
-                {/* Manual coupon code input */}
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Código de cupón"
-                    value={couponCode}
-                    onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                    className="flex-1"
-                    disabled={isValidatingCoupon}
-                  />
-                  <Button
-                    onClick={() => applyCouponByCode(couponCode)}
-                    disabled={!couponCode || isValidatingCoupon}
-                    variant="outline"
+              <Label>Método de Pago</Label>
+              <RadioGroup
+                value={paymentMethod}
+                onValueChange={(value) => setPaymentMethod(value as PaymentMethod)}
+                className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-2"
+              >
+                <div>
+                  <RadioGroupItem value="cash" id="cash" className="peer sr-only" />
+                  <Label
+                    htmlFor="cash"
+                    className="flex flex-col items-center justify-between rounded-xl border-2 border-muted bg-popover p-3 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer transition-all"
                   >
-                    {isValidatingCoupon ? 'Validando...' : 'Aplicar'}
-                  </Button>
+                    <span className="font-medium">Efectivo</span>
+                  </Label>
                 </div>
+                <div>
+                  <RadioGroupItem value="card" id="card" className="peer sr-only" />
+                  <Label
+                    htmlFor="card"
+                    className="flex flex-col items-center justify-between rounded-xl border-2 border-muted bg-popover p-3 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer transition-all"
+                  >
+                    <span className="font-medium">Tarjeta</span>
+                  </Label>
+                </div>
+                <div>
+                  <RadioGroupItem value="transfer" id="transfer" className="peer sr-only" />
+                  <Label
+                    htmlFor="transfer"
+                    className="flex flex-col items-center justify-between rounded-xl border-2 border-muted bg-popover p-3 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer transition-all"
+                  >
+                    <span className="font-medium">Transfer.</span>
+                  </Label>
+                </div>
+                {/* Points payment option */}
+                {totalPointsRequired && totalPointsRequired > 0 && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className={!customer || (customerPointsBalance !== null ? customerPointsBalance : (customer?.points || 0)) < totalPointsRequired ? 'opacity-50' : ''}>
+                          <RadioGroupItem
+                            value="points"
+                            id="points"
+                            className="peer sr-only"
+                            disabled={!customer || (customerPointsBalance !== null ? customerPointsBalance : (customer?.points || 0)) < totalPointsRequired}
+                          />
+                          <Label
+                            htmlFor="points"
+                            className={`flex flex-col items-center justify-between rounded-xl border-2 border-muted bg-popover p-3 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-purple-500 [&:has([data-state=checked])]:border-purple-500 transition-all ${!customer || (customerPointsBalance !== null ? customerPointsBalance : (customer?.points || 0)) < totalPointsRequired ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                          >
+                            <span className="text-purple-600 font-semibold">Puntos</span>
+                            <span className="text-xs text-muted-foreground mt-0.5">
+                              {totalPointsRequired} pts
+                            </span>
+                          </Label>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="top">
+                        {!customer ? (
+                          <p>Selecciona un cliente</p>
+                        ) : (customerPointsBalance !== null ? customerPointsBalance : (customer?.points || 0)) < totalPointsRequired ? (
+                          <p>Puntos insuficientes</p>
+                        ) : (
+                          <p>Pagar con {totalPointsRequired} puntos</p>
+                        )}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+              </RadioGroup>
+            </div>
 
-                {/* Available coupons dropdown */}
-                {coupons.length > 0 && (
-                  <div className="relative">
-                    <div className="absolute inset-0 flex items-center">
-                      <span className="w-full border-t" />
-                    </div>
-                    <div className="relative flex justify-center text-xs uppercase">
-                      <span className="bg-background px-2 text-muted-foreground">o selecciona uno</span>
+            <div className="space-y-2">
+              <Label>Entrega</Label>
+              <RadioGroup
+                value={deliveryMethod}
+                onValueChange={(value) => setDeliveryMethod(value as DeliveryMethod)}
+                className="grid grid-cols-2 gap-3 mt-2"
+              >
+                <div>
+                  <RadioGroupItem value="pickup" id="pickup" className="peer sr-only" />
+                  <Label
+                    htmlFor="pickup"
+                    className="flex flex-col items-center justify-between rounded-xl border-2 border-muted bg-popover p-3 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer text-center transition-all"
+                  >
+                    <span className="font-medium">Recoger</span>
+                  </Label>
+                </div>
+                <div>
+                  <RadioGroupItem value="delivery" id="delivery" className="peer sr-only" />
+                  <Label
+                    htmlFor="delivery"
+                    className="flex flex-col items-center justify-between rounded-xl border-2 border-muted bg-popover p-3 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer text-center transition-all"
+                  >
+                    <span className="font-medium">A Domicilio</span>
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
+
+            {paymentMethod === 'points' && customer && totalPointsRequired && (
+              <div className="space-y-2">
+                <div className="p-3 bg-purple-50 dark:bg-purple-950 border border-purple-200 dark:border-purple-800 rounded-lg">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-sm font-medium">Disponibles:</span>
+                    <span className="font-bold text-purple-600">{customerPointsBalance !== null ? customerPointsBalance : customer.points} pts</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium">A usar:</span>
+                    <span className="font-bold text-purple-700">{totalPointsRequired} pts</span>
+                  </div>
+                  <div className="mt-2 pt-2 border-t border-purple-200">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">Restantes:</span>
+                      <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                        {((customerPointsBalance !== null ? customerPointsBalance : customer.points) - totalPointsRequired).toFixed(0)} pts
+                      </span>
                     </div>
                   </div>
-                )}
-
-                <Select
-                  onValueChange={(value) => {
-                    const coupon = coupons.find(c => c.id === parseInt(value));
-                    if (coupon) applyCoupon(coupon);
-                  }}
-                  disabled={isLoadingCoupons || coupons.length === 0}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder={isLoadingCoupons ? "Cargando cupones..." : coupons.length > 0 ? "Seleccionar cupón disponible" : "No hay cupones disponibles"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {coupons.length > 0 ? (
-                      coupons.map((coupon) => (
-                        <SelectItem
-                          key={coupon.id}
-                          value={coupon.id.toString()}
-                          className="flex flex-col items-start"
-                        >
-                          <div className="font-medium">{coupon.code}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {coupon.name}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {coupon.type === 'fixed_amount' && `$${typeof coupon.discount_amount === 'string' ? parseFloat(coupon.discount_amount).toFixed(2) : coupon.discount_amount?.toFixed(2)} de descuento`}
-                            {coupon.type === 'percentage' && `${coupon.discount_percentage}% de descuento`}
-                            {coupon.type === 'free_shipping' && 'Envío gratis'}
-                            {coupon.type === 'buy_x_get_y' && 'Compra y lleva más'}
-                            {coupon.type === 'free_item' && 'Producto gratis'}
-                            {coupon.min_purchase_amount && ` (Mín. $${typeof coupon.min_purchase_amount === 'string' ? parseFloat(coupon.min_purchase_amount).toFixed(2) : coupon.min_purchase_amount?.toFixed(2)})`}
-                          </div>
-                        </SelectItem>
-                      ))
-                    ) : (
-                      <div className="p-2 text-sm text-muted-foreground">
-                        No hay cupones disponibles
-                      </div>
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <div className="px-3 py-1.5 text-sm bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-md flex items-center gap-1">
-                  <TicketPercent className="h-4 w-4" />
-                  {selectedCoupon.code}
-                  {selectedCoupon.discountAmount > 0 && (
-                    <span className="ml-1">-${selectedCoupon.discountAmount.toFixed(2)}</span>
+                  {(customerPointsBalance !== null ? customerPointsBalance : customer.points) < totalPointsRequired && (
+                    <div className="mt-2 p-1.5 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded text-xs text-red-600 dark:text-red-400">
+                      Faltan {(totalPointsRequired - (customerPointsBalance !== null ? customerPointsBalance : customer.points)).toFixed(0)} puntos.
+                    </div>
                   )}
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={removeCoupon}
-                  className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-                >
-                  Quitar
-                </Button>
               </div>
             )}
 
-            <div className="border-t pt-4 space-y-2">
-              <div className="flex justify-between">
-                <span>Subtotal:</span>
-                <span>${total.toFixed(2)}</span>
+            {paymentMethod === 'cash' && (
+              <div className="space-y-2">
+                <Label htmlFor="cashAmount">Efectivo Recibido</Label>
+                <Input
+                  id="cashAmount"
+                  type="number"
+                  value={cashAmount}
+                  onChange={(e) => calculateChange(e.target.value)}
+                  placeholder="0.00"
+                  min={total}
+                  step="0.01"
+                />
+                {change >= 0 && (
+                  <div className="text-sm text-muted-foreground">
+                    Cambio: ${change.toFixed(2)}
+                  </div>
+                )}
+                {change < 0 && (
+                  <div className="text-sm text-red-500">
+                    Faltan: ${(Math.abs(change)).toFixed(2)}
+                  </div>
+                )}
               </div>
+            )}
 
-              {selectedCoupon && selectedCoupon.discountAmount > 0 && (
-                <div className="flex justify-between text-green-600 dark:text-green-400">
-                  <span>Descuento ({selectedCoupon.code}):</span>
-                  <span>-${selectedCoupon.discountAmount.toFixed(2)}</span>
+            <div className="space-y-3 pb-2">
+              <Label className="font-normal">Cupón</Label>
+
+              {!selectedCoupon ? (
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Código..."
+                      value={couponCode}
+                      onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                      className="flex-1"
+                      disabled={isValidatingCoupon}
+                    />
+                    <Button
+                      onClick={() => applyCouponByCode(couponCode)}
+                      disabled={!couponCode || isValidatingCoupon}
+                      variant="outline"
+                      size="icon"
+                    >
+                      {isValidatingCoupon ? <span className="animate-spin">⌛</span> : <TicketPercent className="h-4 w-4" />}
+                    </Button>
+                  </div>
+
+                  {coupons.length > 0 && (
+                    <Select
+                      onValueChange={(value) => {
+                        const coupon = coupons.find(c => c.id === parseInt(value));
+                        if (coupon) applyCoupon(coupon);
+                      }}
+                      disabled={isLoadingCoupons}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Ver cupones disponibles" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {coupons.length > 0 ? (
+                          coupons.map((coupon) => (
+                            <SelectItem
+                              key={coupon.id}
+                              value={coupon.id.toString()}
+                              className="flex flex-col items-start py-2"
+                            >
+                              <div className="font-medium">{coupon.code}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {coupon.name}
+                              </div>
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <div className="p-2 text-sm text-muted-foreground">
+                            No hay cupones
+                          </div>
+                        )}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
+              ) : (
+                <div className="flex items-center justify-between p-2 bg-green-50 dark:bg-green-900/30 rounded-md border border-green-100 dark:border-green-800">
+                  <div className="flex items-center gap-2">
+                    <TicketPercent className="h-4 w-4 text-green-600" />
+                    <div>
+                      <p className="text-sm font-medium text-green-900 dark:text-green-100">{selectedCoupon.code}</p>
+                      {selectedCoupon.discountAmount > 0 && (
+                        <p className="text-xs text-green-700 dark:text-green-300">-${selectedCoupon.discountAmount.toFixed(2)}</p>
+                      )}
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={removeCoupon}
+                    className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                  >
+                    ×
+                  </Button>
                 </div>
               )}
 
-              <div className="flex justify-between font-medium pt-2 border-t">
-                <span>Total a Pagar:</span>
-                <div className="flex items-center gap-2">
-                  {selectedCoupon && selectedCoupon.discountAmount > 0 && (
-                    <span className="text-sm text-muted-foreground line-through">
-                      ${total.toFixed(2)}
-                    </span>
-                  )}
-                  <span className={selectedCoupon ? "text-lg font-bold text-green-600 dark:text-green-400" : ""}>
-                    ${(selectedCoupon ? discountedTotal : total).toFixed(2)}
-                  </span>
+              <div className="border-t pt-4 space-y-1">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Subtotal:</span>
+                  <span>${total.toFixed(2)}</span>
+                </div>
+
+                {selectedCoupon && selectedCoupon.discountAmount > 0 && (
+                  <div className="flex justify-between text-sm text-green-600 dark:text-green-400">
+                    <span>Descuento:</span>
+                    <span>-${selectedCoupon.discountAmount.toFixed(2)}</span>
+                  </div>
+                )}
+
+                <div className="flex justify-between items-end pt-2 border-t mt-2">
+                  <span className="font-semibold text-lg">Total:</span>
+                  <div className="text-right">
+                    {selectedCoupon && selectedCoupon.discountAmount > 0 && (
+                      <div className="text-xs text-muted-foreground line-through mb-0.5">
+                        ${total.toFixed(2)}
+                      </div>
+                    )}
+                    <div className={selectedCoupon ? "text-xl font-bold text-green-600 dark:text-green-400" : "text-xl font-bold"}>
+                      ${(selectedCoupon ? discountedTotal : total).toFixed(2)}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="px-6 py-4 border-t bg-background flex-shrink-0">
           <Button variant="outline" onClick={onClose}>
             Cancelar
           </Button>
           <Button
             onClick={handleSubmit}
+            className="flex-1 sm:flex-none"
             disabled={
               (paymentMethod === 'cash' && (isNaN(parseFloat(cashAmount)) || parseFloat(cashAmount) < (selectedCoupon ? discountedTotal : total))) ||
               (paymentMethod === 'points' && (!customer || customer.points < (selectedCoupon ? discountedTotal : total)))
             }
           >
-            Procesar Pago
+            Pagar ${(selectedCoupon ? discountedTotal : total).toFixed(2)}
           </Button>
         </DialogFooter>
       </DialogContent>
