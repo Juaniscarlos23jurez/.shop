@@ -4,15 +4,18 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { 
-  Search, 
-  Filter, 
+import {
+  Search,
+  Filter,
   ShoppingCart,
+  Printer,
+  CheckCircle2,
 } from 'lucide-react';
 import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/api/api";
 import { Sale, SalesStatistics } from "@/types/api";
 import { useToast } from "@/hooks/use-toast";
+import { useThermalPrinter } from "@/hooks/use-thermal-printer";
 import { formatCurrency } from "@/lib/utils/currency";
 import {
   Select,
@@ -38,7 +41,8 @@ export default function ReportesPage() {
   const [statsLoading, setStatsLoading] = useState(true);
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  
+  const { isConnected: isPrinterConnected, connect: connectPrinter, disconnect: disconnectPrinter, printTicket } = useThermalPrinter();
+
   // Filters
   const [locationId, setLocationId] = useState<string>('');
   const [dateFrom, setDateFrom] = useState<string>('');
@@ -74,13 +78,13 @@ export default function ReportesPage() {
         page: currentPage,
         per_page: 15,
       };
-      
+
       if (locationId) params.location_id = locationId;
       if (dateFrom) params.date_from = dateFrom;
       if (dateTo) params.date_to = dateTo;
 
       const response = await api.sales.listSales(params, token);
-      
+
       if (response.success && response.data) {
         setSales(response.data.data || []);
         setTotalPages(response.data.last_page || 1);
@@ -109,7 +113,7 @@ export default function ReportesPage() {
       if (dateTo) params.date_to = dateTo;
 
       const response = await api.sales.getStatistics(params, token);
-      
+
       if (response.success && response.data) {
         setStatistics(response.data);
       }
@@ -130,7 +134,9 @@ export default function ReportesPage() {
   const handleViewDetails = async (sale: Sale) => {
     try {
       if (!token) return;
-      
+
+      // If we already have the full details in the row (which we might not), use it.
+      // But typically listSales returns summary, getSale returns full details including items.
       const response = await api.sales.getSale(sale.id, token);
       if (response.success && response.data) {
         setSelectedSale(response.data.sale || response.data);
@@ -144,6 +150,28 @@ export default function ReportesPage() {
         variant: 'destructive',
       });
     }
+  };
+
+  const handlePrintTicket = (sale: Sale) => {
+    if (!sale) return;
+
+    // Ensure we have items to print
+    const itemsToPrint = sale.items?.map(item => ({
+      name: item.product?.name || `Product #${item.product_id}`,
+      quantity: item.quantity,
+      price: typeof item.unit_price === 'string' ? parseFloat(item.unit_price) : Number(item.unit_price || 0)
+    })) || [];
+
+    const totalToPrint = sale.total ?? sale.total_amount ?? 0;
+
+    printTicket({
+      companyName: "Ticket de Venta", // TODO: use real name
+      items: itemsToPrint,
+      total: typeof totalToPrint === 'string' ? parseFloat(totalToPrint) : Number(totalToPrint),
+      date: new Date(sale.created_at).toLocaleString('es-MX'),
+      saleId: sale.id,
+      paymentMethod: getPaymentMethodLabel(sale.payment_method)
+    });
   };
 
   const handleClearFilters = () => {
@@ -202,9 +230,20 @@ export default function ReportesPage() {
           <h2 className="text-3xl font-bold tracking-tight">Reportes de Ventas</h2>
           <p className="text-muted-foreground">Historial y estadísticas de ventas</p>
         </div>
-        <Button variant="outline" className="gap-2">
-          Exportar
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant={isPrinterConnected ? "outline" : "default"}
+            onClick={isPrinterConnected ? disconnectPrinter : connectPrinter}
+            className={isPrinterConnected ? "border-green-500 text-green-600 hover:text-green-700 hover:bg-green-50" : ""}
+          >
+            <Printer className="mr-2 h-4 w-4" />
+            {isPrinterConnected ? 'Impresora Conectada' : 'Conectar Impresora'}
+            {isPrinterConnected && <CheckCircle2 className="ml-2 h-3 w-3" />}
+          </Button>
+          <Button variant="outline" className="gap-2">
+            Exportar
+          </Button>
+        </div>
       </div>
 
       {/* Statistics Cards */}
@@ -341,8 +380,8 @@ export default function ReportesPage() {
 
             <div className="space-y-2">
               <label className="text-sm font-medium invisible">Acciones</label>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="w-full"
                 onClick={handleClearFilters}
               >
@@ -467,7 +506,7 @@ export default function ReportesPage() {
               {selectedSale && new Date(selectedSale.created_at).toLocaleString('es-MX')}
             </DialogDescription>
           </DialogHeader>
-          
+
           {selectedSale && (
             <div className="space-y-4">
               {/* Sale Info */}
@@ -556,6 +595,22 @@ export default function ReportesPage() {
             </div>
           )}
         </DialogContent>
+        {selectedSale && (
+          <div className="p-6 border-t bg-gray-50 flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setIsDetailModalOpen(false)}>
+              Cerrar
+            </Button>
+            {isPrinterConnected && (
+              <Button
+                onClick={() => handlePrintTicket(selectedSale)}
+                className="gap-2 bg-slate-800 text-white hover:bg-slate-700"
+              >
+                <Printer className="h-4 w-4" />
+                Reimprimir Ticket
+              </Button>
+            )}
+          </div>
+        )}
       </Dialog>
     </div>
   );

@@ -2,6 +2,13 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Plus, Minus, ShoppingCart, Printer, CheckCircle2, XCircle } from 'lucide-react';
@@ -11,6 +18,7 @@ import { ordersApi } from "@/lib/api/orders";
 import { PaymentModal } from "@/components/pos/PaymentModal";
 import { useToast } from "@/hooks/use-toast";
 import { useThermalPrinter } from "@/hooks/use-thermal-printer";
+import { TicketPreview } from "@/components/pos/TicketPreview";
 
 // Tipo local de producto para POS (precio como string)
 type PosProduct = {
@@ -99,6 +107,9 @@ export default function PuntoVentaPage() {
   const [salesPage, setSalesPage] = useState(1);
   const [salesTotal, setSalesTotal] = useState(0);
   const salesPerPage = 15;
+  const [selectedSale, setSelectedSale] = useState<any | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [showTicketPreview, setShowTicketPreview] = useState(false);
 
   // Printer logic
   const { isConnected: isPrinterConnected, connect: connectPrinter, disconnect: disconnectPrinter, printTicket, isPrinting } = useThermalPrinter();
@@ -586,6 +597,59 @@ export default function PuntoVentaPage() {
     return labels[status] || status;
   };
 
+  const handleViewDetails = async (sale: any) => {
+    try {
+      if (!token) return;
+      // Fetch full details if needed, for now use what we have or fetch specific sale endpoint
+      // Assuming list endpoint gives enough info, otherwise we fetch:
+      const response = await api.sales.getSale(sale.id, token);
+      if (response.success && response.data) {
+        setSelectedSale(response.data.sale || response.data);
+        setIsDetailModalOpen(true);
+        setShowTicketPreview(false); // Reset to details view
+      }
+    } catch (error) {
+      console.error('Error fetching details:', error);
+      toast({
+        title: 'Error',
+        description: 'No se pudieron cargar los detalles',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handlePrintTicket = (sale: any) => {
+    if (!sale) return;
+
+    const itemsToPrint = sale.items?.map((item: any) => ({
+      name: item.product?.name || `Product #${item.product_id}`,
+      quantity: item.quantity,
+      price: typeof item.unit_price === 'string' ? parseFloat(item.unit_price) : Number(item.unit_price || 0)
+    })) || [];
+
+    const totalToPrint = sale.total ? parseFloat(sale.total) : 0;
+
+    // Helper for payment method label
+    const getPaymentMethodLabel = (method: string) => {
+      const labels: Record<string, string> = {
+        cash: 'Efectivo',
+        card: 'Tarjeta',
+        transfer: 'Transferencia',
+        points: 'Puntos',
+      };
+      return labels[method] || method;
+    };
+
+    printTicket({
+      companyName: "Ticket de Venta",
+      items: itemsToPrint,
+      total: totalToPrint,
+      date: new Date(sale.created_at).toLocaleString(),
+      saleId: sale.id,
+      paymentMethod: getPaymentMethodLabel(sale.payment_method)
+    });
+  };
+
   return (
     <>
       <div className="space-y-6">
@@ -1047,6 +1111,7 @@ export default function PuntoVentaPage() {
                           <th className="py-2 pr-4">Estado</th>
                           <th className="py-2 pr-4">Total</th>
                           <th className="py-2 pr-4">Items</th>
+                          <th className="py-2 pr-4">Acciones</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -1063,6 +1128,15 @@ export default function PuntoVentaPage() {
                             </td>
                             <td className="py-2 pr-4 font-bold text-emerald-600">{`$${parseFloat(s.total || '0').toFixed(2)}`}</td>
                             <td className="py-2 pr-4">{Array.isArray(s.items) ? s.items.length : 0}</td>
+                            <td className="py-2 pr-4">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleViewDetails(s)}
+                              >
+                                Ver
+                              </Button>
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -1103,6 +1177,129 @@ export default function PuntoVentaPage() {
         totalPointsRequired={cartTotalPointsRequired > 0 ? cartTotalPointsRequired : undefined}
         onPaymentComplete={handlePaymentComplete}
       />
+
+      {/* Sale Detail Modal */}
+      <Dialog open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto w-full">
+          <DialogHeader>
+            <DialogTitle>Detalles de Venta #{selectedSale?.id}</DialogTitle>
+            <DialogDescription>
+              {selectedSale && new Date(selectedSale.created_at).toLocaleString()}
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedSale && (
+            <div className="space-y-4">
+              <div className="flex justify-center pb-2">
+                <div className="flex border rounded-lg p-1 bg-muted/20">
+                  <button
+                    onClick={() => setShowTicketPreview(false)}
+                    className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${!showTicketPreview ? 'bg-white shadow-sm text-primary' : 'text-muted-foreground hover:text-primary/70'}`}
+                  >
+                    Detalles
+                  </button>
+                  <button
+                    onClick={() => setShowTicketPreview(true)}
+                    className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${showTicketPreview ? 'bg-white shadow-sm text-primary' : 'text-muted-foreground hover:text-primary/70'}`}
+                  >
+                    Vista Previa Ticket
+                  </button>
+                </div>
+              </div>
+
+              {showTicketPreview ? (
+                <div className="bg-gray-100 p-4 rounded-lg flex justify-center">
+                  <TicketPreview data={{
+                    companyName: selectedSale.location?.company?.name || "Mi Negocio",
+                    locationName: selectedSale.location?.name,
+                    companyAddress: selectedSale.location?.address,
+                    customerName: selectedSale.user?.name || selectedSale.client?.name || 'Cliente General',
+                    items: selectedSale.items?.map((item: any) => ({
+                      name: item.product?.name || item.product_name || 'Producto',
+                      quantity: item.quantity,
+                      price: typeof item.unit_price === 'string' ? parseFloat(item.unit_price) : Number(item.unit_price || 0)
+                    })) || [],
+                    total: parseFloat(selectedSale.total || '0'),
+                    date: new Date(selectedSale.created_at).toLocaleString(),
+                    saleId: selectedSale.id,
+                    paymentMethod: selectedSale.payment_method === 'cash' ? 'Efectivo' :
+                      selectedSale.payment_method === 'card' ? 'Tarjeta' :
+                        selectedSale.payment_method === 'transfer' ? 'Transferencia' :
+                          selectedSale.payment_method === 'points' ? 'Puntos' : selectedSale.payment_method
+                  }} />
+                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Cliente</p>
+                      <p className="text-sm">{selectedSale.user?.name || selectedSale.client?.name || 'Cliente General'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Método de Pago</p>
+                      <p className="text-sm capitalize">{selectedSale.payment_method}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Puntos Ganados</p>
+                      <p className="text-sm">{selectedSale.points_earned || 0}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Estado</p>
+                      <span className={`px-2 py-0.5 rounded text-xs ${getStatusColor(selectedSale.payment_status || 'completed')} bg-emerald-100 text-emerald-700`}>
+                        {selectedSale.payment_status || 'Completado'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="border rounded-lg overflow-hidden">
+                    <table className="w-full text-sm">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="text-left p-3">Producto</th>
+                          <th className="text-right p-3">Cant</th>
+                          <th className="text-right p-3">Precio</th>
+                          <th className="text-right p-3">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {selectedSale.items?.map((item: any) => (
+                          <tr key={item.id} className="border-t">
+                            <td className="p-3">
+                              {item.product?.name || item.product_name || 'Producto'}
+                              {item.notes && <p className="text-xs text-muted-foreground">{item.notes}</p>}
+                            </td>
+                            <td className="p-3 text-right">{item.quantity}</td>
+                            <td className="p-3 text-right">${parseFloat(item.unit_price).toFixed(2)}</td>
+                            <td className="p-3 text-right">${parseFloat(item.subtotal || (item.quantity * item.unit_price)).toFixed(2)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot className="bg-gray-50 font-medium">
+                        <tr>
+                          <td colSpan={3} className="p-3 text-right">Total:</td>
+                          <td className="p-3 text-right">${parseFloat(selectedSale.total).toFixed(2)}</td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                </>
+              )}
+
+              {isPrinterConnected && (
+                <div className="flex justify-end pt-4 border-t">
+                  <Button
+                    onClick={() => handlePrintTicket(selectedSale)}
+                    className="gap-2 bg-slate-800 text-white hover:bg-slate-700"
+                  >
+                    <Printer className="h-4 w-4" />
+                    Imprimir Ticket
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
