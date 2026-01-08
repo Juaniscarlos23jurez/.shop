@@ -80,8 +80,8 @@ interface AcceptedOrder {
 }
 
 export default function PuntoVentaPage() {
+  const { user, token } = useAuth();
   const { toast } = useToast();
-  const { token, user } = useAuth();
   const authToken = token || ''; // Ensure token is always a string
   const [products, setProducts] = useState<PosProduct[]>([]);
   const [loading, setLoading] = useState(true);
@@ -110,9 +110,109 @@ export default function PuntoVentaPage() {
   const [selectedSale, setSelectedSale] = useState<any | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [showTicketPreview, setShowTicketPreview] = useState(false);
+  const [printerName, setPrinterName] = useState('');
 
   // Printer logic
   const { isConnected: isPrinterConnected, connect: connectPrinter, disconnect: disconnectPrinter, printTicket, isPrinting } = useThermalPrinter();
+
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem('qz_printer_name');
+      if (stored) setPrinterName(stored);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const handleSavePrinterName = () => {
+    try {
+      const trimmed = printerName.trim();
+      if (!trimmed) {
+        window.localStorage.removeItem('qz_printer_name');
+        toast({
+          title: 'Nombre eliminado',
+          description: 'Se usará la impresora predeterminada del sistema.',
+        });
+        return;
+      }
+
+      window.localStorage.setItem('qz_printer_name', trimmed);
+      toast({
+        title: 'Impresora guardada',
+        description: `Se usará: ${trimmed}`,
+      });
+    } catch (error) {
+      console.error('[POS] Error saving printer name:', error);
+      toast({
+        title: 'Error',
+        description: 'No se pudo guardar el nombre de la impresora.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleTogglePrinterConnection = async () => {
+    try {
+      if (isPrinterConnected) {
+        disconnectPrinter();
+        toast({
+          title: 'Impresora desconectada',
+          description: 'Se desconectó la sesión con QZ Tray.',
+        });
+        return;
+      }
+
+      await connectPrinter();
+      toast({
+        title: 'Impresora conectada',
+        description: 'Conectado a QZ Tray. Ya puedes imprimir.',
+      });
+    } catch (error) {
+      console.error('[POS] Error connecting to QZ Tray:', error);
+      toast({
+        title: 'No se pudo conectar',
+        description: 'Abre QZ Tray en esta misma computadora y activa Allow unsigned requests. Si estás en Vercel (HTTPS), habilita conexiones seguras en QZ Tray.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handlePrintTestTicket = async () => {
+    try {
+      if (!isPrinterConnected) {
+        toast({
+          title: 'Impresora no conectada',
+          description: 'Conecta la impresora antes de imprimir un ticket de prueba.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      await printTicket({
+        companyName: 'Ticket de Prueba',
+        items: [
+          { name: 'Producto Demo A', quantity: 1, price: 10 },
+          { name: 'Producto Demo B', quantity: 2, price: 15.5 },
+        ],
+        total: 41,
+        date: new Date().toLocaleString(),
+        paymentMethod: 'Prueba',
+        footerMessage: 'Gracias por tu compra',
+      });
+
+      toast({
+        title: 'Ticket enviado',
+        description: 'Se envió el ticket de prueba a la impresora.',
+      });
+    } catch (error) {
+      console.error('[POS] Error printing test ticket:', error);
+      toast({
+        title: 'Error al imprimir',
+        description: 'No se pudo imprimir el ticket de prueba.',
+        variant: 'destructive',
+      });
+    }
+  };
 
   const getProductLocationPivot = (product: any) => {
     const loc = Array.isArray(product?.locations) ? product.locations[0] : null;
@@ -659,12 +759,37 @@ export default function PuntoVentaPage() {
             <Button
               variant={isPrinterConnected ? "outline" : "default"}
               size="sm"
-              onClick={isPrinterConnected ? disconnectPrinter : connectPrinter}
+              onClick={handleTogglePrinterConnection}
               className={isPrinterConnected ? "border-green-500 text-green-600 hover:text-green-700 hover:bg-green-50" : ""}
             >
               <Printer className="mr-2 h-4 w-4" />
               {isPrinterConnected ? 'Impresora Conectada' : 'Conectar Impresora'}
               {isPrinterConnected && <CheckCircle2 className="ml-2 h-3 w-3" />}
+            </Button>
+
+            <div className="flex items-center gap-2">
+              <Input
+                value={printerName}
+                onChange={(e) => setPrinterName(e.target.value)}
+                placeholder="Nombre de impresora (QZ)"
+                className="h-9 w-56"
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSavePrinterName}
+              >
+                Guardar
+              </Button>
+            </div>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handlePrintTestTicket}
+              disabled={isPrinting}
+            >
+              Imprimir ticket de prueba
             </Button>
           </div>
         </div>

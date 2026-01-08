@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 
 export type ThermalTicketItem = {
   name: string;
@@ -14,6 +14,8 @@ export type ThermalTicketPayload = {
   total: number;
   saleId?: number | string;
   footerMessage?: string;
+  printerName?: string;
+  [key: string]: unknown;
 };
 
 type UseThermalPrinterResult = {
@@ -34,30 +36,132 @@ type UseThermalPrinterResult = {
 export function useThermalPrinter(): UseThermalPrinterResult {
   const [isConnected, setIsConnected] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
+  const qzRef = useRef<any>(null);
+
+  const canUseQz = useMemo(() => typeof window !== "undefined", []);
+
+  const ensureQz = useCallback(async () => {
+    if (!canUseQz) {
+      throw new Error("QZ Tray only works in the browser");
+    }
+    if (qzRef.current) return qzRef.current;
+
+    const mod: any = await import("qz-tray");
+    const qz: any = mod?.default ?? mod;
+    // For local/dev usage, enable unsigned mode in QZ Tray (Settings -> Security).
+    // These promises prevent qz from throwing if the site is not signed.
+    try {
+      qz.security.setCertificatePromise(() => Promise.resolve(null));
+      qz.security.setSignaturePromise(() => Promise.resolve(null));
+    } catch {
+      // Ignore if security API differs; qz-tray versions vary.
+    }
+    qzRef.current = qz;
+    return qz;
+  }, [canUseQz]);
+
+  const ensureConnected = useCallback(async () => {
+    const qz = await ensureQz();
+    if (qz.websocket.isActive()) return qz;
+
+    const host = "localhost";
+    const port = 8181;
+
+    // If your site is HTTPS (e.g. Vercel), browsers may block ws:// as mixed content.
+    // We'll try secure first on HTTPS, otherwise insecure first.
+    const preferSecure = typeof window !== "undefined" && window.location.protocol === "https:";
+    const attempts = preferSecure
+      ? [{ host, port, usingSecure: true }, { host, port, usingSecure: false }]
+      : [{ host, port, usingSecure: false }, { host, port, usingSecure: true }];
+
+    let lastError: unknown = null;
+    for (const opts of attempts) {
+      try {
+        await qz.websocket.connect(opts);
+        if (qz.websocket.isActive()) return qz;
+      } catch (e) {
+        lastError = e;
+      }
+    }
+
+    throw lastError || new Error("Unable to establish connection with QZ");
+  }, [ensureQz]);
 
   const connect = useCallback(async () => {
-    setIsConnected(true);
-  }, []);
+    try {
+      const qz = await ensureConnected();
+      setIsConnected(Boolean(qz.websocket.isActive()));
+    } catch {
+      setIsConnected(false);
+      throw new Error("Unable to establish connection with QZ");
+    }
+  }, [ensureConnected]);
 
   const disconnect = useCallback(() => {
+    const qz = qzRef.current;
+    if (qz?.websocket?.isActive?.()) {
+      qz.websocket.disconnect();
+    }
     setIsConnected(false);
   }, []);
 
   const printTicket = useCallback(async (payload: ThermalTicketPayload) => {
-    if (!isConnected) {
-      throw new Error("Printer not connected");
-    }
+    const qz = await ensureConnected();
+    setIsConnected(Boolean(qz.websocket.isActive()));
 
     setIsPrinting(true);
     try {
-      // Placeholder behavior: log the ticket payload. Replace with real printer integration.
-      // eslint-disable-next-line no-console
-      console.log("[ThermalPrinter] printTicket", payload);
-      await new Promise((resolve) => setTimeout(resolve, 300));
+      const storedPrinterName =
+        typeof window !== "undefined" ? window.localStorage.getItem("qz_printer_name") : null;
+      const printerName = (payload.printerName || storedPrinterName || "").trim();
+
+      const printer = printerName
+        ? await qz.printers.find(printerName)
+        : await qz.printers.getDefault();
+
+      const config = qz.configs.create(printer, {
+        copies: 1,
+        colorType: "blackwhite",
+      });
+
+      const money = (n: number) => {
+        try {
+          return new Intl.NumberFormat("es-MX", {
+            style: "currency",
+            currency: "MXN",
+          }).format(n);
+        } catch {
+          return `$${n.toFixed(2)}`;
+        }
+      };
+
+      const lines: string[] = [];
+      lines.push("\x1B\x40");
+      if (payload.companyName) lines.push(`${payload.companyName}\n`);
+      lines.push("------------------------------\n");
+      if (payload.saleId !== undefined) lines.push(`Venta: ${String(payload.saleId)}\n`);
+      if (payload.date) lines.push(`${String(payload.date)}\n`);
+      if (payload.paymentMethod) lines.push(`Pago: ${String(payload.paymentMethod)}\n`);
+      lines.push("------------------------------\n");
+
+      for (const item of payload.items || []) {
+        const qty = Number(item.quantity || 0);
+        const price = Number(item.price || 0);
+        const lineTotal = qty * price;
+        lines.push(`${qty} x ${item.name}  ${money(lineTotal)}\n`);
+      }
+
+      lines.push("------------------------------\n");
+      lines.push(`TOTAL: ${money(Number(payload.total || 0))}\n`);
+      if (payload.footerMessage) lines.push(`\n${payload.footerMessage}\n`);
+      lines.push("\n\n\n");
+      lines.push("\x1D\x56\x00");
+
+      await qz.print(config, lines);
     } finally {
       setIsPrinting(false);
     }
-  }, [isConnected]);
+  }, [ensureConnected]);
 
   return {
     isConnected,

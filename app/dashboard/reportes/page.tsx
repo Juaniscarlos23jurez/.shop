@@ -43,6 +43,32 @@ export default function ReportesPage() {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const { isConnected: isPrinterConnected, connect: connectPrinter, disconnect: disconnectPrinter, printTicket } = useThermalPrinter();
 
+  const handleTogglePrinterConnection = async () => {
+    try {
+      if (isPrinterConnected) {
+        disconnectPrinter();
+        toast({
+          title: 'Impresora desconectada',
+          description: 'Se desconectó la sesión con QZ Tray.',
+        });
+        return;
+      }
+
+      await connectPrinter();
+      toast({
+        title: 'Impresora conectada',
+        description: 'Conectado a QZ Tray. Ya puedes imprimir.',
+      });
+    } catch (error) {
+      console.error('[REPORTES] Error connecting to QZ Tray:', error);
+      toast({
+        title: 'No se pudo conectar',
+        description: 'Abre QZ Tray en esta misma computadora y activa Allow unsigned requests. Si estás en Vercel (HTTPS), habilita conexiones seguras en QZ Tray.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   // Filters
   const [locationId, setLocationId] = useState<string>('');
   const [dateFrom, setDateFrom] = useState<string>('');
@@ -233,7 +259,7 @@ export default function ReportesPage() {
         <div className="flex gap-2">
           <Button
             variant={isPrinterConnected ? "outline" : "default"}
-            onClick={isPrinterConnected ? disconnectPrinter : connectPrinter}
+            onClick={handleTogglePrinterConnection}
             className={isPrinterConnected ? "border-green-500 text-green-600 hover:text-green-700 hover:bg-green-50" : ""}
           >
             <Printer className="mr-2 h-4 w-4" />
