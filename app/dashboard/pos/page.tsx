@@ -177,41 +177,8 @@ export default function PuntoVentaPage() {
     }
   };
 
-  const handlePrintTestTicket = async () => {
-    try {
-      if (!isPrinterConnected) {
-        toast({
-          title: 'Impresora no conectada',
-          description: 'Conecta la impresora antes de imprimir un ticket de prueba.',
-          variant: 'destructive',
-        });
-        return;
-      }
-
-      await printTicket({
-        companyName: 'Ticket de Prueba',
-        items: [
-          { name: 'Producto Demo A', quantity: 1, price: 10 },
-          { name: 'Producto Demo B', quantity: 2, price: 15.5 },
-        ],
-        total: 41,
-        date: new Date().toLocaleString(),
-        paymentMethod: 'Prueba',
-        footerMessage: 'Gracias por tu compra',
-      });
-
-      toast({
-        title: 'Ticket enviado',
-        description: 'Se envió el ticket de prueba a la impresora.',
-      });
-    } catch (error) {
-      console.error('[POS] Error printing test ticket:', error);
-      toast({
-        title: 'Error al imprimir',
-        description: 'No se pudo imprimir el ticket de prueba.',
-        variant: 'destructive',
-      });
-    }
+  const handlePrintTestTicket = () => {
+    window.print();
   };
 
   const getProductLocationPivot = (product: any) => {
@@ -787,9 +754,8 @@ export default function PuntoVentaPage() {
               variant="outline"
               size="sm"
               onClick={handlePrintTestTicket}
-              disabled={isPrinting}
             >
-              Imprimir ticket de prueba
+              Imprimir ticket
             </Button>
           </div>
         </div>
@@ -1425,6 +1391,77 @@ export default function PuntoVentaPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Hidden print area for thermal ticket */}
+      <div className="ticket-print-area">
+        <div className="ticket-content">
+          <div className="text-center font-bold mb-2">Ticket de Prueba</div>
+          <div className="border-t border-b border-black py-1 my-2">
+            <div>Fecha: {new Date().toLocaleString()}</div>
+            <div>Pago: Prueba</div>
+          </div>
+          <div className="my-2">
+            <div>1 x Producto Demo A.....................$10.00</div>
+            <div>2 x Producto Demo B.....................$31.00</div>
+          </div>
+          <div className="border-t border-b border-black py-1 my-2">
+            <div className="font-bold text-right">TOTAL: $41.00</div>
+          </div>
+          <div className="text-center mt-4">Gracias por tu compra</div>
+        </div>
+      </div>
+
+      {/* Inject print styles */}
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          @media print {
+            body * {
+              visibility: hidden;
+            }
+            .ticket-print-area,
+            .ticket-print-area * {
+              visibility: visible;
+            }
+            .ticket-print-area {
+              position: absolute;
+              left: 0;
+              top: 0;
+              width: 58mm;
+              font-family: 'Courier New', monospace;
+              font-size: 12px;
+              line-height: 1.2;
+            }
+            .ticket-content {
+              padding: 8mm;
+            }
+            .text-center {
+              text-align: center;
+            }
+            .font-bold {
+              font-weight: bold;
+            }
+            .border-t,
+            .border-b {
+              border-top: 1px solid black;
+              border-bottom: 1px solid black;
+            }
+            .py-1 {
+              padding-top: 4px;
+              padding-bottom: 4px;
+            }
+            .my-2 {
+              margin-top: 8px;
+              margin-bottom: 8px;
+            }
+            .mt-4 {
+              margin-top: 16px;
+            }
+            .text-right {
+              text-align: right;
+            }
+          }
+        `
+      }} />
     </>
   );
 }
