@@ -270,6 +270,14 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
     return false;
   });
 
+  const [isWebSectionExpanded, setIsWebSectionExpanded] = useState(() => {
+    const webSection = adminSidebarItems.find(item => item.label === 'Web');
+    if (webSection && webSection.subItems) {
+      return webSection.subItems.some(subItem => pathname.startsWith(subItem.href));
+    }
+    return false;
+  });
+
   const [isSuscripcionSectionExpanded, setIsSuscripcionSectionExpanded] = useState(() => {
     const suscripcionSection = adminSidebarItems.find(item => item.label === 'Suscripción');
     if (suscripcionSection && suscripcionSection.subItems) {
@@ -284,31 +292,30 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
     let isOpening = false;
 
     if (label === 'App') {
-      setIsAppSectionExpanded(prev => { isOpening = !prev; return !prev; });
+      setIsAppSectionExpanded((prev: boolean) => { isOpening = !prev; return !prev; });
     } else if (label === 'WhatsApp') {
-      setIsWhatsAppSectionExpanded(prev => { isOpening = !prev; return !prev; });
+      setIsWhatsAppSectionExpanded((prev: boolean) => { isOpening = !prev; return !prev; });
     } else if (label === 'Clientes') {
-      setIsClientesSectionExpanded(prev => { isOpening = !prev; return !prev; });
+      setIsClientesSectionExpanded((prev: boolean) => { isOpening = !prev; return !prev; });
     } else if (label === 'Empleados') {
-      setIsEmpleadosSectionExpanded(prev => { isOpening = !prev; return !prev; });
+      setIsEmpleadosSectionExpanded((prev: boolean) => { isOpening = !prev; return !prev; });
     } else if (label === 'Compañía') {
-      setIsCompaniaSectionExpanded(prev => { isOpening = !prev; return !prev; });
+      setIsCompaniaSectionExpanded((prev: boolean) => { isOpening = !prev; return !prev; });
     } else if (label === 'Reportes') {
-      setIsReportesSectionExpanded(prev => { isOpening = !prev; return !prev; });
+      setIsReportesSectionExpanded((prev: boolean) => { isOpening = !prev; return !prev; });
     } else if (label === 'Web') {
-      setIsWebSectionExpanded(prev => { isOpening = !prev; return !prev; });
+      setIsWebSectionExpanded((prev: boolean) => { isOpening = !prev; return !prev; });
     } else if (label === 'Suscripción') {
-      setIsSuscripcionSectionExpanded(prev => { isOpening = !prev; return !prev; });
+      setIsSuscripcionSectionExpanded((prev: boolean) => { isOpening = !prev; return !prev; });
     }
 
-    // Scroll to the item if it's opening
+    // Scroll to the item if it's opening to ensure children are visible
     if (isOpening) {
       setTimeout(() => {
-        target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      }, 50);
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 150); // Slightly more delay to allow the CSS transition to start
     }
   };
- Houses the rest of state definitions...
 
   const [pendingOrdersCount, setPendingOrdersCount] = useState<number | null>(null);
   const [companySlug, setCompanySlug] = useState<string | null>(null);
