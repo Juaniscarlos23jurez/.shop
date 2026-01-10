@@ -1,17 +1,82 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { AuthContext } from "@/contexts/AuthContext";
+import { CompanyContext } from "@/contexts/CompanyContext";
+import { api } from "@/lib/api/api";
+import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 
 const CALENDLY_URL = process.env.NEXT_PUBLIC_CALENDLY_URL || 'https://calendly.com/juancarlosjuarez26/30min';
 
 export function PricingSection({ activePlanId }: { activePlanId?: number | string | null }) {
     const [isYearly, setIsYearly] = useState(false);
+    const [loadingPlan, setLoadingPlan] = useState<number | string | null>(null);
+    const [fetchedPlans, setFetchedPlans] = useState<any[] | null>(null);
+    const authContext = useContext(AuthContext);
+    const companyContext = useContext(CompanyContext);
+
+    const token = authContext?.token;
+    const company = companyContext?.company;
+
+    useEffect(() => {
+        const fetchPlans = async () => {
+            try {
+                const response = await api.subscriptions.getPlans(token || undefined);
+                if (response.success && Array.isArray(response.data) && response.data.length > 0) {
+                    setFetchedPlans(response.data);
+                }
+            } catch (error) {
+                console.error("Error fetching plans:", error);
+            }
+        };
+        fetchPlans();
+    }, [token]);
+
+    const handleSubscribe = async (planId: number | string | null) => {
+        if (!token || !company) {
+            toast.error("Debes iniciar sesión para suscribirte");
+            return;
+        }
+
+        if (planId === 1 || planId === null) {
+            // Plan básico is typically free/default.
+            // If the user is on a paid plan and downgrades, you might need a specific API call or just redirect.
+            // For now, we'll assume subscribing to Basic (free) is either a no-op or handled differently.
+            toast.info("El plan básico es gratuito.");
+            return;
+        }
+
+        setLoadingPlan(planId);
+        try {
+            const response = await api.subscriptions.subscribe({
+                company_id: company.id,
+                plan_id: planId,
+                interval: isYearly ? 'year' : 'month',
+                // Premium plan (ID 2) gets 30 days free trial
+                trial_days: planId === 2 ? 30 : 0,
+                success_url: window.location.origin + '/dashboard/subscription/success?session_id={CHECKOUT_SESSION_ID}',
+                cancel_url: window.location.origin + '/dashboard/suscripcion/planes'
+            }, token);
+
+            if (response.success && response.data?.checkout_url) {
+                window.location.href = response.data.checkout_url;
+            } else {
+                toast.error(response.message || "Error al iniciar el proceso de pago");
+            }
+        } catch (error) {
+            console.error("Subscription error:", error);
+            toast.error("Ocurrió un error inesperado");
+        } finally {
+            setLoadingPlan(null);
+        }
+    };
 
     const plans = [
         {
-            id: null,
+            id: 1, // Basic is ID 1
             name: 'Básico',
             subtitle: 'Para aficionados',
             price: '0',
@@ -28,12 +93,12 @@ export function PricingSection({ activePlanId }: { activePlanId?: number | strin
                 'Puntos para tus clientes',
                 'Cupones para tus clientes'
             ],
-            cta: 'Comienza ahora',
+            cta: 'Plan Básico',
             popular: false,
             badge: null
         },
         {
-            id: 1, // Assume 1 for Premium
+            id: 2, // Premium is ID 2
             name: 'Premium',
             subtitle: 'Para emprendedores independientes',
             price: '300',
@@ -64,10 +129,10 @@ export function PricingSection({ activePlanId }: { activePlanId?: number | strin
             cta: 'Obtener Premium',
             popular: true,
             badge: '🎁 Dominio gratis - Oferta limitada',
-            promo: '¡Primer mes por solo $20!'
+            promo: '¡Primer mes Gratis!'
         },
         {
-            id: 2, // Assume 2 for Business
+            id: 3, // Business is ID 3
             name: 'Business',
             subtitle: 'Para equipos',
             price: '750',
@@ -104,7 +169,7 @@ export function PricingSection({ activePlanId }: { activePlanId?: number | strin
             cta: 'Obtener Business',
             popular: false,
             badge: '🎁 Dominio gratis - Oferta limitada',
-            promo: '¡Primer mes por solo $20!'
+            promo: '¡Primer mes Gratis!'
         }
     ];
 
@@ -155,8 +220,22 @@ export function PricingSection({ activePlanId }: { activePlanId?: number | strin
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto items-stretch">
-                        {plans.map((plan, index) => {
-                            const isActive = (plan.id === null && (activePlanId === null || activePlanId === undefined)) || (activePlanId !== null && activePlanId !== undefined && String(plan.id) === String(activePlanId));
+                        {(fetchedPlans || plans).map((plan, index) => {
+                            const isActive = activePlanId !== null && activePlanId !== undefined && String(plan.id) === String(activePlanId);
+
+                            const isDowngradeToBasic = activePlanId && Number(activePlanId) > Number(plan.id) && plan.id === 1;
+
+                            const getButtonText = () => {
+                                if (isActive) return 'PLAN ACTIVO';
+                                if (isDowngradeToBasic) return 'PLAN BÁSICO';
+
+                                // Logic for other downgrades
+                                if (activePlanId && Number(activePlanId) > Number(plan.id)) {
+                                    return `BAJAR A ${plan.name.toUpperCase()}`;
+                                }
+
+                                return plan.cta.toUpperCase();
+                            };
 
                             return (
                                 <div
@@ -188,11 +267,27 @@ export function PricingSection({ activePlanId }: { activePlanId?: number | strin
                                                 <>
                                                     {isYearly ? (
                                                         <div className="space-y-1">
-                                                            <div className="flex items-baseline">
-                                                                <span className="text-5xl font-black text-slate-900 tracking-tight">
-                                                                    ${new Intl.NumberFormat().format(Number(plan.yearlyPrice))}
-                                                                </span>
-                                                                <span className="ml-2 text-slate-400 font-bold uppercase text-[10px] tracking-widest">MXN/año</span>
+                                                            <div className="flex items-baseline flex-wrap">
+                                                                {plan.promo === '¡Primer mes Gratis!' ? (
+                                                                    <>
+                                                                        <span className="text-3xl font-black text-slate-300 line-through mr-3 tracking-tight">
+                                                                            ${new Intl.NumberFormat().format(Number(plan.yearlyPrice))}
+                                                                        </span>
+                                                                        <span className="text-5xl font-black text-green-600 tracking-tight">
+                                                                            Gratis
+                                                                        </span>
+                                                                        <span className="w-full text-slate-400 font-bold uppercase text-[10px] tracking-widest mt-1">
+                                                                            1er mes, luego ${new Intl.NumberFormat().format(Number(plan.yearlyPrice))}/año
+                                                                        </span>
+                                                                    </>
+                                                                ) : (
+                                                                    <>
+                                                                        <span className="text-5xl font-black text-slate-900 tracking-tight">
+                                                                            ${new Intl.NumberFormat().format(Number(plan.yearlyPrice))}
+                                                                        </span>
+                                                                        <span className="ml-2 text-slate-400 font-bold uppercase text-[10px] tracking-widest">MXN/año</span>
+                                                                    </>
+                                                                )}
                                                             </div>
                                                             <div className="text-xs font-bold text-green-600 flex items-center gap-1.5">
                                                                 <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
@@ -201,15 +296,33 @@ export function PricingSection({ activePlanId }: { activePlanId?: number | strin
                                                         </div>
                                                     ) : (
                                                         <div className="space-y-1">
-                                                            <div className="flex items-baseline">
-                                                                <span className="text-6xl font-black text-slate-900 tracking-tight">
-                                                                    ${plan.price}
-                                                                </span>
-                                                                <span className="ml-2 text-slate-400 font-bold uppercase text-[10px] tracking-widest">MXN/mes</span>
+                                                            <div className="flex items-baseline flex-wrap">
+                                                                {plan.promo === '¡Primer mes Gratis!' ? (
+                                                                    <>
+                                                                        <span className="text-3xl font-black text-slate-300 line-through mr-3 tracking-tight">
+                                                                            ${plan.price}
+                                                                        </span>
+                                                                        <span className="text-5xl font-black text-green-600 tracking-tight">
+                                                                            Gratis
+                                                                        </span>
+                                                                        <span className="w-full text-slate-400 font-bold uppercase text-[10px] tracking-widest mt-1">
+                                                                            1er mes, luego ${plan.price}/mes
+                                                                        </span>
+                                                                    </>
+                                                                ) : (
+                                                                    <>
+                                                                        <span className="text-6xl font-black text-slate-900 tracking-tight">
+                                                                            ${plan.price}
+                                                                        </span>
+                                                                        <span className="ml-2 text-slate-400 font-bold uppercase text-[10px] tracking-widest">MXN/mes</span>
+                                                                    </>
+                                                                )}
                                                             </div>
-                                                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                                                                {`$${Number(plan.price) * 12} / año pagando mes a mes`}
-                                                            </div>
+                                                            {plan.promo !== '¡Primer mes Gratis!' && (
+                                                                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                                                    {`$${Number(plan.price) * 12} / año pagando mes a mes`}
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     )}
                                                 </>
@@ -217,7 +330,7 @@ export function PricingSection({ activePlanId }: { activePlanId?: number | strin
                                         </div>
                                     </div>
                                     <ul className="space-y-3 mb-10 flex-grow">
-                                        {plan.features.map((feature, i) => {
+                                        {plan.features.map((feature: string, i: number) => {
                                             const isHighlight = feature.includes('Puntos') ||
                                                 feature.includes('Cupones') ||
                                                 feature.includes('Notificaciones push') ||
@@ -246,9 +359,10 @@ export function PricingSection({ activePlanId }: { activePlanId?: number | strin
                                     </ul>
 
                                     <div className="mt-auto space-y-4">
-                                        <Link href="#contact" className="block w-full">
+                                        <div className="block w-full">
                                             <Button
-                                                disabled={isActive}
+                                                disabled={isActive || isDowngradeToBasic || loadingPlan !== null}
+                                                onClick={() => handleSubscribe(plan.id)}
                                                 className={`w-full py-7 text-base font-black rounded-2xl transition-all duration-300 ${isActive
                                                     ? 'bg-slate-100 text-slate-400 cursor-not-allowed border-none'
                                                     : plan.popular
@@ -256,9 +370,11 @@ export function PricingSection({ activePlanId }: { activePlanId?: number | strin
                                                         : 'bg-[#0f172a] text-white hover:bg-slate-800 shadow-xl hover:-translate-y-1'
                                                     }`}
                                             >
-                                                {isActive ? 'PLAN ACTIVO' : plan.cta.toUpperCase()}
+                                                {loadingPlan === plan.id ? (
+                                                    <Loader2 className="w-6 h-6 animate-spin" />
+                                                ) : getButtonText()}
                                             </Button>
-                                        </Link>
+                                        </div>
 
                                         <div className="flex flex-col items-center gap-2">
                                             {plan.badge && (

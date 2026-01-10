@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Area, AreaChart, XAxis, YAxis, ResponsiveContainer } from 'recharts';
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 
 interface SalesData {
@@ -45,7 +45,8 @@ export function SalesChart({ data, title, description, change }: SalesChartProps
           }}
           className="h-[300px]"
         >
-          <AreaChart data={data}>
+          <AreaChart data={data} margin={{ left: 12, right: 12, top: 12, bottom: 0 }}>
+            <CartesianGrid vertical={false} strokeDasharray="3 3" />
             <defs>
               <linearGradient id="salesGradient" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3}/>
@@ -66,6 +67,7 @@ export function SalesChart({ data, title, description, change }: SalesChartProps
               stroke="#22c55e"
               strokeWidth={2}
               fill="url(#salesGradient)"
+              isAnimationActive={false}
             />
           </AreaChart>
         </ChartContainer>

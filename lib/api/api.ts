@@ -370,6 +370,68 @@ export const api = {
   // Profile API
 
   // User's Companies API
+  subscriptions: {
+    /**
+     * List all available plans (Public/Auth)
+     * GET /api/company-plans
+     */
+    async getPlans(token?: string): Promise<ApiResponse<any>> {
+      const url = `/api/proxy/api/company-plans`;
+      const headers: Record<string, string> = {
+        'Accept': 'application/json',
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      return fetch(url, {
+        method: 'GET',
+        headers,
+      }).then(handleResponse);
+    },
+
+    /**
+     * Initiate a subscription checkout process
+     * POST /api/company-subscriptions/subscribe
+     * Body: { company_id, plan_id, interval, trial_days }
+     */
+    async subscribe(
+      data: {
+        company_id: number | string;
+        plan_id: number | string;
+        interval: 'month' | 'year';
+        trial_days?: number;
+        success_url?: string;
+        cancel_url?: string;
+      },
+      token: string
+    ): Promise<ApiResponse<{ checkout_url: string }>> {
+      const url = `/api/proxy/api/company-subscriptions/subscribe`;
+      return fetch(url, {
+        method: 'POST',
+        headers: {
+          ...getAuthHeader(token),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      }).then(handleResponse);
+    },
+
+    /**
+     * Get payment history for a company
+     * GET /api/companies/{companyId}/subscription-payments
+     */
+    async getPaymentHistory(
+      companyId: number | string,
+      token: string
+    ): Promise<ApiResponse<any>> {
+      const url = `/api/proxy/api/companies/${companyId}/subscription-payments`;
+      return fetch(url, {
+        method: 'GET',
+        headers: getAuthHeader(token),
+      }).then(handleResponse);
+    }
+  },
+
   userCompanies: {
     async createEmployee(
       companyId: string,

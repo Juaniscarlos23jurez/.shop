@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Line, LineChart, XAxis, YAxis } from 'recharts';
+import { CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 
 interface AvgPurchaseMonthlyData {
@@ -45,7 +45,8 @@ export function ConversionChart({ data, title, description, average }: Conversio
           }}
           className="h-[300px]"
         >
-          <LineChart data={data}>
+          <LineChart data={data} margin={{ left: 12, right: 12, top: 12, bottom: 0 }}>
+            <CartesianGrid vertical={false} strokeDasharray="3 3" />
             <XAxis 
               dataKey="month" 
               axisLine={false}
@@ -61,6 +62,7 @@ export function ConversionChart({ data, title, description, average }: Conversio
               strokeWidth={3}
               dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
               activeDot={{ r: 6, stroke: '#3b82f6', strokeWidth: 2 }}
+              isAnimationActive={false}
             />
           </LineChart>
         </ChartContainer>

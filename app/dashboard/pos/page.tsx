@@ -1411,57 +1411,55 @@ export default function PuntoVentaPage() {
         </div>
       </div>
 
-      {/* Inject print styles */}
-      <style dangerouslySetInnerHTML={{
-        __html: `
-          @media print {
-            body * {
-              visibility: hidden;
-            }
-            .ticket-print-area,
-            .ticket-print-area * {
-              visibility: visible;
-            }
-            .ticket-print-area {
-              position: absolute;
-              left: 0;
-              top: 0;
-              width: 58mm;
-              font-family: 'Courier New', monospace;
-              font-size: 12px;
-              line-height: 1.2;
-            }
-            .ticket-content {
-              padding: 8mm;
-            }
-            .text-center {
-              text-align: center;
-            }
-            .font-bold {
-              font-weight: bold;
-            }
-            .border-t,
-            .border-b {
-              border-top: 1px solid black;
-              border-bottom: 1px solid black;
-            }
-            .py-1 {
-              padding-top: 4px;
-              padding-bottom: 4px;
-            }
-            .my-2 {
-              margin-top: 8px;
-              margin-bottom: 8px;
-            }
-            .mt-4 {
-              margin-top: 16px;
-            }
-            .text-right {
-              text-align: right;
-            }
+      {/* Print styles for thermal ticket */}
+      <style jsx>{`
+        @media print {
+          body * {
+            visibility: hidden;
           }
-        `
-      }} />
+          .ticket-print-area,
+          .ticket-print-area * {
+            visibility: visible;
+          }
+          .ticket-print-area {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 58mm;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.2;
+          }
+          .ticket-content {
+            padding: 8mm;
+          }
+          .text-center {
+            text-align: center;
+          }
+          .font-bold {
+            font-weight: bold;
+          }
+          .border-t,
+          .border-b {
+            border-top: 1px solid black;
+            border-bottom: 1px solid black;
+          }
+          .py-1 {
+            padding-top: 4px;
+            padding-bottom: 4px;
+          }
+          .my-2 {
+            margin-top: 8px;
+            margin-bottom: 8px;
+          }
+          .mt-4 {
+            margin-top: 16px;
+          }
+          .text-right {
+            text-align: right;
+          }
+        }
+      `}</style>
     </>
   );
 }

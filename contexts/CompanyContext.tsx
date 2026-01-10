@@ -23,7 +23,7 @@ interface CompanyContextType {
     getPlanName: () => string;
 }
 
-const CompanyContext = createContext<CompanyContextType | null>(null);
+export const CompanyContext = createContext<CompanyContextType | null>(null);
 
 export function CompanyProvider({ children }: { children: ReactNode }) {
     const { token } = useAuth();

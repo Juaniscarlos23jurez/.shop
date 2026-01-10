@@ -183,7 +183,16 @@ const adminSidebarItems: SidebarItem[] = [
     ]
   },
 
-  { icon: Settings, label: "Configuración", href: "/dashboard/configuracion" },
+  {
+    icon: CreditCard,
+    label: "Suscripción",
+    href: "#",
+    isCollapsible: true,
+    subItems: [
+      { icon: Package, label: "Planes", href: "/dashboard/suscripcion/planes" },
+      { icon: Receipt, label: "Facturas", href: "/dashboard/suscripcion/facturas" },
+    ]
+  },
 ];
 
 // Employee sidebar items (only Point of Sale)
@@ -213,7 +222,10 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
   const [isAppSectionExpanded, setIsAppSectionExpanded] = useState(() => {
     const appSection = adminSidebarItems.find(item => item.label === 'App');
     if (appSection && appSection.subItems) {
-      return appSection.subItems.some(subItem => pathname.startsWith(subItem.href));
+      return appSection.subItems.some(subItem => {
+        const baseHref = subItem.href.split('#')[0];
+        return pathname.startsWith(baseHref) && baseHref !== '/dashboard/whatsapp';
+      });
     }
     return false;
   });
@@ -258,13 +270,45 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
     return false;
   });
 
-  const [isWebSectionExpanded, setIsWebSectionExpanded] = useState(() => {
-    const webSection = adminSidebarItems.find(item => item.label === 'Web');
-    if (webSection && webSection.subItems) {
-      return webSection.subItems.some(subItem => pathname.startsWith(subItem.href));
+  const [isSuscripcionSectionExpanded, setIsSuscripcionSectionExpanded] = useState(() => {
+    const suscripcionSection = adminSidebarItems.find(item => item.label === 'Suscripción');
+    if (suscripcionSection && suscripcionSection.subItems) {
+      return suscripcionSection.subItems.some(subItem => pathname.startsWith(subItem.href.split('#')[0]));
     }
     return false;
   });
+
+  // Unified toggle function with auto-scroll logic
+  const toggleSection = (label: string, e: React.MouseEvent) => {
+    const target = e.currentTarget as HTMLElement;
+    let isOpening = false;
+
+    if (label === 'App') {
+      setIsAppSectionExpanded(prev => { isOpening = !prev; return !prev; });
+    } else if (label === 'WhatsApp') {
+      setIsWhatsAppSectionExpanded(prev => { isOpening = !prev; return !prev; });
+    } else if (label === 'Clientes') {
+      setIsClientesSectionExpanded(prev => { isOpening = !prev; return !prev; });
+    } else if (label === 'Empleados') {
+      setIsEmpleadosSectionExpanded(prev => { isOpening = !prev; return !prev; });
+    } else if (label === 'Compañía') {
+      setIsCompaniaSectionExpanded(prev => { isOpening = !prev; return !prev; });
+    } else if (label === 'Reportes') {
+      setIsReportesSectionExpanded(prev => { isOpening = !prev; return !prev; });
+    } else if (label === 'Web') {
+      setIsWebSectionExpanded(prev => { isOpening = !prev; return !prev; });
+    } else if (label === 'Suscripción') {
+      setIsSuscripcionSectionExpanded(prev => { isOpening = !prev; return !prev; });
+    }
+
+    // Scroll to the item if it's opening
+    if (isOpening) {
+      setTimeout(() => {
+        target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 50);
+    }
+  };
+ Houses the rest of state definitions...
 
   const [pendingOrdersCount, setPendingOrdersCount] = useState<number | null>(null);
   const [companySlug, setCompanySlug] = useState<string | null>(null);
@@ -410,23 +454,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
                 <Button
                   variant="ghost"
                   className={`w-full justify-start h-11 ${isCollapsed ? 'px-2' : ''} text-slate-600 hover:text-slate-900 hover:bg-slate-100`}
-                  onClick={() => {
-                    if (item.label === 'App') {
-                      setIsAppSectionExpanded(!isAppSectionExpanded);
-                    } else if (item.label === 'WhatsApp') {
-                      setIsWhatsAppSectionExpanded(!isWhatsAppSectionExpanded);
-                    } else if (item.label === 'Clientes') {
-                      setIsClientesSectionExpanded(!isClientesSectionExpanded);
-                    } else if (item.label === 'Empleados') {
-                      setIsEmpleadosSectionExpanded(!isEmpleadosSectionExpanded);
-                    } else if (item.label === 'Compañía') {
-                      setIsCompaniaSectionExpanded(!isCompaniaSectionExpanded);
-                    } else if (item.label === 'Reportes') {
-                      setIsReportesSectionExpanded(!isReportesSectionExpanded);
-                    } else if (item.label === 'Web') {
-                      setIsWebSectionExpanded(!isWebSectionExpanded);
-                    }
-                  }}
+                  onClick={(e) => toggleSection(item.label, e)}
                 >
                   <item.icon className={`h-5 w-5 ${isCollapsed ? 'mr-0' : 'mr-3'}`} />
                   <span className={`${isCollapsed ? 'hidden' : ''}`}>{item.label}</span>
@@ -437,7 +465,8 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
                       (item.label === 'Empleados' && isEmpleadosSectionExpanded) ||
                       (item.label === 'Compañía' && isCompaniaSectionExpanded) ||
                       (item.label === 'Reportes' && isReportesSectionExpanded) ||
-                      (item.label === 'Web' && isWebSectionExpanded)
+                      (item.label === 'Web' && isWebSectionExpanded) ||
+                      (item.label === 'Suscripción' && isSuscripcionSectionExpanded)
                       ? 'rotate-180' : ''
                       }`} />
                   )}
@@ -449,7 +478,8 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
                     (item.label === 'Empleados' && isEmpleadosSectionExpanded) ||
                     (item.label === 'Compañía' && isCompaniaSectionExpanded) ||
                     (item.label === 'Reportes' && isReportesSectionExpanded) ||
-                    (item.label === 'Web' && isWebSectionExpanded)) && (
+                    (item.label === 'Web' && isWebSectionExpanded) ||
+                    (item.label === 'Suscripción' && isSuscripcionSectionExpanded)) && (
                     <div className="ml-6 space-y-2">
                       {item.subItems?.map((subItem, subIndex) => {
                         const isSubItemActive = pathname === subItem.href ||

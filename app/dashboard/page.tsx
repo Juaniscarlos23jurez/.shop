@@ -172,7 +172,17 @@ export default function Dashboard() {
 
         // Build chart data from new monthly-statistics endpoint if available
         if (monthlyStatsRes.status === 'fulfilled' && (monthlyStatsRes.value as any)?.success) {
-          const series = ((monthlyStatsRes.value as any)?.data || []) as Array<any>;
+          const rawMonthly = (monthlyStatsRes.value as any)?.data;
+          const series = (Array.isArray(rawMonthly)
+            ? rawMonthly
+            : Array.isArray(rawMonthly?.data)
+            ? rawMonthly.data
+            : []) as Array<any>;
+          if (process.env.NODE_ENV !== 'production') {
+            console.log('[Dashboard] monthly-statistics rawMonthly:', rawMonthly);
+            console.log('[Dashboard] monthly-statistics series length:', Array.isArray(series) ? series.length : 'not-array');
+            console.log('[Dashboard] monthly-statistics series sample:', Array.isArray(series) ? series.slice(0, 3) : series);
+          }
           if (Array.isArray(series) && series.length) {
             const monthNames = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
             const toLabel = (ym: string) => {
@@ -185,8 +195,25 @@ export default function Dashboard() {
               sales: Number(row.total_sales ?? 0),
               revenue: Number(row.total_revenue ?? 0),
             }));
-            setSalesData(points);
+
+            // Ensure we always render a full 12-month timeline so Recharts draws the area/line
+            // even when the API returns only 1 month.
+            const byMonth = new Map(points.map((p) => [p.month, p]));
+            const filledPoints: SalesPoint[] = monthNames.map((m) => {
+              const existing = byMonth.get(m);
+              return existing || { month: m, sales: 0, revenue: 0 };
+            });
+            if (process.env.NODE_ENV !== 'production') {
+              console.log('[Dashboard] salesData points length:', points.length);
+              console.log('[Dashboard] salesData points sample:', points.slice(0, 3));
+              console.log('[Dashboard] salesData filledPoints length:', filledPoints.length);
+              console.log('[Dashboard] salesData filledPoints sample:', filledPoints.slice(0, 3));
+            }
+            setSalesData(filledPoints);
           } else {
+            if (process.env.NODE_ENV !== 'production') {
+              console.warn('[Dashboard] monthly-statistics returned empty series; using defaultSalesData');
+            }
             setSalesData(defaultSalesData);
           }
         } else {
@@ -199,8 +226,23 @@ export default function Dashboard() {
               sales: Number(m.total_sales || m.count || 0),
               revenue: Number(m.total_amount || m.revenue || 0)
             }));
-            setSalesData(points);
+            const byMonth = new Map(points.map((p) => [p.month, p]));
+            const filledPoints: SalesPoint[] = monthNames.map((m) => {
+              const existing = byMonth.get(m);
+              return existing || { month: m, sales: 0, revenue: 0 };
+            });
+            if (process.env.NODE_ENV !== 'production') {
+              console.log('[Dashboard] fallback salesData points length:', points.length);
+              console.log('[Dashboard] fallback salesData points sample:', points.slice(0, 3));
+              console.log('[Dashboard] fallback salesData filledPoints length:', filledPoints.length);
+              console.log('[Dashboard] fallback salesData filledPoints sample:', filledPoints.slice(0, 3));
+            }
+            setSalesData(filledPoints);
           } else {
+            if (process.env.NODE_ENV !== 'production') {
+              console.warn('[Dashboard] fallback monthly data missing; using defaultSalesData');
+              console.log('[Dashboard] sales statistics payload:', salesDataObj);
+            }
             setSalesData(defaultSalesData);
           }
         }
@@ -329,7 +371,17 @@ export default function Dashboard() {
 
         // Average purchase per user monthly (for ConversionChart)
         if (avgPerUserMonthlyRes.status === 'fulfilled' && (avgPerUserMonthlyRes.value as any)?.success) {
-          const series = ((avgPerUserMonthlyRes.value as any)?.data || []) as Array<any>;
+          const rawAvg = (avgPerUserMonthlyRes.value as any)?.data;
+          const series = (Array.isArray(rawAvg)
+            ? rawAvg
+            : Array.isArray(rawAvg?.data)
+            ? rawAvg.data
+            : []) as Array<any>;
+          if (process.env.NODE_ENV !== 'production') {
+            console.log('[Dashboard] avg-per-user-monthly rawAvg:', rawAvg);
+            console.log('[Dashboard] avg-per-user-monthly series length:', Array.isArray(series) ? series.length : 'not-array');
+            console.log('[Dashboard] avg-per-user-monthly series sample:', Array.isArray(series) ? series.slice(0, 3) : series);
+          }
           if (Array.isArray(series)) {
             const monthNames = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
             const toLabel = (ym: string) => {
@@ -341,13 +393,28 @@ export default function Dashboard() {
               avg: Number(row.average_purchase_value ?? 0),
               users: Number(row.total_users_with_purchases ?? 0),
             }));
-            setConversionData(points);
+            const byMonth = new Map(points.map((p) => [p.month, p]));
+            const filledPoints: AvgPurchaseMonthlyPoint[] = monthNames.map((m) => {
+              const existing = byMonth.get(m);
+              return existing || { month: m, avg: 0, users: 0 };
+            });
+            if (process.env.NODE_ENV !== 'production') {
+              console.log('[Dashboard] conversionData points length:', points.length);
+              console.log('[Dashboard] conversionData points sample:', points.slice(0, 3));
+              console.log('[Dashboard] conversionData filledPoints length:', filledPoints.length);
+              console.log('[Dashboard] conversionData filledPoints sample:', filledPoints.slice(0, 3));
+            }
+            setConversionData(filledPoints);
             const avgOverall = points.length
               ? points.reduce((acc, p) => acc + (p.avg || 0), 0) / points.length
               : 0;
             const currency = (salesDataObj?.currency || 'MXN') as string;
             const fmtCurrency = (n: number) => new Intl.NumberFormat('es-MX', { style: 'currency', currency }).format(Number(n || 0));
             setAvgBadge(fmtCurrency(avgOverall));
+          }
+        } else {
+          if (process.env.NODE_ENV !== 'production') {
+            console.warn('[Dashboard] avg-per-user-monthly request not fulfilled or not success:', avgPerUserMonthlyRes);
           }
         }
       } catch (e: any) {

@@ -21,7 +21,7 @@ interface AuthContextType {
   userRole?: string;
 }
 
-const AuthContext = createContext<AuthContextType | null>(null);
+export const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -111,10 +111,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!access_token) {
       throw new Error('No access token received');
     }
-    
+
     localStorage.setItem('token', access_token);
     setToken(access_token);
-    
+
     if (userData) {
       const role = userData?.role as string | undefined;
       setUserRole(role);
@@ -207,9 +207,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       // Always use general login endpoint. Role is derived from response.
       let response: ApiResponse<LoginResponse> = await api.auth.login(email, password);
-      
+
       console.log('Login response:', response);
-      
+
       if (response.success && response.data) {
         const { access_token, user } = response.data;
         handleAuthSuccess(access_token, user);
@@ -222,8 +222,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               const fcmToken = await getFcmBrowserToken();
               console.log('[FCM] Token obtenido desde getFcmBrowserToken:', fcmToken);
               if (fcmToken) {
-                 const putResponse = await api.auth.updateFcmToken(access_token, fcmToken);
-               } else {
+                const putResponse = await api.auth.updateFcmToken(access_token, fcmToken);
+              } else {
                 console.warn('[FCM] No se obtuvo token FCM (puede que el usuario haya negado permisos o haya fallado algo).');
               }
             } catch (err) {
@@ -248,7 +248,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const response = await api.auth.register(name, email, password, password_confirmation, phone);
       console.log('Register response:', response);
-      
+
       if (response.success && response.data) {
         const { access_token, user } = response.data;
         handleAuthSuccess(access_token, user);
