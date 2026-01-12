@@ -191,6 +191,7 @@ const adminSidebarItems: SidebarItem[] = [
     subItems: [
       { icon: Package, label: "Planes", href: "/dashboard/suscripcion/planes" },
       { icon: Receipt, label: "Facturas", href: "/dashboard/suscripcion/facturas" },
+      { icon: Settings, label: "Gestionar", href: "/dashboard/suscripcion/gestion" },
     ]
   },
 ];

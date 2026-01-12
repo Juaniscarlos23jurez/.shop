@@ -49,14 +49,16 @@ export function PricingSection({ activePlanId }: { activePlanId?: number | strin
             return;
         }
 
+        const isTrialUsed = company?.company_plan_trial_used || false;
+
         setLoadingPlan(planId);
         try {
             const response = await api.subscriptions.subscribe({
                 company_id: company.id,
                 plan_id: planId,
                 interval: isYearly ? 'year' : 'month',
-                // Premium plan (ID 2) gets 30 days free trial
-                trial_days: planId === 2 ? 30 : 0,
+                // Premium plan (ID 2) gets 30 days free trial only if not used before
+                trial_days: (planId === 2 && !isTrialUsed) ? 30 : 0,
                 success_url: window.location.origin + '/dashboard/subscription/success?session_id={CHECKOUT_SESSION_ID}',
                 cancel_url: window.location.origin + '/dashboard/suscripcion/planes'
             }, token);
@@ -221,7 +223,17 @@ export function PricingSection({ activePlanId }: { activePlanId?: number | strin
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto items-stretch">
                         {(fetchedPlans || plans).map((plan, index) => {
-                            const isActive = activePlanId !== null && activePlanId !== undefined && String(plan.id) === String(activePlanId);
+                            // Check if this specific variation (ID + Interval) is the one active
+                            const companyInterval = (company?.company_plan_billing_cycle || 'monthly').toLowerCase();
+
+                            // Normalize intervals to check if they match (handle 'month' vs 'monthly' and 'year' vs 'yearly/annual')
+                            const isMonthlyMatch = !isYearly && companyInterval.includes('month');
+                            const isYearlyMatch = isYearly && (companyInterval.includes('year') || companyInterval.includes('annua'));
+
+                            const isActive = activePlanId !== null &&
+                                activePlanId !== undefined &&
+                                String(plan.id) === String(activePlanId) &&
+                                (isMonthlyMatch || isYearlyMatch);
 
                             const isDowngradeToBasic = activePlanId && Number(activePlanId) > Number(plan.id) && plan.id === 1;
 
@@ -251,7 +263,7 @@ export function PricingSection({ activePlanId }: { activePlanId?: number | strin
                                     </div>
 
                                     <div className="mb-8">
-                                        {plan.promo && (
+                                        {plan.promo && !(plan.id === 2 && company?.company_plan_trial_used) && (
                                             <div className="inline-flex items-center px-4 py-1.5 rounded-full text-[11px] font-black bg-emerald-50 text-emerald-600 border border-emerald-100 mb-4 animate-pulse uppercase tracking-wider">
                                                 ★ {plan.promo}
                                             </div>
@@ -268,7 +280,7 @@ export function PricingSection({ activePlanId }: { activePlanId?: number | strin
                                                     {isYearly ? (
                                                         <div className="space-y-1">
                                                             <div className="flex items-baseline flex-wrap">
-                                                                {plan.promo === '¡Primer mes Gratis!' ? (
+                                                                {(plan.promo === '¡Primer mes Gratis!' && !company?.company_plan_trial_used) ? (
                                                                     <>
                                                                         <span className="text-3xl font-black text-slate-300 line-through mr-3 tracking-tight">
                                                                             ${new Intl.NumberFormat().format(Number(plan.yearlyPrice))}
@@ -297,7 +309,7 @@ export function PricingSection({ activePlanId }: { activePlanId?: number | strin
                                                     ) : (
                                                         <div className="space-y-1">
                                                             <div className="flex items-baseline flex-wrap">
-                                                                {plan.promo === '¡Primer mes Gratis!' ? (
+                                                                {(plan.promo === '¡Primer mes Gratis!' && !company?.company_plan_trial_used) ? (
                                                                     <>
                                                                         <span className="text-3xl font-black text-slate-300 line-through mr-3 tracking-tight">
                                                                             ${plan.price}

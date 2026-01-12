@@ -429,6 +429,29 @@ export const api = {
         method: 'GET',
         headers: getAuthHeader(token),
       }).then(handleResponse);
+    },
+
+    /**
+     * Get Stripe Customer Portal URL for managing subscription
+     * POST /api/company-subscriptions/portal
+     */
+    async getPortalUrl(
+      companyId: number | string,
+      token: string,
+      returnUrl?: string
+    ): Promise<ApiResponse<{ portal_url: string; url?: string }>> {
+      const url = `/api/proxy/api/company-subscriptions/portal`;
+      return fetch(url, {
+        method: 'POST',
+        headers: {
+          ...getAuthHeader(token),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          company_id: companyId,
+          return_url: returnUrl || window.location.href
+        }),
+      }).then(handleResponse);
     }
   },
 
@@ -3042,3 +3065,5 @@ export const companyApi = {
     return data;
   },
 };
+
+export const subscriptionApi = api.subscriptions;

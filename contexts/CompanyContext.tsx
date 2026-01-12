@@ -57,11 +57,18 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     const getPlanName = () => {
         if (!company) return '';
 
+        // Try to get name directly from API objects first
+        const directName = company.company_plan?.name || company.plan?.details?.name;
+        if (directName) return directName;
+
         const planId = company.company_plan_id || company.plan?.plan_id;
 
         if (planId === null || planId === undefined) return "Básico";
-        if (String(planId) === "1") return "Premium";
-        if (String(planId) === "2") return "Business";
+        const idStr = String(planId);
+        if (idStr === "1") return "Basic";
+        if (idStr === "2") return "Premium";
+        if (idStr === "3") return "Business";
+
         return "Personalizado";
     };
 
