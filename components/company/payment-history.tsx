@@ -15,16 +15,20 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { Loader2, CreditCard } from "lucide-react";
+import { Loader2, CreditCard, ExternalLink } from "lucide-react";
 
 interface Payment {
     id: number | string;
-    amount: number;
+    amount: number | string;
     currency: string;
     status: string;
     description: string;
     created_at: string;
+    paid_at?: string;
     receipt_url?: string;
+    plan?: {
+        name: string;
+    }
 }
 
 export function PaymentHistory({ companyId }: { companyId: number | string }) {
@@ -95,43 +99,56 @@ export function PaymentHistory({ companyId }: { companyId: number | string }) {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {payments.map((payment) => (
-                                <TableRow key={payment.id} className="group transition-colors hover:bg-gray-50/50">
-                                    <TableCell className="text-sm text-gray-600">
-                                        {format(new Date(payment.created_at), "d 'de' MMMM, yyyy", { locale: es })}
-                                    </TableCell>
-                                    <TableCell>
-                                        <p className="text-sm font-medium text-gray-900">{payment.description || "Suscripción"}</p>
-                                    </TableCell>
-                                    <TableCell className="text-right font-bold text-gray-900">
-                                        ${new Intl.NumberFormat().format(payment.amount / 100)} {payment.currency?.toUpperCase()}
-                                    </TableCell>
-                                    <TableCell className="text-center">
-                                        <Badge className={`
-                                            ${payment.status === 'succeeded' || payment.status === 'paid'
-                                                ? 'bg-green-100 text-green-700 hover:bg-green-100'
-                                                : 'bg-red-100 text-red-700 hover:bg-red-100'}
-                                            border-none font-bold uppercase text-[10px]
-                                        `}>
-                                            {payment.status === 'succeeded' || payment.status === 'paid' ? 'Exitoso' : 'Fallido'}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        {payment.receipt_url ? (
-                                            <a
-                                                href={payment.receipt_url}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="text-green-600 hover:text-green-700 text-xs font-bold underline"
-                                            >
-                                                Ver recibo
-                                            </a>
-                                        ) : (
-                                            <span className="text-gray-300 text-xs">-</span>
-                                        )}
-                                    </TableCell>
-                                </TableRow>
-                            ))}
+                            {payments.map((payment) => {
+                                // Parse amount because it can be "2700.00" string
+                                const displayAmount = typeof payment.amount === 'string'
+                                    ? parseFloat(payment.amount)
+                                    : payment.amount;
+
+                                // Priority to paid_at, fallback to created_at
+                                const displayDate = payment.paid_at || payment.created_at;
+
+                                return (
+                                    <TableRow key={payment.id} className="group transition-colors hover:bg-gray-50/50">
+                                        <TableCell className="text-sm text-gray-600">
+                                            {displayDate ? format(new Date(displayDate), "d 'de' MMMM, yyyy", { locale: es }) : '---'}
+                                        </TableCell>
+                                        <TableCell>
+                                            <p className="text-sm font-medium text-gray-900">
+                                                {payment.plan?.name ? `Suscripción ${payment.plan.name}` : (payment.description || "Suscripción")}
+                                            </p>
+                                        </TableCell>
+                                        <TableCell className="text-right font-bold text-gray-900">
+                                            ${new Intl.NumberFormat().format(displayAmount)} {payment.currency?.toUpperCase()}
+                                        </TableCell>
+                                        <TableCell className="text-center">
+                                            <Badge className={`
+                                                ${payment.status === 'succeeded' || payment.status === 'paid'
+                                                    ? 'bg-green-100 text-green-700 hover:bg-green-100'
+                                                    : 'bg-red-100 text-red-700 hover:bg-red-100'}
+                                                border-none font-bold uppercase text-[10px]
+                                            `}>
+                                                {payment.status === 'succeeded' || payment.status === 'paid' ? 'Exitoso' : 'Fallido'}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            {payment.receipt_url ? (
+                                                <a
+                                                    href={payment.receipt_url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="inline-flex items-center gap-1 text-green-600 hover:text-green-700 text-xs font-bold underline decoration-2 underline-offset-4 decoration-green-200 hover:decoration-green-600 transition-all font-inter"
+                                                >
+                                                    Ver factura
+                                                    <ExternalLink className="w-3 h-3" />
+                                                </a>
+                                            ) : (
+                                                <span className="text-gray-300 text-xs italic">Procesando...</span>
+                                            )}
+                                        </TableCell>
+                                    </TableRow>
+                                );
+                            })}
                         </TableBody>
                     </Table>
                 </div>

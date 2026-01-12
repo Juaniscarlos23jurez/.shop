@@ -11,11 +11,15 @@ import {
     ExternalLink,
     MessageCircle,
     ShieldCheck,
-    AlertCircle
+    AlertCircle,
+    Receipt,
+    XCircle,
+    CheckCircle2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { toast } from 'sonner';
+import { FeedbackButton } from '@/components/feedback/FeedbackButton';
 
 export default function GestionSuscripcionPage() {
     const { token } = useAuth();
@@ -129,41 +133,66 @@ export default function GestionSuscripcionPage() {
                     </CardFooter>
                 </Card>
 
-                {/* Facturación y Pagos */}
-                <Card className="shadow-md">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <CreditCard className="w-5 h-5 text-blue-500" />
-                            Facturación y Pagos
+                {/* Administrar Mi Suscripción */}
+                <Card className="shadow-lg border-blue-50 dark:border-blue-900/20 overflow-hidden flex flex-col">
+                    <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-b border-blue-100 dark:border-blue-900/30">
+                        <CardTitle className="flex items-center gap-2 text-blue-900 dark:text-blue-100">
+                            <CreditCard className="w-5 h-5" />
+                            Pagos y Facturación
                         </CardTitle>
-                        <CardDescription>Portal seguro de autoservicio</CardDescription>
+                        <CardDescription className="text-blue-700/70 dark:text-blue-300/70 font-medium">
+                            Portal seguro para gestionar tu cuenta
+                        </CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="space-y-3">
-                            <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
-                                <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
-                                Cambiar de tarjeta y métodos de pago.
+                    <CardContent className="space-y-6 pt-6 flex-grow">
+                        <div className="grid grid-cols-1 gap-4">
+                            {/* Bajar Facturas */}
+                            <div className="flex items-center gap-4 p-3 rounded-xl border border-transparent hover:border-slate-200 hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-all group">
+                                <div className="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 group-hover:scale-110 transition-transform">
+                                    <Receipt className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-bold text-slate-900 dark:text-slate-100 leading-tight">Bajar facturas PDF</p>
+                                    <p className="text-xs text-slate-500">Historial completo de tus pagos</p>
+                                </div>
                             </div>
-                            <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
-                                <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
-                                Ver historial de cobros realizados.
+
+                            {/* Cambiar Tarjeta */}
+                            <div className="flex items-center gap-4 p-3 rounded-xl border border-transparent hover:border-slate-200 hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-all group">
+                                <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform">
+                                    <CheckCircle2 className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-bold text-slate-900 dark:text-slate-100 leading-tight">Cambiar tarjeta</p>
+                                    <p className="text-xs text-slate-500">Actualiza tu método de pago</p>
+                                </div>
                             </div>
-                            <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
-                                <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
-                                Descargar facturas en formato PDF.
+
+                            {/* Cancelar Suscripción */}
+                            <div className="flex items-center gap-4 p-3 rounded-xl border border-transparent hover:border-red-100 hover:bg-red-50/50 dark:hover:bg-red-900/20 transition-all group">
+                                <div className="w-10 h-10 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-red-600 group-hover:scale-110 transition-transform">
+                                    <XCircle className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-bold text-red-700 dark:text-red-400 leading-tight">Cancelar Plan</p>
+                                    <p className="text-xs text-red-600/70">Cancela tu suscripción al instante</p>
+                                </div>
                             </div>
                         </div>
 
-                        <div className="flex items-start gap-3 p-3 bg-blue-50 dark:bg-blue-900/10 rounded-lg border border-blue-100 dark:border-blue-900/30">
-                            <AlertCircle className="w-5 h-5 text-blue-500 mt-0.5 shrink-0" />
-                            <p className="text-xs text-blue-700 dark:text-blue-300 leading-tight">
-                                Serás redirigido al portal de Stripe para gestionar tus datos de forma privada.
+                        <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 space-y-2">
+                            <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                <ShieldCheck className="w-3 h-3" />
+                                Seguridad Garantizada
+                            </div>
+                            <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
+                                Usamos la tecnología de <span className="font-bold text-slate-900 dark:text-slate-200">Stripe</span> (líder mundial en pagos) para que tus datos bancarios estén siempre protegidos y nunca toquen nuestros servidores.
                             </p>
                         </div>
                     </CardContent>
-                    <CardFooter className="flex flex-col gap-3">
+                    <CardFooter className="pt-2">
                         <Button
-                            className="w-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center gap-2 py-6 text-lg font-semibold transition-all shadow-lg shadow-blue-200 dark:shadow-none"
+                            className="w-full bg-[#635BFF] hover:bg-[#5851e5] text-white flex items-center justify-center gap-3 py-8 text-lg font-black transition-all shadow-[0_20px_40px_-12px_rgba(99,91,255,0.4)] hover:shadow-[0_20px_40px_-12px_rgba(99,91,255,0.5)] hover:-translate-y-1 rounded-2xl"
                             onClick={handleManageSubscription}
                             disabled={loading}
                         >
@@ -171,15 +200,11 @@ export default function GestionSuscripcionPage() {
                                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
                             ) : (
                                 <>
-                                    Gestionar en Stripe
+                                    Abrir Portal de Pagos
                                     <ExternalLink className="w-5 h-5" />
                                 </>
                             )}
                         </Button>
-
-                        <p className="text-center text-[10px] text-gray-400 uppercase tracking-widest font-medium mt-2">
-                            Seguridad de nivel bancario por Stripe
-                        </p>
                     </CardFooter>
                 </Card>
             </div>
@@ -197,14 +222,22 @@ export default function GestionSuscripcionPage() {
                         ¿Cometiste un error o no estás satisfecho? Si solicitas tu reembolso dentro de los primeros 7 días de tu suscripción, procesaremos la devolución total sin preguntas.
                     </p>
                     <div className="mt-4 flex flex-col md:flex-row items-center gap-4">
-                        <Button
-                            variant="link"
-                            className="text-red-500 p-0 flex items-center gap-2 font-semibold"
-                            onClick={() => window.location.href = 'mailto:soporte@tuapp.com'}
+                        <FeedbackButton
+                            variant="custom"
+                            initialType="general"
+                            initialSubject="Reembolso"
+                            hideTypeSelect={true}
+                            customTitle="Solicitar Reembolso"
+                            customDescription="Cuéntanos por qué solicitas el reembolso. Procesaremos tu solicitud en menos de 24 horas."
                         >
-                            <MessageCircle className="w-4 h-4" />
-                            Solicitar Reembolso por Correo
-                        </Button>
+                            <Button
+                                variant="link"
+                                className="text-red-500 p-0 flex items-center gap-2 font-semibold"
+                            >
+                                <MessageCircle className="w-4 h-4" />
+                                Solicitar Reembolso por Ticket
+                            </Button>
+                        </FeedbackButton>
                         <span className="hidden md:inline text-gray-300">|</span>
                         <p className="text-xs text-gray-500 italic">
                             Tiempo estimado de respuesta: Menos de 24 horas.

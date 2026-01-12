@@ -33,14 +33,30 @@ const FEEDBACK_TYPE_LABELS: Record<string, string> = {
   praise: "Elogio",
 }
 
-export function FeedbackButton({ variant = "floating" }: { variant?: "floating" | "navbar" }) {
+export function FeedbackButton({
+  variant = "floating",
+  initialType = "",
+  initialSubject = "",
+  hideTypeSelect = false,
+  customTitle,
+  customDescription,
+  children
+}: {
+  variant?: "floating" | "navbar" | "custom",
+  initialType?: string,
+  initialSubject?: string,
+  hideTypeSelect?: boolean,
+  customTitle?: string,
+  customDescription?: string,
+  children?: React.ReactNode
+}) {
   const [isOpen, setIsOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [screenshot, setScreenshot] = useState<File | null>(null)
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null)
   const [formData, setFormData] = useState({
-    type: "",
-    subject: "",
+    type: initialType,
+    subject: initialSubject,
     message: "",
     email: "",
     whatsapp: ""
@@ -176,7 +192,9 @@ export function FeedbackButton({ variant = "floating" }: { variant?: "floating" 
     <div className={variant === "floating" ? "fixed top-4 left-1/2 transform -translate-x-1/2 z-50" : "relative"}>
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogTrigger asChild>
-          {variant === "floating" ? (
+          {variant === "custom" ? (
+            children
+          ) : variant === "floating" ? (
             <Button
               className="bg-purple-600 hover:bg-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 rounded-full px-6 py-3 flex items-center gap-2"
               size="sm"
@@ -198,29 +216,31 @@ export function FeedbackButton({ variant = "floating" }: { variant?: "floating" 
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Plus className="w-5 h-5 text-blue-600" />
-              Envíanos tu Feedback
+              {customTitle || "Envíanos tu Feedback"}
             </DialogTitle>
             <DialogDescription>
-              Ayúdanos a mejorar Fynlink+ compartiendo tus ideas, reportando problemas o sugiriendo mejoras.
+              {customDescription || "Ayúdanos a mejorar Fynlink+ compartiendo tus ideas, reportando problemas o sugiriendo mejoras."}
             </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-            <div className="space-y-2">
-              <Label htmlFor="type">Tipo de Feedback *</Label>
-              <Select value={formData.type} onValueChange={(value) => handleInputChange('type', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecciona una opción" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="bug">🐛 Reportar un Error</SelectItem>
-                  <SelectItem value="feature">💡 Sugerir una Mejora</SelectItem>
-                  <SelectItem value="general">💬 Comentario General</SelectItem>
-                  <SelectItem value="question">❓ Pregunta</SelectItem>
-                  <SelectItem value="praise">👍 Elogio o Satisfacción</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {!hideTypeSelect && (
+              <div className="space-y-2">
+                <Label htmlFor="type">Tipo de Feedback *</Label>
+                <Select value={formData.type} onValueChange={(value) => handleInputChange('type', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona una opción" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="bug">🐛 Reportar un Error</SelectItem>
+                    <SelectItem value="feature">💡 Sugerir una Mejora</SelectItem>
+                    <SelectItem value="general">💬 Comentario General</SelectItem>
+                    <SelectItem value="question">❓ Pregunta</SelectItem>
+                    <SelectItem value="praise">👍 Elogio o Satisfacción</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="subject">Asunto (Opcional)</Label>
