@@ -237,9 +237,23 @@ export function PricingSection({ activePlanId }: { activePlanId?: number | strin
 
                             const isDowngradeToBasic = activePlanId && Number(activePlanId) > Number(plan.id) && plan.id === 1;
 
+                            // Restricted Downgrade: If user has Annual, they cannot go to Monthly (even of the same plan)
+                            const isAnnualToMonthlyDowngrade = isYearlyMatch === false &&
+                                (companyInterval.includes('year') || companyInterval.includes('annua')) &&
+                                !isYearly;
+
+                            // A normal downgrade is to a lower plan ID
+                            const isLowerPlan = activePlanId && Number(plan.id) < Number(activePlanId);
+
+                            const isDisabled = isActive ||
+                                isDowngradeToBasic ||
+                                loadingPlan !== null ||
+                                (isAnnualToMonthlyDowngrade && (String(plan.id) === String(activePlanId) || isLowerPlan));
+
                             const getButtonText = () => {
                                 if (isActive) return 'PLAN ACTIVO';
                                 if (isDowngradeToBasic) return 'PLAN BÁSICO';
+                                if (isDisabled && isAnnualToMonthlyDowngrade) return 'NO DISPONIBLE';
 
                                 // Logic for other downgrades
                                 if (activePlanId && Number(activePlanId) > Number(plan.id)) {
@@ -373,9 +387,9 @@ export function PricingSection({ activePlanId }: { activePlanId?: number | strin
                                     <div className="mt-auto space-y-4">
                                         <div className="block w-full">
                                             <Button
-                                                disabled={isActive || isDowngradeToBasic || loadingPlan !== null}
+                                                disabled={isDisabled}
                                                 onClick={() => handleSubscribe(plan.id)}
-                                                className={`w-full py-7 text-base font-black rounded-2xl transition-all duration-300 ${isActive
+                                                className={`w-full py-7 text-base font-black rounded-2xl transition-all duration-300 ${isDisabled
                                                     ? 'bg-slate-100 text-slate-400 cursor-not-allowed border-none'
                                                     : plan.popular
                                                         ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 shadow-[0_20px_40px_-12px_rgba(34,197,94,0.35)] hover:shadow-[0_20px_40px_-12px_rgba(34,197,94,0.45)] hover:-translate-y-1'
@@ -389,6 +403,11 @@ export function PricingSection({ activePlanId }: { activePlanId?: number | strin
                                         </div>
 
                                         <div className="flex flex-col items-center gap-2">
+                                            {isAnnualToMonthlyDowngrade && String(plan.id) === String(activePlanId) && (
+                                                <p className="text-[10px] text-amber-600 font-bold uppercase tracking-tight">
+                                                    Ya tienes facturación anual activa
+                                                </p>
+                                            )}
                                             {plan.badge && (
                                                 <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-green-50 text-green-600 text-[10px] font-black uppercase tracking-wider border border-green-100">
                                                     <span>{plan.badge}</span>
