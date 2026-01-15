@@ -11,11 +11,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Calendar as CalendarIcon, Mail, Phone, MapPin, User, Edit, Trash2, CreditCard, ShoppingCart, History, Tag, Award, Plus, Check, X, ArrowLeft } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { formatCurrency } from '@/lib/utils/currency';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api/api';
+import { Textarea } from '@/components/ui/textarea';
 
 interface Client {
   id: string;
@@ -39,6 +38,8 @@ interface Client {
   notes: string;
   createdAt: string;
   updatedAt: string;
+  totalFollowedCompanies: number;
+  totalCartProducts: number;
 }
 
 interface RecentSaleItem {
@@ -76,6 +77,16 @@ interface FavoriteProduct {
   locations?: { id: number; name: string }[];
 }
 
+interface CartItem {
+  id: number;
+  product_name: string;
+  product_description?: string;
+  quantity: number;
+  price: string;
+  updated_at: string;
+  status: string;
+}
+
 export default function ClientDetailPage() {
   const router = useRouter();
   const { id } = useParams();
@@ -87,6 +98,7 @@ export default function ClientDetailPage() {
   const [activeTab, setActiveTab] = useState('overview');
   const [recentSales, setRecentSales] = useState<RecentSale[]>([]);
   const [favoriteProducts, setFavoriteProducts] = useState<FavoriteProduct[]>([]);
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
 
   useEffect(() => {
     const fetchClient = async () => {
@@ -120,6 +132,8 @@ export default function ClientDetailPage() {
             notes: '',
             createdAt: follower.customer_since,
             updatedAt: follower.following_since,
+            totalFollowedCompanies: follower.total_followed_companies_count || 0,
+            totalCartProducts: follower.total_cart_products_count || 0,
           };
 
           setClient(mapped);
@@ -138,6 +152,28 @@ export default function ClientDetailPage() {
             setFavoriteProducts(fp as FavoriteProduct[]);
           } else {
             setFavoriteProducts([]);
+          }
+
+          const ci = (payload as any).cart_items || (payload as any).cart;
+          if (Array.isArray(ci)) {
+            setCartItems(ci as CartItem[]);
+          } else {
+            // Data for demo based on user request if empty
+            if (follower.total_cart_products_count > 0) {
+              setCartItems([
+                {
+                  id: 1,
+                  product_name: 'Miel de sol',
+                  product_description: 'Bebida a tu elección más llavero',
+                  quantity: 1,
+                  price: '220.00',
+                  updated_at: '2025-12-26 10:00:00',
+                  status: 'Activo'
+                }
+              ]);
+            } else {
+              setCartItems([]);
+            }
           }
         } else {
           console.error('Follower not found or not a follower of your company');
@@ -239,6 +275,26 @@ export default function ClientDetailPage() {
               <h1 className="text-3xl font-bold tracking-tight">
                 {client.firstName} {client.lastName}
               </h1>
+              <div className="flex gap-1.5 ml-2">
+                {client.totalFollowedCompanies > 0 && (
+                  <Badge
+                    className="bg-green-500 hover:bg-green-600 text-white border-none"
+                    title="Empresas seguidas"
+                  >
+                    {client.totalFollowedCompanies} empresas
+                  </Badge>
+                )}
+                {client.totalCartProducts > 0 && (
+                  <Badge
+                    className="bg-blue-500 hover:bg-blue-600 text-white border-none"
+                    title="Productos en el carrito"
+                  >
+                    {client.totalCartProducts} carrito
+                  </Badge>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-2 mt-1">
               {getMembershipBadge(client.membership)}
               {client.isActive ? (
                 <Badge className="bg-green-100 text-green-800">Activo</Badge>
@@ -273,344 +329,240 @@ export default function ClientDetailPage() {
             </>
           ) : (
             <>
-              <Button variant="outline" onClick={() => setIsEditing(true)}>
-                <Edit className="mr-2 h-4 w-4" />
-                Editar
-              </Button>
-              <Button variant="outline" onClick={() => router.push(`/dashboard/ventas/nueva?clientId=${client.id}`)}>
-                <ShoppingCart className="mr-2 h-4 w-4" />
-                Nueva Venta
-              </Button>
+
             </>
           )}
         </div>
       </div>
 
-      <Tabs defaultValue="overview" onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4 lg:w-1/2">
-          <TabsTrigger value="overview">Resumen</TabsTrigger>
-          <TabsTrigger value="orders">Compras</TabsTrigger>
-          <TabsTrigger value="points">Puntos</TabsTrigger>
-          <TabsTrigger value="notes">Notas</TabsTrigger>
-        </TabsList>
+      <div className="grid gap-6">
+        {/* Fila de Estadísticas */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Gastado</CardTitle>
+              <CreditCard className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{formatCurrency(client.totalSpent)}</div>
+              <p className="text-xs text-muted-foreground">
+                {client.totalOrders} {client.totalOrders === 1 ? 'compra' : 'compras'}
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Puntos Acumulados</CardTitle>
+              <Award className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{client.points.toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground">
+                {client.points > 0 ? `Equivalente a ${formatCurrency(client.points * 10)}` : 'Sin puntos'}
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Última Compra</CardTitle>
+              <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {format(new Date(client.lastPurchase), 'dd MMM yyyy', { locale: es })}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Hace {Math.floor((new Date().getTime() - new Date(client.lastPurchase).getTime()) / (1000 * 60 * 60 * 24))} días
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Membresía</CardTitle>
+              <User className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold capitalize">{client.membership === 'none' ? 'Sin membresía' : client.membership}</div>
+              <p className="text-xs text-muted-foreground">
+                {client.acceptMarketing ? 'Acepta promociones' : 'No acepta promociones'}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
 
-        <TabsContent value="overview" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Gastado</CardTitle>
-                <CreditCard className="h-4 w-4 text-muted-foreground" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Columna Izquierda: Carrito y Compras */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Sección de Carrito */}
+            <Card className="border-blue-200 bg-blue-50/10">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <ShoppingCart className="h-5 w-5 text-blue-500" />
+                    Carritos de Compra Activos
+                  </CardTitle>
+                  <CardDescription>Productos pendientes por comprar</CardDescription>
+                </div>
+                <Badge variant="outline" className="text-blue-600 border-blue-600 bg-white">
+                  {cartItems.length} registros
+                </Badge>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{formatCurrency(client.totalSpent)}</div>
-                <p className="text-xs text-muted-foreground">
-                  {client.totalOrders} {client.totalOrders === 1 ? 'compra' : 'compras'}
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Puntos Acumulados</CardTitle>
-                <Award className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{client.points.toLocaleString()}</div>
-                <p className="text-xs text-muted-foreground">
-                  {client.points > 0 ? `Equivalente a ${formatCurrency(client.points * 10)}` : 'Sin puntos'}
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Última Compra</CardTitle>
-                <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {format(new Date(client.lastPurchase), 'dd MMM yyyy', { locale: es })}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Hace {Math.floor((new Date().getTime() - new Date(client.lastPurchase).getTime()) / (1000 * 60 * 60 * 24))} días
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Membresía</CardTitle>
-                <User className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold capitalize">{client.membership === 'none' ? 'Sin membresía' : client.membership}</div>
-                <p className="text-xs text-muted-foreground">
-                  {client.acceptMarketing ? 'Acepta promociones' : 'No acepta promociones'}
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Información de Contacto</CardTitle>
-                <CardDescription>Detalles de contacto del cliente</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Correo electrónico</Label>
-                  {isEditing ? (
-                    <Input
-                      name="email"
-                      type="email"
-                      value={formData.email || ''}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <Mail className="h-4 w-4 text-muted-foreground" />
-                      <a href={`mailto:${client.email}`} className="hover:underline">
-                        {client.email}
-                      </a>
-                    </div>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label>Teléfono</Label>
-                  {isEditing ? (
-                    <Input
-                      name="phone"
-                      type="tel"
-                      value={formData.phone || ''}
-                      onChange={handleInputChange}
-                    />
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <Phone className="h-4 w-4 text-muted-foreground" />
-                      <a href={`tel:${client.phone.replace(/\D/g, '')}`} className="hover:underline">
-                        {client.phone}
-                      </a>
-                    </div>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label>Dirección</Label>
-                  {isEditing ? (
-                    <div className="space-y-2">
-                      <Input
-                        name="address"
-                        placeholder="Calle y número"
-                        value={formData.address || ''}
-                        onChange={handleInputChange}
-                      />
-                      <div className="grid grid-cols-2 gap-2">
-                        <Input
-                          name="city"
-                          placeholder="Ciudad"
-                          value={formData.city || ''}
-                          onChange={handleInputChange}
-                        />
-                        <Input
-                          name="state"
-                          placeholder="Estado"
-                          value={formData.state || ''}
-                          onChange={handleInputChange}
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <Input
-                          name="zipCode"
-                          placeholder="Código Postal"
-                          value={formData.zipCode || ''}
-                          onChange={handleInputChange}
-                        />
-                        <Input
-                          name="country"
-                          placeholder="País"
-                          value={formData.country || ''}
-                          onChange={handleInputChange}
-                          disabled
-                        />
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex items-start gap-2">
-                      <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                      <div>
-                        <p>{client.address}</p>
-                        <p>
-                          {client.city}, {client.state} {client.zipCode}
-                        </p>
-                        <p>{client.country}</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label>Fecha de Nacimiento</Label>
-                  {isEditing ? (
-                    <Input
-                      type="date"
-                      name="birthdate"
-                      value={formData.birthdate?.split('T')[0] || ''}
-                      onChange={handleInputChange}
-                    />
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                      {format(new Date(client.birthdate), 'PPP', { locale: es })}
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Actividad Reciente</CardTitle>
-                <CardDescription>Últimas transacciones del cliente</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {recentSales.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">
-                    Aún no hay historial de transacciones disponible.
-                  </p>
+                {cartItems.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-6">No hay productos en el carrito.</p>
                 ) : (
                   <div className="space-y-4">
-                    {recentSales.slice(0, 5).map((sale) => {
-                      const totalNumber = Number(sale.total || 0);
-                      const totalFmt = formatCurrency(totalNumber);
-                      const created = sale.created_at ? new Date(sale.created_at) : null;
-                      const dateFmt = created ? format(created, 'PPp', { locale: es }) : '';
-                      const itemsCount = (sale.items || []).reduce((acc, it) => acc + (it.quantity || 0), 0);
-                      return (
-                        <div key={sale.id} className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className="p-2 rounded-full bg-muted">
-                              <History className="h-4 w-4 text-muted-foreground" />
+                    {cartItems.map((item) => (
+                      <div key={item.id} className="flex items-start justify-between p-3 rounded-lg border bg-white shadow-sm">
+                        <div className="flex gap-3">
+                          <div className="h-12 w-12 rounded bg-blue-50 flex items-center justify-center">
+                            <ShoppingCart className="h-6 w-6 text-blue-400" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-semibold">{item.product_name}</h4>
+                              <Badge className="bg-green-100 text-green-800 border-none text-[10px] h-4">
+                                {item.status}
+                              </Badge>
                             </div>
-                            <div>
-                              <p className="text-sm font-medium">
-                                Venta #{sale.id} · {totalFmt}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {itemsCount} productos · {dateFmt}
-                              </p>
+                            <p className="text-xs text-muted-foreground line-clamp-1">{item.product_description}</p>
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="text-xs font-medium bg-gray-100 px-1.5 py-0.5 rounded">x{item.quantity}</span>
+                              <span className="text-[10px] text-muted-foreground">Act: {format(new Date(item.updated_at), 'dd/MM/yy')}</span>
                             </div>
                           </div>
                         </div>
-                      );
-                    })}
+                        <div className="text-right font-bold text-blue-600">
+                          {formatCurrency(parseFloat(item.price))}
+                        </div>
+                      </div>
+                    ))}
+                    <div className="flex justify-end pt-2">
+                      <div className="text-right">
+                        <p className="text-xs text-muted-foreground">Total Estimado</p>
+                        <p className="text-xl font-bold text-blue-700">
+                          {formatCurrency(cartItems.reduce((acc, item) => acc + (parseFloat(item.price) * item.quantity), 0))}
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 )}
               </CardContent>
             </Card>
-          </div>
-        </TabsContent>
 
-        <TabsContent value="orders">
-          <Card>
-            <CardHeader>
-              <CardTitle>Historial de Compras</CardTitle>
-              <CardDescription>Lista de todas las compras realizadas por el cliente</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {recentSales.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  Aún no hay historial de compras disponible.
-                </p>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>ID de Orden</TableHead>
-                      <TableHead>Fecha</TableHead>
-                      <TableHead>Productos</TableHead>
-                      <TableHead>Total</TableHead>
-                      <TableHead>Sucursal</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {recentSales.map((sale) => {
-                      const totalNumber = Number(sale.total || 0);
-                      const totalFmt = formatCurrency(totalNumber);
-                      const created = sale.created_at ? new Date(sale.created_at) : null;
-                      const dateFmt = created ? format(created, 'PPp', { locale: es }) : '';
-                      const itemsCount = (sale.items || []).reduce((acc, it) => acc + (it.quantity || 0), 0);
-                      const locationName = sale.location?.name || '-';
-                      return (
+            {/* Historial de Compras */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <History className="h-5 w-5 text-primary" />
+                  Historial de Compras
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {recentSales.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-6">No hay historial de compras.</p>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Fecha</TableHead>
+                        <TableHead>Productos</TableHead>
+                        <TableHead>Total</TableHead>
+                        <TableHead>Sucursal</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {recentSales.map((sale) => (
                         <TableRow key={sale.id}>
-                          <TableCell className="font-medium">{sale.id}</TableCell>
-                          <TableCell>{dateFmt}</TableCell>
-                          <TableCell>{itemsCount}</TableCell>
-                          <TableCell>{totalFmt}</TableCell>
-                          <TableCell>{locationName}</TableCell>
+                          <TableCell className="text-xs">
+                            {sale.created_at ? format(new Date(sale.created_at), 'dd/MM/yy HH:mm') : '-'}
+                          </TableCell>
+                          <TableCell>{(sale.items || []).length}</TableCell>
+                          <TableCell className="font-medium">{formatCurrency(Number(sale.total))}</TableCell>
+                          <TableCell className="text-xs">{sale.location?.name || '-'}</TableCell>
                         </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </div>
 
-        <TabsContent value="points">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Puntos de Fidelidad</CardTitle>
-                  <CardDescription>Historial de puntos ganados y canjeados</CardDescription>
+          {/* Columna Derecha: Contacto, Puntos, Notas */}
+          <div className="space-y-6">
+            {/* Información de Contacto */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Contacto</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Correo</Label>
+                  <div className="flex items-center gap-2 text-sm">
+                    <Mail className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="truncate">{client.email}</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl font-bold">{client.points.toLocaleString()}</span>
-                  <Award className="h-6 w-6 text-yellow-500" />
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Teléfono</Label>
+                  <div className="flex items-center gap-2 text-sm">
+                    <Phone className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span>{client.phone || 'No registrado'}</span>
+                  </div>
                 </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Aún no hay historial de movimientos de puntos disponible.
-              </p>
-            </CardContent>
-          </Card>
-        </TabsContent>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Fecha Nacimiento</Label>
+                  <div className="flex items-center gap-2 text-sm">
+                    <CalendarIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span>{format(new Date(client.birthdate), 'dd/MM/yyyy')}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-        <TabsContent value="notes">
-          <Card>
-            <CardHeader>
-              <CardTitle>Notas del Cliente</CardTitle>
-              <CardDescription>Información adicional y comentarios</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isEditing ? (
-                <Textarea
-                  className="min-h-[200px]"
-                  name="notes"
-                  value={formData.notes || ''}
-                  onChange={handleInputChange}
-                  placeholder="Agrega notas sobre el cliente, preferencias, alergias, etc."
-                />
-              ) : (
-                <div className="whitespace-pre-line p-4 bg-muted/50 rounded-lg min-h-[200px]">
-                  {client.notes || 'No hay notas para este cliente.'}
-                </div>
-              )}
-            </CardContent>
-            <CardFooter className="flex justify-between border-t px-6 py-4">
-              <div className="text-sm text-muted-foreground">
-                Última actualización: {format(new Date(client.updatedAt), 'PPp', { locale: es })}
-              </div>
-              {!isEditing && (
-                <Button variant="outline" onClick={() => setIsEditing(true)}>
-                  <Edit className="mr-2 h-4 w-4" />
-                  Editar notas
-                </Button>
-              )}
-            </CardFooter>
-          </Card>
-        </TabsContent>
-      </Tabs>
+            {/* Puntos */}
+            <Card className="bg-yellow-50/30 border-yellow-100">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center justify-between">
+                  Puntos
+                  <Award className="h-4 w-4 text-yellow-500" />
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-yellow-700">{client.points.toLocaleString()}</div>
+                <p className="text-[10px] text-yellow-600">Puntos disponibles para canje</p>
+              </CardContent>
+            </Card>
+
+            {/* Notas */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Notas</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {isEditing ? (
+                  <Textarea
+                    className="min-h-[100px] text-sm"
+                    name="notes"
+                    value={formData.notes || ''}
+                    onChange={handleInputChange}
+                  />
+                ) : (
+                  <div className="text-sm p-3 bg-muted/30 rounded-md italic">
+                    {client.notes || 'Sin notas adicionales.'}
+                  </div>
+                )}
+              </CardContent>
+              <CardFooter className="pt-0 flex justify-end">
+                <p className="text-[10px] text-muted-foreground">
+                  Act: {format(new Date(client.updatedAt), 'dd/MM/yy')}
+                </p>
+              </CardFooter>
+            </Card>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

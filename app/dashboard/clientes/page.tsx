@@ -34,6 +34,8 @@ interface Follower {
   membership_description: string | null;
   membership_price: string | null;
   has_active_membership: number; // 0 or 1
+  total_followed_companies_count: number;
+  total_cart_products_count: number;
 }
 
 interface ApiResponseData {
@@ -72,7 +74,7 @@ export default function ClientesPage() {
   const [data, setData] = useState<ApiResponseData | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'with_membership' | 'without_membership'>('all');
-  
+
   const [sortConfig, setSortConfig] = useState<{ key: SortableField; direction: 'asc' | 'desc' }>({
     key: 'following_since',
     direction: 'desc',
@@ -85,21 +87,21 @@ export default function ClientesPage() {
         setError('No se pudo autenticar. Por favor, inicia sesión nuevamente.');
         return;
       }
-      
+
       try {
         console.log('Fetching followers data...');
         setIsLoading(true);
-        
+
         console.log('Using token:', token.substring(0, 10) + '...');
-        
+
         const response = await api.userCompanies.getFollowers(token);
         console.log('API Response:', response);
-        
+
         if (response && response.success && response.data) {
           // The API returns data with the wrapper structure
           const responseData = response.data.data as ApiResponseData;
           console.log('API Response Data:', responseData);
-          
+
           setData(responseData);
         } else {
           const errorMsg = response?.message || 'Error al procesar la respuesta del servidor';
@@ -132,38 +134,38 @@ export default function ClientesPage() {
   };
 
   const filteredClients = data?.followers?.filter((follower) => {
-    const matchesSearch = 
+    const matchesSearch =
       follower.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       follower.customer_email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (follower.customer_phone || '').includes(searchTerm);
-    
+
     if (statusFilter === 'all') return matchesSearch;
     if (statusFilter === 'with_membership') return matchesSearch && follower.has_active_membership === 1;
     if (statusFilter === 'without_membership') return matchesSearch && follower.has_active_membership !== 1;
-    
+
     return matchesSearch;
   }) || [];
 
   const sortedClients = [...filteredClients].sort((a, b) => {
     const { key, direction } = sortConfig;
-    
+
     // Type guard to ensure we only access valid properties
     const getValue = (item: Follower, k: SortableField): string | number | null => {
       const value = item[k];
       return value;
     };
-    
+
     const aValue = getValue(a, key);
     const bValue = getValue(b, key);
-    
+
     // Handle null or undefined values
     if (aValue === null || aValue === undefined) return direction === 'asc' ? -1 : 1;
     if (bValue === null || bValue === undefined) return direction === 'asc' ? 1 : -1;
-    
+
     // Convert to string for consistent comparison
     const strA = String(aValue).toLowerCase();
     const strB = String(bValue).toLowerCase();
-    
+
     if (strA < strB) return direction === 'asc' ? -1 : 1;
     if (strA > strB) return direction === 'asc' ? 1 : -1;
     return 0;
@@ -230,9 +232,9 @@ export default function ClientesPage() {
             </div>
           )}
         </div>
-        <Button 
-          className="mt-4 md:mt-0" 
-          onClick={() => router.push('/dashboard/clientes/nuevo')} 
+        <Button
+          className="mt-4 md:mt-0"
+          onClick={() => router.push('/dashboard/clientes/nuevo')}
           disabled={!token}
         >
           <Plus className="mr-2 h-4 w-4" />
@@ -276,7 +278,7 @@ export default function ClientesPage() {
               <thead>
                 <tr className="border-b">
                   <th className="text-left py-3 px-4">
-                    <button 
+                    <button
                       className="flex items-center gap-1 font-medium"
                       onClick={() => handleSort('customer_name')}
                     >
@@ -285,7 +287,7 @@ export default function ClientesPage() {
                     </button>
                   </th>
                   <th className="text-left py-3 px-4">
-                    <button 
+                    <button
                       className="flex items-center gap-1 font-medium"
                       onClick={() => handleSort('membership_name')}
                     >
@@ -304,7 +306,7 @@ export default function ClientesPage() {
                     </div>
                   </th>
                   <th className="text-right py-3 px-4">
-                    <button 
+                    <button
                       className="flex items-center gap-1 font-medium ml-auto"
                       onClick={() => handleSort('customer_since')}
                     >
@@ -313,7 +315,7 @@ export default function ClientesPage() {
                     </button>
                   </th>
                   <th className="text-right py-3 px-4">
-                    <button 
+                    <button
                       className="flex items-center gap-1 font-medium ml-auto"
                       onClick={() => handleSort('following_since')}
                     >
@@ -342,6 +344,24 @@ export default function ClientesPage() {
                             {client.customer_email_verified === 1 && (
                               <CheckCircle className="h-4 w-4 text-green-500" />
                             )}
+                            <div className="flex gap-1 ml-1">
+                              {client.total_followed_companies_count > 0 && (
+                                <Badge
+                                  className="bg-green-500 hover:bg-green-600 text-white border-none h-5 px-1.5 min-w-[20px] justify-center text-[10px]"
+                                  title={`Sigue a ${client.total_followed_companies_count} empresas`}
+                                >
+                                  {client.total_followed_companies_count}
+                                </Badge>
+                              )}
+                              {client.total_cart_products_count > 0 && (
+                                <Badge
+                                  className="bg-blue-500 hover:bg-blue-600 text-white border-none h-5 px-1.5 min-w-[20px] justify-center text-[10px]"
+                                  title={`${client.total_cart_products_count} productos en el carrito`}
+                                >
+                                  {client.total_cart_products_count}
+                                </Badge>
+                              )}
+                            </div>
                           </div>
                           <div className="text-sm text-muted-foreground flex items-center gap-1">
                             <Mail className="h-3 w-3" />
@@ -414,8 +434,8 @@ export default function ClientesPage() {
                       {getStatusBadge(client.has_active_membership)}
                     </td>
                     <td className="py-4 px-4 text-right">
-                      <Button 
-                        variant="ghost" 
+                      <Button
+                        variant="ghost"
                         size="sm"
                         onClick={() => router.push(`/dashboard/clientes/${client.customer_id}`)}
                       >
@@ -432,7 +452,7 @@ export default function ClientesPage() {
             <div className="text-center py-12">
               <User className="h-12 w-12 mx-auto text-muted-foreground" />
               <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">
-                {searchTerm || statusFilter !== 'all' 
+                {searchTerm || statusFilter !== 'all'
                   ? 'No se encontraron clientes que coincidan con tu búsqueda'
                   : 'Aún no tienes clientes registrados'}
               </h3>
@@ -443,7 +463,7 @@ export default function ClientesPage() {
               </p>
               {(searchTerm || statusFilter !== 'all') && (
                 <div className="mt-6">
-                  <Button 
+                  <Button
                     onClick={() => {
                       setSearchTerm('');
                       setStatusFilter('all');
