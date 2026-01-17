@@ -81,7 +81,7 @@ const adminSidebarItems: SidebarItem[] = [
   { icon: Package, label: "Productos", href: "/dashboard/productos" },
   { icon: Package, label: "Stock", href: "/dashboard/stock" },
   { icon: ShoppingCart, label: "Punto de Venta", href: "/dashboard/pos" },
-  { icon: Bot, label: "Asistente IA", href: "/dashboard/ai-assistant" },
+  // { icon: Bot, label: "Asistente IA", href: "/dashboard/ai-assistant" },
   { icon: Clock4, label: "Órdenes Pendientes", href: "/dashboard/ordenes-pendientes" },
   { icon: CreditCardIcon, label: "Metodos de cobro", href: "/dashboard/stripe" },
 

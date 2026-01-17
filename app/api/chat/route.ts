@@ -1,20 +1,20 @@
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { streamText, tool, UIMessage, convertToModelMessages } from 'ai';
 import { z } from 'zod';
+// MCP imports - kept for future use but simplified prompt
+// import { mcpServer } from '@/lib/mcp/mcp-server';
+// import { generateAPIContextForAI } from '@/lib/mcp/api-documentation';
 
-// Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
 
-const BASE_URL = 'https://laravel-pkpass-backend-development-pfaawl.laravel.cloud';
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://laravel-pkpass-backend-development-pfaawl.laravel.cloud';
 
 const google = createGoogleGenerativeAI({
     apiKey: process.env.GEMINI_API_KEY,
 });
 
-// Helper function to make authenticated API calls
+// Helper para hacer llamadas autenticadas a la API
 async function fetchAPI(endpoint: string, token: string, options: RequestInit = {}) {
-    console.log('[AI - fetchAPI] 📡 Llamando:', { endpoint, tokenLength: token?.length });
-
     const response = await fetch(`${BASE_URL}${endpoint}`, {
         ...options,
         headers: {
@@ -25,109 +25,120 @@ async function fetchAPI(endpoint: string, token: string, options: RequestInit = 
         },
     });
 
-    console.log('[AI - fetchAPI] 📥 Respuesta:', { endpoint, status: response.status, ok: response.ok });
-
     if (!response.ok) {
         const errorText = await response.text();
-        console.error('[AI - fetchAPI] ❌ Error:', { endpoint, status: response.status, errorText });
-        throw new Error(`API Error: ${response.statusText}`);
+        console.error('[API Error]', { endpoint, status: response.status, error: errorText });
+        throw new Error(`API Error: ${response.status} - ${response.statusText}`);
     }
 
-    const data = await response.json();
-    console.log('[AI - fetchAPI] ✅ Datos:', { endpoint, hasData: !!data.data, keys: Object.keys(data) });
-    return data;
+    return response.json();
+}
+
+// Helper para calcular fecha de hace N días
+function getDaysAgo(days: number): string {
+    const date = new Date();
+    date.setDate(date.getDate() - days);
+    return date.toISOString().split('T')[0];
 }
 
 export async function POST(req: Request) {
     const body = await req.json();
     const { messages, token } = body as { messages: UIMessage[]; token?: string };
 
-    console.log('\n' + '='.repeat(80));
-    console.log('[AI Chat] 🚀 NUEVA PETICIÓN');
-    console.log('[AI Chat] Token presente:', !!token);
-    console.log('[AI Chat] Token length:', token?.length || 0);
-    console.log('[AI Chat] Token preview:', token?.substring(0, 20) + '...');
-    console.log('[AI Chat] Mensajes:', messages.length);
-    console.log('[AI Chat] Último mensaje:', JSON.stringify(messages[messages.length - 1]));
-    console.log('='.repeat(80) + '\n');
-
-    // If no token provided, use demo data
     const hasAuth = !!token;
+    const today = new Date().toISOString().split('T')[0];
+    const thirtyDaysAgo = getDaysAgo(30);
 
-    if (!hasAuth) {
-        console.warn('[AI Chat] ⚠️  NO HAY TOKEN - usando datos demo');
+    // Detectar si es el primer mensaje del usuario
+    const userMessages = messages.filter(msg => msg.role === 'user');
+    const isFirstMessage = userMessages.length === 1;
+
+    // Analizar si el primer mensaje necesita análisis
+    let needsAnalysis = false;
+    if (isFirstMessage && hasAuth) {
+        // Convertir el mensaje a string para analizar su contenido
+        const messageStr = JSON.stringify(userMessages[0]).toLowerCase();
+        needsAnalysis = messageStr.includes('producto nuevo') ||
+            messageStr.includes('recomienda') ||
+            messageStr.includes('analiza') ||
+            messageStr.includes('ventas') ||
+            messageStr.includes('catálogo');
     }
+
+    // Obtener contexto RAG simplificado - solo palabras clave para guiar la búsqueda
+    let ragHints = '';
+    if (hasAuth && userMessages.length > 0) {
+        const lastUserMessage: any = userMessages[userMessages.length - 1];
+        const messageText = typeof lastUserMessage.content === 'string'
+            ? lastUserMessage.content
+            : JSON.stringify(lastUserMessage.content || lastUserMessage);
+
+        // Solo agregar hints si la consulta mencionas análisis o recomendaciones
+        const lowerMsg = messageText.toLowerCase();
+        if (lowerMsg.includes('producto') || lowerMsg.includes('recomienda') ||
+            lowerMsg.includes('analiz') || lowerMsg.includes('ventas') ||
+            lowerMsg.includes('catálogo') || lowerMsg.includes('nuevo')) {
+            ragHints = `
+WORKFLOW OBLIGATORIO:
+1. getCompanyInfo() → obtener company_id (guardarlo)
+2. getAllProducts(company_id) → ver catálogo actual  
+3. getSalesStatistics() → obtener datos de ventas REALES
+4. Analizar datos REALES y generar recomendaciones
+
+⚠️ IMPORTANTE: getSalesStatistics SIEMPRE retorna datos. Si dice "sin datos", EL ERROR ESTÁ EN TU ANÁLISIS, no en la API.`;
+        }
+    }
+
+    // Sistema prompt CORTO y DIRECTO - sin documentación extensa
+    const systemPrompt = `Eres un asistente de análisis de negocios. Fecha: ${today}.
+
+${hasAuth ? `
+**EJECUTA HERRAMIENTAS AUTOMÁTICAMENTE:**
+Cuando el usuario pida análisis o recomendaciones:
+1. getCompanyInfo() → guarda company_id
+2. getAllProducts(company_id, perPage=50) → lista productos
+3. getSalesStatistics(dateFrom="${thirtyDaysAgo}", dateTo="${today}") → OBTÉN VENTAS REALES
+4. Analiza los datos REALES que obtuviste y responde
+
+${ragHints}
+
+**REGLAS ESTRICTAS:**
+- NUNCA digas "si los datos estuvieran disponibles"
+- SIEMPRE incluye números REALES de las respuestas de las herramientas
+- Si una herramienta falla, di exactamente qué error retornó
+- Menciona total_revenue, total_orders, productos más vendidos de los DATOS REALES
+
+**FORMATO:**
+📊 Análisis de Datos (con números REALES de las herramientas)
+💡 Recomendaciones Específicas (basadas en datos REALES)
+✅ Próximos Pasos
+` : `
+Usuario NO autenticado. Usa getDemoStats para datos demo.
+`}`;
 
     const result = streamText({
         model: google('gemini-2.0-flash-lite-preview-02-05'),
         messages: await convertToModelMessages(messages),
-        system: `Eres un asistente de IA especializado en análisis de negocios y comercio electrónico. 
-Tu trabajo es ayudar a los dueños de negocios a tomar decisiones informadas basadas en datos reales de su empresa.
-
-CONTEXTO TEMPORAL:
-- Fecha actual: ${new Date().toISOString().split('T')[0]} (2026)
-- Para análisis de ventas, USA SIEMPRE los últimos 90 días por defecto
-- Rango por defecto: desde ${new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]} hasta hoy
-
-REGLAS CRÍTICAS PARA CONVERSACIÓN FLUIDA:
-1. NUNCA pidas al usuario información que puedes obtener con las herramientas
-2. NO preguntes sobre períodos de tiempo - USA 90 días por defecto SIEMPRE
-3. NO pidas confirmaciones - SÉ DECISIVO y toma la iniciativa
-4. OBTÉN toda la información EN UNA SOLA RONDA de llamadas
-5. DA respuestas COMPLETAS, no fragmentadas
-
-FLUJO OBLIGATORIO (TODO DE UNA VEZ):
-Para preguntas sobre productos/ventas/recomendaciones:
-1. getCompanyInfo → obtén company_id
-2. getAllProducts → ve el catálogo
-3. getSalesStatistics (90 días) → analiza ventas
-4. Respuesta COMPLETA con análisis y recomendaciones
-
-FORMATO DE RESPUESTA:
-📊 **Situación Actual:**
-[Resumen de datos encontrados]
-
-💡 **Recomendaciones:**
-1. [Acción específica con datos]
-2. [Acción específica con datos]
-3. [Acción específica con datos]
-
-✅ **Próximos Pasos:**
-[Acciones concretas]
-
-NO dividas respuestas. NO pidas aclaraciones innecesarias. SÉ DIRECTO.
-
-Herramientas disponibles:
-- getCompanyInfo (úsala primero SIEMPRE)
-- getAllProducts (úsala automáticamente)
-- getSalesStatistics (90 días por defecto)
-- getRecentSales (solo si necesitas detalles)
-- getProductDetails (solo para productos específicos)
-
-Sé profesional, decisivo y completo.`,
+        system: systemPrompt,
+        maxSteps: 10, // Permite múltiples llamadas a herramientas
         tools: {
-            // Real business data tools
+            // ====== REAL BUSINESS TOOLS ======
+
             getCompanyInfo: tool({
-                description: 'Obtener información detallada de la compañía del usuario, incluyendo el company_id necesario para otras consultas',
+                description: 'ÚSALA PRIMERO: Obtiene información de la compañía del usuario, incluyendo el company_id necesario para otras llamadas.',
                 inputSchema: z.object({}),
                 execute: async () => {
-                    console.log('[AI - Tool] 🏢 getCompanyInfo ejecutándose...', { hasAuth, tokenLength: token?.length });
                     if (!hasAuth || !token) {
-                        console.warn('[AI - Tool] ⚠️ getCompanyInfo: Sin token');
-                        return { error: 'No hay token de autenticación disponible' };
+                        throw new Error('Usuario no autenticado');
                     }
+
                     try {
                         const data = await fetchAPI('/api/auth/profile/company', token);
-                        console.log('[AI - Tool] ✅ getCompanyInfo exitoso:', {
-                            hasCompany: !!data.data,
-                            companyId: data.data?.id
-                        });
                         return {
                             success: true,
-                            company: data.data || data,
+                            company: data.data,
                         };
                     } catch (error) {
-                        console.error('[AI - Tool] ❌ getCompanyInfo error:', error);
                         return {
                             success: false,
                             error: error instanceof Error ? error.message : 'Error al obtener información de la compañía'
@@ -137,35 +148,36 @@ Sé profesional, decisivo y completo.`,
             }),
 
             getAllProducts: tool({
-                description: 'Obtener lista completa de productos de la compañía. Esencial para hacer recomendaciones o analizar el catálogo actual.',
+                description: 'Obtiene el catálogo COMPLETO de productos. Úsala para ver qué vende el negocio actualmente. Requiere company_id de getCompanyInfo.',
                 inputSchema: z.object({
-                    companyId: z.string().describe('ID de la compañía (obtenlo primero con getCompanyInfo)'),
-                    perPage: z.number().optional().describe('Productos por página, default 50'),
-                    page: z.number().optional().describe('Número de página para paginación'),
+                    companyId: z.string().describe('ID de la compañía (de getCompanyInfo)'),
+                    perPage: z.number().min(1).max(100).default(50).describe('Productos por página - usa 50 o más para ver todo el catálogo'),
+                    page: z.number().min(1).default(1).describe('Página actual'),
                 }),
-                execute: async ({ companyId, perPage, page }: { companyId: string; perPage?: number; page?: number }) => {
-                    console.log('[AI - Tool] 📦 getAllProducts ejecutándose...', { companyId, perPage, page, hasAuth });
+                execute: async ({ companyId, perPage = 50, page = 1 }) => {
                     if (!hasAuth || !token) {
-                        console.warn('[AI - Tool] ⚠️ getAllProducts: Sin token');
-                        return { error: 'No hay token de autenticación disponible' };
+                        throw new Error('Usuario no autenticado');
                     }
+
                     try {
-                        console.log('[AI Chat] Obteniendo productos', { companyId, perPage, page });
                         const params = new URLSearchParams({
-                            page: String(page || 1),
-                            per_page: String(Math.min(perPage || 50, 100)),
+                            page: String(page),
+                            per_page: String(perPage),
                         });
 
-                        const endpoint = `/api/companies/${companyId}/products?${params.toString()}`;
+                        const endpoint = `/api/companies/${companyId}/products?${params}`;
                         const data = await fetchAPI(endpoint, token);
 
-                        console.log('[AI Chat] Productos obtenidos:', data);
                         return {
                             success: true,
-                            products: data.data || data,
+                            products: data.data,
+                            pagination: {
+                                currentPage: page,
+                                perPage,
+                                total: data.meta?.total || data.data?.length || 0,
+                            }
                         };
                     } catch (error) {
-                        console.error('[AI Chat] Error obteniendo productos:', error);
                         return {
                             success: false,
                             error: error instanceof Error ? error.message : 'Error al obtener productos'
@@ -175,163 +187,148 @@ Sé profesional, decisivo y completo.`,
             }),
 
             getSalesStatistics: tool({
-                description: 'Obtener estadísticas de ventas para un período específico. Útil para análisis de rendimiento.',
+                description: `CRÍTICO: Obtiene estadísticas de ventas REALES. SIEMPRE ÚSALA para análisis. Retorna total_revenue, total_orders, top_products. Periodo por defecto: ${thirtyDaysAgo} a ${today}`,
                 inputSchema: z.object({
-                    dateFrom: z.string().optional().describe('Fecha de inicio en formato YYYY-MM-DD'),
-                    dateTo: z.string().optional().describe('Fecha de fin en formato YYYY-MM-DD'),
-                    locationId: z.number().optional().describe('ID de la ubicación específica'),
+                    dateFrom: z.string().optional().describe(`Fecha inicio (YYYY-MM-DD). Por defecto: ${thirtyDaysAgo}`),
+                    dateTo: z.string().optional().describe(`Fecha fin (YYYY-MM-DD). Por defecto: ${today}`),
+                    locationId: z.number().optional().describe('ID de ubicación específica (opcional)'),
                 }),
-                execute: async ({ dateFrom, dateTo, locationId }: { dateFrom?: string; dateTo?: string; locationId?: number }) => {
+                execute: async ({ dateFrom, dateTo, locationId }) => {
+                    console.log('[getSalesStatistics] Called with:', { dateFrom, dateTo, locationId });
+
                     if (!hasAuth || !token) {
-                        return { error: 'No hay token de autenticación disponible' };
+                        console.log('[getSalesStatistics] ERROR: No auth');
+                        throw new Error('Usuario no autenticado');
                     }
+
                     try {
                         const params = new URLSearchParams();
-                        if (dateFrom) params.set('date_from', dateFrom);
-                        if (dateTo) params.set('date_to', dateTo);
+
+                        const from = dateFrom || thirtyDaysAgo;
+                        const to = dateTo || today;
+
+                        params.set('date_from', from);
+                        params.set('date_to', to);
                         if (locationId) params.set('location_id', String(locationId));
 
-                        const endpoint = `/api/sales/statistics${params.toString() ? `?${params.toString()}` : ''}`;
+                        const endpoint = `/api/sales/statistics?${params}`;
+                        console.log('[getSalesStatistics] Calling endpoint:', endpoint);
+
                         const data = await fetchAPI(endpoint, token);
+                        console.log('[getSalesStatistics] Response:', JSON.stringify(data).substring(0, 500));
 
                         return {
                             success: true,
-                            statistics: data.data || data,
+                            statistics: data.data,
+                            period: { from, to },
+                            _debug: 'Estos son datos REALES del backend'
                         };
                     } catch (error) {
+                        const errorMsg = error instanceof Error ? error.message : 'Error desconocido';
+                        console.log('[getSalesStatistics] ERROR:', errorMsg);
                         return {
                             success: false,
-                            error: error instanceof Error ? error.message : 'Error al obtener estadísticas de ventas'
+                            error: errorMsg,
+                            _debug: 'La herramienta falló - reporta este error al usuario'
                         };
                     }
                 },
             }),
 
             getRecentSales: tool({
-                description: 'Obtener lista de ventas recientes. Útil para ver tendencias y patrones de compra.',
+                description: 'Obtiene lista detallada de ventas recientes. Úsala solo si necesitas ver transacciones individuales específicas.',
                 inputSchema: z.object({
-                    dateFrom: z.string().optional().describe('Fecha de inicio en formato YYYY-MM-DD'),
-                    dateTo: z.string().optional().describe('Fecha de fin en formato YYYY-MM-DD'),
-                    perPage: z.number().optional().describe('Número de resultados por página (máximo 50)'),
-                    page: z.number().optional().describe('Número de página'),
+                    dateFrom: z.string().optional().describe('Fecha inicio (YYYY-MM-DD)'),
+                    dateTo: z.string().optional().describe('Fecha fin (YYYY-MM-DD)'),
+                    perPage: z.number().min(1).max(50).default(20).describe('Resultados por página'),
+                    page: z.number().min(1).default(1).describe('Número de página'),
                 }),
-                execute: async ({ dateFrom, dateTo, perPage, page }: { dateFrom?: string; dateTo?: string; perPage?: number; page?: number }) => {
+                execute: async ({ dateFrom, dateTo, perPage = 20, page = 1 }) => {
                     if (!hasAuth || !token) {
-                        return { error: 'No hay token de autenticación disponible' };
+                        throw new Error('Usuario no autenticado');
                     }
+
                     try {
-                        const params = new URLSearchParams();
+                        const params = new URLSearchParams({
+                            page: String(page),
+                            per_page: String(perPage),
+                        });
+
                         if (dateFrom) params.set('date_from', dateFrom);
                         if (dateTo) params.set('date_to', dateTo);
-                        if (perPage) params.set('per_page', String(Math.min(perPage, 50)));
-                        if (page) params.set('page', String(page));
 
-                        const endpoint = `/api/sales${params.toString() ? `?${params.toString()}` : ''}`;
+                        const endpoint = `/api/sales?${params}`;
                         const data = await fetchAPI(endpoint, token);
 
                         return {
                             success: true,
-                            sales: data.data || data,
+                            sales: data.data,
+                            pagination: {
+                                currentPage: page,
+                                perPage,
+                                total: data.meta?.total || data.data?.length || 0,
+                            }
                         };
                     } catch (error) {
                         return {
                             success: false,
-                            error: error instanceof Error ? error.message : 'Error al obtener ventas recientes'
+                            error: error instanceof Error ? error.message : 'Error al obtener ventas'
                         };
                     }
                 },
             }),
 
             getProductDetails: tool({
-                description: 'Obtener detalles de un producto específico por su ID',
+                description: 'Obtiene detalles de un producto específico. Úsala solo si necesitas información detallada de UN producto en particular.',
                 inputSchema: z.object({
                     companyId: z.string().describe('ID de la compañía'),
-                    productId: z.string().describe('ID del producto a consultar'),
+                    productId: z.string().describe('ID del producto'),
                 }),
-                execute: async ({ companyId, productId }: { companyId: string; productId: string }) => {
+                execute: async ({ companyId, productId }) => {
                     if (!hasAuth || !token) {
-                        return { error: 'No hay token de autenticación disponible' };
+                        throw new Error('Usuario no autenticado');
                     }
+
                     try {
                         const endpoint = `/api/companies/${companyId}/products/${productId}`;
                         const data = await fetchAPI(endpoint, token);
 
                         return {
                             success: true,
-                            product: data.data || data,
+                            product: data.data,
                         };
                     } catch (error) {
                         return {
                             success: false,
-                            error: error instanceof Error ? error.message : 'Error al obtener detalles del producto'
+                            error: error instanceof Error ? error.message : 'Error al obtener producto'
                         };
                     }
                 },
             }),
 
-            // Demo/example tools (kept for when no auth is available)
-            getStats: tool({
-                description: 'Obtener estadísticas de ejemplo del negocio (demo)',
-                inputSchema: z.object({
-                    period: z.enum(['daily', 'weekly', 'monthly']).default('weekly'),
-                }),
-                execute: async ({ period }: { period: 'daily' | 'weekly' | 'monthly' }) => {
-                    return {
-                        totalSales: '$12,345',
-                        newCustomers: 150,
-                        topProduct: 'Camiseta Premium',
-                        period,
-                        note: 'Estos son datos de demostración. Inicia sesión para ver datos reales.'
-                    };
-                },
-            }),
+            // ====== DEMO TOOLS (solo si no hay auth) ======
 
-            recommendProducts: tool({
-                description: 'Obtener recomendaciones de productos para una campaña (demo)',
-                inputSchema: z.object({
-                    category: z.string().optional(),
-                    targetAudience: z.string().optional(),
+            ...(hasAuth ? {} : {
+                getDemoStats: tool({
+                    description: 'Obtiene estadísticas de demostración (datos ficticios)',
+                    inputSchema: z.object({
+                        period: z.enum(['daily', 'weekly', 'monthly']).default('weekly'),
+                    }),
+                    execute: async ({ period }) => {
+                        return {
+                            totalSales: 12345,
+                            salesGrowth: 15.3,
+                            newCustomers: 150,
+                            topProduct: 'Camiseta Premium',
+                            period,
+                            isDemo: true,
+                            message: 'Estos son datos de demostración. Inicia sesión para ver datos reales.'
+                        };
+                    },
                 }),
-                execute: async ({ category, targetAudience }: { category?: string; targetAudience?: string }) => {
-                    return [
-                        { id: 1, name: 'Sudadera Vintage', price: 45.00, matchScore: 95 },
-                        { id: 2, name: 'Gorra Urbana', price: 25.00, matchScore: 88 },
-                        { id: 3, name: 'Calcetines Pack', price: 15.00, matchScore: 82 },
-                    ];
-                },
-            }),
-
-            generateCoupon: tool({
-                description: 'Generar un código de cupón de descuento',
-                inputSchema: z.object({
-                    discountPercentage: z.number().min(1).max(100),
-                    codePrefix: z.string().optional(),
-                }),
-                execute: async ({ discountPercentage, codePrefix }: { discountPercentage: number; codePrefix?: string }) => {
-                    const code = `${codePrefix || 'SALE'}${discountPercentage}${Math.floor(Math.random() * 1000)}`;
-                    return {
-                        code,
-                        discount: `${discountPercentage}%`,
-                        validUntil: '2024-12-31',
-                    };
-                },
-            }),
-
-            generateImage: tool({
-                description: 'Generar una imagen basada en un prompt',
-                inputSchema: z.object({
-                    prompt: z.string(),
-                }),
-                execute: async ({ prompt }: { prompt: string }) => {
-                    return {
-                        imageUrl: `https://placehold.co/600x400/png?text=${encodeURIComponent(prompt)}`,
-                        prompt
-                    };
-                },
             }),
         },
     });
 
     return result.toUIMessageStreamResponse();
 }
-
