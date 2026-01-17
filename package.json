@@ -9,6 +9,9 @@
     "start": "next start"
   },
   "dependencies": {
+    "@ai-sdk/google": "^3.0.10",
+    "@ai-sdk/openai": "^3.0.10",
+    "@ai-sdk/react": "^3.0.37",
     "@geist-ui/core": "^2.3.8",
     "@google-analytics/data": "^5.2.1",
     "@hookform/resolvers": "^3.9.1",
@@ -42,6 +45,7 @@
     "@react-google-maps/api": "^2.20.7",
     "@zxing/browser": "^0.1.5",
     "@zxing/library": "^0.21.3",
+    "ai": "^6.0.35",
     "autoprefixer": "^10.4.20",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
