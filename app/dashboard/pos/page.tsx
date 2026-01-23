@@ -113,7 +113,15 @@ export default function PuntoVentaPage() {
   const [printerName, setPrinterName] = useState('');
 
   // Printer logic
-  const { isConnected: isPrinterConnected, connect: connectPrinter, disconnect: disconnectPrinter, printTicket, isPrinting } = useThermalPrinter();
+  const {
+    isConnected: isPrinterConnected,
+    connect: connectPrinter,
+    disconnect: disconnectPrinter,
+    printTicket,
+    isPrinting,
+    availablePrinters,
+    listPrinters
+  } = useThermalPrinter();
 
   useEffect(() => {
     try {
@@ -123,6 +131,19 @@ export default function PuntoVentaPage() {
       // ignore
     }
   }, []);
+
+  // List printers automatically when connected
+  useEffect(() => {
+    if (isPrinterConnected) {
+      listPrinters().then(printers => {
+        // If "POS58" is found and no current printerName, auto-select it
+        if (!printerName && printers.includes('POS58')) {
+          setPrinterName('POS58');
+          window.localStorage.setItem('qz_printer_name', 'POS58');
+        }
+      });
+    }
+  }, [isPrinterConnected, listPrinters]);
 
   const handleSavePrinterName = () => {
     try {
@@ -163,9 +184,16 @@ export default function PuntoVentaPage() {
       }
 
       await connectPrinter();
+      const printers = await listPrinters();
+
+      let message = 'Conectado a QZ Tray. Ya puedes imprimir.';
+      if (printers.length > 0) {
+        message += ` Se encontraron ${printers.length} impresoras.`;
+      }
+
       toast({
         title: 'Impresora conectada',
-        description: 'Conectado a QZ Tray. Ya puedes imprimir.',
+        description: message,
       });
     } catch (error) {
       console.error('[POS] Error connecting to QZ Tray:', error);
@@ -723,39 +751,33 @@ export default function PuntoVentaPage() {
         <div className="flex items-center justify-between">
           <h2 className="text-3xl font-bold tracking-tight">Punto de Venta</h2>
           <div className="flex items-center gap-2">
+            {isPrinterConnected && availablePrinters.length > 0 && (
+              <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-md border">
+                <select
+                  className="bg-transparent text-sm font-medium outline-none px-2 py-1"
+                  value={printerName}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setPrinterName(val);
+                    window.localStorage.setItem('qz_printer_name', val);
+                    toast({ title: 'Impresora seleccionada', description: val });
+                  }}
+                >
+                  <option value="">Seleccionar impresora...</option>
+                  {availablePrinters.map(p => (
+                    <option key={p} value={p}>{p}</option>
+                  ))}
+                </select>
+              </div>
+            )}
             <Button
               variant={isPrinterConnected ? "outline" : "default"}
               size="sm"
               onClick={handleTogglePrinterConnection}
-              className={isPrinterConnected ? "border-green-500 text-green-600 hover:text-green-700 hover:bg-green-50" : ""}
+              className="gap-2"
             >
-              <Printer className="mr-2 h-4 w-4" />
-              {isPrinterConnected ? 'Impresora Conectada' : 'Conectar Impresora'}
-              {isPrinterConnected && <CheckCircle2 className="ml-2 h-3 w-3" />}
-            </Button>
-
-            <div className="flex items-center gap-2">
-              <Input
-                value={printerName}
-                onChange={(e) => setPrinterName(e.target.value)}
-                placeholder="Nombre de impresora (QZ)"
-                className="h-9 w-56"
-              />
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleSavePrinterName}
-              >
-                Guardar
-              </Button>
-            </div>
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handlePrintTestTicket}
-            >
-              Imprimir ticket
+              <Printer className="h-4 w-4" />
+              {isPrinterConnected ? 'Desconectar' : 'Conectar Impresora'}
             </Button>
           </div>
         </div>

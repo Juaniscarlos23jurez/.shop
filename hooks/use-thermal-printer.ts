@@ -21,8 +21,10 @@ export type ThermalTicketPayload = {
 type UseThermalPrinterResult = {
   isConnected: boolean;
   isPrinting: boolean;
+  availablePrinters: string[];
   connect: () => Promise<void>;
   disconnect: () => void;
+  listPrinters: () => Promise<string[]>;
   printTicket: (payload: ThermalTicketPayload) => Promise<void>;
 };
 
@@ -36,6 +38,7 @@ type UseThermalPrinterResult = {
 export function useThermalPrinter(): UseThermalPrinterResult {
   const [isConnected, setIsConnected] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
+  const [availablePrinters, setAvailablePrinters] = useState<string[]>([]);
   const qzRef = useRef<any>(null);
 
   const canUseQz = useMemo(() => typeof window !== "undefined", []);
@@ -103,7 +106,20 @@ export function useThermalPrinter(): UseThermalPrinterResult {
       qz.websocket.disconnect();
     }
     setIsConnected(false);
+    setAvailablePrinters([]);
   }, []);
+
+  const listPrinters = useCallback(async () => {
+    try {
+      const qz = await ensureConnected();
+      const printers: string[] = await qz.printers.findAll();
+      setAvailablePrinters(printers);
+      return printers;
+    } catch (error) {
+      console.error("[ThermalPrinter] Error listing printers:", error);
+      return [];
+    }
+  }, [ensureConnected]);
 
   const printTicket = useCallback(async (payload: ThermalTicketPayload) => {
     const qz = await ensureConnected();
@@ -166,8 +182,10 @@ export function useThermalPrinter(): UseThermalPrinterResult {
   return {
     isConnected,
     isPrinting,
+    availablePrinters,
     connect,
     disconnect,
+    listPrinters,
     printTicket,
   };
 }
