@@ -164,29 +164,52 @@ export function useThermalPrinter(): UseThermalPrinterResult {
         }
       };
 
-      const lines: string[] = [];
-      lines.push("\x1B\x40");
-      if (payload.companyName) lines.push(`${payload.companyName}\n`);
-      lines.push("------------------------------\n");
-      if (payload.saleId !== undefined) lines.push(`Venta: ${String(payload.saleId)}\n`);
-      if (payload.date) lines.push(`${String(payload.date)}\n`);
-      if (payload.paymentMethod) lines.push(`Pago: ${String(payload.paymentMethod)}\n`);
-      lines.push("------------------------------\n");
+      // Generamos un HTML simple que QZ Tray renderizará como imagen.
+      // Esto evita que salga el código "% !PS-Adobe-3.0" en Mac.
+      const htmlContent = `
+        <div style="width: 100%; font-family: 'Courier New', monospace; font-size: 12px; color: black; background: white; padding: 0; margin: 0;">
+          <div style="text-align: center; font-weight: bold; font-size: 14px; margin-bottom: 5px;">
+            ${payload.companyName?.toUpperCase() || 'TICKET DE VENTA'}
+          </div>
+          <div style="border-bottom: 1px dashed black; margin-bottom: 5px; padding-bottom: 5px;">
+            ${payload.saleId ? `<div>Venta: #${payload.saleId}</div>` : ''}
+            <div>Fecha: ${payload.date || new Date().toLocaleString()}</div>
+            ${payload.paymentMethod ? `<div>Pago: ${payload.paymentMethod}</div>` : ''}
+          </div>
+          
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 5px;">
+            ${(payload.items || []).map(item => `
+              <tr>
+                <td style="padding: 2px 0;">${item.quantity} x ${item.name}</td>
+                <td style="text-align: right; padding: 2px 0;">${money(item.quantity * item.price)}</td>
+              </tr>
+            `).join('')}
+          </table>
 
-      for (const item of payload.items || []) {
-        const qty = Number(item.quantity || 0);
-        const price = Number(item.price || 0);
-        const lineTotal = qty * price;
-        lines.push(`${qty} x ${item.name}  ${money(lineTotal)}\n`);
-      }
+          <div style="border-top: 1px dashed black; padding-top: 5px; font-weight: bold; font-size: 14px; display: flex; justify-content: space-between;">
+            <span>TOTAL:</span>
+            <span>${money(Number(payload.total || 0))}</span>
+          </div>
 
-      lines.push("------------------------------\n");
-      lines.push(`TOTAL: ${money(Number(payload.total || 0))}\n`);
-      if (payload.footerMessage) lines.push(`\n${payload.footerMessage}\n`);
-      lines.push("\n\n\n");
-      lines.push("\x1D\x56\x00");
+          <div style="text-align: center; margin-top: 15px; font-size: 11px;">
+            ${payload.footerMessage || '¡Gracias por su compra!'}
+          </div>
+          <div style="height: 30px;"></div>
+        </div>
+      `;
 
-      await qz.print(config, lines);
+      const data = [{
+        type: 'pixel',
+        format: 'html',
+        flavor: 'plain',
+        data: htmlContent,
+        options: {
+          pageWidth: 2.1, // Aprox 58mm en pulgadas
+          pageHeight: null // Automático
+        }
+      }];
+
+      await qz.print(config, data);
     } finally {
       setIsPrinting(false);
     }
