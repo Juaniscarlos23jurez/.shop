@@ -92,6 +92,73 @@ export function PrinterProvider({ children }: { children: React.ReactNode }) {
     // QZ State stub
     const [isQzConnected, setIsQzConnected] = useState(false);
 
+    // Auto-reconnect on mount
+    useEffect(() => {
+        const restoreConnection = async () => {
+            if (typeof window === "undefined") return;
+            const nav = navigator as any;
+            if (!nav.bluetooth) return;
+
+            const savedId = localStorage.getItem("last_printer_id");
+            const savedName = localStorage.getItem("last_printer_name");
+
+            if (!savedId) return;
+
+            // Scenario A: Browser supports getDevices()
+            if (nav.bluetooth.getDevices) {
+                try {
+                    const devices = await nav.bluetooth.getDevices();
+                    const device = devices.find((d: any) => d.id === savedId);
+
+                    if (device) {
+                        console.log("[PrinterContext] Restaurando conexión silenciosa con:", device.name);
+
+                        device.addEventListener('gattserverdisconnected', () => {
+                            if (!isManualDisconnect.current) {
+                                setIsBluetoothConnected(false);
+                                setShowReconnectModal(true);
+                            }
+                        });
+
+                        const server = await device.gatt?.connect();
+                        deviceRef.current = device;
+                        serverRef.current = server;
+                        isManualDisconnect.current = false;
+
+                        setBluetoothDevice(device);
+                        setBtPrinterName(device.name || savedName || "Impresora Guardada");
+                        setIsBluetoothConnected(true);
+
+                        toast({
+                            title: "Conexión restaurada",
+                            description: `Conectado automáticamente a ${device.name || savedName}`,
+                        });
+                    } else if (savedName) {
+                        // Device not found in permissions, might need manual prompt
+                        triggerManualRestore(savedName);
+                    }
+                } catch (err) {
+                    console.warn("[PrinterContext] Falló reconexión automática:", err);
+                    if (savedName) triggerManualRestore(savedName);
+                }
+            }
+            // Scenario B: Browser lacks getDevices()
+            else {
+                console.log("[PrinterContext] getDevices() no disponible. Solicitando restauración manual.");
+                if (savedName) triggerManualRestore(savedName);
+            }
+        };
+
+        const triggerManualRestore = (name: string) => {
+            setBtPrinterName(name); // Show name in UI
+            setShowReconnectModal(true); // Show modal immediately
+        };
+
+        // Slight delay to ensure UI is ready
+        const t = setTimeout(restoreConnection, 500);
+        return () => clearTimeout(t);
+    }, [toast]);
+
     // Initial mount log and recovery attempt
     useEffect(() => {
         console.log("[PrinterProvider] Heartbeat & Recovery Monitor activo.");
@@ -168,6 +235,13 @@ export function PrinterProvider({ children }: { children: React.ReactNode }) {
             setBluetoothDevice(device);
             setBtPrinterName(device.name || "Impresora BT");
             setIsBluetoothConnected(true);
+
+            // Persist device info
+            if (typeof window !== "undefined") {
+                localStorage.setItem("last_printer_id", device.id);
+                localStorage.setItem("last_printer_name", device.name || "Impresora BT");
+            }
+
             console.log("[PrinterContext] Éxito:", device.name);
 
         } catch (error: any) {
@@ -178,6 +252,12 @@ export function PrinterProvider({ children }: { children: React.ReactNode }) {
 
     const disconnectBluetooth = useCallback(() => {
         isManualDisconnect.current = true;
+
+        if (typeof window !== "undefined") {
+            localStorage.removeItem("last_printer_id");
+            localStorage.removeItem("last_printer_name");
+        }
+
         if (deviceRef.current?.gatt?.connected) {
             deviceRef.current.gatt.disconnect();
         }
@@ -388,6 +468,75 @@ export function PrinterProvider({ children }: { children: React.ReactNode }) {
     const connectQz = useCallback(async () => setIsQzConnected(true), []);
     const printViaQz = useCallback(async (payload: PrinterPayload) => console.log("QZ Print", payload), []);
 
+    const handleReconnectAttempt = useCallback(async () => {
+        // 1. First Priority: Try reusing existing reference (e.g. temporary disconnect)
+        if (deviceRef.current && deviceRef.current.gatt) {
+            try {
+                toast({ title: "Reconectando..." });
+                await deviceRef.current.gatt.connect();
+                setIsBluetoothConnected(true);
+                setShowReconnectModal(false);
+                isManualDisconnect.current = false;
+                toast({ title: "¡Conectado!" });
+                return;
+            } catch (e) {
+                console.warn("[PrinterContext] Quick reconnect failed:", e);
+            }
+        }
+
+        // 2. Second Priority: Try fetching "allowed" devices if browser supports it (Chrome 85+ / Edge)
+        let silentRestoreSuccess = false;
+        if (typeof window !== "undefined") {
+            const nav = navigator as any;
+            const lastId = localStorage.getItem("last_printer_id");
+
+            // Check if getDevices exists safely
+            if (lastId && nav.bluetooth && typeof nav.bluetooth.getDevices === 'function') {
+                try {
+                    const devices = await nav.bluetooth.getDevices();
+                    const device = devices.find((d: any) => d.id === lastId);
+                    if (device) {
+                        toast({ title: "Restaurando conexión..." });
+                        await device.gatt.connect();
+                        // Restore state
+                        deviceRef.current = device;
+                        serverRef.current = device.gatt;
+
+                        device.addEventListener('gattserverdisconnected', () => {
+                            if (!isManualDisconnect.current) {
+                                setIsBluetoothConnected(false);
+                                setShowReconnectModal(true);
+                            }
+                        });
+
+                        setIsBluetoothConnected(true);
+                        setBluetoothDevice(device);
+                        setShowReconnectModal(false);
+                        silentRestoreSuccess = true;
+                    }
+                } catch (err) {
+                    console.warn("[PrinterContext] Silent restore failed:", err);
+                }
+            }
+        }
+
+        // 3. Fallback: Full reconnect (Browser picker) if silent restore didn't happen
+        if (!silentRestoreSuccess) {
+            console.log("[PrinterContext] Fallback to new connection prompt");
+            setShowReconnectModal(false); // Close modal
+
+            // Allow state to settle, then verify user availability for prompt
+            setTimeout(() => {
+                connectBluetooth().then(() => {
+                    toast({ title: "¡Conectado!" });
+                }).catch((e) => {
+                    // User cancelled or error
+                    console.log("[PrinterContext] Reconnect prompt cancelled/failed", e);
+                });
+            }, 100);
+        }
+    }, [connectBluetooth, toast]);
+
     const contextValue = React.useMemo(() => ({
         isBluetoothConnected,
         bluetoothDevice,
@@ -426,9 +575,13 @@ export function PrinterProvider({ children }: { children: React.ReactNode }) {
                             <Bluetooth className="h-10 w-10 text-rose-600 animate-pulse" />
                         </div>
                         <div className="space-y-2">
-                            <h3 className="text-2xl font-bold text-slate-900">Conexión perdida</h3>
+                            <h3 className="text-2xl font-bold text-slate-900">
+                                {isBluetoothConnected ? "Conexión perdida" : "Restaurar sesión"}
+                            </h3>
                             <p className="text-slate-500">
-                                La impresora se ha desconectado. Asegúrate de que esté cerca y encendida.
+                                {isBluetoothConnected
+                                    ? "La impresora se ha desconectado. Asegúrate de que esté cerca y encendida."
+                                    : `¿Deseas reconectar con "${btPrinterName || 'tu impresora'}"?`}
                             </p>
                         </div>
                         <div className="flex flex-col w-full gap-3">
@@ -456,11 +609,7 @@ export function PrinterProvider({ children }: { children: React.ReactNode }) {
 // Sub-components as symbols
 import { Bluetooth, Search } from "lucide-react";
 
-function handleReconnectAttempt() {
-    // This is just a UI trigger, the user must click "Reconnect" on the Terminal page usually
-    // or we can redirect them to terminal
-    window.location.href = "/dashboard/terminal";
-}
+
 
 export function usePrinter() {
     const context = useContext(PrinterContext);
