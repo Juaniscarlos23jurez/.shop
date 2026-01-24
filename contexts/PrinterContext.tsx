@@ -63,6 +63,8 @@ export function PrinterProvider({ children }: { children: React.ReactNode }) {
     // Persistent refs for connection
     const serverRef = useRef<any>(null);
     const deviceRef = useRef<any>(null);
+    const isManualDisconnect = useRef(false);
+    const [showReconnectModal, setShowReconnectModal] = useState(false);
 
     // Global Printer Settings 
     const [settings, setSettings] = useState(() => {
@@ -92,26 +94,42 @@ export function PrinterProvider({ children }: { children: React.ReactNode }) {
 
     // Initial mount log and recovery attempt
     useEffect(() => {
-        console.log("[PrinterProvider] Montado o Re-renderizado en Root. isBT:", isBluetoothConnected);
+        console.log("[PrinterProvider] Heartbeat & Recovery Monitor activo.");
 
-        // Log when the page is actually unloading
-        const handleUnload = () => console.log("[PrinterProvider] Descargando página...");
-        window.addEventListener('beforeunload', handleUnload);
-
-        // Heartbeat to check connection
-        const interval = setInterval(() => {
-            if (deviceRef.current && !deviceRef.current.gatt?.connected) {
-                console.warn("[PrinterProvider] Heartbeat: Conexión perdida.");
-                setIsBluetoothConnected(false);
-                setBtPrinterName(null);
-                deviceRef.current = null;
-                serverRef.current = null;
+        // Keep-alive heartbeat: Sends a null byte every 40s to prevent printer sleep
+        const heartbeat = setInterval(async () => {
+            if (serverRef.current?.connected) {
+                try {
+                    // We try to find the characteristic to send a tiny "noop" command
+                    const services = await serverRef.current.getPrimaryServices();
+                    for (const service of services) {
+                        const chars = await service.getCharacteristics();
+                        const writeChar = chars.find((c: any) => c.properties.write || c.properties.writeWithoutResponse);
+                        if (writeChar) {
+                            // Send a "Null" byte (0x00) which usually doesn't print anything but keeps link active
+                            await writeChar.writeValue(new Uint8Array([0x00]));
+                            console.log("[PrinterProvider] Heartbeat sent.");
+                            break;
+                        }
+                    }
+                } catch (e) {
+                    console.warn("[PrinterProvider] Heartbeat failed", e);
+                }
             }
-        }, 5000);
+        }, 40000);
+
+        // Heartbeat to check connection status and show modal if lost
+        const monitor = setInterval(() => {
+            if (deviceRef.current && !deviceRef.current.gatt?.connected && !isManualDisconnect.current && isBluetoothConnected) {
+                console.warn("[PrinterProvider] Conexión perdida inesperadamente.");
+                setIsBluetoothConnected(false);
+                setShowReconnectModal(true);
+            }
+        }, 3000);
 
         return () => {
-            window.removeEventListener('beforeunload', handleUnload);
-            clearInterval(interval);
+            clearInterval(heartbeat);
+            clearInterval(monitor);
         };
     }, [isBluetoothConnected]);
 
@@ -135,15 +153,17 @@ export function PrinterProvider({ children }: { children: React.ReactNode }) {
             const server = await device.gatt?.connect();
 
             device.addEventListener('gattserverdisconnected', () => {
-                console.warn("[PrinterContext] Desconexión detectada");
-                setIsBluetoothConnected(false);
-                setBtPrinterName(null);
-                serverRef.current = null;
-                deviceRef.current = null;
+                if (!isManualDisconnect.current) {
+                    console.warn("[PrinterContext] Desconexión inesperada detectada");
+                    setIsBluetoothConnected(false);
+                    setShowReconnectModal(true);
+                }
             });
 
             deviceRef.current = device;
             serverRef.current = server;
+            isManualDisconnect.current = false;
+            setShowReconnectModal(false);
 
             setBluetoothDevice(device);
             setBtPrinterName(device.name || "Impresora BT");
@@ -157,6 +177,7 @@ export function PrinterProvider({ children }: { children: React.ReactNode }) {
     }, []);
 
     const disconnectBluetooth = useCallback(() => {
+        isManualDisconnect.current = true;
         if (deviceRef.current?.gatt?.connected) {
             deviceRef.current.gatt.disconnect();
         }
@@ -165,6 +186,7 @@ export function PrinterProvider({ children }: { children: React.ReactNode }) {
         setBluetoothDevice(null);
         setBtPrinterName(null);
         setIsBluetoothConnected(false);
+        setShowReconnectModal(false);
     }, []);
 
     const sanitizeText = (text: string) => {
@@ -395,8 +417,49 @@ export function PrinterProvider({ children }: { children: React.ReactNode }) {
     return (
         <PrinterContext.Provider value={contextValue}>
             {children}
+
+            {/* Reconnect Modal */}
+            {showReconnectModal && (
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+                    <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl border border-slate-100 flex flex-col items-center text-center space-y-6">
+                        <div className="bg-rose-100 p-4 rounded-full">
+                            <Bluetooth className="h-10 w-10 text-rose-600 animate-pulse" />
+                        </div>
+                        <div className="space-y-2">
+                            <h3 className="text-2xl font-bold text-slate-900">Conexión perdida</h3>
+                            <p className="text-slate-500">
+                                La impresora se ha desconectado. Asegúrate de que esté cerca y encendida.
+                            </p>
+                        </div>
+                        <div className="flex flex-col w-full gap-3">
+                            <button
+                                onClick={handleReconnectAttempt}
+                                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-2xl shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2"
+                            >
+                                <Search className="h-5 w-5" />
+                                Reconectar ahora
+                            </button>
+                            <button
+                                onClick={() => setShowReconnectModal(false)}
+                                className="w-full text-slate-400 hover:text-slate-600 text-sm font-medium py-2"
+                            >
+                                Cerrar aviso
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </PrinterContext.Provider>
     );
+}
+
+// Sub-components as symbols
+import { Bluetooth, Search } from "lucide-react";
+
+function handleReconnectAttempt() {
+    // This is just a UI trigger, the user must click "Reconnect" on the Terminal page usually
+    // or we can redirect them to terminal
+    window.location.href = "/dashboard/terminal";
 }
 
 export function usePrinter() {
