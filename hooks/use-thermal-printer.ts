@@ -68,44 +68,43 @@ export function useThermalPrinter(): UseThermalPrinterResult {
     if (qz.websocket.isActive()) return qz;
 
     const hosts = ["localhost", "127.0.0.1"];
-    const isHttps = typeof window !== "undefined" && window.location.protocol === "https:";
+    const securePorts = [8182, 8184];
+    const insecurePorts = [8181, 8183];
 
-    // Port 8182 is for Secure (WSS), Port 8181 is for Insecure (WS)
+    const isHttps = typeof window !== "undefined" && window.location.protocol === "https:";
     const attempts: { host: string; port: number; usingSecure: boolean }[] = [];
 
     if (isHttps) {
       hosts.forEach(host => {
-        attempts.push({ host, port: 8182, usingSecure: true });
-        attempts.push({ host, port: 8181, usingSecure: false });
+        securePorts.forEach(port => attempts.push({ host, port, usingSecure: true }));
+        insecurePorts.forEach(port => attempts.push({ host, port, usingSecure: false }));
       });
     } else {
       hosts.forEach(host => {
-        attempts.push({ host, port: 8181, usingSecure: false });
-        attempts.push({ host, port: 8182, usingSecure: true });
+        insecurePorts.forEach(port => attempts.push({ host, port, usingSecure: false }));
+        securePorts.forEach(port => attempts.push({ host, port, usingSecure: true }));
       });
     }
 
     let lastError: any = null;
     for (const opts of attempts) {
       try {
-        console.log(`[ThermalPrinter] Intentando conectar a QZ Tray en ${opts.usingSecure ? 'wss' : 'ws'}://${opts.host}:${opts.port}`);
+        console.log(`[ThermalPrinter] Probando: ${opts.usingSecure ? 'wss' : 'ws'}://${opts.host}:${opts.port}`);
 
-        // Timeout de 10 segundos para dar tiempo en Macs cargadas
-        await qz.websocket.connect({ ...opts, timeout: 10000 });
+        await qz.websocket.connect({ ...opts, timeout: 5000 });
 
         if (qz.websocket.isActive()) {
-          console.log(`[ThermalPrinter] Conectado exitosamente a QZ Tray`);
+          console.log(`[ThermalPrinter] Conectado en puerto ${opts.port}`);
           return qz;
         }
       } catch (e: any) {
-        console.warn(`[ThermalPrinter] Falló intento en ${opts.host}:${opts.port}`, e);
         lastError = e;
       }
     }
 
     const errorMsg = isHttps
-      ? "ERROR DE SEGURIDAD. Tu navegador bloquea la conexión. Abre https://localhost:8182 en una pestaña nueva, dale a 'Opciones Avanzadas' y luego a 'Continuar'. Regresa aquí y recarga."
-      : "No se pudo conectar con QZ Tray. Asegúrate de que esté abierto y con 'Allow Unsigned' activado en Settings -> Security.";
+      ? "BLOQUEO DE NAVEGADOR. Por favor abre https://localhost:8182 y https://localhost:8184 en pestañas nuevas. Selecciona 'Opciones Avanzadas' -> 'Continuar' en AMBAS si el navegador te lo pide. Después regresa aquí e intenta de nuevo."
+      : "No se pudo conectar con QZ Tray. Asegúrate de que el programa esté abierto y con 'Allow Unsigned' activado en Settings -> Security.";
 
     throw new Error(errorMsg);
   }, [ensureQz]);
