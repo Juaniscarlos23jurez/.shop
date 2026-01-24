@@ -173,34 +173,35 @@ export function useThermalPrinter(): UseThermalPrinterResult {
       // Generamos un HTML simple que QZ Tray renderizará como imagen.
       // Esto evita que salga el código "% !PS-Adobe-3.0" en Mac.
       const htmlContent = `
-        <div style="width: 100%; font-family: 'Courier New', monospace; font-size: 12px; color: black; background: white; padding: 0; margin: 0;">
-          <div style="text-align: center; font-weight: bold; font-size: 14px; margin-bottom: 5px;">
+        <div style="width: 100%; font-family: 'monospace'; font-size: 10pt; color: black; background: white; padding: 0; margin: 0;">
+          <div style="text-align: center; font-weight: bold; font-size: 12pt; margin-bottom: 4px;">
             ${payload.companyName?.toUpperCase() || 'TICKET DE VENTA'}
           </div>
-          <div style="border-bottom: 1px dashed black; margin-bottom: 5px; padding-bottom: 5px;">
-            ${payload.saleId ? `<div>Venta: #${payload.saleId}</div>` : ''}
+          <div style="border-bottom: 1px dashed black; margin-bottom: 4px; padding-bottom: 4px; font-size: 9pt;">
+            ${payload.saleId ? `<div>Folio: #${payload.saleId}</div>` : ''}
             <div>Fecha: ${payload.date || new Date().toLocaleString()}</div>
             ${payload.paymentMethod ? `<div>Pago: ${payload.paymentMethod}</div>` : ''}
           </div>
           
-          <table style="width: 100%; border-collapse: collapse; margin-bottom: 5px;">
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 4px; font-size: 9pt;">
             ${(payload.items || []).map(item => `
               <tr>
-                <td style="padding: 2px 0;">${item.quantity} x ${item.name}</td>
-                <td style="text-align: right; padding: 2px 0;">${money(item.quantity * item.price)}</td>
+                <td style="padding: 1px 0;">${item.quantity}x ${item.name.substring(0, 18)}</td>
+                <td style="text-align: right; padding: 1px 0;">${money(item.quantity * item.price)}</td>
               </tr>
             `).join('')}
           </table>
 
-          <div style="border-top: 1px dashed black; padding-top: 5px; font-weight: bold; font-size: 14px; display: flex; justify-content: space-between;">
-            <span>TOTAL:</span>
-            <span>${money(Number(payload.total || 0))}</span>
+          <div style="border-top: 1px dashed black; padding-top: 4px; font-weight: bold; font-size: 12pt; display: flex; justify-content: space-between;">
+            <span style="float: left;">TOTAL:</span>
+            <span style="float: right;">${money(Number(payload.total || 0))}</span>
+            <div style="clear: both;"></div>
           </div>
 
-          <div style="text-align: center; margin-top: 15px; font-size: 11px;">
+          <div style="text-align: center; margin-top: 12px; font-size: 8pt;">
             ${payload.footerMessage || '¡Gracias por su compra!'}
           </div>
-          <div style="height: 30px;"></div>
+          <div style="height: 40px;"></div>
         </div>
       `;
 
@@ -210,8 +211,11 @@ export function useThermalPrinter(): UseThermalPrinterResult {
         flavor: 'plain',
         data: htmlContent,
         options: {
-          pageWidth: 2.1, // Aprox 58mm en pulgadas
-          pageHeight: null // Automático
+          pageWidth: 2.1,
+          pageHeight: null,
+          units: 'in',
+          density: 203,
+          interpolation: 'nearest-neighbor'
         }
       }];
 

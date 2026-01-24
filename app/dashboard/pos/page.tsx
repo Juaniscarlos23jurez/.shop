@@ -137,14 +137,24 @@ export default function PuntoVentaPage() {
   useEffect(() => {
     if (isPrinterConnected) {
       listPrinters().then(printers => {
-        // If "POS58" is found and no current printerName, auto-select it
-        if (!printerName && printers.includes('POS58')) {
-          setPrinterName('POS58');
-          window.localStorage.setItem('qz_printer_name', 'POS58');
+        // Find the best match for a thermal printer
+        const targetPrinter = printers.find(p =>
+          p.includes('YICHIP3121') ||
+          p.includes('POS-58') ||
+          p.includes('POS58')
+        );
+
+        if (!printerName && targetPrinter) {
+          setPrinterName(targetPrinter);
+          window.localStorage.setItem('qz_printer_name', targetPrinter);
+          toast({
+            title: 'Impresora detectada',
+            description: `Se seleccionó automáticamente: ${targetPrinter}`
+          });
         }
       });
     }
-  }, [isPrinterConnected, listPrinters]);
+  }, [isPrinterConnected, listPrinters, printerName, toast]);
   const handlePrintTicket = useCallback((sale: any) => {
     if (!sale) {
       console.warn("[POS] Tentativa de impresión sin datos de venta");
