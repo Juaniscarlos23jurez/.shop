@@ -68,26 +68,39 @@ export function useThermalPrinter(): UseThermalPrinterResult {
     if (qz.websocket.isActive()) return qz;
 
     const host = "localhost";
-    const port = 8181;
 
-    // If your site is HTTPS (e.g. Vercel), browsers may block ws:// as mixed content.
-    // We'll try secure first on HTTPS, otherwise insecure first.
-    const preferSecure = typeof window !== "undefined" && window.location.protocol === "https:";
-    const attempts = preferSecure
-      ? [{ host, port, usingSecure: true }, { host, port, usingSecure: false }]
-      : [{ host, port, usingSecure: false }, { host, port, usingSecure: true }];
+    // If your site is HTTPS (e.g. Vercel), browsers block ws:// as mixed content.
+    // QZ Tray uses 8182 for WSS and 8181 for WS.
+    const isHttps = typeof window !== "undefined" && window.location.protocol === "https:";
+
+    // We try secure port 8182 first if on HTTPS. 
+    // Fallback to 8181 if secure fails or if on HTTP.
+    const attempts = isHttps
+      ? [
+        { host, port: 8182, usingSecure: true },
+        { host, port: 8181, usingSecure: false }
+      ]
+      : [
+        { host, port: 8181, usingSecure: false },
+        { host, port: 8182, usingSecure: true }
+      ];
 
     let lastError: unknown = null;
     for (const opts of attempts) {
       try {
+        console.log(`[ThermalPrinter] Trying to connect to QZ Tray at ${opts.usingSecure ? 'wss' : 'ws'}://${opts.host}:${opts.port}`);
         await qz.websocket.connect(opts);
-        if (qz.websocket.isActive()) return qz;
+        if (qz.websocket.isActive()) {
+          console.log(`[ThermalPrinter] Connected successfully to QZ Tray`);
+          return qz;
+        }
       } catch (e) {
+        console.warn(`[ThermalPrinter] Failed attempt to connect to ${opts.host}:${opts.port}`, e);
         lastError = e;
       }
     }
 
-    throw lastError || new Error("Unable to establish connection with QZ");
+    throw lastError || new Error("Unable to establish connection with QZ Tray. Make sure it's running.");
   }, [ensureQz]);
 
   const connect = useCallback(async () => {
