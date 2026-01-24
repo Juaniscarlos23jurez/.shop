@@ -67,7 +67,7 @@ export function useThermalPrinter(): UseThermalPrinterResult {
     const qz = await ensureQz();
     if (qz.websocket.isActive()) return qz;
 
-    const hosts = ["localhost", "127.0.0.1"];
+    const hosts = ["localhost", "127.0.0.1", "localhost.qz.io"];
     const securePorts = [8182, 8184];
     const insecurePorts = [8181, 8183];
 
