@@ -145,6 +145,61 @@ export default function PuntoVentaPage() {
       });
     }
   }, [isPrinterConnected, listPrinters]);
+  const handlePrintTicket = useCallback((sale: any) => {
+    if (!sale) {
+      console.warn("[POS] Tentativa de impresión sin datos de venta");
+      return;
+    }
+
+    try {
+      const itemsToPrint = (sale.items || []).map((item: any) => ({
+        name: item.product?.name || item.product_name || `Producto #${item.product_id || '?'}`,
+        quantity: item.quantity || 1,
+        price: parseFloat(item.unit_price || item.price || '0')
+      }));
+
+      const totalToPrint = parseFloat(sale.total || '0');
+
+      const getPaymentMethodLabel = (method: string) => {
+        const labels: Record<string, string> = {
+          cash: 'Efectivo',
+          card: 'Tarjeta',
+          transfer: 'Transferencia',
+          points: 'Puntos',
+        };
+        return labels[method] || method;
+      };
+
+      const ticketData = {
+        companyName: sale.location?.company?.name || sale.location?.name || "Ticket de Venta",
+        items: itemsToPrint,
+        total: totalToPrint,
+        date: sale.created_at ? new Date(sale.created_at).toLocaleString() : new Date().toLocaleString(),
+        saleId: sale.id || 'N/A',
+        paymentMethod: getPaymentMethodLabel(sale.payment_method || 'N/A')
+      };
+
+      console.log("[POS] Preparando impresión de ticket:", ticketData);
+
+      if (isPrinterConnected) {
+        printTicket(ticketData).catch(err => {
+          console.error("[POS] Error en impresión directa:", err);
+          // Fallback a ventana de navegador si falla la directa
+          setTicketToPrint(ticketData);
+          setTimeout(() => { window.print(); setTicketToPrint(null); }, 300);
+        });
+      } else {
+        setTicketToPrint(ticketData);
+        setTimeout(() => {
+          window.print();
+          setTicketToPrint(null);
+        }, 300);
+      }
+    } catch (error) {
+      console.error("[POS] Error crítico en lógica de impresión:", error);
+    }
+  }, [isPrinterConnected, printTicket]);
+
 
   const handleSavePrinterName = () => {
     try {
@@ -551,27 +606,19 @@ export default function PuntoVentaPage() {
         description: `Venta #${saleData?.id || 'N/A'} creada correctamente. Total: $${cartTotal.toFixed(2)}${discountMessage}${pointsMessage}`,
       });
 
-      // Attempt to print ticket if printer is connected
-      if (isPrinterConnected) {
-        // Calculate items total for the ticket to ensure it matches
-        const ticketTotal = saleData?.total ? parseFloat(saleData.total) : cartTotal - discountApplied;
+      // Intentar imprimir el ticket automáticamente (usando la nueva lógica unificada)
+      const fullSaleData = {
+        ...saleData,
+        items: cart.map(item => ({
+          product: { name: item.name },
+          quantity: item.quantity,
+          unit_price: item.price
+        })),
+        payment_method: paymentData.method,
+        created_at: new Date().toISOString()
+      };
 
-        printTicket({
-          companyName: user?.company_id ? "Ticket de Venta" : "Mi Negocio", // TODO: Fetch real company name if avail
-          items: cart.map(item => ({
-            name: item.name,
-            quantity: item.quantity,
-            price: parseFloat(item.price)
-          })),
-          total: ticketTotal,
-          date: new Date().toLocaleString(),
-          saleId: saleData?.id || 'N/A',
-          paymentMethod: paymentData.method === 'cash' ? 'Efectivo' :
-            paymentData.method === 'card' ? 'Tarjeta' :
-              paymentData.method === 'transfer' ? 'Transferencia' :
-                paymentData.method === 'points' ? 'Puntos' : paymentData.method
-        });
-      }
+      handlePrintTicket(fullSaleData);
 
     } catch (error) {
       console.error('Error al procesar el pago:', error);
@@ -714,48 +761,6 @@ export default function PuntoVentaPage() {
     }
   };
 
-  const handlePrintTicket = (sale: any) => {
-    if (!sale) return;
-
-    const itemsToPrint = sale.items?.map((item: any) => ({
-      name: item.product?.name || item.product_name || `Product #${item.product_id}`,
-      quantity: item.quantity,
-      price: typeof item.unit_price === 'string' ? parseFloat(item.unit_price) : Number(item.unit_price || 0)
-    })) || [];
-
-    const totalToPrint = sale.total ? parseFloat(sale.total) : 0;
-
-    const getPaymentMethodLabel = (method: string) => {
-      const labels: Record<string, string> = {
-        cash: 'Efectivo',
-        card: 'Tarjeta',
-        transfer: 'Transferencia',
-        points: 'Puntos',
-      };
-      return labels[method] || method;
-    };
-
-    const ticketData = {
-      companyName: selectedSale?.location?.company?.name || "Ticket de Venta",
-      items: itemsToPrint,
-      total: totalToPrint,
-      date: new Date(sale.created_at).toLocaleString(),
-      saleId: sale.id,
-      paymentMethod: getPaymentMethodLabel(sale.payment_method)
-    };
-
-    if (isPrinterConnected) {
-      printTicket(ticketData);
-    } else {
-      // Native print fallback
-      setTicketToPrint(ticketData);
-      // Wait for state update and then print
-      setTimeout(() => {
-        window.print();
-        setTicketToPrint(null);
-      }, 100);
-    }
-  };
 
   return (
     <>
