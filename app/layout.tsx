@@ -69,6 +69,7 @@ export const metadata: Metadata = {
 }
 
 import { Toaster } from "@/components/ui/toaster"
+import { PrinterProvider } from "@/contexts/PrinterContext"
 
 export default function RootLayout({
   children,
@@ -114,10 +115,12 @@ html {
       </head>
       <body>
         <AuthProvider>
-          <GA4PageViewTracker />
-          {children}
-          <CookieConsent />
-          <Toaster />
+          <PrinterProvider>
+            <GA4PageViewTracker />
+            {children}
+            <CookieConsent />
+            <Toaster />
+          </PrinterProvider>
         </AuthProvider>
       </body>
     </html>

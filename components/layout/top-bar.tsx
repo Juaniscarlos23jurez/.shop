@@ -9,6 +9,8 @@ import { FeedbackButton } from "@/components/feedback/FeedbackButton";
 import Link from "next/link";
 import { useCompany } from "@/contexts/CompanyContext";
 import { Badge } from "@/components/ui/badge";
+import { usePrinter } from "@/contexts/PrinterContext";
+import { Bluetooth, Printer } from "lucide-react";
 
 interface TopBarProps {
     isCollapsed: boolean;
@@ -18,6 +20,7 @@ interface TopBarProps {
 export function TopBar({ isCollapsed, setIsCollapsed }: TopBarProps) {
     const { user, logout } = useAuth();
     const { company, getPlanName } = useCompany();
+    const { isBluetoothConnected, btPrinterName } = usePrinter();
     const router = useRouter();
 
     const slugifyCompanyName = (name: string) => {
@@ -98,6 +101,22 @@ export function TopBar({ isCollapsed, setIsCollapsed }: TopBarProps) {
                         {planName}
                     </Badge>
                 </div>
+
+                {/* Printer Status */}
+                {isBluetoothConnected ? (
+                    <div className="hidden lg:flex items-center gap-2 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100 animate-in fade-in zoom-in duration-300">
+                        <Printer className="h-4 w-4 text-emerald-600" />
+                        <span className="text-xs font-bold text-emerald-700 truncate max-w-[120px]">
+                            {btPrinterName}
+                        </span>
+                        <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                    </div>
+                ) : (
+                    <Link href="/dashboard/terminal" className="hidden lg:flex items-center gap-2 text-slate-400 hover:text-slate-600 transition-colors">
+                        <Bluetooth className="h-4 w-4" />
+                        <span className="text-[10px] font-medium uppercase tracking-wider">Impresora off</span>
+                    </Link>
+                )}
 
                 {/* Feedback Button */}
                 <FeedbackButton variant="navbar" />

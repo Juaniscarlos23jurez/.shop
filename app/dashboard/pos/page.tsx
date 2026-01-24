@@ -19,6 +19,8 @@ import { PaymentModal } from "@/components/pos/PaymentModal";
 import { useToast } from "@/hooks/use-toast";
 import { useThermalPrinter } from "@/hooks/use-thermal-printer";
 import { TicketPreview } from "@/components/pos/TicketPreview";
+import { usePrinter } from "@/contexts/PrinterContext";
+import { useCompany } from "@/contexts/CompanyContext";
 
 // Tipo local de producto para POS (precio como string)
 type PosProduct = {
@@ -113,7 +115,15 @@ export default function PuntoVentaPage() {
   const [printerName, setPrinterName] = useState('');
   const [ticketToPrint, setTicketToPrint] = useState<any | null>(null);
 
-  // Printer logic
+  // New Bluetooth logic
+  const { isBluetoothConnected, btPrinterName, printViaBluetooth, settings } = usePrinter();
+  const { company } = useCompany();
+
+  useEffect(() => {
+    console.log("[POS] Estado Contexto Bluetooth:", { isBluetoothConnected, btPrinterName });
+  }, [isBluetoothConnected, btPrinterName]);
+
+  // Printer logic (Legacy QZ Tray)
   const {
     isConnected: isPrinterConnected,
     connect: connectPrinter,
@@ -155,7 +165,15 @@ export default function PuntoVentaPage() {
       });
     }
   }, [isPrinterConnected, listPrinters, printerName, toast]);
-  const handlePrintTicket = useCallback((sale: any) => {
+  const handlePrintTicket = useCallback((sale: any, isAutoCall = false) => {
+    console.log("[POS] handlePrintTicket INVOCADO (auto:" + isAutoCall + ") con:", sale);
+
+    // Si es una llamada automática pero la impresión automática está desactivada, terminamos.
+    if (isAutoCall && !settings?.autoPrint) {
+      console.log("[POS] Impresión automática desactivada en ajustes.");
+      return;
+    }
+
     if (!sale) {
       console.warn("[POS] Tentativa de impresión sin datos de venta");
       return;
@@ -181,7 +199,12 @@ export default function PuntoVentaPage() {
       };
 
       const ticketData = {
-        companyName: sale.location?.company?.name || sale.location?.name || "Ticket de Venta",
+        companyName: company?.name || sale.location?.company?.name || sale.location?.name || "Ticket de Venta",
+        address: company?.address || sale.location?.address,
+        city: company?.city || sale.location?.city,
+        state: company?.state || sale.location?.state,
+        phone: company?.phone || sale.location?.phone,
+        logoUrl: company?.logo_url,
         items: itemsToPrint,
         total: totalToPrint,
         date: sale.created_at ? new Date(sale.created_at).toLocaleString() : new Date().toLocaleString(),
@@ -189,31 +212,62 @@ export default function PuntoVentaPage() {
         paymentMethod: getPaymentMethodLabel(sale.payment_method || 'N/A')
       };
 
-      console.log("[POS] Preparando impresión de ticket:", ticketData);
+      console.log("[POS] Preparando impresión de ticket. Estados:", {
+        isBluetoothConnected,
+        btPrinterName,
+        isPrinterConnected,
+        printerName,
+        hasQZ: !!printTicket
+      });
 
+      // Prioridad 1: Bluetooth (Nueva lógica)
+      if (isBluetoothConnected) {
+        console.log("[POS] -> Usando ruta Bluetooth");
+        toast({ title: "Imprimiendo...", description: `Enviando a ${btPrinterName}` });
+        printViaBluetooth(ticketData).catch(err => {
+          console.error("[BT PRINT ERROR]", err);
+          toast({ title: "Error BT", description: "No se pudo imprimir vía Bluetooth. Usando respaldo...", variant: "destructive" });
+        });
+        return;
+      }
+
+      console.log("[POS] -> Ruta Bluetooth no activa, revisando QZ Tray");
+
+      // Prioridad 2: QZ Tray (Legacy)
       if (isPrinterConnected) {
+        console.log("[POS] -> Usando ruta QZ Tray");
         printTicket(ticketData).catch(err => {
-          console.error("[POS] Error en impresión directa:", err);
+          console.error("[POS] Error en impresión directa QZ:", err);
           // Fallback a ventana de navegador si falla la directa
           setTicketToPrint(ticketData);
           setTimeout(() => {
+            console.log("[POS] -> Fallback Navegador desde error QZ");
             window.print();
             // Dar tiempo a que el diálogo de impresión se cierre o abra antes de limpiar el estado
             setTimeout(() => setTicketToPrint(null), 2000);
           }, 500);
         });
       } else {
+        // Fallback final: Navegador
+        // SOLO disparamos window.print() si el usuario lo pidió manualmente (isAutoCall = false)
+        // para evitar que el PDF se abra solo al terminar la venta si no hay ticketera BT conectada.
+        if (isAutoCall) {
+          console.log("[POS] -> Bloqueando fallback PDF automático para evitar interrupción.");
+          return;
+        }
+
+        console.log("[POS] -> No hay impresoras directas conectadas. Fallback Navegador.");
         setTicketToPrint(ticketData);
+        // Aumentamos el tiempo de espera a 1200ms para asegurar que el logo cargue en el DOM oculto
         setTimeout(() => {
           window.print();
-          // Solo limpiamos después de un tiempo largo para asegurar que la vista previa lo capturó
           setTimeout(() => setTicketToPrint(null), 2000);
-        }, 500);
+        }, 1200);
       }
     } catch (error) {
       console.error("[POS] Error crítico en lógica de impresión:", error);
     }
-  }, [isPrinterConnected, printTicket]);
+  }, [isBluetoothConnected, btPrinterName, printViaBluetooth, isPrinterConnected, printTicket, toast]);
 
 
   const handleSavePrinterName = () => {
@@ -277,7 +331,33 @@ export default function PuntoVentaPage() {
   };
 
   const handlePrintTestTicket = () => {
-    window.print();
+    if (isBluetoothConnected) {
+      printViaBluetooth({
+        logoUrl: company?.logo_url,
+        companyName: company?.name || "Ticket de Prueba",
+        items: [{ name: "TEST PRODUCT", quantity: 1, price: 10.00 }],
+        total: 10.00
+      });
+      return;
+    }
+    // For window.print(), we need to set the ticket data to be rendered by the hidden component
+    setTicketToPrint({
+      logoUrl: company?.logo_url,
+      companyName: company?.name || "Ticket de Prueba",
+      address: company?.address,
+      city: company?.city,
+      state: company?.state,
+      phone: company?.phone,
+      items: [{ name: "PRODUCTO DE PRUEBA", quantity: 1, price: 10.00 }],
+      total: 10.00,
+      date: new Date().toLocaleString(),
+      saleId: 'TEST',
+      paymentMethod: 'Efectivo'
+    });
+    setTimeout(() => {
+      window.print();
+      setTimeout(() => setTicketToPrint(null), 2000);
+    }, 500);
   };
 
   const getProductLocationPivot = (product: any) => {
@@ -633,7 +713,7 @@ export default function PuntoVentaPage() {
         created_at: new Date().toISOString()
       };
 
-      handlePrintTicket(fullSaleData);
+      handlePrintTicket(fullSaleData, true); // Pasar true para indicar que es automático
 
     } catch (error) {
       console.error('Error al procesar el pago:', error);
@@ -783,6 +863,12 @@ export default function PuntoVentaPage() {
         <div className="flex items-center justify-between">
           <h2 className="text-3xl font-bold tracking-tight">Punto de Venta</h2>
           <div className="flex items-center gap-2">
+            {isBluetoothConnected && (
+              <div className="flex items-center gap-2 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+                <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-xs font-bold text-emerald-700">Online: {btPrinterName}</span>
+              </div>
+            )}
             {isPrinterConnected && availablePrinters.length > 0 && (
               <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-md border">
                 <select
@@ -802,15 +888,7 @@ export default function PuntoVentaPage() {
                 </select>
               </div>
             )}
-            <Button
-              variant={isPrinterConnected ? "outline" : "default"}
-              size="sm"
-              onClick={handleTogglePrinterConnection}
-              className="gap-2"
-            >
-              <Printer className="h-4 w-4" />
-              {isPrinterConnected ? 'Desconectar' : 'Conectar Impresora'}
-            </Button>
+
           </div>
         </div>
         <div className="mt-2 border-b flex gap-2">
@@ -1433,10 +1511,10 @@ export default function PuntoVentaPage() {
               <div className="flex justify-end pt-4 border-t gap-2">
                 <Button
                   onClick={() => handlePrintTicket(selectedSale)}
-                  className="gap-2 bg-slate-800 text-white hover:bg-slate-700"
+                  className={`gap-2 ${isBluetoothConnected ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-slate-800 hover:bg-slate-700'} text-white transition-colors`}
                 >
                   <Printer className="h-4 w-4" />
-                  {isPrinterConnected ? 'Imprimir Directo' : 'Imprimir Ticket'}
+                  {isBluetoothConnected ? `Imprimir en ${btPrinterName}` : isPrinterConnected ? 'Imprimir Directo (QZ)' : 'Imprimir Ticket (PDF)'}
                 </Button>
               </div>
             </div>
@@ -1449,7 +1527,20 @@ export default function PuntoVentaPage() {
         {ticketToPrint && (
           <div className="ticket-content">
             <div className="text-center">
+              {ticketToPrint.logoUrl && (
+                <img
+                  src={ticketToPrint.logoUrl}
+                  alt="logo"
+                  className="logo-img"
+                  style={{ width: '40mm', height: 'auto', display: 'block', margin: '0 auto 2mm auto' }}
+                />
+              )}
               <h1 className="company-name">{ticketToPrint.companyName}</h1>
+              {ticketToPrint.address && <p className="company-addr">{ticketToPrint.address}</p>}
+              {(ticketToPrint.city || ticketToPrint.state) && (
+                <p className="company-addr">{ticketToPrint.city} {ticketToPrint.state}</p>
+              )}
+              {ticketToPrint.phone && <p className="company-addr">Tel: {ticketToPrint.phone}</p>}
               <p className="ticket-type">TICKET DE VENTA</p>
             </div>
 
@@ -1469,12 +1560,12 @@ export default function PuntoVentaPage() {
               <tbody>
                 {ticketToPrint.items.map((item: any, i: number) => (
                   <tr key={i}>
-                    <td>
-                      <div className="item-name">{item.name}</div>
-                      <div className="item-details">{item.quantity} x ${item.price.toFixed(2)}</div>
-                    </td>
-                    <td className="text-right valign-top">
-                      ${(item.price * item.quantity).toFixed(2)}
+                    <td style={{ width: '100%' }}>
+                      <div className="item-line">
+                        <span className="qty">{item.quantity}x</span>
+                        <span className="name">{item.name}</span>
+                        <span className="price">${(item.price * item.quantity).toFixed(2)}</span>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -1490,7 +1581,7 @@ export default function PuntoVentaPage() {
 
             <div className="ticket-footer text-center">
               <p>¡Gracias por su compra!</p>
-              <p>Conserve su ticket</p>
+              <p style={{ fontSize: '8px', marginTop: '4px' }}>powered by fynlink.shop</p>
             </div>
           </div>
         )}
@@ -1543,14 +1634,25 @@ export default function PuntoVentaPage() {
           .company-name {
             font-size: 14px;
             font-weight: bold;
-            margin: 0 0 4px 0;
+            margin: 0 0 2px 0;
             text-transform: uppercase;
             text-align: center;
           }
 
+          .company-addr {
+            font-size: 9px;
+            margin: 0;
+            text-align: center;
+            line-height: 1.1;
+          }
+
+          .logo-img {
+            filter: grayscale(100%) contrast(200%);
+          }
+
           .ticket-type {
             font-size: 10px;
-            margin: 0 0 8px 0;
+            margin: 4px 0 8px 0;
             border-bottom: 1px dashed #000;
             padding-bottom: 4px;
             text-align: center;
@@ -1583,15 +1685,17 @@ export default function PuntoVentaPage() {
             vertical-align: top;
           }
 
-          .item-name {
-            font-weight: bold;
+          .item-line {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 4px;
             font-size: 10px;
           }
 
-          .item-details {
-            font-size: 9px;
-            color: #333;
-          }
+          .qty { width: 25px; shrink: 0; }
+          .name { flex: 1; word-break: break-word; }
+          .price { width: 60px; text-align: right; shrink: 0; }
 
           .ticket-total {
             border-top: 1px dashed #000;

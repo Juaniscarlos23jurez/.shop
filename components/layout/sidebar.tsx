@@ -80,8 +80,17 @@ const adminSidebarItems: SidebarItem[] = [
   // Core business
   { icon: Package, label: "Productos", href: "/dashboard/productos" },
   { icon: Package, label: "Stock", href: "/dashboard/stock" },
-  { icon: ShoppingCart, label: "Punto de Venta", href: "/dashboard/pos" },
   // { icon: Bot, label: "Asistente IA", href: "/dashboard/ai-assistant" },
+  {
+    icon: ShoppingCart,
+    label: "Punto de Venta",
+    href: "#",
+    isCollapsible: true,
+    subItems: [
+      { icon: ShoppingCart, label: "Punto de Venta", href: "/dashboard/pos" },
+      { icon: Smartphone, label: "Terminal", href: "/dashboard/terminal" },
+    ]
+  },
   { icon: Clock4, label: "Órdenes Pendientes", href: "/dashboard/ordenes-pendientes" },
   { icon: CreditCardIcon, label: "Metodos de cobro", href: "/dashboard/stripe" },
 
@@ -199,7 +208,16 @@ const adminSidebarItems: SidebarItem[] = [
 
 // Employee sidebar items (only Point of Sale)
 const employeeSidebarItems: SidebarItem[] = [
-  { icon: ShoppingCart, label: "Punto de Venta", href: "/dashboard/pos" }
+  {
+    icon: ShoppingCart,
+    label: "Punto de Venta",
+    href: "#",
+    isCollapsible: true,
+    subItems: [
+      { icon: ShoppingCart, label: "Punto de Venta", href: "/dashboard/pos" },
+      { icon: Smartphone, label: "Terminal", href: "/dashboard/terminal" },
+    ]
+  }
 ];
 
 import { useToast } from "@/hooks/use-toast";
@@ -228,6 +246,14 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
         const baseHref = subItem.href.split('#')[0];
         return pathname.startsWith(baseHref) && baseHref !== '/dashboard/whatsapp';
       });
+    }
+    return false;
+  });
+
+  const [isPOSSectionExpanded, setIsPOSSectionExpanded] = useState(() => {
+    const posSection = sidebarItems.find(item => item.label === 'Punto de Venta');
+    if (posSection && posSection.subItems) {
+      return posSection.subItems.some(subItem => pathname.startsWith(subItem.href));
     }
     return false;
   });
@@ -295,6 +321,8 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
 
     if (label === 'App') {
       setIsAppSectionExpanded((prev: boolean) => { isOpening = !prev; return !prev; });
+    } else if (label === 'Punto de Venta') {
+      setIsPOSSectionExpanded((prev: boolean) => { isOpening = !prev; return !prev; });
     } else if (label === 'WhatsApp') {
       setIsWhatsAppSectionExpanded((prev: boolean) => { isOpening = !prev; return !prev; });
     } else if (label === 'Clientes') {
@@ -469,6 +497,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
                   <span className={`${isCollapsed ? 'hidden' : ''}`}>{item.label}</span>
                   {!isCollapsed && (
                     <ChevronDown className={`ml-auto h-4 w-4 transition-transform duration-200 ${(item.label === 'App' && isAppSectionExpanded) ||
+                      (item.label === 'Punto de Venta' && isPOSSectionExpanded) ||
                       (item.label === 'WhatsApp' && isWhatsAppSectionExpanded) ||
                       (item.label === 'Clientes' && isClientesSectionExpanded) ||
                       (item.label === 'Empleados' && isEmpleadosSectionExpanded) ||
@@ -482,6 +511,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
                 </Button>
                 {!isCollapsed &&
                   ((item.label === 'App' && isAppSectionExpanded) ||
+                    (item.label === 'Punto de Venta' && isPOSSectionExpanded) ||
                     (item.label === 'WhatsApp' && isWhatsAppSectionExpanded) ||
                     (item.label === 'Clientes' && isClientesSectionExpanded) ||
                     (item.label === 'Empleados' && isEmpleadosSectionExpanded) ||

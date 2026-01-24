@@ -12,6 +12,10 @@ interface TicketPreviewProps {
         saleId?: string | number;
         paymentMethod?: string;
         customerName?: string;
+        phone?: string;
+        logoUrl?: string;
+        city?: string;
+        state?: string;
     };
 }
 
@@ -20,9 +24,19 @@ export const TicketPreview: React.FC<TicketPreviewProps> = ({ data }) => {
     return (
         <div className="w-[300px] bg-white text-black p-4 font-mono text-xs shadow-lg mx-auto border border-gray-200">
             <div className="text-center mb-4">
+                {data.logoUrl && (
+                    <img
+                        src={data.logoUrl}
+                        alt="logo"
+                        className="w-24 h-auto object-contain mx-auto mb-2"
+                        style={{ display: 'block' }}
+                    />
+                )}
                 <h2 className="font-bold text-lg mb-1">{data.companyName}</h2>
                 {data.locationName && <p className="font-semibold">{data.locationName}</p>}
                 {data.companyAddress && <p>{data.companyAddress}</p>}
+                {(data.city || data.state) && <p>{data.city} {data.state}</p>}
+                {data.phone && <p>Tel: {data.phone}</p>}
                 <p className="mt-2 font-bold uppercase border-b border-black inline-block">Ticket de Venta</p>
 
                 <div className="mt-2 text-left">
@@ -44,10 +58,10 @@ export const TicketPreview: React.FC<TicketPreviewProps> = ({ data }) => {
 
             <div className="space-y-1 mb-4">
                 {data.items.map((item, index) => (
-                    <div key={index} className="grid grid-cols-[auto_1fr_auto] gap-2">
-                        <span className="w-8">{item.quantity}</span>
-                        <span className="truncate">{item.name.substring(0, 18)}</span>
-                        <span className="text-right w-16">
+                    <div key={index} className="grid grid-cols-[auto_1fr_auto] gap-2 items-start">
+                        <span className="w-8 shrink-0">{item.quantity}</span>
+                        <span className="break-words">{item.name}</span>
+                        <span className="text-right w-16 shrink-0">
                             ${(item.price * item.quantity).toFixed(2)}
                         </span>
                     </div>
@@ -66,9 +80,10 @@ export const TicketPreview: React.FC<TicketPreviewProps> = ({ data }) => {
                 </div>
             )}
 
-            <div className="text-center mt-8 space-y-4">
-                <p>Gracias por su compra!</p>
-                <div className="border-b border-black border-dashed w-3/4 mx-auto" />
+            <div className="text-center mt-8 space-y-1">
+                <p>¡Gracias por su compra!</p>
+                <p className="text-[10px] opacity-70">powered by fynlink.shop</p>
+                <div className="border-b border-black border-dashed w-3/4 mx-auto pt-2" />
             </div>
         </div>
     );
