@@ -111,6 +111,7 @@ export default function PuntoVentaPage() {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [showTicketPreview, setShowTicketPreview] = useState(false);
   const [printerName, setPrinterName] = useState('');
+  const [ticketToPrint, setTicketToPrint] = useState<any | null>(null);
 
   // Printer logic
   const {
@@ -717,14 +718,13 @@ export default function PuntoVentaPage() {
     if (!sale) return;
 
     const itemsToPrint = sale.items?.map((item: any) => ({
-      name: item.product?.name || `Product #${item.product_id}`,
+      name: item.product?.name || item.product_name || `Product #${item.product_id}`,
       quantity: item.quantity,
       price: typeof item.unit_price === 'string' ? parseFloat(item.unit_price) : Number(item.unit_price || 0)
     })) || [];
 
     const totalToPrint = sale.total ? parseFloat(sale.total) : 0;
 
-    // Helper for payment method label
     const getPaymentMethodLabel = (method: string) => {
       const labels: Record<string, string> = {
         cash: 'Efectivo',
@@ -735,14 +735,26 @@ export default function PuntoVentaPage() {
       return labels[method] || method;
     };
 
-    printTicket({
-      companyName: "Ticket de Venta",
+    const ticketData = {
+      companyName: selectedSale?.location?.company?.name || "Ticket de Venta",
       items: itemsToPrint,
       total: totalToPrint,
       date: new Date(sale.created_at).toLocaleString(),
       saleId: sale.id,
       paymentMethod: getPaymentMethodLabel(sale.payment_method)
-    });
+    };
+
+    if (isPrinterConnected) {
+      printTicket(ticketData);
+    } else {
+      // Native print fallback
+      setTicketToPrint(ticketData);
+      // Wait for state update and then print
+      setTimeout(() => {
+        window.print();
+        setTicketToPrint(null);
+      }, 100);
+    }
   };
 
   return (
@@ -1398,88 +1410,108 @@ export default function PuntoVentaPage() {
                 </>
               )}
 
-              {isPrinterConnected && (
-                <div className="flex justify-end pt-4 border-t">
-                  <Button
-                    onClick={() => handlePrintTicket(selectedSale)}
-                    className="gap-2 bg-slate-800 text-white hover:bg-slate-700"
-                  >
-                    <Printer className="h-4 w-4" />
-                    Imprimir Ticket
-                  </Button>
-                </div>
-              )}
+              <div className="flex justify-end pt-4 border-t gap-2">
+                <Button
+                  onClick={() => handlePrintTicket(selectedSale)}
+                  className="gap-2 bg-slate-800 text-white hover:bg-slate-700"
+                >
+                  <Printer className="h-4 w-4" />
+                  {isPrinterConnected ? 'Imprimir Directo' : 'Imprimir Ticket'}
+                </Button>
+              </div>
             </div>
           )}
         </DialogContent>
       </Dialog>
 
-      {/* Hidden print area for thermal ticket */}
+      {/* Hidden print area for thermal ticket (Native Fallback) */}
       <div className="ticket-print-area">
-        <div className="ticket-content">
-          <div className="text-center font-bold mb-2">Ticket de Prueba</div>
-          <div className="border-t border-b border-black py-1 my-2">
-            <div>Fecha: {new Date().toLocaleString()}</div>
-            <div>Pago: Prueba</div>
+        {ticketToPrint && (
+          <div className="ticket-content">
+            <div className="text-center font-bold text-lg mb-2">{ticketToPrint.companyName}</div>
+            <div className="text-center text-xs mb-4">TICKET DE VENTA</div>
+
+            <div className="border-t border-b border-black py-1 my-2 text-xs">
+              <div>Folio: #{ticketToPrint.saleId}</div>
+              <div>Fecha: {ticketToPrint.date}</div>
+              <div>Pago: {ticketToPrint.paymentMethod}</div>
+            </div>
+
+            <div className="my-2 text-xs">
+              <div className="grid grid-cols-[1fr_auto] gap-2 font-bold border-b border-black pb-1 mb-1">
+                <span>PRODUCTO</span>
+                <span>TOTAL</span>
+              </div>
+              {ticketToPrint.items.map((item: any, i: number) => (
+                <div key={i} className="grid grid-cols-[1fr_auto] gap-2 py-0.5">
+                  <span>{item.quantity}x {item.name.substring(0, 20)}</span>
+                  <span>${(item.price * item.quantity).toFixed(2)}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="border-t border-black pt-2 my-2">
+              <div className="font-bold text-right text-sm">TOTAL: ${ticketToPrint.total.toFixed(2)}</div>
+            </div>
+
+            <div className="text-center mt-6 text-xs italic">
+              Gracias por su compra
+            </div>
           </div>
-          <div className="my-2">
-            <div>1 x Producto Demo A.....................$10.00</div>
-            <div>2 x Producto Demo B.....................$31.00</div>
-          </div>
-          <div className="border-t border-b border-black py-1 my-2">
-            <div className="font-bold text-right">TOTAL: $41.00</div>
-          </div>
-          <div className="text-center mt-4">Gracias por tu compra</div>
-        </div>
+        )}
       </div>
 
       {/* Print styles for thermal ticket */}
-      <style jsx>{`
+      <style jsx global>{`
         @media print {
+          /* Hide everything by default */
           body * {
             visibility: hidden;
+            -webkit-print-color-adjust: exact;
           }
+          
+          /* Show only the print area */
           .ticket-print-area,
           .ticket-print-area * {
             visibility: visible;
           }
+          
           .ticket-print-area {
-            position: absolute;
+            position: fixed; /* Use fixed for better placement on paper */
             left: 0;
             top: 0;
-            width: 58mm;
-            font-family: 'Courier New', monospace;
-            font-size: 12px;
-            line-height: 1.2;
+            margin: 0;
+            padding: 0;
+            width: 58mm; /* Standard width for POS58 */
+            font-family: 'Courier New', Courier, monospace;
+            background: white;
           }
+
           .ticket-content {
-            padding: 8mm;
+            padding: 0 2mm;
+            width: 100%;
           }
-          .text-center {
-            text-align: center;
+
+          /* Remove browser headers and footers */
+          @page {
+            size: auto;
+            margin: 0mm;
           }
-          .font-bold {
-            font-weight: bold;
-          }
-          .border-t,
-          .border-b {
-            border-top: 1px solid black;
-            border-bottom: 1px solid black;
-          }
-          .py-1 {
-            padding-top: 4px;
-            padding-bottom: 4px;
-          }
-          .my-2 {
-            margin-top: 8px;
-            margin-bottom: 8px;
-          }
-          .mt-4 {
-            margin-top: 16px;
-          }
-          .text-right {
-            text-align: right;
-          }
+          
+          /* Utility classes for the ticket */
+          .text-center { text-align: center; }
+          .text-right { text-align: right; }
+          .font-bold { font-weight: bold; }
+          .text-xs { font-size: 10px; }
+          .text-sm { font-size: 12px; }
+          .text-lg { font-size: 16px; }
+          .border-t { border-top: 1px dashed black; }
+          .border-b { border-bottom: 1px dashed black; }
+          .py-1 { padding-top: 4px; padding-bottom: 4px; }
+          .my-2 { margin-top: 8px; margin-bottom: 8px; }
+          .mt-6 { margin-top: 24px; }
+          .grid { display: grid; }
+          .grid-cols-\\[1fr_auto\\] { grid-template-columns: 1fr auto; }
         }
       `}</style>
     </>
