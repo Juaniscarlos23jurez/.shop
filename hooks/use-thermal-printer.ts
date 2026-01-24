@@ -113,9 +113,10 @@ export function useThermalPrinter(): UseThermalPrinterResult {
     try {
       const qz = await ensureConnected();
       setIsConnected(Boolean(qz.websocket.isActive()));
-    } catch {
+    } catch (error: any) {
       setIsConnected(false);
-      throw new Error("Unable to establish connection with QZ");
+      // Lanzamos el error original para que la UI muestre el mensaje de diagnóstico
+      throw error;
     }
   }, [ensureConnected]);
 

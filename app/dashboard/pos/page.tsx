@@ -266,11 +266,11 @@ export default function PuntoVentaPage() {
         title: 'Impresora conectada',
         description: message,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('[POS] Error connecting to QZ Tray:', error);
       toast({
-        title: 'No se pudo conectar',
-        description: 'Abre QZ Tray en esta misma computadora y activa Allow unsigned requests. Si estás en Vercel (HTTPS), habilita conexiones seguras en QZ Tray.',
+        title: 'Error de conexión',
+        description: error.message || 'No se pudo conectar con QZ Tray. Asegúrate de que el programa esté abierto.',
         variant: 'destructive',
       });
     }
