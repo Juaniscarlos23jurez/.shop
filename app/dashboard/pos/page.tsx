@@ -186,14 +186,19 @@ export default function PuntoVentaPage() {
           console.error("[POS] Error en impresión directa:", err);
           // Fallback a ventana de navegador si falla la directa
           setTicketToPrint(ticketData);
-          setTimeout(() => { window.print(); setTicketToPrint(null); }, 300);
+          setTimeout(() => {
+            window.print();
+            // Dar tiempo a que el diálogo de impresión se cierre o abra antes de limpiar el estado
+            setTimeout(() => setTicketToPrint(null), 2000);
+          }, 500);
         });
       } else {
         setTicketToPrint(ticketData);
         setTimeout(() => {
           window.print();
-          setTicketToPrint(null);
-        }, 300);
+          // Solo limpiamos después de un tiempo largo para asegurar que la vista previa lo capturó
+          setTimeout(() => setTicketToPrint(null), 2000);
+        }, 500);
       }
     } catch (error) {
       console.error("[POS] Error crítico en lógica de impresión:", error);
@@ -1430,37 +1435,52 @@ export default function PuntoVentaPage() {
       </Dialog>
 
       {/* Hidden print area for thermal ticket (Native Fallback) */}
-      <div className="ticket-print-area">
+      <div id="thermal-ticket-print-area" className="thermal-ticket-print-area">
         {ticketToPrint && (
           <div className="ticket-content">
-            <div className="text-center font-bold text-lg mb-2">{ticketToPrint.companyName}</div>
-            <div className="text-center text-xs mb-4">TICKET DE VENTA</div>
-
-            <div className="border-t border-b border-black py-1 my-2 text-xs">
-              <div>Folio: #{ticketToPrint.saleId}</div>
-              <div>Fecha: {ticketToPrint.date}</div>
-              <div>Pago: {ticketToPrint.paymentMethod}</div>
+            <div className="text-center">
+              <h1 className="company-name">{ticketToPrint.companyName}</h1>
+              <p className="ticket-type">TICKET DE VENTA</p>
             </div>
 
-            <div className="my-2 text-xs">
-              <div className="grid grid-cols-[1fr_auto] gap-2 font-bold border-b border-black pb-1 mb-1">
-                <span>PRODUCTO</span>
-                <span>TOTAL</span>
+            <div className="ticket-info">
+              <div className="info-row"><span>Folio:</span> <span>#{ticketToPrint.saleId}</span></div>
+              <div className="info-row"><span>Fecha:</span> <span>{ticketToPrint.date}</span></div>
+              <div className="info-row"><span>Pago:</span> <span>{ticketToPrint.paymentMethod}</span></div>
+            </div>
+
+            <table className="ticket-table">
+              <thead>
+                <tr>
+                  <th className="text-left">CANT/ART</th>
+                  <th className="text-right">TOTAL</th>
+                </tr>
+              </thead>
+              <tbody>
+                {ticketToPrint.items.map((item: any, i: number) => (
+                  <tr key={i}>
+                    <td>
+                      <div className="item-name">{item.name}</div>
+                      <div className="item-details">{item.quantity} x ${item.price.toFixed(2)}</div>
+                    </td>
+                    <td className="text-right valign-top">
+                      ${(item.price * item.quantity).toFixed(2)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            <div className="ticket-total">
+              <div className="total-row">
+                <span>TOTAL:</span>
+                <span>${ticketToPrint.total.toFixed(2)}</span>
               </div>
-              {ticketToPrint.items.map((item: any, i: number) => (
-                <div key={i} className="grid grid-cols-[1fr_auto] gap-2 py-0.5">
-                  <span>{item.quantity}x {item.name.substring(0, 20)}</span>
-                  <span>${(item.price * item.quantity).toFixed(2)}</span>
-                </div>
-              ))}
             </div>
 
-            <div className="border-t border-black pt-2 my-2">
-              <div className="font-bold text-right text-sm">TOTAL: ${ticketToPrint.total.toFixed(2)}</div>
-            </div>
-
-            <div className="text-center mt-6 text-xs italic">
-              Gracias por su compra
+            <div className="ticket-footer text-center">
+              <p>¡Gracias por su compra!</p>
+              <p>Conserve su ticket</p>
             </div>
           </div>
         )}
@@ -1468,55 +1488,129 @@ export default function PuntoVentaPage() {
 
       {/* Print styles for thermal ticket */}
       <style jsx global>{`
+        /* Ocultar el área de impresión en pantalla normal */
+        #thermal-ticket-print-area {
+          display: none;
+        }
+
         @media print {
-          /* Hide everything by default */
-          body * {
+          /* HIdden everything by default */
+          html, body {
             visibility: hidden;
-            -webkit-print-color-adjust: exact;
+            height: auto !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: #fff;
           }
           
-          /* Show only the print area */
-          .ticket-print-area,
-          .ticket-print-area * {
-            visibility: visible;
+          /* Show ONLY the ticket area and its children */
+          #thermal-ticket-print-area, 
+          #thermal-ticket-print-area * {
+            visibility: visible !important;
           }
           
-          .ticket-print-area {
-            position: fixed; /* Use fixed for better placement on paper */
+          /* Fix the ticket area position */
+          #thermal-ticket-print-area {
+            display: block !important;
+            width: 58mm;
+            position: absolute;
             left: 0;
             top: 0;
             margin: 0;
             padding: 0;
-            width: 58mm; /* Standard width for POS58 */
-            font-family: 'Courier New', Courier, monospace;
-            background: white;
           }
-
+          
           .ticket-content {
-            padding: 0 2mm;
-            width: 100%;
+            width: 58mm;
+            padding: 2mm;
+            box-sizing: border-box;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 11px;
+            line-height: 1.2;
+            color: #000;
           }
 
-          /* Remove browser headers and footers */
+          .company-name {
+            font-size: 14px;
+            font-weight: bold;
+            margin: 0 0 4px 0;
+            text-transform: uppercase;
+            text-align: center;
+          }
+
+          .ticket-type {
+            font-size: 10px;
+            margin: 0 0 8px 0;
+            border-bottom: 1px dashed #000;
+            padding-bottom: 4px;
+            text-align: center;
+          }
+
+          .ticket-info {
+            margin-bottom: 8px;
+            font-size: 10px;
+          }
+
+          .info-row {
+            display: flex;
+            justify-content: space-between;
+          }
+
+          .ticket-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 8px;
+          }
+
+          .ticket-table th {
+            border-bottom: 1px dashed #000;
+            font-size: 9px;
+            padding: 4px 0;
+          }
+
+          .ticket-table td {
+            padding: 4px 0;
+            vertical-align: top;
+          }
+
+          .item-name {
+            font-weight: bold;
+            font-size: 10px;
+          }
+
+          .item-details {
+            font-size: 9px;
+            color: #333;
+          }
+
+          .ticket-total {
+            border-top: 1px dashed #000;
+            padding-top: 4px;
+            margin-bottom: 12px;
+          }
+
+          .total-row {
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            font-size: 13px;
+          }
+
+          .ticket-footer {
+            font-size: 10px;
+            margin-top: 10px;
+            padding-bottom: 20mm; 
+            text-align: center;
+          }
+
+          .text-center { text-align: center; }
+          .text-right { text-align: right; }
+          .valign-top { vertical-align: top; }
+
           @page {
             size: auto;
             margin: 0mm;
           }
-          
-          /* Utility classes for the ticket */
-          .text-center { text-align: center; }
-          .text-right { text-align: right; }
-          .font-bold { font-weight: bold; }
-          .text-xs { font-size: 10px; }
-          .text-sm { font-size: 12px; }
-          .text-lg { font-size: 16px; }
-          .border-t { border-top: 1px dashed black; }
-          .border-b { border-bottom: 1px dashed black; }
-          .py-1 { padding-top: 4px; padding-bottom: 4px; }
-          .my-2 { margin-top: 8px; margin-bottom: 8px; }
-          .mt-6 { margin-top: 24px; }
-          .grid { display: grid; }
-          .grid-cols-\\[1fr_auto\\] { grid-template-columns: 1fr auto; }
         }
       `}</style>
     </>
