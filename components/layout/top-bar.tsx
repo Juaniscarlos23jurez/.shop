@@ -112,9 +112,9 @@ export function TopBar({ isCollapsed, setIsCollapsed }: TopBarProps) {
                         <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                     </div>
                 ) : (
-                    <Link href="/dashboard/terminal" className="hidden lg:flex items-center gap-2 text-slate-400 hover:text-slate-600 transition-colors">
-                        <Bluetooth className="h-4 w-4" />
-                        <span className="text-[10px] font-medium uppercase tracking-wider">Impresora off</span>
+                    <Link href="/dashboard/terminal" className="hidden lg:flex items-center gap-2 text-rose-500 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-full border border-rose-200 transition-all shadow-sm group">
+                        <Bluetooth className="h-4 w-4 group-hover:scale-110 transition-transform" />
+                        <span className="text-[10px] font-bold uppercase tracking-wider">Impresora Off</span>
                     </Link>
                 )}
 

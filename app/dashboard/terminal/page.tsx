@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Bluetooth, Printer, RefreshCw, CheckCircle2, XCircle, Search, Info, Settings2, Smartphone, Terminal as TerminalIcon } from "lucide-react";
+import { Bluetooth, Printer, RefreshCw, CheckCircle2, XCircle, Search, Info, Settings2, Smartphone, Terminal as TerminalIcon, Usb, Cable } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +27,7 @@ export default function TerminalPage() {
 
     const [isConnecting, setIsConnecting] = useState(false);
     const [isScanning, setIsScanning] = useState(false);
+    const [activeTab, setActiveTab] = useState<"bluetooth" | "usb">("bluetooth");
 
     useEffect(() => {
         console.log("[TerminalPage] Estado del Contexto BT:", { isBluetoothConnected, btPrinterName, bluetoothDevice });
@@ -126,92 +127,155 @@ export default function TerminalPage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Connection Control */}
                 <div className="lg:col-span-2 space-y-6">
-                    <Card className="border-none shadow-xl bg-gradient-to-br from-white to-slate-50 overflow-hidden relative">
-                        <div className="absolute top-0 right-0 p-8 opacity-5">
-                            <Bluetooth className="h-32 w-32" />
-                        </div>
-                        <CardHeader className="pb-2">
-                            <CardTitle className="flex items-center gap-2 text-2xl">
-                                <Search className="h-6 w-6 text-emerald-500" />
-                                Buscar Terminal
-                            </CardTitle>
-                            <CardDescription>
-                                Utiliza el Bluetooth de tu navegador para conectar directamente con la impresora.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="pt-6">
-                            {!isBluetoothConnected ? (
+                    {/* Custom Tabs */}
+                    <div className="flex p-1 bg-slate-100/80 backdrop-blur-md rounded-2xl border border-slate-200">
+                        <button
+                            onClick={() => setActiveTab("bluetooth")}
+                            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all duration-200 ${activeTab === "bluetooth"
+                                    ? "bg-white text-emerald-600 shadow-sm ring-1 ring-slate-200"
+                                    : "text-slate-500 hover:text-slate-700 hover:bg-white/50"
+                                }`}
+                        >
+                            <Bluetooth className="h-4 w-4" />
+                            Bluetooth
+                        </button>
+                        <button
+                            onClick={() => setActiveTab("usb")}
+                            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all duration-200 ${activeTab === "usb"
+                                    ? "bg-white text-blue-600 shadow-sm ring-1 ring-slate-200"
+                                    : "text-slate-500 hover:text-slate-700 hover:bg-white/50"
+                                }`}
+                        >
+                            <Usb className="h-4 w-4" />
+                            USB / Serial
+                        </button>
+                    </div>
+
+                    {activeTab === "bluetooth" ? (
+                        <>
+                            <Card className="border-none shadow-xl bg-gradient-to-br from-white to-slate-50 overflow-hidden relative">
+                                <div className="absolute top-0 right-0 p-8 opacity-5">
+                                    <Bluetooth className="h-32 w-32" />
+                                </div>
+                                <CardHeader className="pb-2">
+                                    <CardTitle className="flex items-center gap-2 text-2xl">
+                                        <Search className="h-6 w-6 text-emerald-500" />
+                                        Buscar Terminal
+                                    </CardTitle>
+                                    <CardDescription>
+                                        Utiliza el Bluetooth de tu navegador para conectar directamente con la impresora.
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent className="pt-6">
+                                    {!isBluetoothConnected ? (
+                                        <div className="flex flex-col items-center justify-center py-12 border-2 border-dashed border-slate-200 rounded-2xl bg-white/50 space-y-4">
+                                            <div className="bg-emerald-100 p-4 rounded-full">
+                                                <Bluetooth className="h-8 w-8 text-emerald-600" />
+                                            </div>
+                                            <div className="text-center">
+                                                <p className="font-semibold text-slate-900">No hay dispositivos vinculados</p>
+                                                <p className="text-sm text-slate-500 px-8">
+                                                    Asegúrate de que tu impresora esté encendida y en modo vinculación.
+                                                </p>
+                                            </div>
+                                            <Button
+                                                onClick={handleConnect}
+                                                disabled={isScanning || isConnecting}
+                                                className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-6 h-auto text-lg rounded-xl shadow-lg shadow-emerald-600/20 active:scale-95 transition-all"
+                                            >
+                                                {isScanning ? (
+                                                    <RefreshCw className="mr-2 h-5 w-5 animate-spin" />
+                                                ) : (
+                                                    <Search className="mr-2 h-5 w-5" />
+                                                )}
+                                                {isScanning ? "Escaneando..." : "Buscar Impresora"}
+                                            </Button>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-6">
+                                            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex items-center justify-between">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="bg-emerald-500 p-3 rounded-xl text-white">
+                                                        <Printer className="h-6 w-6" />
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="font-bold text-slate-900 text-lg leading-tight">{btPrinterName}</h4>
+                                                        <p className="text-sm text-slate-500 font-mono">{bluetoothDevice?.id}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex flex-col items-end gap-2">
+                                                    <Badge className="bg-emerald-500 hover:bg-emerald-600 text-white border-0">Conectado</Badge>
+                                                    <Button variant="ghost" size="sm" onClick={disconnectPrinter} className="text-rose-500 hover:text-rose-600 hover:bg-rose-50 h-auto py-1">
+                                                        Desconectar
+                                                    </Button>
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <Button
+                                                    onClick={handlePrintTest}
+                                                    className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-emerald-600 border px-6 py-8 h-auto flex flex-col gap-2 rounded-2xl transition-all group"
+                                                >
+                                                    <TerminalIcon className="h-6 w-6 transition-transform group-hover:scale-110" />
+                                                    <span className="font-semibold">Imprimir Test</span>
+                                                </Button>
+                                                <Button
+                                                    variant="outline"
+                                                    className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 border px-6 py-8 h-auto flex flex-col gap-2 rounded-2xl transition-all"
+                                                >
+                                                    <Settings2 className="h-6 w-6" />
+                                                    <span className="font-semibold">Ajustes</span>
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+
+                            <Alert className="bg-blue-50 border-blue-100 text-blue-800 rounded-2xl border">
+                                <Info className="h-5 w-5 !text-blue-600" />
+                                <AlertTitle className="font-bold">¿Cómo conectar sin contraseña?</AlertTitle>
+                                <AlertDescription className="text-blue-700">
+                                    Muchos modelos de impresoras térmicas Bluetooth utilizan el modo "Just Works" o códigos genéricos (0000 o 1234). Al pulsar en buscar, selecciona tu dispositivo y el sistema intentará la conexión automática.
+                                </AlertDescription>
+                            </Alert>
+                        </>
+                    ) : (
+                        <Card className="border-none shadow-xl bg-gradient-to-br from-white to-slate-50 overflow-hidden relative">
+                            <div className="absolute top-0 right-0 p-8 opacity-5">
+                                <Usb className="h-32 w-32" />
+                            </div>
+                            <CardHeader className="pb-2">
+                                <CardTitle className="flex items-center gap-2 text-2xl">
+                                    <Cable className="h-6 w-6 text-blue-500" />
+                                    Conexión USB
+                                </CardTitle>
+                                <CardDescription>
+                                    Conecta tu impresora mediante cable USB o adaptador Serial.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="pt-6">
                                 <div className="flex flex-col items-center justify-center py-12 border-2 border-dashed border-slate-200 rounded-2xl bg-white/50 space-y-4">
-                                    <div className="bg-emerald-100 p-4 rounded-full">
-                                        <Bluetooth className="h-8 w-8 text-emerald-600" />
+                                    <div className="bg-blue-100 p-4 rounded-full">
+                                        <Usb className="h-8 w-8 text-blue-600" />
                                     </div>
                                     <div className="text-center">
-                                        <p className="font-semibold text-slate-900">No hay dispositivos vinculados</p>
+                                        <p className="font-semibold text-slate-900">Modo USB Beta</p>
                                         <p className="text-sm text-slate-500 px-8">
-                                            Asegúrate de que tu impresora esté encendida y en modo vinculación.
+                                            Esta función experimental permite conectar impresoras seriales.
                                         </p>
                                     </div>
                                     <Button
-                                        onClick={handleConnect}
-                                        disabled={isScanning || isConnecting}
-                                        className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-6 h-auto text-lg rounded-xl shadow-lg shadow-emerald-600/20 active:scale-95 transition-all"
+                                        disabled
+                                        className="bg-slate-200 text-slate-400 px-8 py-6 h-auto text-lg rounded-xl cursor-not-allowed"
                                     >
-                                        {isScanning ? (
-                                            <RefreshCw className="mr-2 h-5 w-5 animate-spin" />
-                                        ) : (
-                                            <Search className="mr-2 h-5 w-5" />
-                                        )}
-                                        {isScanning ? "Escaneando..." : "Buscar Impresora"}
+                                        <Search className="mr-2 h-5 w-5" />
+                                        Próximamente
                                     </Button>
                                 </div>
-                            ) : (
-                                <div className="space-y-6">
-                                    <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex items-center justify-between">
-                                        <div className="flex items-center gap-4">
-                                            <div className="bg-emerald-500 p-3 rounded-xl text-white">
-                                                <Printer className="h-6 w-6" />
-                                            </div>
-                                            <div>
-                                                <h4 className="font-bold text-slate-900 text-lg leading-tight">{btPrinterName}</h4>
-                                                <p className="text-sm text-slate-500 font-mono">{bluetoothDevice?.id}</p>
-                                            </div>
-                                        </div>
-                                        <div className="flex flex-col items-end gap-2">
-                                            <Badge className="bg-emerald-500 hover:bg-emerald-600 text-white border-0">Conectado</Badge>
-                                            <Button variant="ghost" size="sm" onClick={disconnectPrinter} className="text-rose-500 hover:text-rose-600 hover:bg-rose-50 h-auto py-1">
-                                                Desconectar
-                                            </Button>
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <Button
-                                            onClick={handlePrintTest}
-                                            className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-emerald-600 border px-6 py-8 h-auto flex flex-col gap-2 rounded-2xl transition-all group"
-                                        >
-                                            <TerminalIcon className="h-6 w-6 transition-transform group-hover:scale-110" />
-                                            <span className="font-semibold">Imprimir Test</span>
-                                        </Button>
-                                        <Button
-                                            variant="outline"
-                                            className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 border px-6 py-8 h-auto flex flex-col gap-2 rounded-2xl transition-all"
-                                        >
-                                            <Settings2 className="h-6 w-6" />
-                                            <span className="font-semibold">Ajustes</span>
-                                        </Button>
-                                    </div>
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-
-                    <Alert className="bg-blue-50 border-blue-100 text-blue-800 rounded-2xl border">
-                        <Info className="h-5 w-5 !text-blue-600" />
-                        <AlertTitle className="font-bold">¿Cómo conectar sin contraseña?</AlertTitle>
-                        <AlertDescription className="text-blue-700">
-                            Muchos modelos de impresoras térmicas Bluetooth utilizan el modo "Just Works" o códigos genéricos (0000 o 1234). Al pulsar en buscar, selecciona tu dispositivo y el sistema intentará la conexión automática.
-                        </AlertDescription>
-                    </Alert>
+                            </CardContent>
+                        </Card>
+                    )}
                 </div>
 
                 {/* Sidebar / Settings */}
