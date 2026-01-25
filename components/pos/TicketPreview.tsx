@@ -82,7 +82,7 @@ export const TicketPreview: React.FC<TicketPreviewProps> = ({ data }) => {
 
             <div className="text-center mt-8 space-y-1">
                 <p>¡Gracias por su compra!</p>
-                <p className="text-[10px] opacity-70">powered by fynlink.shop</p>
+
                 <div className="border-b border-black border-dashed w-3/4 mx-auto pt-2" />
             </div>
         </div>

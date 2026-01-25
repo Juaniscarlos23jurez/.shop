@@ -1581,7 +1581,7 @@ export default function PuntoVentaPage() {
 
             <div className="ticket-footer text-center">
               <p>¡Gracias por su compra!</p>
-              <p style={{ fontSize: '8px', marginTop: '4px' }}>powered by fynlink.shop</p>
+
             </div>
           </div>
         )}

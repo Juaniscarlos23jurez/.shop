@@ -436,13 +436,27 @@ export function PrinterProvider({ children }: { children: React.ReactNode }) {
 
                 for (const item of payload.items) {
                     const nameLines = wrapText(item.name, 18);
-                    const firstLine = nameLines.shift() || "";
                     const priceStr = `$${(item.quantity * item.price).toFixed(2).padStart(8)}`;
 
-                    await write(`${item.quantity}x ${firstLine.padEnd(18)} ${priceStr}\n`);
+                    for (let i = 0; i < nameLines.length; i++) {
+                        const line = nameLines[i];
+                        // Qty only on first line, otherwise indentation
+                        // "3x " is roughly 3 chars if quantity < 10. 
+                        // Let's standardise the prefix width to ensure alignment.
+                        const qtyStr = `${item.quantity}x`;
+                        const prefix = i === 0
+                            ? qtyStr.padEnd(3)
+                            : "   ";
 
-                    for (const extraLine of nameLines) {
-                        await write(`   ${extraLine}\n`);
+                        // Name padding
+                        const paddedName = line.padEnd(18);
+
+                        // Price only on last line
+                        if (i === nameLines.length - 1) {
+                            await write(`${prefix} ${paddedName} ${priceStr}\n`);
+                        } else {
+                            await write(`${prefix} ${line}\n`);
+                        }
                     }
                 }
 
@@ -454,7 +468,7 @@ export function PrinterProvider({ children }: { children: React.ReactNode }) {
                 await write(esc.feed);
                 await write(esc.center);
                 await write(`${payload.footerMessage || 'Gracias por su compra'}\n`);
-                await write(`powered by fynlink.shop\n\n\n\n`);
+                await write(`\n\n\n\n`);
                 await write(esc.cut);
                 if (i < (settings.copies - 1)) await new Promise(r => setTimeout(r, 500));
             }
