@@ -610,25 +610,23 @@ export default function HomePage() {
               </div>
 
               <h1 className="text-5xl md:text-7xl font-black text-[#0f172a] tracking-tight mb-8 leading-[1.1]">
-                Gestiona con <span className="text-green-600">Fynlink+</span> <br />
-                Conecta con <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">Rewin</span>
+                Sé el <span className="text-green-600">dueño</span> total de <br />
+                tu propia <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">Tecnología</span>
               </h1>
 
               <p className="mt-8 max-w-2xl mx-auto text-xl text-[#64748b] leading-relaxed">
-                El ecosistema completo para negocios modernos. Tú controlas todo desde tu panel
-                <span className="text-[#0f172a] font-bold"> Fynlink+</span> y tus clientes disfrutan de la mejor experiencia en la app
-                <span className="text-blue-600 font-bold"> Rewin</span>.
+                Olvídate de las rentas mensuales. Adquiere tu propio ecosistema digital con <span className="text-blue-600 font-bold">Rewin</span> y <span className="text-[#0f172a] font-bold">Fynlink+</span>. Todo desbloqueado, de por vida, bajo tu control.
               </p>
 
               <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
                 <Link href="/auth/register" className="w-full sm:w-auto">
                   <Button size="lg" className="w-full h-14 px-8 bg-[#22c55e] hover:bg-green-600 text-white text-lg font-bold rounded-2xl shadow-[0_20px_40px_-12px_rgba(34,197,94,0.35)] hover:shadow-[0_20px_40px_-12px_rgba(34,197,94,0.45)] hover:-translate-y-1 transition-all duration-300">
-                    Empezar ahora — Es gratis
+                    Obtener mi App ahora
                   </Button>
                 </Link>
                 <Link href={CALENDLY_URL} className="w-full sm:w-auto" target="_blank" rel="noopener noreferrer">
                   <Button size="lg" variant="outline" className="w-full h-14 px-8 border-2 border-gray-200 text-[#0f172a] text-lg font-bold rounded-2xl hover:bg-gray-50 transition-all duration-300">
-                    Ver demo en vivo
+                    Ver cómo funciona
                   </Button>
                 </Link>
               </div>
@@ -2060,7 +2058,7 @@ export default function HomePage() {
 
       {/* Floating WhatsApp Button */}
       <a
-        href="https://wa.me/522381638747"
+        href={WHATSAPP_URL}
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Chatear por WhatsApp"
