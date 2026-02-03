@@ -80,19 +80,23 @@ export function PricingSection({ activePlanId }: { activePlanId?: number | strin
             id: 1,
             name: 'Licencia Starter',
             subtitle: 'Ideal para elevar tu marca propia',
-            price: '4,999',
+            price: '14,999',
+            monthlyFrom: '1,250',
+            installments: '12',
             period: 'de por vida',
             description: 'Acceso vitalicio a las herramientas core:',
             features: [
                 'Todo desbloqueado desde el día 1',
                 'Tu propio Dominio (.com / .com.mx)',
+                'Sitio web profesional con carrito',
                 'Pedidos ilimitados por WhatsApp',
                 'Catálogo digital interactivo',
-                'Punto de venta (POS) incluido',
+                'Punto de venta (POS) completo',
                 'Programa de lealtad vitalicio',
                 'Cupones digitales ilimitados',
-                'Hasta 3 sucursales',
-                'Soporte técnico por 1 año'
+                'Hasta 5 sucursales',
+                'Soporte técnico por 2 años',
+                'Actualizaciones de seguridad incluidas'
             ],
             cta: 'Comprar Licencia Vitalicia',
             popular: false,
@@ -102,50 +106,59 @@ export function PricingSection({ activePlanId }: { activePlanId?: number | strin
             id: 2,
             name: 'Ecosistema Premium',
             subtitle: 'Tu propia APP en Stores y control absoluto',
-            price: '14,999',
+            price: '49,999',
+            monthlyFrom: '4,167',
+            installments: '12',
             period: 'de por vida',
             description: 'Todo en Starter, más tu propia tecnología nativa:',
             features: [
-                'TU PROPIA APP (Android & iOS)',
+                'TU PROPIA APP NATIVA (Android & iOS)',
                 'Publicación en App Store y Play Store',
-                'WhatsApp y chatbot con IA vitalicio',
+                'Diseño personalizado de tu marca',
+                'WhatsApp Business API con IA vitalicio',
+                'Chatbot inteligente 24/7',
                 'Dominio y correo profesional propio',
                 'Todo lo demás desbloqueado para siempre',
-                'Hasta 10 sucursales',
+                'Hasta 20 sucursales',
                 'Notificaciones push ilimitadas',
-                'Pagos con Stripe & Mercado Pago',
-                'Analíticas y SEO avanzado',
+                'Pagos con Stripe & Mercado Pago (0% comisión nuestra)',
+                'Analíticas avanzadas y SEO premium',
                 'Soporte prioritario de por vida',
-                'Actualizaciones gratuitas garantizadas'
+                'Actualizaciones y nuevas features incluidas'
             ],
             cta: 'Obtener mi Ecosistema',
             popular: true,
             badge: 'EL MÁS ELEGIDO - PAGO ÚNICO',
-            promo: '¡Propiedad total!'
+            promo: '¡Ahorra $180,000/año en suscripciones!'
         },
         {
             id: 3,
             name: 'White Label / Enterprise',
             subtitle: 'Para cadenas y franquicias multinacionales',
-            price: '29,999',
+            price: '149,999',
+            monthlyFrom: '12,500',
+            installments: '12',
             period: 'de por vida',
             description: 'Propiedad total del sistema:',
             features: [
                 'Todo lo de Premium sin límites',
                 'Sucursales y Staff ilimitados',
+                'Multi-marca (varias marcas en un solo sistema)',
                 'API & Webhooks avanzados',
-                'Instalación en tu propio servidor si lo prefieres',
-                'Propiedad de la base de datos de clientes',
-                'Integración con sistemas externos (ERP/SAP)',
-                'Capacitación presencial/virtual para tu equipo',
-                'Update prioritario de funciones personalizadas',
-                'Soporte dedicado 24/7',
-                'Repositorio de código fuente opcional'
+                'Instalación en tu propio servidor (on-premise)',
+                'Propiedad completa de la base de datos',
+                'Integración con sistemas externos (ERP/SAP/CRM)',
+                'Capacitación presencial para tu equipo',
+                'Desarrollo de features personalizadas',
+                'Soporte dedicado 24/7 con SLA garantizado',
+                'Acceso al código fuente (opcional)',
+                'Consultoría estratégica incluida',
+                'Migración de datos sin costo'
             ],
             cta: 'Consultar Propiedad Total',
             popular: false,
             badge: 'PROPIEDAD TOTAL',
-            promo: 'Control Absoluto'
+            promo: 'Ahorra +$500,000/año vs competencia'
         }
     ];
 
@@ -206,8 +219,8 @@ export function PricingSection({ activePlanId }: { activePlanId?: number | strin
                                             </div>
                                         )}
 
-                                        <div className="h-24 flex flex-col justify-end">
-                                            <div className="space-y-1">
+                                        <div className="h-32 flex flex-col justify-end">
+                                            <div className="space-y-2">
                                                 <div className="flex items-baseline flex-wrap">
                                                     <span className="text-5xl font-black text-slate-900 tracking-tight">
                                                         ${plan.price}
@@ -218,6 +231,16 @@ export function PricingSection({ activePlanId }: { activePlanId?: number | strin
                                                     <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
                                                     Pago único — Sin rentas
                                                 </div>
+                                                {plan.monthlyFrom && (
+                                                    <div className="pt-2 border-t border-slate-100">
+                                                        <p className="text-sm text-slate-600">
+                                                            o desde <span className="font-black text-blue-600">${plan.monthlyFrom}/mes</span>
+                                                        </p>
+                                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                                                            Hasta {plan.installments} MSI con tarjetas participantes
+                                                        </p>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
@@ -326,90 +349,8 @@ export function PricingSection({ activePlanId }: { activePlanId?: number | strin
                 </div>
             </section>
 
-            {/* Custom Plan Section */}
-            <section id="custom-plan" className="py-24 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white relative overflow-hidden">
-                {/* Background Pattern */}
-                <div className="absolute inset-0 bg-grid-white/5 [mask-image:linear-gradient(0deg,white,transparent)]"></div>
 
-                <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="text-center mb-16">
-                        <div className="inline-flex items-center space-x-2 bg-purple-500/20 text-purple-200 text-base font-medium px-4 py-2 rounded-full mb-6 backdrop-blur-sm border border-purple-400/20">
-                            <span className="text-xl">🏢</span>
-                            <span>Solución Empresarial</span>
-                        </div>
-                        <h2 className="text-5xl font-black mb-6">
-                            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">Propiedad Total del Código</span>
-                        </h2>
-                        <p className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
-                            Para empresas que necesitan control absoluto. Te entregamos el sistema completo para que lo operes en tu propia infraestructura de por vida.
-                        </p>
-                    </div>
-
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-16">
-                        {/* Right Side - Features */}
-                        <div className="space-y-6">
-                            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
-                                <div className="flex items-start gap-4">
-                                    <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-                                        <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                                        </svg>
-                                    </div>
-                                    <div>
-                                        <h3 className="text-xl font-bold mb-2">App Dedicada & Código Fuente</h3>
-                                        <p className="text-gray-300">Tu propia aplicación nativa y acceso al código para personalizaciones infinitas.</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
-                                <div className="flex items-start gap-4">
-                                    <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-blue-500 flex items-center justify-center">
-                                        <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-                                        </svg>
-                                    </div>
-                                    <div>
-                                        <h3 className="text-xl font-bold mb-2">Sistema Independiente</h3>
-                                        <p className="text-gray-300">Servidores dedicados y base de datos propia. Sin dependencias externas.</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Visual Mockup placeholder (reusing the logic from before but cleaner) */}
-                        <div className="relative group/mockup flex justify-center">
-                            <div className="w-64 h-[500px] bg-black rounded-[3rem] p-3 shadow-2xl relative z-10 overflow-hidden">
-                                <div className="absolute inset-0 bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center">
-                                    <div className="text-center">
-                                        <div className="text-4xl mb-4">👑</div>
-                                        <p className="text-white font-black">TU MARCA</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* CTA Section */}
-                    <div className="text-center">
-                        <div className="bg-gradient-to-r from-purple-600/20 to-pink-600/20 rounded-3xl p-8 backdrop-blur-sm border border-purple-400/20">
-                            <h3 className="text-3xl font-bold mb-4">¿Listo para ser dueño de tu tecnología?</h3>
-                            <div className="flex flex-col sm:flex-row justify-center gap-4">
-                                <Link href="#contact">
-                                    <Button size="lg" className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white">
-                                        Contactar Ventas
-                                    </Button>
-                                </Link>
-                                <Link href={WHATSAPP_URL} target="_blank">
-                                    <Button size="lg" variant="outline" className="text-white border-white hover:bg-white hover:text-slate-900">
-                                        Hablar por WhatsApp
-                                    </Button>
-                                </Link>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
         </div>
+
     );
 }

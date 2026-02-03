@@ -574,14 +574,11 @@ export default function HomePage() {
                 <a href="#contact" className="text-gray-600 hover:text-gray-900 px-4 py-2 text-base font-medium rounded-lg hover:bg-gray-50 transition-colors">Contacto</a>
                 <a href="#testimonials" className="text-gray-600 hover:text-gray-900 px-4 py-2 text-base font-medium rounded-lg hover:bg-gray-50 transition-colors">Testimonios</a>
                 <a href="#pricing" className="text-gray-600 hover:text-gray-900 px-4 py-2 text-base font-medium rounded-lg hover:bg-gray-50 transition-colors">Precios</a>
-                <a href="#custom-plan" className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-2 text-base font-medium rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all shadow-md hover:shadow-lg">Plan Empresarial</a>
                 <a href="#faq" className="text-gray-600 hover:text-gray-900 px-4 py-2 text-base font-medium rounded-lg hover:bg-gray-50 transition-colors">Preguntas Frecuentes</a>
               </div>
             </div>
             <div className="flex items-center space-x-3">
-              <Link href="/auth/login">
-                <Button variant="ghost" className="text-gray-600 hover:bg-gray-100">Iniciar sesión</Button>
-              </Link>
+
               <Link href="#contact">
                 <Button className="bg-[#22c55e] hover:bg-green-600 text-white shadow-md hover:shadow-lg transition-all">Hablar con ventas</Button>
               </Link>
