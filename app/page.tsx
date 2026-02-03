@@ -103,8 +103,8 @@ export default function HomePage() {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
         </svg>
       ),
-      title: "App Rewin Reward",
-      description: "Aparece en nuestra app y permite que nuevos clientes te descubran.",
+      title: "Tu Propia App Nativa",
+      description: "Tus clientes descargan TU aplicación desde la App Store y Play Store.",
       visual: (
         <div className="relative w-full h-32 bg-orange-50/50 rounded-xl flex items-center justify-center overflow-hidden group-hover:bg-orange-50 transition-colors">
           <div className="bg-white border border-orange-100 rounded-xl shadow-sm w-20 h-28 transform rotate-12 group-hover:rotate-0 transition-transform duration-300 relative overflow-hidden">
@@ -558,7 +558,7 @@ export default function HomePage() {
                 <div className="w-10 h-10 relative">
                   <Image
                     src="/logorewa.png"
-                    alt="Rewin logo"
+                    alt="Tu Marca logo"
                     fill
                     sizes="40px"
                     className="object-contain"
@@ -615,7 +615,7 @@ export default function HomePage() {
               </h1>
 
               <p className="mt-8 max-w-2xl mx-auto text-xl text-[#64748b] leading-relaxed">
-                Olvídate de las rentas mensuales. Adquiere tu propio ecosistema digital con <span className="text-blue-600 font-bold">Rewin</span> y <span className="text-[#0f172a] font-bold">Fynlink+</span>. Todo desbloqueado, de por vida, bajo tu control.
+                Olvídate de las rentas mensuales. Adquiere tu propio ecosistema digital con <span className="text-blue-600 font-bold">Tu Marca</span> y <span className="text-[#0f172a] font-bold">Fynlink+</span>. Todo desbloqueado, de por vida, bajo tu control.
               </p>
 
               <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
@@ -739,7 +739,7 @@ export default function HomePage() {
                     </svg>
                   </div>
                   <div className="text-sm font-black text-[#0f172a]">Integración WhatsApp</div>
-                  <p className="text-[10px] text-gray-500 mt-1">Automatiza conversaciones y respuestas desde Rewin.</p>
+                  <p className="text-[10px] text-gray-500 mt-1">Automatiza conversaciones y respuestas desde tu panel.</p>
                 </div>
 
                 {/* Bottom Right: Coupons */}
@@ -807,11 +807,11 @@ export default function HomePage() {
               <h2 className="text-4xl md:text-5xl font-black text-[#0f172a] mb-6">
                 Tu marca en el bolsillo <br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
-                  de tus clientes con Rewin
+                  de tus clientes con tu propia App
                 </span>
               </h2>
               <p className="text-[#64748b] text-xl max-w-3xl mx-auto leading-relaxed">
-                Tus clientes acceden a <span className="text-[#0f172a] font-bold">Rewin</span> desde su móvil para ver su saldo de puntos,
+                Tus clientes acceden a <span className="text-[#0f172a] font-bold">tu propia App</span> desde su móvil para ver su saldo de puntos,
                 descubrir recompensas y comprar tus productos en segundos.
               </p>
             </div>

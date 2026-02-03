@@ -79,12 +79,13 @@ export function PricingSection({ activePlanId }: { activePlanId?: number | strin
         {
             id: 1,
             name: 'Licencia Starter',
-            subtitle: 'Ideal para comenzar con tu marca propia',
-            price: '2,999',
+            subtitle: 'Ideal para elevar tu marca propia',
+            price: '4,999',
             period: 'de por vida',
             description: 'Acceso vitalicio a las herramientas core:',
             features: [
                 'Todo desbloqueado desde el día 1',
+                'Tu propio Dominio (.com / .com.mx)',
                 'Pedidos ilimitados por WhatsApp',
                 'Catálogo digital interactivo',
                 'Punto de venta (POS) incluido',
@@ -100,12 +101,13 @@ export function PricingSection({ activePlanId }: { activePlanId?: number | strin
         {
             id: 2,
             name: 'Ecosistema Premium',
-            subtitle: 'Tu propia App y control absoluto',
-            price: '7,499',
+            subtitle: 'Tu propia APP en Stores y control absoluto',
+            price: '14,999',
             period: 'de por vida',
-            description: 'Todo en Starter, más tu propia tecnología:',
+            description: 'Todo en Starter, más tu propia tecnología nativa:',
             features: [
                 'TU PROPIA APP (Android & iOS)',
+                'Publicación en App Store y Play Store',
                 'WhatsApp y chatbot con IA vitalicio',
                 'Dominio y correo profesional propio',
                 'Todo lo demás desbloqueado para siempre',
@@ -124,8 +126,8 @@ export function PricingSection({ activePlanId }: { activePlanId?: number | strin
         {
             id: 3,
             name: 'White Label / Enterprise',
-            subtitle: 'Para cadenas y franquicias',
-            price: '14,999',
+            subtitle: 'Para cadenas y franquicias multinacionales',
+            price: '29,999',
             period: 'de por vida',
             description: 'Propiedad total del sistema:',
             features: [
@@ -138,7 +140,7 @@ export function PricingSection({ activePlanId }: { activePlanId?: number | strin
                 'Capacitación presencial/virtual para tu equipo',
                 'Update prioritario de funciones personalizadas',
                 'Soporte dedicado 24/7',
-                'Control total de tu ecosistema tecnológico'
+                'Repositorio de código fuente opcional'
             ],
             cta: 'Consultar Propiedad Total',
             popular: false,
