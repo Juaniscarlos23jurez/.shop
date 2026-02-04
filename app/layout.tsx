@@ -77,7 +77,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
+    <html lang="es" translate="no">
       <head>
         {/* ... existing head content ... */}
         <meta name='impact-site-verification' content='4b5de0c7-8ebb-4f48-b5da-e458bc9cefd1' />
