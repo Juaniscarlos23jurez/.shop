@@ -39,8 +39,11 @@ export function PricingSection({ activePlanId }: { activePlanId?: number | strin
     }, [token]);
 
     const handleSubscribe = async (planId: number | string | null) => {
+        console.log('handleSubscribe called with planId:', planId);
+
         // Enterprise plan - open contact modal instead
         if (planId === 3) {
+            console.log('Opening contact modal for Enterprise plan');
             setIsContactModalOpen(true);
             return;
         }

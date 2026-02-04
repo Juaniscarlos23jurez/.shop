@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import Link from "next/link";
+import { useEffect } from "react";
 
 interface ContactModalProps {
     isOpen: boolean;
@@ -20,6 +21,10 @@ export function ContactModal({
     salesEmail = 'info@fynlink.shop',
     calendlyUrl = 'https://calendly.com/juancarlosjuarez26/30min'
 }: ContactModalProps) {
+    useEffect(() => {
+        console.log('ContactModal isOpen changed:', isOpen);
+    }, [isOpen]);
+
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden">
