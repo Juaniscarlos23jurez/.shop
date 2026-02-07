@@ -578,7 +578,11 @@ export default function HomePage() {
               </div>
             </div>
             <div className="flex items-center space-x-3">
-
+              <Link href="/auth/login">
+                <Button variant="ghost" className="text-gray-600 hover:text-gray-900 font-medium">
+                  Iniciar sesión
+                </Button>
+              </Link>
               <Link href="#contact">
                 <Button className="bg-[#22c55e] hover:bg-green-600 text-white shadow-md hover:shadow-lg transition-all">Hablar con ventas</Button>
               </Link>
@@ -608,11 +612,11 @@ export default function HomePage() {
 
               <h1 className="text-5xl md:text-7xl font-black text-[#0f172a] tracking-tight mb-8 leading-[1.1]">
                 Sé el <span className="text-green-600">dueño</span> total de <br />
-                tu propia <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">Tecnología</span>
+                tu propia <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">Marca</span>
               </h1>
 
               <p className="mt-8 max-w-2xl mx-auto text-xl text-[#64748b] leading-relaxed">
-                Olvídate de las rentas mensuales. Adquiere tu propio ecosistema digital con <span className="text-blue-600 font-bold">Tu Marca</span> y <span className="text-[#0f172a] font-bold">Fynlink+</span>. Todo desbloqueado, de por vida, bajo tu control.
+                Olvídate de las rentas mensuales. Sé el dueño absoluto de tu relación con los clientes con <span className="text-blue-600 font-bold">Tu Marca</span> y <span className="text-[#0f172a] font-bold">Fynlink+</span>. Todo bajo tu control, de por vida y sin intermediarios.
               </p>
 
               <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
