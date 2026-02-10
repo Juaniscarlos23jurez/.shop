@@ -7,9 +7,10 @@ type Section = 'home' | 'promotions' | 'points' | 'coupons' | 'wallet';
 interface BottomNavProps {
     activeSection: Section;
     onSectionChange: (section: Section) => void;
+    backgroundColor?: string;
 }
 
-export function BottomNav({ activeSection, onSectionChange }: BottomNavProps) {
+export function BottomNav({ activeSection, onSectionChange, backgroundColor }: BottomNavProps) {
     const navItems = [
         { id: 'home', label: 'Inicio', icon: Store },
         { id: 'promotions', label: 'Promos', icon: Gift },
@@ -21,7 +22,10 @@ export function BottomNav({ activeSection, onSectionChange }: BottomNavProps) {
     return (
         <div className="fixed bottom-0 left-0 right-0 z-30 pointer-events-none pb-safe">
             <div className="mx-auto max-w-md px-4 pb-6">
-                <div className="pointer-events-auto bg-white/95 backdrop-blur-xl border border-gray-200/50 rounded-2xl shadow-2xl p-2">
+                <div
+                    className="pointer-events-auto bg-white/95 backdrop-blur-xl border border-gray-200/50 rounded-2xl shadow-2xl p-2"
+                    style={{ backgroundColor: backgroundColor || 'rgba(255, 255, 255, 0.95)' }}
+                >
                     <div className="flex items-center justify-around gap-1">
                         {navItems.map((item) => {
                             const isActive = activeSection === item.id;

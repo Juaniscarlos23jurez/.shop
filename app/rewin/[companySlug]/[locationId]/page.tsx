@@ -733,7 +733,10 @@ function PublicLocationProductsPageContent() {
 
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-32 relative">
+    <div
+      className="min-h-screen pb-32 relative"
+      style={{ backgroundColor: uiSettings?.background_color ?? '#f9fafb' }}
+    >
       {/* Banner from UI Settings */}
       {uiSettings?.banner_enabled && uiSettings.banner_text && (
         <div
@@ -764,7 +767,8 @@ function PublicLocationProductsPageContent() {
           {/* Botón Descargar app solo en móvil, debajo del botón Seguir */}
           <div className="mt-3 sm:hidden">
             <Button
-              className="w-full gap-2 shadow-xl bg-emerald-600 text-white hover:bg-emerald-700 rounded-full h-12 px-4 text-sm font-semibold"
+              className="w-full gap-2 shadow-xl text-white rounded-full h-12 px-4 text-sm font-semibold hover:opacity-90 transition-opacity"
+              style={{ backgroundColor: uiSettings?.download_app_color || '#059669' }}
               onClick={() => {
                 if (typeof window === 'undefined') return;
 
@@ -799,7 +803,8 @@ function PublicLocationProductsPageContent() {
         {user ? (
           <>
             <Button
-              className="gap-2 shadow-xl bg-emerald-600 text-white hover:bg-emerald-700 rounded-full h-12 px-5 text-sm font-semibold hidden sm:inline-flex"
+              className="gap-2 shadow-xl text-white rounded-full h-12 px-5 text-sm font-semibold hidden sm:inline-flex hover:opacity-90 transition-opacity"
+              style={{ backgroundColor: uiSettings?.download_app_color || '#059669' }}
               onClick={() => {
                 if (typeof window === 'undefined') return;
 
@@ -857,7 +862,8 @@ function PublicLocationProductsPageContent() {
         ) : (
           <>
             <Button
-              className="gap-2 shadow-xl bg-emerald-600 text-white hover:bg-emerald-700 rounded-full h-12 px-5 text-sm font-semibold hidden sm:inline-flex"
+              className="gap-2 shadow-xl text-white rounded-full h-12 px-5 text-sm font-semibold hidden sm:inline-flex hover:opacity-90 transition-opacity"
+              style={{ backgroundColor: uiSettings?.download_app_color || '#059669' }}
               onClick={() => {
                 if (typeof window === 'undefined') return;
 
@@ -1349,7 +1355,12 @@ function PublicLocationProductsPageContent() {
         )}
       </div>
 
-      <FloatingCartButton onClick={() => setCartOpen(true)} isHidden={cartOpen} />
+      <FloatingCartButton
+        onClick={() => setCartOpen(true)}
+        isHidden={cartOpen}
+        backgroundColor={uiSettings?.cart_button_color}
+        iconColor={uiSettings?.cart_icon_color}
+      />
       <CartDrawer
         open={cartOpen}
         onClose={() => setCartOpen(false)}
@@ -1359,7 +1370,11 @@ function PublicLocationProductsPageContent() {
         userName={user?.name}
       />
 
-      <BottomNav activeSection={activeSection} onSectionChange={setActiveSection} />
+      <BottomNav
+        activeSection={activeSection}
+        onSectionChange={setActiveSection}
+        backgroundColor={uiSettings?.navigation_bar_color}
+      />
 
       {/* Popup Modal from UI Settings */}
       <Dialog open={popupOpen} onOpenChange={(open) => {

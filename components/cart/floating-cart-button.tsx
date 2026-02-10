@@ -8,9 +8,11 @@ import { formatCurrency } from '@/lib/utils/currency'
 interface FloatingCartButtonProps {
   onClick: () => void
   isHidden?: boolean
+  backgroundColor?: string
+  iconColor?: string
 }
 
-export function FloatingCartButton({ onClick, isHidden = false }: FloatingCartButtonProps) {
+export function FloatingCartButton({ onClick, isHidden = false, backgroundColor, iconColor }: FloatingCartButtonProps) {
   const { itemCount, total } = useCart()
 
   if (isHidden) return null
@@ -19,9 +21,13 @@ export function FloatingCartButton({ onClick, isHidden = false }: FloatingCartBu
     <Button
       onClick={onClick}
       className={`fixed z-[99999] h-14 sm:h-16 rounded-full text-white shadow-[0_8px_30px_rgb(0,0,0,0.12)] transition-all duration-300 ease-in-out px-5 sm:px-6 flex items-center gap-3 
-        ${itemCount === 0 ? 'bg-gray-700 hover:bg-gray-700 opacity-90' : 'bg-black hover:bg-gray-800 hover:scale-110'}`}
+        ${itemCount === 0 && !backgroundColor ? 'bg-gray-700 hover:bg-gray-700 opacity-90' : ''}
+        ${itemCount > 0 && !backgroundColor ? 'bg-black hover:bg-gray-800 hover:scale-110' : ''}
+        ${backgroundColor ? 'hover:scale-110' : ''}
+        `}
       style={{
         touchAction: 'manipulation',
+        backgroundColor: backgroundColor,
         // Ensure visibility on iOS devices with notch/safe area
         // Use inline style to override Tailwind bottom/right when needed
         bottom: 'max(env(safe-area-inset-bottom, 0px), 80px)',
@@ -29,7 +35,7 @@ export function FloatingCartButton({ onClick, isHidden = false }: FloatingCartBu
       }}
     >
       <div className="relative">
-        <ShoppingCart className="h-6 w-6 sm:h-7 sm:w-7" />
+        <ShoppingCart className="h-6 w-6 sm:h-7 sm:w-7" style={{ color: iconColor }} />
         {itemCount > 0 && (
           <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full min-w-[20px] h-5 px-1.5 flex items-center justify-center border-2 border-black">
             {itemCount > 99 ? '99+' : itemCount}
