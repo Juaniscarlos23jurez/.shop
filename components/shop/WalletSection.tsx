@@ -9,9 +9,10 @@ const { Wallet, CreditCard, Smartphone } = Lucide as any;
 
 interface WalletSectionProps {
   companyName?: string;
+  buttonColor?: string;
 }
 
-export function WalletSection({ companyName }: WalletSectionProps) {
+export function WalletSection({ companyName, buttonColor }: WalletSectionProps) {
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -67,7 +68,10 @@ export function WalletSection({ companyName }: WalletSectionProps) {
     <div className="pb-16">
       <Card className="max-w-xl mx-auto">
         <CardHeader className="flex flex-row items-start gap-3">
-          <div className="h-11 w-11 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
+          <div
+            className={`h-11 w-11 rounded-xl flex items-center justify-center ${!buttonColor ? 'bg-emerald-100 text-emerald-700' : 'text-white'}`}
+            style={buttonColor ? { backgroundColor: buttonColor } : {}}
+          >
             <Wallet className="h-6 w-6" />
           </div>
           <div>
@@ -84,7 +88,8 @@ export function WalletSection({ companyName }: WalletSectionProps) {
             </p>
             <div className="flex flex-col sm:flex-row gap-3 mt-4">
               <Button
-                className="w-full sm:w-auto inline-flex items-center gap-2"
+                className={`w-full sm:w-auto inline-flex items-center gap-2 text-white ${!buttonColor ? 'bg-emerald-600 hover:bg-emerald-700' : 'hover:opacity-90'}`}
+                style={buttonColor ? { backgroundColor: buttonColor } : {}}
                 onClick={handleDownloadPkpass}
                 disabled={downloading}
               >

@@ -890,7 +890,14 @@ function PublicLocationProductsPageContent() {
             </Button>
 
             <Link href={`/rewin/${companySlug}/${locationId}/auth/login`}>
-              <Button className="gap-3 shadow-xl bg-white text-emerald-600 hover:bg-gray-50 hover:text-emerald-700 border-2 border-emerald-100 rounded-full h-16 px-6 text-lg font-semibold">
+              <Button
+                variant="outline"
+                className="gap-3 shadow-xl bg-white rounded-full h-16 px-6 text-lg font-semibold border-2 hover:bg-gray-50 transition-all"
+                style={{
+                  color: uiSettings?.download_app_color || '#059669',
+                  borderColor: uiSettings?.download_app_color || '#059669'
+                }}
+              >
                 <User className="h-6 w-6" />
                 <span>Iniciar Sesión</span>
               </Button>
@@ -1239,6 +1246,7 @@ function PublicLocationProductsPageContent() {
                           initialOpen={initialProductId === String(item.id)}
                           pointRules={company?.point_rules || null}
                           userPoints={userPoints}
+                          buttonColor={uiSettings?.cart_button_color}
                         />
                       ))}
                     </div>
@@ -1270,7 +1278,14 @@ function PublicLocationProductsPageContent() {
                     </p>
                     <div className="flex flex-col sm:flex-row gap-3">
                       <Link href={`/${companySlug}/${locationId}/auth/login`} className="sm:w-auto w-full">
-                        <Button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold">
+                        <Button
+                          variant="outline"
+                          className="w-full font-semibold border-2 hover:bg-gray-50 transition-all"
+                          style={{
+                            color: uiSettings?.download_app_color || '#059669',
+                            borderColor: uiSettings?.download_app_color || '#059669'
+                          }}
+                        >
                           Iniciar sesión
                         </Button>
                       </Link>
@@ -1300,7 +1315,7 @@ function PublicLocationProductsPageContent() {
         )}
 
         {activeSection === 'wallet' && (
-          <WalletSection companyName={company?.name} />
+          <WalletSection companyName={company?.name} buttonColor={uiSettings?.cart_button_color} />
         )}
 
         {activeSection === 'coupons' && (

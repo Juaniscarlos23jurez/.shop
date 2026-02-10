@@ -17,9 +17,10 @@ interface CatalogCardProps {
   initialOpen?: boolean;
   pointRules?: PointRule[] | null;
   userPoints?: number | null;
+  buttonColor?: string;
 }
 
-export function CatalogCard({ item, locationId, phone, initialOpen = false, pointRules, userPoints }: CatalogCardProps) {
+export function CatalogCard({ item, locationId, phone, initialOpen = false, pointRules, userPoints, buttonColor }: CatalogCardProps) {
   const { items, addItem, updateQuantity } = useCart();
   const isService = item.product_type === "service";
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -204,7 +205,10 @@ export function CatalogCard({ item, locationId, phone, initialOpen = false, poin
               </div>
             )}
             {item.category && (
-              <div className="absolute top-2 left-2 bg-emerald-600 text-white text-xs font-medium px-2.5 py-1 rounded-full shadow-lg z-10">
+              <div
+                className={`absolute top-2 left-2 text-white text-xs font-medium px-2.5 py-1 rounded-full shadow-lg z-10 ${!buttonColor ? 'bg-emerald-600' : ''}`}
+                style={buttonColor ? { backgroundColor: buttonColor } : {}}
+              >
                 {item.category}
               </div>
             )}
@@ -216,7 +220,10 @@ export function CatalogCard({ item, locationId, phone, initialOpen = false, poin
 
               {!isService && (
                 <div className="mb-3">
-                  <span className="text-2xl md:text-3xl font-bold text-emerald-600">
+                  <span
+                    className={`text-2xl md:text-3xl font-bold ${!buttonColor ? 'text-emerald-600' : ''}`}
+                    style={buttonColor ? { color: buttonColor } : {}}
+                  >
                     {formatCurrency(typeof item.price === "number" ? item.price : 0)}
                   </span>
                 </div>
@@ -235,7 +242,8 @@ export function CatalogCard({ item, locationId, phone, initialOpen = false, poin
               {isService ? (
                 <Button
                   size="lg"
-                  className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold shadow-md hover:shadow-lg transition-all gap-2"
+                  className={`w-full text-white font-semibold shadow-md hover:shadow-lg transition-all gap-2 ${!buttonColor ? 'bg-green-600 hover:bg-green-700' : 'hover:opacity-90'}`}
+                  style={buttonColor ? { backgroundColor: buttonColor } : {}}
                   onClick={(e) => {
                     e.stopPropagation();
                     handleContact();
@@ -249,7 +257,8 @@ export function CatalogCard({ item, locationId, phone, initialOpen = false, poin
                 <div className="flex flex-col sm:flex-row gap-3">
                   <Button
                     size="lg"
-                    className="w-full sm:flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-md hover:shadow-lg transition-all"
+                    className={`w-full sm:flex-1 text-white font-semibold shadow-md hover:shadow-lg transition-all ${!buttonColor ? 'bg-emerald-600 hover:bg-emerald-700' : 'hover:opacity-90'}`}
+                    style={buttonColor ? { backgroundColor: buttonColor } : {}}
                     onClick={(e) => {
                       e.stopPropagation();
                       handleAdd();
@@ -278,7 +287,8 @@ export function CatalogCard({ item, locationId, phone, initialOpen = false, poin
                   </div>
                   <Button
                     size="icon"
-                    className="h-10 w-10 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-md hover:shadow-lg"
+                    className={`h-10 w-10 rounded-full text-white shadow-md hover:shadow-lg ${!buttonColor ? 'bg-emerald-600 hover:bg-emerald-700' : 'hover:opacity-90'}`}
+                    style={buttonColor ? { backgroundColor: buttonColor } : {}}
                     onClick={(e) => {
                       e.stopPropagation();
                       updateQuantity(String(item.id), quantity + 1);
@@ -311,7 +321,10 @@ export function CatalogCard({ item, locationId, phone, initialOpen = false, poin
                   <div>
                     <h2 className="text-2xl font-bold text-gray-900">{item.name}</h2>
                     {item.category && (
-                      <Badge className="w-fit bg-emerald-600 mt-2">
+                      <Badge
+                        className={`w-fit mt-2 ${!buttonColor ? 'bg-emerald-600' : ''}`}
+                        style={buttonColor ? { backgroundColor: buttonColor } : {}}
+                      >
                         {item.category}
                       </Badge>
                     )}
@@ -360,9 +373,15 @@ export function CatalogCard({ item, locationId, phone, initialOpen = false, poin
                 )}
 
                 {!isService && (
-                  <div className="text-center py-5 bg-emerald-50 rounded-2xl mb-6">
+                  <div
+                    className="text-center py-5 rounded-2xl mb-6"
+                    style={{ backgroundColor: buttonColor ? `${buttonColor}15` : '#ecfdf5' }} // 15% opacity for bg
+                  >
                     <p className="text-sm text-gray-600 mb-1 font-medium">Precio</p>
-                    <p className="text-4xl font-bold text-emerald-600">
+                    <p
+                      className={`text-4xl font-bold ${!buttonColor ? 'text-emerald-600' : ''}`}
+                      style={buttonColor ? { color: buttonColor } : {}}
+                    >
                       {formatCurrency(typeof item.price === "number" ? item.price : 0)}
                     </p>
                   </div>
@@ -409,7 +428,8 @@ export function CatalogCard({ item, locationId, phone, initialOpen = false, poin
                   {isService ? (
                     <Button
                       size="lg"
-                      className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all gap-2 h-14 text-lg rounded-xl"
+                      className={`w-full text-white font-semibold shadow-lg hover:shadow-xl transition-all gap-2 h-14 text-lg rounded-xl ${!buttonColor ? 'bg-green-600 hover:bg-green-700' : 'hover:opacity-90'}`}
+                      style={buttonColor ? { backgroundColor: buttonColor } : {}}
                       onClick={(e) => {
                         e.stopPropagation();
                         handleContact();
@@ -422,7 +442,8 @@ export function CatalogCard({ item, locationId, phone, initialOpen = false, poin
                   ) : (
                     <Button
                       size="lg"
-                      className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all h-14 text-lg rounded-xl"
+                      className={`w-full text-white font-semibold shadow-lg hover:shadow-xl transition-all h-14 text-lg rounded-xl ${!buttonColor ? 'bg-emerald-600 hover:bg-emerald-700' : 'hover:opacity-90'}`}
+                      style={buttonColor ? { backgroundColor: buttonColor } : {}}
                       onClick={(e) => {
                         e.stopPropagation();
                         handleAdd();
