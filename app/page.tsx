@@ -571,6 +571,7 @@ export default function HomePage() {
               <div className="ml-10 flex items-center space-x-4">
                 <a href="#features" className="text-gray-600 hover:text-gray-900 px-4 py-2 text-base font-medium rounded-lg hover:bg-gray-50 transition-colors">Características</a>
                 <a href="#how-it-works" className="text-gray-600 hover:text-gray-900 px-4 py-2 text-base font-medium rounded-lg hover:bg-gray-50 transition-colors">¿Cómo funciona?</a>
+                <Link href="/promotores" className="text-blue-600 hover:text-blue-700 px-4 py-2 text-base font-bold rounded-lg hover:bg-blue-50 transition-colors">Promotores</Link>
                 <a href="#contact" className="text-gray-600 hover:text-gray-900 px-4 py-2 text-base font-medium rounded-lg hover:bg-gray-50 transition-colors">Contacto</a>
                 <a href="#testimonials" className="text-gray-600 hover:text-gray-900 px-4 py-2 text-base font-medium rounded-lg hover:bg-gray-50 transition-colors">Testimonios</a>
                 <a href="#pricing" className="text-gray-600 hover:text-gray-900 px-4 py-2 text-base font-medium rounded-lg hover:bg-gray-50 transition-colors">Precios</a>
