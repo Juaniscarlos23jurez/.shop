@@ -572,7 +572,7 @@ export default function HomePage() {
                 <a href="#features" className="text-gray-600 hover:text-gray-900 px-4 py-2 text-base font-medium rounded-lg hover:bg-gray-50 transition-colors">Características</a>
                 <a href="#how-it-works" className="text-gray-600 hover:text-gray-900 px-4 py-2 text-base font-medium rounded-lg hover:bg-gray-50 transition-colors">¿Cómo funciona?</a>
                 <Link href="/promotores" className="text-blue-600 hover:text-blue-700 px-4 py-2 text-base font-bold rounded-lg hover:bg-blue-50 transition-colors">Promotores</Link>
-                <a href="#contact" className="text-gray-600 hover:text-gray-900 px-4 py-2 text-base font-medium rounded-lg hover:bg-gray-50 transition-colors">Contacto</a>
+                <Link href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-gray-900 px-4 py-2 text-base font-medium rounded-lg hover:bg-gray-50 transition-colors">Contacto</Link>
                 <a href="#testimonials" className="text-gray-600 hover:text-gray-900 px-4 py-2 text-base font-medium rounded-lg hover:bg-gray-50 transition-colors">Testimonios</a>
                 <a href="#pricing" className="text-gray-600 hover:text-gray-900 px-4 py-2 text-base font-medium rounded-lg hover:bg-gray-50 transition-colors">Precios</a>
                 <a href="#faq" className="text-gray-600 hover:text-gray-900 px-4 py-2 text-base font-medium rounded-lg hover:bg-gray-50 transition-colors">Preguntas Frecuentes</a>
@@ -584,7 +584,7 @@ export default function HomePage() {
                   Iniciar sesión
                 </Button>
               </Link>
-              <Link href="#contact">
+              <Link href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">
                 <Button className="bg-[#22c55e] hover:bg-green-600 text-white shadow-md hover:shadow-lg transition-all">Hablar con ventas</Button>
               </Link>
             </div>
@@ -1856,7 +1856,7 @@ export default function HomePage() {
               <p className="text-[#64748b] text-base mb-4">
                 ¿Tienes alguna otra pregunta sobre cómo implementar un programa de lealtad en tu negocio?
               </p>
-              <Link href="#contact">
+              <Link href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">
                 <Button className="bg-[#22c55e] hover:bg-green-600 text-white rounded-xl px-6 text-base font-semibold">
                   Hablar con nuestro equipo
                 </Button>
@@ -1876,7 +1876,7 @@ export default function HomePage() {
             Agenda una llamada o escríbenos por WhatsApp para conocer tus objetivos y proponerte la mejor solución.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4 max-w-md mx-auto">
-            <Link href="#contact" className="w-full sm:w-auto">
+            <Link href={WHATSAPP_URL} className="w-full sm:w-auto" target="_blank" rel="noopener noreferrer">
               <Button size="lg" className="w-full bg-white text-[#0f172a] hover:bg-gray-100 font-medium">
                 Hablar con ventas
               </Button>

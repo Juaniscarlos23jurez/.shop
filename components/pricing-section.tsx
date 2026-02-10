@@ -11,7 +11,7 @@ import { Loader2 } from "lucide-react";
 import { ContactModal } from "@/components/contact-modal";
 
 const CALENDLY_URL = process.env.NEXT_PUBLIC_CALENDLY_URL || 'https://calendly.com/juancarlosjuarez26/30min';
-const WHATSAPP_URL = process.env.NEXT_PUBLIC_WHATSAPP_URL || 'https://wa.me/521234567890';
+const WHATSAPP_URL = process.env.NEXT_PUBLIC_WHATSAPP_URL || 'https://wa.me/522381638747';
 const SALES_EMAIL = process.env.NEXT_PUBLIC_SALES_EMAIL || 'info@fynlink.shop';
 
 export function PricingSection({ activePlanId }: { activePlanId?: number | string | null }) {
