@@ -75,7 +75,7 @@ export default function PromotoresPage() {
                                     Iniciar sesión
                                 </Button>
                             </Link>
-                            <Link href="/auth/register">
+                            <Link href="/promotores/register">
                                 <Button className="bg-[#22c55e] hover:bg-green-600 text-white shadow-md hover:shadow-lg transition-all">Unirse ahora</Button>
                             </Link>
                         </div>
@@ -110,7 +110,7 @@ export default function PromotoresPage() {
                         </p>
 
                         <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
-                            <Link href="/auth/register" className="w-full sm:w-auto">
+                            <Link href="/promotores/register" className="w-full sm:w-auto">
                                 <Button size="lg" className="w-full h-14 px-8 bg-[#22c55e] hover:bg-green-600 text-white text-lg font-bold rounded-2xl shadow-[0_20px_40px_-12px_rgba(34,197,94,0.35)] hover:shadow-[0_20px_40px_-12px_rgba(34,197,94,0.45)] hover:-translate-y-1 transition-all duration-300">
                                     Registrarme como Promotor
                                 </Button>
@@ -291,7 +291,7 @@ export default function PromotoresPage() {
                                 No esperes más. Únete hoy a Fynlink+ y comienza a construir tu propio negocio de referidos.
                             </p>
                             <div className="flex flex-col sm:flex-row justify-center gap-4 relative z-10">
-                                <Link href="/auth/register">
+                                <Link href="/promotores/register">
                                     <Button size="lg" className="w-full sm:w-auto h-16 px-12 bg-[#22c55e] hover:bg-green-600 text-white text-xl font-bold rounded-2xl shadow-xl transition-all">
                                         ¡COMENZAR AHORA!
                                     </Button>

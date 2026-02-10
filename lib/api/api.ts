@@ -367,6 +367,79 @@ export const api = {
     },
   },
 
+  promoters: {
+    async join(token: string): Promise<ApiResponse<{
+      status: string;
+      message: string;
+      promoter: {
+        id: number;
+        user_id: number;
+        referral_code: string;
+        commission_type: string;
+        commission_value: number;
+        is_active: boolean;
+        created_at: string;
+        updated_at: string;
+      }
+    }>> {
+      return fetch(`${BASE_URL}/api/promoter/join`, {
+        method: 'POST',
+        headers: getAuthHeader(token),
+      }).then(handleResponse);
+    },
+
+    async getReferrals(token: string): Promise<ApiResponse<{
+      status: string;
+      referrals: Array<{
+        id: number;
+        name: string;
+        slug: string;
+        company_plan_id: number;
+        company_plan_status: string;
+        created_at: string;
+        company_plan: { id: number; name: string;[key: string]: any };
+      }>;
+    }>> {
+      return fetch(`${BASE_URL}/api/promoter/referrals`, {
+        method: 'GET',
+        headers: getAuthHeader(token),
+      }).then(handleResponse);
+    },
+
+    async getCommissions(token: string): Promise<ApiResponse<{
+      status: string;
+      commissions: Array<{
+        id: number;
+        promoter_id: number;
+        company_id: number;
+        amount: number;
+        currency: string;
+        status: string;
+        created_at: string;
+        company: { id: number; name: string; slug: string };
+      }>;
+    }>> {
+      return fetch(`${BASE_URL}/api/promoter/commissions`, {
+        method: 'GET',
+        headers: getAuthHeader(token),
+      }).then(handleResponse);
+    },
+
+    async getProfile(token: string): Promise<ApiResponse<{
+      status: string;
+      stats: {
+        total_referrals: number;
+        total_commissions: number;
+        pending_commissions: number;
+      };
+    }>> {
+      return fetch(`${BASE_URL}/api/promoter/profile`, {
+        method: 'GET',
+        headers: getAuthHeader(token),
+      }).then(handleResponse);
+    },
+  },
+
   // Profile API
 
   // User's Companies API
