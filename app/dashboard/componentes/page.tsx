@@ -41,13 +41,6 @@ export default function ComponentesPlaygroundPage() {
   const [popupButtonUrl, setPopupButtonUrl] = useState("https://tutienda.com/promo");
   const [popupButtonColor, setPopupButtonColor] = useState("#059669");
 
-  // Ticket preview state (solo visual, sin guardar aún)
-  const [ticketBusinessName, setTicketBusinessName] = useState("Mi Negocio");
-  const [ticketBusinessAddress, setTicketBusinessAddress] = useState("Calle 123, Colonia, Ciudad");
-  const [ticketBusinessPhone, setTicketBusinessPhone] = useState("55 1234 5678");
-  const [ticketFooterMessage, setTicketFooterMessage] = useState("Gracias por tu compra");
-  const [ticketAccentColor, setTicketAccentColor] = useState("#000000");
-  const [ticketLogoUrl, setTicketLogoUrl] = useState<string | null>(null);
 
   // Custom design colors state
   const [cartButtonColor, setCartButtonColor] = useState("#059669"); // emerald-600 por defecto
@@ -113,30 +106,6 @@ export default function ComponentesPlaygroundPage() {
     loadSettings();
   }, [token, user?.company_id]);
 
-  // Load company data for ticket
-  useEffect(() => {
-    const loadCompany = async () => {
-      if (!token) return;
-      try {
-        const res = await api.userCompanies.get(token);
-        const payload: any = res && (res as any).data ? (res as any).data : res;
-        // Soportar forma { status: 'success', data: { ...company } } o directa
-        const company: any = payload?.data || payload;
-
-        if (company) {
-          if (company.name) setTicketBusinessName(company.name);
-          const parts = [company.address, company.city, company.state].filter(Boolean);
-          if (parts.length) setTicketBusinessAddress(parts.join(", "));
-          if (company.phone) setTicketBusinessPhone(company.phone);
-          if (company.logo_url) setTicketLogoUrl(company.logo_url);
-        }
-      } catch (error) {
-        console.error("Error loading company for ticket preview", error);
-      }
-    };
-
-    loadCompany();
-  }, [token]);
 
   const handleSave = async () => {
     if (!token || !user?.company_id) return;
@@ -252,7 +221,7 @@ export default function ComponentesPlaygroundPage() {
           )}
         </div>
         <div className="flex items-center gap-3">
-           
+
           <Button size="sm" onClick={handleSave} disabled={savingSettings || !token}>
             {savingSettings ? "Guardando..." : "Guardar cambios"}
           </Button>
@@ -263,7 +232,7 @@ export default function ComponentesPlaygroundPage() {
         <TabsList>
           <TabsTrigger value="custom-design">Custom Diseño</TabsTrigger>
           <TabsTrigger value="componentes">Componentes</TabsTrigger>
-          <TabsTrigger value="ticket">Diseño de ticket</TabsTrigger>
+
         </TabsList>
 
         <TabsContent value="custom-design" className="mt-4">
@@ -284,7 +253,7 @@ export default function ComponentesPlaygroundPage() {
                   {/* Botón Agregar al Carrito */}
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
-                      <div 
+                      <div
                         className="w-6 h-6 rounded"
                         style={{ backgroundColor: cartButtonColor }}
                       />
@@ -312,7 +281,7 @@ export default function ComponentesPlaygroundPage() {
                   {/* Icono del Carrito */}
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
-                      <div 
+                      <div
                         className="w-6 h-6 rounded border"
                         style={{ backgroundColor: cartIconColor }}
                       />
@@ -340,7 +309,7 @@ export default function ComponentesPlaygroundPage() {
                   {/* Barra de Navegación */}
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
-                      <div 
+                      <div
                         className="w-6 h-6 rounded"
                         style={{ backgroundColor: navigationBarColor }}
                       />
@@ -368,7 +337,7 @@ export default function ComponentesPlaygroundPage() {
                   {/* Botón Descargar App */}
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
-                      <div 
+                      <div
                         className="w-6 h-6 rounded"
                         style={{ backgroundColor: downloadAppColor }}
                       />
@@ -396,7 +365,7 @@ export default function ComponentesPlaygroundPage() {
                   {/* Color de Fondo */}
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
-                      <div 
+                      <div
                         className="w-6 h-6 rounded border"
                         style={{ backgroundColor: backgroundColor }}
                       />
@@ -426,24 +395,24 @@ export default function ComponentesPlaygroundPage() {
                 <div className="mt-8 p-6 border rounded-lg" style={{ backgroundColor: backgroundColor }}>
                   <div className="space-y-4">
                     {/* Preview de navegación */}
-                    <div 
+                    <div
                       className="p-4 rounded-lg text-white"
                       style={{ backgroundColor: navigationBarColor }}
                     >
                       <div className="flex items-center justify-between">
                         <span className="font-medium">Mi Tienda</span>
                         <div className="flex items-center gap-2">
-                          <div 
+                          <div
                             className="p-2 rounded"
                             style={{ backgroundColor: cartButtonColor }}
                           >
-                            <svg 
-                              className="w-5 h-5" 
+                            <svg
+                              className="w-5 h-5"
                               style={{ color: cartIconColor }}
-                              fill="currentColor" 
+                              fill="currentColor"
                               viewBox="0 0 20 20"
                             >
-                              <path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z"/>
+                              <path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
                             </svg>
                           </div>
                         </div>
@@ -452,13 +421,13 @@ export default function ComponentesPlaygroundPage() {
 
                     {/* Preview de botones */}
                     <div className="flex flex-wrap gap-4">
-                      <button 
+                      <button
                         className="px-4 py-2 rounded-lg text-white font-medium"
                         style={{ backgroundColor: cartButtonColor }}
                       >
                         Agregar al carrito
                       </button>
-                      <button 
+                      <button
                         className="px-4 py-2 rounded-lg text-white font-medium"
                         style={{ backgroundColor: downloadAppColor }}
                       >
@@ -476,373 +445,265 @@ export default function ComponentesPlaygroundPage() {
           <div className="grid gap-6 lg:grid-cols-2">
             {/* Banner demo + config */}
             <Card className="border-dashed">
-          <CardHeader className="flex flex-row items-center justify-between gap-4">
-            <div>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Megaphone className="h-5 w-5 text-emerald-600" />
-                Banner promocional
-              </CardTitle>
-              <CardDescription>
-                Aquí podrás diseñar banners hero que luego se mostrarán en tu web o app.
-              </CardDescription>
-            </div>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <span>Habilitado</span>
-              <Switch checked={bannerEnabled} onCheckedChange={setBannerEnabled} />
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Preview */}
-            {bannerEnabled ? (
-              <div
-                className="rounded-2xl border px-6 py-4 text-white shadow-lg"
-                style={{ backgroundColor: bannerColor || "#059669" }}
-              >
-                <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <p className="text-sm sm:text-base font-medium leading-snug">
-                    {bannerText}
-                  </p>
-                  <Button
-                    size="sm"
-                    className="bg-white text-emerald-700 hover:bg-emerald-50 whitespace-nowrap"
-                    asChild={!!bannerButtonUrl}
+              <CardHeader className="flex flex-row items-center justify-between gap-4">
+                <div>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Megaphone className="h-5 w-5 text-emerald-600" />
+                    Banner promocional
+                  </CardTitle>
+                  <CardDescription>
+                    Aquí podrás diseñar banners hero que luego se mostrarán en tu web o app.
+                  </CardDescription>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <span>Habilitado</span>
+                  <Switch checked={bannerEnabled} onCheckedChange={setBannerEnabled} />
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Preview */}
+                {bannerEnabled ? (
+                  <div
+                    className="rounded-2xl border px-6 py-4 text-white shadow-lg"
+                    style={{ backgroundColor: bannerColor || "#059669" }}
                   >
-                    {bannerButtonUrl ? (
-                      <a href={bannerButtonUrl} target="_blank" rel="noreferrer">
-                        {bannerButtonLabel}
-                      </a>
-                    ) : (
-                      <span>{bannerButtonLabel}</span>
-                    )}
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="rounded-xl border border-dashed border-muted-foreground/20 p-4 text-xs text-muted-foreground">
-                El banner está deshabilitado. Activa el switch para verlo en la vista previa.
-              </div>
-            )}
+                    <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <p className="text-sm sm:text-base font-medium leading-snug">
+                        {bannerText}
+                      </p>
+                      <Button
+                        size="sm"
+                        className="bg-white text-emerald-700 hover:bg-emerald-50 whitespace-nowrap"
+                        asChild={!!bannerButtonUrl}
+                      >
+                        {bannerButtonUrl ? (
+                          <a href={bannerButtonUrl} target="_blank" rel="noreferrer">
+                            {bannerButtonLabel}
+                          </a>
+                        ) : (
+                          <span>{bannerButtonLabel}</span>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-dashed border-muted-foreground/20 p-4 text-xs text-muted-foreground">
+                    El banner está deshabilitado. Activa el switch para verlo en la vista previa.
+                  </div>
+                )}
 
-            {/* Config form */}
-            <div className="grid gap-4 text-sm sm:grid-cols-2">
-              <div className="space-y-1 sm:col-span-2">
-                <label className="font-medium">Texto del banner</label>
-                <Textarea
-                  value={bannerText}
-                  onChange={(e) => setBannerText(e.target.value)}
-                  rows={2}
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="font-medium text-xs uppercase tracking-wide text-muted-foreground">
-                  Texto del botón
-                </label>
-                <Input
-                  value={bannerButtonLabel}
-                  onChange={(e) => setBannerButtonLabel(e.target.value)}
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="font-medium text-xs uppercase tracking-wide text-muted-foreground">
-                  Link del botón
-                </label>
-                <Input
-                  placeholder="https://tutienda.com/promo"
-                  value={bannerButtonUrl}
-                  onChange={(e) => setBannerButtonUrl(e.target.value)}
-                />
-              </div>
-              <div className="space-y-1 sm:col-span-2">
-                <label className="font-medium text-xs uppercase tracking-wide text-muted-foreground">
-                  Color de fondo
-                </label>
-                <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                  <input
-                    type="color"
-                    value={bannerColor}
-                    onChange={(e) => setBannerColor(e.target.value)}
-                    className="h-9 w-9 cursor-pointer rounded-md border border-input bg-background p-1"
-                  />
-                  <Input
-                    value={bannerColor}
-                    onChange={(e) => setBannerColor(e.target.value)}
-                    className="max-w-[140px] text-xs"
-                  />
-                  <span className="hidden sm:inline">
-                    Ejemplo: #059669
-                  </span>
+                {/* Config form */}
+                <div className="grid gap-4 text-sm sm:grid-cols-2">
+                  <div className="space-y-1 sm:col-span-2">
+                    <label className="font-medium">Texto del banner</label>
+                    <Textarea
+                      value={bannerText}
+                      onChange={(e) => setBannerText(e.target.value)}
+                      rows={2}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="font-medium text-xs uppercase tracking-wide text-muted-foreground">
+                      Texto del botón
+                    </label>
+                    <Input
+                      value={bannerButtonLabel}
+                      onChange={(e) => setBannerButtonLabel(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="font-medium text-xs uppercase tracking-wide text-muted-foreground">
+                      Link del botón
+                    </label>
+                    <Input
+                      placeholder="https://tutienda.com/promo"
+                      value={bannerButtonUrl}
+                      onChange={(e) => setBannerButtonUrl(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-1 sm:col-span-2">
+                    <label className="font-medium text-xs uppercase tracking-wide text-muted-foreground">
+                      Color de fondo
+                    </label>
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      <input
+                        type="color"
+                        value={bannerColor}
+                        onChange={(e) => setBannerColor(e.target.value)}
+                        className="h-9 w-9 cursor-pointer rounded-md border border-input bg-background p-1"
+                      />
+                      <Input
+                        value={bannerColor}
+                        onChange={(e) => setBannerColor(e.target.value)}
+                        className="max-w-[140px] text-xs"
+                      />
+                      <span className="hidden sm:inline">
+                        Ejemplo: #059669
+                      </span>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-          </CardContent>
+              </CardContent>
             </Card>
 
             {/* Modal demo + config */}
             <Card className="border-dashed">
-          <CardHeader className="flex flex-row items-center justify-between gap-4">
-            <div>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <MousePointerClick className="h-5 w-5 text-sky-600" />
-                Modal / Pop-up
-              </CardTitle>
-              <CardDescription>
-                Ejemplo de modal que luego podrás adaptar para anuncios, formularios o confirmaciones.
-              </CardDescription>
-            </div>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <span>Habilitado</span>
-              <Switch checked={popupEnabled} onCheckedChange={setPopupEnabled} />
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <p className="text-sm text-muted-foreground">
-              Configura el contenido del pop-up y luego pruébalo con el botón de vista previa.
-            </p>
-            <div className="flex flex-wrap gap-3">
-              <Button
-                size="sm"
-                disabled={!popupEnabled}
-                onClick={() => popupEnabled && setOpenDemoModal(true)}
-              >
-                Abrir pop-up de ejemplo
-              </Button>
-            </div>
-
-            {/* Config form */}
-            <div className="grid gap-4 text-sm">
-              <div className="space-y-1">
-                <label className="font-medium">Imagen del pop-up</label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="block w-full text-sm text-muted-foreground file:mr-3 file:rounded-md file:border file:border-input file:bg-background file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-foreground hover:file:bg-accent hover:file:text-accent-foreground"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    console.log("[UI Settings] onChange imagen pop-up", { hasFile: !!file, file });
-                    if (!file) return;
-                    const objectUrl = URL.createObjectURL(file);
-                    console.log("[UI Settings] objectUrl generado para previsualización", { objectUrl });
-                    setPopupImageUrl(objectUrl);
-                    setPopupImageFile(file);
-                  }}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Selecciona una imagen desde tu dispositivo para previsualizar el pop-up.
+              <CardHeader className="flex flex-row items-center justify-between gap-4">
+                <div>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <MousePointerClick className="h-5 w-5 text-sky-600" />
+                    Modal / Pop-up
+                  </CardTitle>
+                  <CardDescription>
+                    Ejemplo de modal que luego podrás adaptar para anuncios, formularios o confirmaciones.
+                  </CardDescription>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <span>Habilitado</span>
+                  <Switch checked={popupEnabled} onCheckedChange={setPopupEnabled} />
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <p className="text-sm text-muted-foreground">
+                  Configura el contenido del pop-up y luego pruébalo con el botón de vista previa.
                 </p>
-                {popupImageUrl && (
-                  <div className="mt-2 overflow-hidden rounded-lg border bg-muted">
-                    <img
-                      src={popupImageUrl}
-                      alt="Preview del pop-up"
-                      className="h-32 w-full object-cover"
-                    />
-                  </div>
-                )}
-              </div>
-              <div className="space-y-1">
-                <label className="font-medium">Título</label>
-                <Input value={popupTitle} onChange={(e) => setPopupTitle(e.target.value)} />
-              </div>
-              <div className="space-y-1">
-                <label className="font-medium">Descripción</label>
-                <Textarea
-                  value={popupDescription}
-                  onChange={(e) => setPopupDescription(e.target.value)}
-                  rows={3}
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="font-medium text-xs uppercase tracking-wide text-muted-foreground">
-                  Texto del botón
-                </label>
-                <Input
-                  value={popupButtonLabel}
-                  onChange={(e) => setPopupButtonLabel(e.target.value)}
-                  placeholder="Ej: Ir al grupo de WhatsApp"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="font-medium text-xs uppercase tracking-wide text-muted-foreground">
-                  Link del botón
-                </label>
-                <Input
-                  value={popupButtonUrl}
-                  onChange={(e) => setPopupButtonUrl(e.target.value)}
-                  placeholder="https://..."
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="font-medium text-xs uppercase tracking-wide text-muted-foreground">
-                  Color del botón
-                </label>
-                <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                  <input
-                    type="color"
-                    value={popupButtonColor}
-                    onChange={(e) => setPopupButtonColor(e.target.value)}
-                    className="h-9 w-9 cursor-pointer rounded-md border border-input bg-background p-1"
-                  />
-                  <Input
-                    value={popupButtonColor}
-                    onChange={(e) => setPopupButtonColor(e.target.value)}
-                    className="max-w-[140px] text-xs"
-                  />
-                  <span className="hidden sm:inline">Ejemplo: #059669</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Dialog preview */}
-            <Dialog open={openDemoModal && popupEnabled} onOpenChange={setOpenDemoModal}>
-              <DialogContent className="w-[90%] sm:max-w-md rounded-2xl p-0 overflow-hidden">
-                {popupImageUrl && (
-                  <div className="w-full h-64 sm:h-72 overflow-hidden">
-                    <img
-                      src={popupImageUrl}
-                      alt={popupTitle}
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-                )}
-                <div className="px-5 py-4 space-y-4">
-                  <DialogHeader className="p-0">
-                    <DialogTitle>{popupTitle}</DialogTitle>
-                    <DialogDescription>{popupDescription}</DialogDescription>
-                  </DialogHeader>
-                 
-                  {popupButtonLabel && popupButtonUrl && (
-                    <div className="pt-2 flex justify-center">
-                      <Button
-                        className="w-[90%] max-w-xs text-sm font-semibold rounded-full"
-                        style={{
-                          backgroundColor: popupButtonColor || '#059669',
-                          color: '#ffffff',
-                        }}
-                        onClick={() => {
-                          window.open(popupButtonUrl, '_blank');
-                        }}
-                      >
-                        {popupButtonLabel}
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </DialogContent>
-            </Dialog>
-          </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="ticket" className="mt-4">
-          <div className="grid gap-6 lg:grid-cols-2">
-            {/* Ticket design preview + config */}
-            <Card className="border-dashed">
-          <CardHeader className="flex flex-row items-center justify-between gap-4">
-            <div>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <LayoutTemplate className="h-5 w-5 text-zinc-700" />
-                Diseño de ticket
-              </CardTitle>
-              <CardDescription>
-                Vista previa del ticket que verán tus clientes cuando completes una venta.
-              </CardDescription>
-            </div>
-            <Badge variant="outline" className="text-xs font-normal">Solo vista previa</Badge>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Ticket preview + form en dos columnas */}
-            <div className="grid gap-6 lg:grid-cols-2 items-start">
-              <div
-                className="mx-auto w-full max-w-sm rounded-xl border bg-background px-4 py-4 shadow-sm text-xs font-mono"
-                style={{ borderColor: ticketAccentColor || "#e5e5e5" }}
-              >
-                <div className="text-center space-y-1 mb-3">
-                  {ticketLogoUrl && (
-                    <div className="flex justify-center mb-1">
-                      <img
-                        src={ticketLogoUrl}
-                        alt={ticketBusinessName}
-                        className="h-10 w-10 rounded-full object-cover border border-muted-foreground/30"
-                      />
-                    </div>
-                  )}
-                  <p
-                    className="font-semibold uppercase tracking-wide"
-                    style={{ color: ticketAccentColor || undefined }}
+                <div className="flex flex-wrap gap-3">
+                  <Button
+                    size="sm"
+                    disabled={!popupEnabled}
+                    onClick={() => popupEnabled && setOpenDemoModal(true)}
                   >
-                    {ticketBusinessName}
-                  </p>
-                  <p className="text-[11px] text-muted-foreground leading-snug">{ticketBusinessAddress}</p>
-                  <p className="text-[11px] text-muted-foreground">Tel. {ticketBusinessPhone}</p>
+                    Abrir pop-up de ejemplo
+                  </Button>
                 </div>
-                <div className="flex justify-between text-[11px] mb-1">
-                  <span>Ticket #1234</span>
-                  <span>29/11/2025 14:35</span>
-                </div>
-                <div className="border-t border-dashed my-1" />
-                <div className="space-y-1 mb-2">
-                  <div className="flex justify-between gap-2">
-                    <span>Producto demo 1</span>
-                    <span>$120.00</span>
-                  </div>
-                  <div className="flex justify-between gap-2">
-                    <span>Producto demo 2</span>
-                    <span>$80.00</span>
-                  </div>
-                </div>
-                <div className="border-t border-dashed my-1" />
-                <div className="flex justify-between text-[11px] font-semibold mb-2">
-                  <span style={{ color: ticketAccentColor || undefined }}>Total</span>
-                  <span style={{ color: ticketAccentColor || undefined }}>$200.00</span>
-                </div>
-                <div className="mt-3 pt-2 border-t text-center text-[11px] text-muted-foreground leading-snug">
-                  <p>{ticketFooterMessage}</p>
-                  <p>Conserva este comprobante.</p>
-                </div>
-              </div>
 
-              {/* Ticket config form */}
-              <div className="flex-1 space-y-3 text-sm">
-                <p className="text-xs text-muted-foreground">
-                  Ajusta los textos principales del ticket. Más adelante podrás conectar esta configuración con los
-                  datos reales de tus ventas.
-                </p>
-                <div className="space-y-1">
-                  <label className="font-medium text-xs uppercase tracking-wide text-muted-foreground">
-                    Mensaje de agradecimiento
-                  </label>
-                  <Textarea
-                    value={ticketFooterMessage}
-                    onChange={(e) => setTicketFooterMessage(e.target.value)}
-                    rows={2}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="font-medium text-xs uppercase tracking-wide text-muted-foreground">
-                    Color de acento del ticket
-                  </label>
-                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                {/* Config form */}
+                <div className="grid gap-4 text-sm">
+                  <div className="space-y-1">
+                    <label className="font-medium">Imagen del pop-up</label>
                     <input
-                      type="color"
-                      value={ticketAccentColor}
-                      onChange={(e) => setTicketAccentColor(e.target.value)}
-                      className="h-9 w-9 cursor-pointer rounded-md border border-input bg-background p-1"
+                      type="file"
+                      accept="image/*"
+                      className="block w-full text-sm text-muted-foreground file:mr-3 file:rounded-md file:border file:border-input file:bg-background file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-foreground hover:file:bg-accent hover:file:text-accent-foreground"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        console.log("[UI Settings] onChange imagen pop-up", { hasFile: !!file, file });
+                        if (!file) return;
+                        const objectUrl = URL.createObjectURL(file);
+                        console.log("[UI Settings] objectUrl generado para previsualización", { objectUrl });
+                        setPopupImageUrl(objectUrl);
+                        setPopupImageFile(file);
+                      }}
                     />
+                    <p className="text-xs text-muted-foreground">
+                      Selecciona una imagen desde tu dispositivo para previsualizar el pop-up.
+                    </p>
+                    {popupImageUrl && (
+                      <div className="mt-2 overflow-hidden rounded-lg border bg-muted">
+                        <img
+                          src={popupImageUrl}
+                          alt="Preview del pop-up"
+                          className="h-32 w-full object-cover"
+                        />
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-1">
+                    <label className="font-medium">Título</label>
+                    <Input value={popupTitle} onChange={(e) => setPopupTitle(e.target.value)} />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="font-medium">Descripción</label>
+                    <Textarea
+                      value={popupDescription}
+                      onChange={(e) => setPopupDescription(e.target.value)}
+                      rows={3}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="font-medium text-xs uppercase tracking-wide text-muted-foreground">
+                      Texto del botón
+                    </label>
                     <Input
-                      value={ticketAccentColor}
-                      onChange={(e) => setTicketAccentColor(e.target.value)}
-                      className="max-w-[140px] text-xs"
+                      value={popupButtonLabel}
+                      onChange={(e) => setPopupButtonLabel(e.target.value)}
+                      placeholder="Ej: Ir al grupo de WhatsApp"
                     />
-                    <span className="hidden sm:inline">Ejemplo: #000000</span>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="font-medium text-xs uppercase tracking-wide text-muted-foreground">
+                      Link del botón
+                    </label>
+                    <Input
+                      value={popupButtonUrl}
+                      onChange={(e) => setPopupButtonUrl(e.target.value)}
+                      placeholder="https://..."
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="font-medium text-xs uppercase tracking-wide text-muted-foreground">
+                      Color del botón
+                    </label>
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      <input
+                        type="color"
+                        value={popupButtonColor}
+                        onChange={(e) => setPopupButtonColor(e.target.value)}
+                        className="h-9 w-9 cursor-pointer rounded-md border border-input bg-background p-1"
+                      />
+                      <Input
+                        value={popupButtonColor}
+                        onChange={(e) => setPopupButtonColor(e.target.value)}
+                        className="max-w-[140px] text-xs"
+                      />
+                      <span className="hidden sm:inline">Ejemplo: #059669</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
-          </CardContent>
+
+                {/* Dialog preview */}
+                <Dialog open={openDemoModal && popupEnabled} onOpenChange={setOpenDemoModal}>
+                  <DialogContent className="w-[90%] sm:max-w-md rounded-2xl p-0 overflow-hidden">
+                    {popupImageUrl && (
+                      <div className="w-full h-64 sm:h-72 overflow-hidden">
+                        <img
+                          src={popupImageUrl}
+                          alt={popupTitle}
+                          className="h-full w-full object-cover"
+                        />
+                      </div>
+                    )}
+                    <div className="px-5 py-4 space-y-4">
+                      <DialogHeader className="p-0">
+                        <DialogTitle>{popupTitle}</DialogTitle>
+                        <DialogDescription>{popupDescription}</DialogDescription>
+                      </DialogHeader>
+
+                      {popupButtonLabel && popupButtonUrl && (
+                        <div className="pt-2 flex justify-center">
+                          <Button
+                            className="w-[90%] max-w-xs text-sm font-semibold rounded-full"
+                            style={{
+                              backgroundColor: popupButtonColor || '#059669',
+                              color: '#ffffff',
+                            }}
+                            onClick={() => {
+                              window.open(popupButtonUrl, '_blank');
+                            }}
+                          >
+                            {popupButtonLabel}
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </CardContent>
             </Card>
           </div>
         </TabsContent>
+
+
       </Tabs>
     </div>
   );

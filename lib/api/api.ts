@@ -1040,6 +1040,14 @@ export const api = {
         popup_image_url?: string;
         popup_title?: string;
         popup_description?: string;
+        popup_button_label?: string;
+        popup_button_url?: string;
+        popup_button_color?: string;
+        cart_button_color?: string;
+        cart_icon_color?: string;
+        navigation_bar_color?: string;
+        download_app_color?: string;
+        background_color?: string;
       },
       token: string
     ): Promise<ApiResponse<any>> {
