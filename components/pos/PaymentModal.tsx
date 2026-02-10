@@ -397,7 +397,7 @@ export function PaymentModal({ isOpen, onClose, total, totalPointsRequired, onPa
         id: customerId,
         name: 'Cliente Escaneado',
         email: 'cliente@ejemplo.com',
-        phone: '1234567890',
+        phone: '522381638747',
         points: 100,
       };
       setCustomer(mockCustomer);

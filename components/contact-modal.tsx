@@ -17,7 +17,7 @@ interface ContactModalProps {
 export function ContactModal({
     isOpen,
     onClose,
-    whatsappUrl = 'https://wa.me/521234567890',
+    whatsappUrl = 'https://wa.me/522381638747',
     salesEmail = 'info@fynlink.shop',
     calendlyUrl = 'https://calendly.com/juancarlosjuarez26/30min'
 }: ContactModalProps) {
