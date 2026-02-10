@@ -20,6 +20,7 @@ export function FloatingCartButton({ onClick, isHidden = false, backgroundColor,
   return (
     <Button
       onClick={onClick}
+      variant="ghost"
       className={`fixed z-[99999] h-14 sm:h-16 rounded-full text-white shadow-[0_8px_30px_rgb(0,0,0,0.12)] transition-all duration-300 ease-in-out px-5 sm:px-6 flex items-center gap-3 
         ${itemCount === 0 && !backgroundColor ? 'bg-gray-700 hover:bg-gray-700 opacity-90' : ''}
         ${itemCount > 0 && !backgroundColor ? 'bg-black hover:bg-gray-800 hover:scale-110' : ''}
@@ -27,7 +28,7 @@ export function FloatingCartButton({ onClick, isHidden = false, backgroundColor,
         `}
       style={{
         touchAction: 'manipulation',
-        backgroundColor: backgroundColor,
+        backgroundColor: backgroundColor || (itemCount === 0 ? '#374151' : '#000000'),
         // Ensure visibility on iOS devices with notch/safe area
         // Use inline style to override Tailwind bottom/right when needed
         bottom: 'max(env(safe-area-inset-bottom, 0px), 80px)',

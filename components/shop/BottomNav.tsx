@@ -8,9 +8,10 @@ interface BottomNavProps {
     activeSection: Section;
     onSectionChange: (section: Section) => void;
     backgroundColor?: string;
+    activeItemColor?: string;
 }
 
-export function BottomNav({ activeSection, onSectionChange, backgroundColor }: BottomNavProps) {
+export function BottomNav({ activeSection, onSectionChange, backgroundColor, activeItemColor }: BottomNavProps) {
     const navItems = [
         { id: 'home', label: 'Inicio', icon: Store },
         { id: 'promotions', label: 'Promos', icon: Gift },
@@ -35,9 +36,10 @@ export function BottomNav({ activeSection, onSectionChange, backgroundColor }: B
                                 <button
                                     key={item.id}
                                     className={`flex flex-col items-center justify-center gap-1 px-3 py-3 rounded-xl text-[10px] sm:text-xs font-medium transition-all duration-200 flex-1 ${isActive
-                                        ? 'text-white bg-gradient-to-b from-emerald-500 to-emerald-600 shadow-lg scale-105'
+                                        ? `text-white shadow-lg scale-105 ${!activeItemColor ? 'bg-gradient-to-b from-emerald-500 to-emerald-600' : ''}`
                                         : 'text-gray-600 hover:bg-gray-100 hover:scale-105'
                                         }`}
+                                    style={isActive && activeItemColor ? { backgroundColor: activeItemColor } : {}}
                                     onClick={() => onSectionChange(item.id)}
                                 >
                                     <Icon className={`h-5 w-5 sm:h-6 sm:w-6 ${isActive ? 'stroke-[2.5]' : 'stroke-2'}`} />

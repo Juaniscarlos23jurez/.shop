@@ -1178,23 +1178,26 @@ function PublicLocationProductsPageContent() {
                       <Badge
                         variant={selectedCategory === 'all' ? 'default' : 'outline'}
                         className={`cursor-pointer transition-all px-5 py-2.5 text-base sm:text-lg rounded-full ${selectedCategory === 'all'
-                          ? 'bg-emerald-600 hover:bg-emerald-700'
+                          ? `text-white ${!uiSettings?.cart_button_color ? 'bg-emerald-600 hover:bg-emerald-700' : ''}`
                           : 'hover:bg-gray-100'
                           }`}
+                        style={selectedCategory === 'all' && uiSettings?.cart_button_color ? { backgroundColor: uiSettings.cart_button_color } : {}}
                         onClick={() => setSelectedCategory('all')}
                       >
                         Todos ({items.length})
                       </Badge>
                       {categories.map((category) => {
                         const count = items.filter(item => item.category === category).length;
+                        const isCurrentActive = selectedCategory === category;
                         return (
                           <Badge
                             key={category}
-                            variant={selectedCategory === category ? 'default' : 'outline'}
-                            className={`cursor-pointer transition-all px-5 py-2.5 text-base sm:text-lg rounded-full ${selectedCategory === category
-                              ? 'bg-emerald-600 hover:bg-emerald-700'
+                            variant={isCurrentActive ? 'default' : 'outline'}
+                            className={`cursor-pointer transition-all px-5 py-2.5 text-base sm:text-lg rounded-full ${isCurrentActive
+                              ? `text-white ${!uiSettings?.cart_button_color ? 'bg-emerald-600 hover:bg-emerald-700' : ''}`
                               : 'hover:bg-gray-100'
                               }`}
+                            style={isCurrentActive && uiSettings?.cart_button_color ? { backgroundColor: uiSettings.cart_button_color } : {}}
                             onClick={() => setSelectedCategory(category)}
                           >
                             {category} ({count})
@@ -1374,6 +1377,7 @@ function PublicLocationProductsPageContent() {
         activeSection={activeSection}
         onSectionChange={setActiveSection}
         backgroundColor={uiSettings?.navigation_bar_color}
+        activeItemColor={uiSettings?.cart_button_color}
       />
 
       {/* Popup Modal from UI Settings */}
