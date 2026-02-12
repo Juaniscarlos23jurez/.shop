@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -29,18 +29,6 @@ export function CatalogCard({ item, locationId, phone, initialOpen = false, poin
   useEffect(() => {
     setResolvedPoints(userPoints);
   }, [userPoints]);
-
-  // Debug: Log item data on mount
-  useEffect(() => {
-    console.log('🔍 CatalogCard mounted:', {
-      id: item.id,
-      name: item.name,
-      image_url: item.image_url,
-      image_url_type: typeof item.image_url,
-      image_url_length: item.image_url?.length,
-      has_image: !!item.image_url
-    });
-  }, []);
 
   useEffect(() => {
     if (initialOpen) {
@@ -88,7 +76,7 @@ export function CatalogCard({ item, locationId, phone, initialOpen = false, poin
     return Number.isNaN(parsed) ? null : parsed;
   };
 
-  const getActivePointRule = (): PointRule | null => {
+  const activeRule = useMemo((): PointRule | null => {
     if (!pointRules || pointRules.length === 0) return null;
     const now = new Date();
     const candidates = pointRules
@@ -109,10 +97,9 @@ export function CatalogCard({ item, locationId, phone, initialOpen = false, poin
     if (!candidates.length) return null;
 
     return candidates.reduce((best, candidate) => (candidate.ratio > best.ratio ? candidate : best)).rule;
-  };
+  }, [pointRules]);
 
-  const activeRule = getActivePointRule();
-  const estimatedPoints = (() => {
+  const estimatedPoints = useMemo(() => {
     if (!activeRule || isService) return 0;
     const spendAmount = parseNumber(activeRule.spend_amount);
     const pointsForRule = parseNumber(activeRule.points);
@@ -120,52 +107,62 @@ export function CatalogCard({ item, locationId, phone, initialOpen = false, poin
     const subtotal = typeof item.price === "number" ? item.price : parseFloat(String(item.price));
     if (!subtotal || subtotal <= 0) return 0;
     return Math.round(((subtotal / spendAmount) * pointsForRule) * 10) / 10;
-  })();
+  }, [activeRule, isService, item.price]);
 
-  const redeemPoints = typeof item.points === "number" && item.points > 0 ? item.points : null;
-  const userLoyaltyPoints = typeof resolvedPoints === "number" && resolvedPoints >= 0 ? resolvedPoints : null;
-  const progressPercent =
+  const redeemPoints = useMemo(() =>
+    typeof item.points === "number" && item.points > 0 ? item.points : null,
+    [item.points]);
+
+  const userLoyaltyPoints = useMemo(() =>
+    typeof resolvedPoints === "number" && resolvedPoints >= 0 ? resolvedPoints : null,
+    [resolvedPoints]);
+
+  const progressPercent = useMemo(() =>
     redeemPoints && userLoyaltyPoints !== null && redeemPoints > 0
       ? Math.min(100, (userLoyaltyPoints / redeemPoints) * 100)
-      : 0;
-  const pointsNeeded =
-    redeemPoints && userLoyaltyPoints !== null ? Math.max(0, redeemPoints - userLoyaltyPoints) : null;
-  const canRedeem = redeemPoints !== null && userLoyaltyPoints !== null && userLoyaltyPoints >= redeemPoints;
+      : 0,
+    [redeemPoints, userLoyaltyPoints]);
+
+  const pointsNeeded = useMemo(() =>
+    redeemPoints && userLoyaltyPoints !== null ? Math.max(0, redeemPoints - userLoyaltyPoints) : null,
+    [redeemPoints, userLoyaltyPoints]);
+
+  const canRedeem = useMemo(() =>
+    redeemPoints !== null && userLoyaltyPoints !== null && userLoyaltyPoints >= redeemPoints,
+    [redeemPoints, userLoyaltyPoints]);
 
   const renderRedemptionProgress = (variant: "card" | "modal" = "card") => {
     if (!redeemPoints || userLoyaltyPoints === null) return null;
     const wrapperClasses =
       variant === "card"
-        ? "mt-3 rounded-2xl border border-purple-100 bg-white px-4 py-3 shadow-sm"
+        ? "mt-2 rounded-xl border border-purple-100 bg-white/80 px-2 py-2 shadow-sm"
         : "mb-6 rounded-2xl border border-purple-100 bg-purple-50 px-6 py-4";
     const progressBg = variant === "card" ? "bg-gray-100" : "bg-white/70";
 
     return (
       <div className={wrapperClasses}>
-        <div className="flex items-center gap-2 text-purple-700 font-semibold text-sm">
-          <Gift className="h-4 w-4" />
-          <span>{redeemPoints} pts para gratis</span>
+        <div className="flex items-center gap-1.5 text-purple-700 font-bold text-[10px] uppercase tracking-tight">
+          <Gift className="h-3 w-3" />
+          <span>{redeemPoints} pts</span>
         </div>
-        <div className="mt-3">
-          <div className="flex items-center justify-between text-xs text-purple-600 font-medium mb-1">
-            <span>{userLoyaltyPoints} pts</span>
-            <span>{redeemPoints} pts</span>
-          </div>
-          <div className={`h-2 rounded-full ${progressBg} overflow-hidden`}>
+        <div className="mt-1.5">
+          <div className={`h-1.5 rounded-full ${progressBg} overflow-hidden`}>
             <div
               className="h-full rounded-full bg-gradient-to-r from-purple-500 to-purple-700 transition-all duration-300"
               style={{ width: `${progressPercent}%` }}
             />
           </div>
         </div>
-        <p
-          className={`text-sm mt-3 ${canRedeem ? "text-emerald-600 font-semibold" : "text-gray-600"
-            }`}
-        >
-          {canRedeem
-            ? "🎉 ¡Este producto lo puedes pagar con tus puntos!"
-            : `Te faltan ${pointsNeeded} puntos`}
-        </p>
+        {!canRedeem && pointsNeeded && (
+          <p className="text-[9px] mt-1 text-gray-500 font-medium leading-none">
+            Faltan {pointsNeeded}
+          </p>
+        )}
+        {canRedeem && (
+          <p className="text-[9px] mt-1 text-emerald-600 font-bold leading-none animate-pulse">
+            ¡DÉ LO GRATIS!
+          </p>
+        )}
       </div>
     );
   };
@@ -177,41 +174,45 @@ export function CatalogCard({ item, locationId, phone, initialOpen = false, poin
         onClick={() => setIsModalOpen(true)}
       >
         <div className="flex flex-row h-full">
-          <div className="relative w-48 md:w-56 flex-shrink-0 bg-gray-100 flex items-center justify-center p-3">
-            {item.image_url ? (
-              <img
-                src={item.image_url}
-                alt={item.name}
-                className="w-full h-auto object-contain transition-transform duration-300 group-hover:scale-105 rounded-lg"
-                style={{ maxHeight: "200px" }}
-                onLoad={() => {
-                  console.log('✅ Card image loaded:', item?.image_url);
-                }}
-                onError={(e) => {
-                  const img = e.target as HTMLImageElement;
-                  const currentSrc = img.src;
-                  console.error('❌ Card image failed:', {
-                    currentSrc,
-                    originalUrl: item?.image_url,
-                    productId: item?.id,
-                    productName: item?.name
-                  });
-                  img.style.display = 'none';
-                }}
-              />
-            ) : (
-              <div className="w-full h-48 flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg">
-                <Package className="h-16 w-16 text-gray-300" />
-              </div>
-            )}
-            {item.category && (
-              <div
-                className={`absolute top-2 left-2 text-white text-xs font-medium px-2.5 py-1 rounded-full shadow-lg z-10 ${!buttonColor ? 'bg-emerald-600' : ''}`}
-                style={buttonColor ? { backgroundColor: buttonColor } : {}}
-              >
-                {item.category}
-              </div>
-            )}
+          <div className="relative w-32 sm:w-48 md:w-56 flex-shrink-0 bg-gray-100 flex flex-col items-stretch p-2 sm:p-3">
+            <div className="flex-1 flex items-center justify-center relative min-h-[100px] sm:min-h-[140px]">
+              {item.image_url ? (
+                <img
+                  src={item.image_url}
+                  alt={item.name}
+                  className="w-full h-auto object-contain transition-transform duration-300 group-hover:scale-105 rounded-lg"
+                  style={{ maxHeight: "120px" }}
+                  onLoad={() => {
+                    console.log('✅ Card image loaded:', item?.image_url);
+                  }}
+                  onError={(e) => {
+                    const img = e.target as HTMLImageElement;
+                    const currentSrc = img.src;
+                    console.error('❌ Card image failed:', {
+                      currentSrc,
+                      originalUrl: item?.image_url,
+                      productId: item?.id,
+                      productName: item?.name
+                    });
+                    img.style.display = 'none';
+                  }}
+                />
+              ) : (
+                <div className="w-full h-24 sm:h-32 flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg">
+                  <Package className="h-10 w-10 sm:h-12 sm:w-12 text-gray-300" />
+                </div>
+              )}
+              {item.category && (
+                <div
+                  className={`absolute top-0 left-0 text-white text-[9px] sm:text-[10px] font-medium px-2 py-0.5 rounded-full shadow-lg z-10 ${!buttonColor ? 'bg-emerald-600' : ''}`}
+                  style={buttonColor ? { backgroundColor: buttonColor } : {}}
+                >
+                  {item.category}
+                </div>
+              )}
+            </div>
+
+            {renderRedemptionProgress("card")}
           </div>
 
           <div className="p-5 flex flex-col flex-1 justify-between min-w-0">
@@ -228,8 +229,6 @@ export function CatalogCard({ item, locationId, phone, initialOpen = false, poin
                   </span>
                 </div>
               )}
-
-              {renderRedemptionProgress("card")}
 
               {item.description && (
                 <p className="text-sm md:text-base text-gray-600 leading-relaxed line-clamp-3">

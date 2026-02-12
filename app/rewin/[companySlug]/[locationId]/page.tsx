@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { publicWebApiClient } from '@/lib/api/public-web';
@@ -109,7 +109,6 @@ function PublicLocationProductsPageContent() {
   const [location, setLocation] = useState<PublicCompanyLocation | null>(null);
   const [company, setCompany] = useState<any>(null);
   const [items, setItems] = useState<PublicItem[]>([]);
-  const [filteredItems, setFilteredItems] = useState<PublicItem[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -391,7 +390,6 @@ function PublicLocationProductsPageContent() {
     if (hasItems) {
       const normalized = cachedItems!.data as PublicItem[];
       setItems(normalized);
-      setFilteredItems(normalized);
       const uniqueCategories = Array.from(new Set(
         normalized.map(i => i.category).filter(Boolean)
       )) as string[];
@@ -490,7 +488,6 @@ function PublicLocationProductsPageContent() {
                 product_type: p.product_type,
               } as PublicItem));
               setItems(normalized);
-              setFilteredItems(normalized);
               const uniqueCategories = Array.from(new Set(
                 normalized.map(item => item.category).filter(Boolean)
               )) as string[];
@@ -499,7 +496,6 @@ function PublicLocationProductsPageContent() {
               console.log('Items loaded:', normalized);
             } else {
               setItems([]);
-              setFilteredItems([]);
               setCache(`${baseKey}:items`, [] as PublicItem[]);
             }
           } else {
@@ -662,7 +658,7 @@ function PublicLocationProductsPageContent() {
   }, [company, location, locationId]);
 
   // Filter products based on search and category
-  useEffect(() => {
+  const filteredItems = useMemo(() => {
     let filtered = items;
 
     // Filter by category
@@ -679,7 +675,7 @@ function PublicLocationProductsPageContent() {
       );
     }
 
-    setFilteredItems(filtered);
+    return filtered;
   }, [items, selectedCategory, searchQuery]);
 
   const renderNotFound = (message: string) => (
@@ -734,7 +730,7 @@ function PublicLocationProductsPageContent() {
 
   return (
     <div
-      className="min-h-screen pb-32 relative"
+      className="min-h-screen pb-32 relative overflow-x-hidden"
       style={{ backgroundColor: uiSettings?.background_color ?? '#f9fafb' }}
     >
       {/* Banner from UI Settings */}
@@ -759,51 +755,14 @@ function PublicLocationProductsPageContent() {
         </div>
       )}
 
-      {/* Follow Button (Left Side) */}
-      {user && company && (
-        <div className="fixed top-16 left-6 z-50">
-
-
-          {/* Botón Descargar app solo en móvil, debajo del botón Seguir */}
-          <div className="mt-3 sm:hidden">
-            <Button
-              className="w-full gap-2 shadow-xl text-white rounded-full h-12 px-4 text-sm font-semibold hover:opacity-90 transition-opacity"
-              style={{ backgroundColor: uiSettings?.download_app_color || '#059669' }}
-              onClick={() => {
-                if (typeof window === 'undefined') return;
-
-                trackAnalyticsEvent('download_app_click', {
-                  location: 'follow_button_mobile',
-                  company_slug: companySlug,
-                  location_id: locationId,
-                  user_logged_in: !!user,
-                });
-
-                const IOS_URL = 'https://apps.apple.com/us/app/rewin-reward/id6748548104';
-                const ANDROID_URL = process.env.NEXT_PUBLIC_ANDROID_URL ||
-                  'https://play.google.com/store/apps/details?id=com.fynlink.BoostYou';
-
-                const userAgent = window.navigator.userAgent || '';
-                const isIOS = /iPhone|iPad|iPod/i.test(userAgent);
-                const isAndroid = /Android/i.test(userAgent);
-
-                const targetUrl = isIOS ? IOS_URL : ANDROID_URL;
-                window.location.href = targetUrl;
-              }}
-            >
-              <Download className="h-4 w-4" />
-              <span>Descargar app</span>
-            </Button>
-          </div>
-        </div>
-      )}
+      {/* Header Buttons (Left & Right Sides) */}
 
       {/* Login/User Button (Right Side) + Descargar app */}
       <div className="fixed top-16 right-6 z-50 flex items-center gap-3">
         {user ? (
           <>
             <Button
-              className="gap-2 shadow-xl text-white rounded-full h-12 px-5 text-sm font-semibold hidden sm:inline-flex hover:opacity-90 transition-opacity"
+              className="gap-2 shadow-xl text-white rounded-full h-10 sm:h-12 px-3 sm:px-5 text-xs sm:text-sm font-semibold flex hover:opacity-90 transition-opacity"
               style={{ backgroundColor: uiSettings?.download_app_color || '#059669' }}
               onClick={() => {
                 if (typeof window === 'undefined') return;
@@ -828,19 +787,20 @@ function PublicLocationProductsPageContent() {
               }}
             >
               <Download className="h-4 w-4" />
-              <span>Descargar app</span>
+              <span className="sm:hidden">App</span>
+              <span className="hidden sm:inline">Descargar app</span>
             </Button>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button className="gap-3 shadow-xl bg-white text-emerald-600 hover:bg-gray-50 hover:text-emerald-700 border-2 border-emerald-100 rounded-full pl-3 pr-6 h-16 text-lg">
-                  <Avatar className="h-11 w-11 border-2 border-emerald-200">
+                <Button className="gap-2 sm:gap-3 shadow-xl bg-white text-emerald-600 hover:bg-gray-50 hover:text-emerald-700 border-2 border-emerald-100 rounded-full pl-2 sm:pl-3 pr-4 sm:pr-6 h-10 sm:h-16 text-sm sm:text-lg">
+                  <Avatar className="h-7 w-7 sm:h-11 sm:w-11 border-2 border-emerald-200">
                     <AvatarImage src={user.profile_photo_path || user.avatar_url || user.photo_url} />
                     <AvatarFallback className="bg-emerald-100 text-emerald-700">
                       {user.name ? user.name.substring(0, 2).toUpperCase() : 'US'}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="font-semibold max-w-[140px] truncate text-base">{user.name}</span>
+                  <span className="font-semibold max-w-[80px] sm:max-w-[140px] truncate">{user.name}</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
@@ -862,7 +822,7 @@ function PublicLocationProductsPageContent() {
         ) : (
           <>
             <Button
-              className="gap-2 shadow-xl text-white rounded-full h-12 px-5 text-sm font-semibold hidden sm:inline-flex hover:opacity-90 transition-opacity"
+              className="gap-2 shadow-xl text-white rounded-full h-10 sm:h-12 px-3 sm:px-5 text-xs sm:text-sm font-semibold flex hover:opacity-90 transition-opacity"
               style={{ backgroundColor: uiSettings?.download_app_color || '#059669' }}
               onClick={() => {
                 if (typeof window === 'undefined') return;
@@ -886,19 +846,21 @@ function PublicLocationProductsPageContent() {
                 window.location.href = targetUrl;
               }}
             >
-              <span>Descargar app</span>
+              <Download className="h-4 w-4" />
+              <span className="sm:hidden">App</span>
+              <span className="hidden sm:inline">Descargar app</span>
             </Button>
 
             <Link href={`/rewin/${companySlug}/${locationId}/auth/login`}>
               <Button
                 variant="outline"
-                className="gap-3 shadow-xl bg-white rounded-full h-16 px-6 text-lg font-semibold border-2 hover:bg-gray-50 transition-all"
+                className="gap-2 sm:gap-3 shadow-xl bg-white rounded-full h-10 sm:h-16 px-4 sm:px-6 text-sm sm:text-lg font-semibold border-2 hover:bg-gray-50 transition-all"
                 style={{
                   color: uiSettings?.download_app_color || '#059669',
                   borderColor: uiSettings?.download_app_color || '#059669'
                 }}
               >
-                <User className="h-6 w-6" />
+                <User className="h-5 w-5 sm:h-6 sm:w-6" />
                 <span>Iniciar Sesión</span>
               </Button>
             </Link>
@@ -983,7 +945,7 @@ function PublicLocationProductsPageContent() {
 
               {/* Location Info */}
               <div className="flex-1">
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2 break-words">
                   {company?.name} <span className="text-gray-400 font-normal text-xl sm:text-2xl">| {location.name}</span>
                 </h1>
                 {company?.description && (
