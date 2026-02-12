@@ -68,17 +68,18 @@ interface AcceptedOrder {
     product_id: number;
     quantity: number;
     unit_price: string;
+    product_name?: string;
     product: {
       id: number;
       name: string;
       price: string;
-    };
+    } | null;
   }>;
   user: {
     id: number;
     name: string;
     email: string;
-  };
+  } | null;
 }
 
 export default function PuntoVentaPage() {
@@ -1152,7 +1153,7 @@ export default function PuntoVentaPage() {
                                 {getStatusLabel(order.status)}
                               </span>
                             </div>
-                            <p className="text-sm text-slate-600">Cliente: {order.user.name}</p>
+                            <p className="text-sm text-slate-600">Cliente: {order.user?.name || 'Cliente General'}</p>
                           </div>
 
                           {/* Items */}
@@ -1161,7 +1162,7 @@ export default function PuntoVentaPage() {
                             <div className="space-y-1">
                               {order.items.map((item) => (
                                 <div key={item.id} className="text-sm flex justify-between">
-                                  <span className="text-slate-700">{item.product.name}</span>
+                                  <span className="text-slate-700">{item.product?.name || item.product_name || 'Producto Desconocido'}</span>
                                   <span className="text-slate-600">x{item.quantity}</span>
                                 </div>
                               ))}
@@ -1258,7 +1259,7 @@ export default function PuntoVentaPage() {
                       <div key={order.id} className="border rounded-lg p-4 bg-muted/10">
                         <div className="flex justify-between items-start">
                           <div>
-                            <p className="font-medium">Orden #{order.id.slice(-6)}</p>
+                            <p className="font-medium">Orden #{String(order.id).slice(-6)}</p>
                             <p className="text-sm text-muted-foreground">
                               {new Date(order.createdAt).toLocaleString()}
                             </p>
@@ -1289,7 +1290,7 @@ export default function PuntoVentaPage() {
                                   quantity: item.quantity
                                 })));
                                 // Guardar el ID de la orden actual para eliminarla después del pago
-                                setCurrentOrderId(order.id);
+                                setCurrentOrderId(String(order.id));
                                 // Abrir modal de pago
                                 setIsPaymentModalOpen(true);
                               }}
