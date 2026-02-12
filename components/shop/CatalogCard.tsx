@@ -200,14 +200,14 @@ export function CatalogCard({ item, locationId, phone, initialOpen = false, poin
         onClick={() => setIsModalOpen(true)}
       >
         <div className="flex flex-row h-full">
-          <div className="relative w-32 sm:w-48 md:w-56 flex-shrink-0 bg-gray-100 flex flex-col items-stretch p-2 sm:p-3">
-            <div className="flex-1 flex items-center justify-center relative min-h-[100px] sm:min-h-[140px]">
+          <div className="relative w-44 sm:w-64 md:w-80 flex-shrink-0 bg-gray-100 flex flex-col items-stretch overflow-hidden">
+            <div className="flex-1 flex items-center justify-center relative min-h-[140px] sm:min-h-[200px]">
               {item.image_url ? (
                 <img
                   src={item.image_url}
                   alt={item.name}
-                  className="w-full h-auto object-contain transition-transform duration-300 group-hover:scale-105 rounded-lg"
-                  style={{ maxHeight: "120px" }}
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  style={{ maxHeight: "200px" }}
                   onLoad={() => {
                     console.log('✅ Card image loaded:', item?.image_url);
                   }}
@@ -365,12 +365,12 @@ export function CatalogCard({ item, locationId, phone, initialOpen = false, poin
                 </div>
 
                 {item.image_url ? (
-                  <div className="w-full flex items-center justify-center bg-gray-50 rounded-2xl p-6 mb-6">
+                  <div className="w-full flex items-center justify-center bg-gray-50 rounded-2xl mb-6 overflow-hidden">
                     <img
                       src={item.image_url}
                       alt={item.name}
-                      className="max-w-full h-auto object-contain rounded-xl"
-                      style={{ maxHeight: "350px" }}
+                      className="w-full h-auto object-cover"
+                      style={{ maxHeight: "550px" }}
                       onLoad={() => {
                         console.log('✅ Product image loaded successfully:', item?.image_url);
                       }}
