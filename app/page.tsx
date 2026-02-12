@@ -357,6 +357,35 @@ export default function HomePage() {
   const [slideWidth, setSlideWidth] = useState(240)
   const [activeDemo, setActiveDemo] = useState<'mobile' | 'web'>('mobile')
 
+  // Typewriter effect state
+  const words = ["y vende más", "y gana más", "y crece más"]
+  const [wordIndex, setWordIndex] = useState(0)
+  const [charIndex, setCharIndex] = useState(0)
+  const [isDeleting, setIsDeleting] = useState(false)
+
+  useEffect(() => {
+    const word = words[wordIndex]
+    const timer = setTimeout(() => {
+      if (!isDeleting) {
+        if (charIndex < word.length) {
+          setCharIndex(prev => prev + 1)
+        } else {
+          // Pause at full word
+          setTimeout(() => setIsDeleting(true), 1000)
+        }
+      } else {
+        if (charIndex > 0) {
+          setCharIndex(prev => prev - 1)
+        } else {
+          setIsDeleting(false)
+          setWordIndex((prev) => (prev + 1) % words.length)
+        }
+      }
+    }, isDeleting ? 20 : 40)
+
+    return () => clearTimeout(timer)
+  }, [charIndex, isDeleting, wordIndex])
+
   // Testimonials data for carousel
   const testimonials = [
     {
@@ -611,13 +640,16 @@ export default function HomePage() {
                 <span>Plataforma #1 de Lealtad en LATAM</span>
               </div>
 
-              <h1 className="text-5xl md:text-7xl font-black text-[#0f172a] tracking-tight mb-8 leading-[1.1]">
-                Sé el <span className="text-green-600">dueño</span> total de <br />
-                tu propia <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">Marca</span>
+              <h1 className="text-5xl md:text-7xl font-black text-[#0f172a] tracking-tight mb-8 leading-[1.2] min-h-[140px] md:min-h-[180px]">
+                Fideliza a tus clientes <br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 inline-block pb-4">
+                  {words[wordIndex].substring(0, charIndex)}
+                  <span className="text-blue-600 animate-pulse ml-1">|</span>
+                </span>
               </h1>
 
               <p className="mt-8 max-w-2xl mx-auto text-xl text-[#64748b] leading-relaxed">
-                Olvídate de las rentas mensuales. Sé el dueño absoluto de tu relación con los clientes con <span className="text-blue-600 font-bold">Tu Marca</span> y <span className="text-[#0f172a] font-bold">Fynlink+</span>. Todo bajo tu control, de por vida y sin intermediarios.
+                Impulsa tus ventas recurrentes con nuestro ecosistema integral de lealtad y gestión. Elige el plan que mejor se adapte a tu etapa y <span className="text-blue-600 font-bold">comienza a crecer</span> hoy mismo.
               </p>
 
               <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
@@ -793,6 +825,38 @@ export default function HomePage() {
 
               {/* MacBook Shadow */}
               <div className="mt-8 h-4 w-3/4 mx-auto bg-black/10 blur-2xl rounded-full"></div>
+            </div>
+          </div>
+        </section>
+
+        {/* Features Section - Moved Up */}
+        <section id="features" className="py-16 bg-white" >
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-16">
+              <h2 className="text-4xl font-black text-[#0f172a] mb-4">
+                Todo lo que necesitas para fidelizar clientes
+              </h2>
+              <p className="text-[#64748b] text-xl max-w-3xl mx-auto">
+                Herramientas poderosas diseñadas para negocios que quieren crecer
+              </p>
+            </div>
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {features.map((feature, index) => (
+                <Card key={index} className="group hover:shadow-xl transition-all duration-300 border border-gray-100 rounded-2xl overflow-hidden bg-white">
+                  <div className="p-1">
+                    {feature.visual}
+                  </div>
+                  <div className="p-6">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-10 h-10 rounded-lg bg-gray-50 flex items-center justify-center group-hover:bg-green-50 transition-colors">
+                        {feature.icon}
+                      </div>
+                      <h3 className="text-lg font-bold text-[#0f172a] leading-tight">{feature.title}</h3>
+                    </div>
+                    <p className="text-[#64748b] text-sm leading-relaxed">{feature.description}</p>
+                  </div>
+                </Card>
+              ))}
             </div>
           </div>
         </section>
@@ -1089,162 +1153,6 @@ export default function HomePage() {
                   <div className="text-3xl font-bold text-[#0f172a]">{stat.number}</div>
                   <div className="text-base text-[#64748b]">{stat.label}</div>
                 </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Testimonials Section */}
-        <section id="testimonials" className="py-16 bg-gray-50" >
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12">
-              <h2 className="text-4xl font-black text-[#0f172a] mb-4">
-                Lo que dicen nuestros clientes
-              </h2>
-              <p className="text-[#64748b] text-xl max-w-2xl mx-auto">
-                Empresas de todos los tamaños confían en Fynlink+ para fidelizar a sus clientes
-              </p>
-            </div>
-
-            {/* Testimonial carousel (smooth continuous sliding) */}
-            <div className="max-w-6xl mx-auto overflow-hidden">
-              <div className="relative">
-                {/* Viewport showing 3 testimonials */}
-                <div className="overflow-hidden">
-                  <div
-                    className="flex gap-6 transition-transform duration-1000 ease-in-out"
-                    style={{
-                      transform: `translateX(-${testimonialOffset * 33.333}%)`,
-                      transition: isTestimonialAnimating ? 'transform 1000ms ease-in-out' : 'none'
-                    }}
-                    onTransitionEnd={handleTestimonialTransitionEnd}
-                  >
-                    {/* Duplicate testimonials for seamless loop */}
-                    {[...testimonials, ...testimonials.slice(0, 3)].map((testimonial, index) => (
-                      <div
-                        key={`testimonial-${index}`}
-                        className="flex-shrink-0 w-full md:w-1/3 px-3"
-                      >
-                        <div className="bg-white p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow text-left h-full">
-                          <div className="mb-4 text-yellow-400">
-                            {[...Array(5)].map((_, i) => (
-                              <svg key={i} className="w-5 h-5 inline-block" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                              </svg>
-                            ))}
-                          </div>
-                          <p className="text-gray-600 text-lg mb-6 min-h-[88px]">
-                            "{testimonial.quote}"
-                          </p>
-                          <div className="flex items-center">
-                            <img
-                              src={testimonial.avatar}
-                              alt={testimonial.author}
-                              className="w-12 h-12 rounded-full object-cover mr-4"
-                            />
-                            <div>
-                              <div className="font-medium text-gray-900 text-lg">{testimonial.author}</div>
-                              <div className="text-base text-gray-500">{testimonial.role}</div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Controls and dots */}
-                <div className="mt-6 flex items-center justify-center gap-6">
-                  {/* Previous button */}
-                  <button
-                    type="button"
-                    onClick={goToPrevTestimonial}
-                    className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
-                    aria-label="Testimonio anterior"
-                  >
-                    <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                    </svg>
-                  </button>
-
-                  {/* Play/Pause button */}
-                  <button
-                    type="button"
-                    onClick={toggleTestimonialAutoplay}
-                    className="p-2 rounded-full bg-[#16a34a] hover:bg-[#15803d] transition-colors"
-                    aria-label={isTestimonialPaused ? 'Reproducir automático' : 'Pausar automático'}
-                  >
-                    {isTestimonialPaused ? (
-                      <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M8 5v14l11-7z" />
-                      </svg>
-                    ) : (
-                      <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
-                      </svg>
-                    )}
-                  </button>
-
-                  {/* Next button */}
-                  <button
-                    type="button"
-                    onClick={goToNextTestimonial}
-                    className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
-                    aria-label="Siguiente testimonio"
-                  >
-                    <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </button>
-                </div>
-
-                {/* Dots indicator */}
-                <div className="mt-4 flex items-center justify-center gap-2">
-                  {testimonials.map((_, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => setTestimonialOffset(i)}
-                      className={`h-2 w-2 rounded-full transition-colors ${i === (testimonialOffset % testimonials.length)
-                        ? 'bg-[#16a34a]'
-                        : 'bg-gray-300 hover:bg-gray-400'
-                        }`}
-                      aria-label={`Ir al testimonio ${i + 1}`}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Features Section */}
-        <section id="features" className="py-16 bg-white" >
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16">
-              <h2 className="text-4xl font-black text-[#0f172a] mb-4">
-                Todo lo que necesitas para fidelizar clientes
-              </h2>
-              <p className="text-[#64748b] text-xl max-w-3xl mx-auto">
-                Herramientas poderosas diseñadas para negocios que quieren crecer
-              </p>
-            </div>
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {features.map((feature, index) => (
-                <Card key={index} className="group hover:shadow-xl transition-all duration-300 border border-gray-100 rounded-2xl overflow-hidden bg-white">
-                  <div className="p-1">
-                    {feature.visual}
-                  </div>
-                  <div className="p-6">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="w-10 h-10 rounded-lg bg-gray-50 flex items-center justify-center group-hover:bg-green-50 transition-colors">
-                        {feature.icon}
-                      </div>
-                      <h3 className="text-lg font-bold text-[#0f172a] leading-tight">{feature.title}</h3>
-                    </div>
-                    <p className="text-[#64748b] text-sm leading-relaxed">{feature.description}</p>
-                  </div>
-                </Card>
               ))}
             </div>
           </div>
@@ -1771,6 +1679,130 @@ export default function HomePage() {
           </div>
         </section>
 
+        {/* Testimonials Section - Moved Down */}
+        <section id="testimonials" className="py-16 bg-gray-50" >
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12">
+              <h2 className="text-4xl font-black text-[#0f172a] mb-4">
+                Lo que dicen nuestros clientes
+              </h2>
+              <p className="text-[#64748b] text-xl max-w-2xl mx-auto">
+                Empresas de todos los tamaños confían en Fynlink+ para fidelizar a sus clientes
+              </p>
+            </div>
+
+            {/* Testimonial carousel (smooth continuous sliding) */}
+            <div className="max-w-6xl mx-auto overflow-hidden">
+              <div className="relative">
+                {/* Viewport showing 3 testimonials */}
+                <div className="overflow-hidden">
+                  <div
+                    className="flex gap-6 transition-transform duration-1000 ease-in-out"
+                    style={{
+                      transform: `translateX(-${testimonialOffset * 33.333}%)`,
+                      transition: isTestimonialAnimating ? 'transform 1000ms ease-in-out' : 'none'
+                    }}
+                    onTransitionEnd={handleTestimonialTransitionEnd}
+                  >
+                    {/* Duplicate testimonials for seamless loop */}
+                    {[...testimonials, ...testimonials.slice(0, 3)].map((testimonial, index) => (
+                      <div
+                        key={`testimonial-${index}`}
+                        className="flex-shrink-0 w-full md:w-1/3 px-3"
+                      >
+                        <div className="bg-white p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow text-left h-full">
+                          <div className="mb-4 text-yellow-400">
+                            {[...Array(5)].map((_, i) => (
+                              <svg key={i} className="w-5 h-5 inline-block" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                              </svg>
+                            ))}
+                          </div>
+                          <p className="text-gray-600 text-lg mb-6 min-h-[88px]">
+                            "{testimonial.quote}"
+                          </p>
+                          <div className="flex items-center">
+                            <img
+                              src={testimonial.avatar}
+                              alt={testimonial.author}
+                              className="w-12 h-12 rounded-full object-cover mr-4"
+                            />
+                            <div>
+                              <div className="font-medium text-gray-900 text-lg">{testimonial.author}</div>
+                              <div className="text-base text-gray-500">{testimonial.role}</div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Controls and dots */}
+                <div className="mt-6 flex items-center justify-center gap-6">
+                  {/* Previous button */}
+                  <button
+                    type="button"
+                    onClick={goToPrevTestimonial}
+                    className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+                    aria-label="Testimonio anterior"
+                  >
+                    <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+
+                  {/* Play/Pause button */}
+                  <button
+                    type="button"
+                    onClick={toggleTestimonialAutoplay}
+                    className="p-2 rounded-full bg-[#16a34a] hover:bg-[#15803d] transition-colors"
+                    aria-label={isTestimonialPaused ? 'Reproducir automático' : 'Pausar automático'}
+                  >
+                    {isTestimonialPaused ? (
+                      <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M8 5v14l11-7z" />
+                      </svg>
+                    ) : (
+                      <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
+                      </svg>
+                    )}
+                  </button>
+
+                  {/* Next button */}
+                  <button
+                    type="button"
+                    onClick={goToNextTestimonial}
+                    className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+                    aria-label="Siguiente testimonio"
+                  >
+                    <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
+
+                {/* Dots indicator */}
+                <div className="mt-4 flex items-center justify-center gap-2">
+                  {testimonials.map((_, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => setTestimonialOffset(i)}
+                      className={`h-2 w-2 rounded-full transition-colors ${i === (testimonialOffset % testimonials.length)
+                        ? 'bg-[#16a34a]'
+                        : 'bg-gray-300 hover:bg-gray-400'
+                        }`}
+                      aria-label={`Ir al testimonio ${i + 1}`}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Plans Section */}
 
         <PricingSection />
@@ -1838,7 +1870,7 @@ export default function HomePage() {
                   ¿Cuánto cuesta Fynlink+ y qué incluye cada plan?
                 </h3>
                 <p className="text-[#64748b] text-base leading-relaxed">
-                  Contamos con planes mensuales y anuales que se adaptan al tamaño de tu negocio. En todos los planes tienes acceso al programa de puntos, cupones digitales, dashboard de analíticas y soporte. En los planes superiores se incluye multi-sucursal, POS avanzado y acceso a la API. Puedes revisar los detalles en la sección de precios.
+                  Ofrecemos opciones flexibles según tu etapa: desde un <span className="font-bold text-[#0f172a]">pago único de $200 MXN</span> para el Plan Básico, hasta cotizaciones personalizadas para los planes Pro y Empresa que requieren implementación a medida. Todos los planes incluyen acceso al programa de lealtad, dashboard y soporte.
                 </p>
               </div>
 

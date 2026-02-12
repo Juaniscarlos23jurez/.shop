@@ -90,87 +90,67 @@ export function PricingSection({ activePlanId }: { activePlanId?: number | strin
     const plans = [
         {
             id: 1,
-            name: 'Licencia Starter',
-            subtitle: 'Ideal para elevar tu marca propia',
-            price: '14,999',
-            monthlyFrom: '1,250',
-            installments: '12',
-            period: 'de por vida',
-            description: 'Acceso vitalicio a las herramientas core:',
+            name: 'Plan Básico',
+            subtitle: 'Ideal para emprendedores y pequeños negocios',
+            price: '200',
+            period: 'único',
+            description: 'Comienza a fidelizar a tus clientes hoy:',
             features: [
-                'Todo desbloqueado desde el día 1',
-                'Tu propio Dominio (.com / .com.mx)',
-                'Sitio web profesional con carrito',
-                'Pedidos ilimitados por WhatsApp',
-                'Catálogo digital interactivo',
-                'Punto de venta (POS) completo',
-                'Programa de lealtad vitalicio',
-                'Cupones digitales ilimitados',
-                'Hasta 5 sucursales',
-                'Soporte técnico por 2 años',
-                'Actualizaciones de seguridad incluidas'
+                'Programa de lealtad básico',
+                'Hasta 500 clientes registrados',
+                'Catálogo digital básico',
+                'Pedidos por WhatsApp',
+                '1 sucursal',
+                'Cupones digitales (hasta 10)',
+                'Soporte por email/WhatsApp'
             ],
-            cta: 'Comprar Licencia Vitalicia',
+            cta: 'Comprar ahora',
             popular: false,
             badge: 'PAGO ÚNICO'
         },
         {
             id: 2,
-            name: 'Ecosistema Premium',
-            subtitle: 'Tu propia APP en Stores y control absoluto',
-            price: '49,999',
-            monthlyFrom: '4,167',
-            installments: '12',
-            period: 'de por vida',
-            description: 'Todo en Starter, más tu propia tecnología nativa:',
+            name: 'Plan Pro',
+            subtitle: 'Ecosistema completo y marca propia',
+            price: 'COTIZACIÓN',
+            period: 'personalizado',
+            description: 'Lleva tu negocio al siguiente nivel:',
             features: [
+                'Todo en el Plan Básico',
                 'TU PROPIA APP NATIVA (Android & iOS)',
-                'Publicación en App Store y Play Store',
-                'Diseño personalizado de tu marca',
-                'WhatsApp Business API con IA vitalicio',
-                'Chatbot inteligente 24/7',
-                'Dominio y correo profesional propio',
-                'Todo lo demás desbloqueado para siempre',
-                'Hasta 20 sucursales',
+                'WhatsApp Business API con IA',
+                'Clientes y productos ilimitados',
+                'Hasta 10 sucursales',
+                'Punto de venta (POS) avanzado',
                 'Notificaciones push ilimitadas',
-                'Pagos con Stripe & Mercado Pago (0% comisión nuestra)',
-                'Analíticas avanzadas y SEO premium',
-                'Soporte prioritario de por vida',
-                'Actualizaciones y nuevas features incluidas'
+                'Analíticas avanzadas y SEO',
+                'Soporte prioritario 24/7'
             ],
-            cta: 'Obtener mi Ecosistema',
+            cta: 'Cotizar Plan Pro',
             popular: true,
-            badge: 'EL MÁS ELEGIDO - PAGO ÚNICO',
-            promo: '¡Ahorra $180,000/año en suscripciones!'
+            badge: 'EL MÁS RECOMENDADO',
+            promo: '¡Potencia tu marca al máximo!'
         },
         {
             id: 3,
-            name: 'White Label / Enterprise',
+            name: 'Plan Empresa',
             subtitle: 'Para cadenas y franquicias multinacionales',
-            price: '149,999',
-            monthlyFrom: '12,500',
-            installments: '12',
-            period: 'de por vida',
-            description: 'Propiedad total del sistema:',
+            price: 'COTIZACIÓN',
+            period: 'personalizado',
+            description: 'Soluciones a medida para grandes escalas:',
             features: [
-                'Todo lo de Premium sin límites',
-                'Sucursales y Staff ilimitados',
-                'Multi-marca (varias marcas en un solo sistema)',
-                'API & Webhooks avanzados',
-                'Instalación en tu propio servidor (on-premise)',
-                'Propiedad completa de la base de datos',
-                'Integración con sistemas externos (ERP/SAP/CRM)',
-                'Capacitación presencial para tu equipo',
-                'Desarrollo de features personalizadas',
-                'Soporte dedicado 24/7 con SLA garantizado',
-                'Acceso al código fuente (opcional)',
-                'Consultoría estratégica incluida',
-                'Migración de datos sin costo'
+                'Todo lo de Pro sin límites',
+                'Multi-marca y multi-empresa',
+                'Integración con ERP / SAP',
+                'Instalación en servidor propio (Opcional)',
+                'Capacitación presencial',
+                'Desarrollo de funciones a medida',
+                'Gerente de cuenta dedicado',
+                'API & Webhooks ilimitados'
             ],
-            cta: 'Consultar Propiedad Total',
+            cta: 'Consultar con Ventas',
             popular: false,
-            badge: 'PROPIEDAD TOTAL',
-            promo: 'Ahorra +$500,000/año vs competencia'
+            badge: 'MÁXIMA POTENCIA'
         }
     ];
 
@@ -180,22 +160,22 @@ export function PricingSection({ activePlanId }: { activePlanId?: number | strin
                 <section id="pricing" className="py-24 relative overflow-hidden bg-white">
                     {/* Background Atmosphere */}
                     <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full -z-10 overflow-hidden">
-                        <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-50 rounded-full blur-[120px] opacity-60"></div>
+                        <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-50 rounded-full blur-[120px] opacity-60"></div>
                         <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-green-50 rounded-full blur-[120px] opacity-60"></div>
                     </div>
 
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <div className="text-center mb-20">
-                            <div className="inline-flex items-center space-x-2 bg-slate-100 text-slate-800 text-xs font-black px-3 py-1 rounded-full mb-6 uppercase tracking-[0.2em] border border-slate-200">
-                                <span>Sin Suscripciones</span>
+                            <div className="inline-flex items-center space-x-2 bg-green-50 text-green-700 text-xs font-black px-3 py-1 rounded-full mb-6 uppercase tracking-[0.2em] border border-green-100">
+                                <span>Planes Flexibles</span>
                             </div>
                             <h2 className="text-5xl md:text-6xl font-black text-[#0f172a] mb-6 tracking-tight">
-                                Un solo pago, <br />
-                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-emerald-600">dueño para siempre</span>
+                                Impulsa tu crecimiento <br />
+                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">con el plan perfecto</span>
                             </h2>
 
                             <p className="text-xl text-slate-500 max-w-2xl mx-auto font-medium">
-                                Olvídate de las rentas mensuales. Adquiere el ecosistema completo y llévate todo desbloqueado desde el primer día.
+                                Elige la solución que mejor se adapte a tu etapa actual y escala sin límites con nuestra tecnología.
                             </p>
                         </div>
 
@@ -208,15 +188,16 @@ export function PricingSection({ activePlanId }: { activePlanId?: number | strin
                                 const isDisabled = loadingPlan !== null;
 
                                 const getButtonText = () => {
-                                    if (isActive) return 'MI PROPIEDAD';
+                                    if (isActive) return 'PLAN ACTUAL';
                                     return plan.cta.toUpperCase();
                                 };
 
                                 return (
                                     <div
                                         key={index}
+                                        id={plan.id === 3 ? "custom-plan" : undefined}
                                         className={`group relative bg-white rounded-[2.5rem] p-8 transition-all duration-500 flex flex-col h-full border ${plan.popular
-                                            ? 'border-green-200 shadow-[0_32px_64px_-16px_rgba(34,197,94,0.15)] ring-4 ring-green-50/50 scale-[1.02] z-10'
+                                            ? 'border-blue-200 shadow-[0_32px_64px_-16px_rgba(59,130,246,0.15)] ring-4 ring-blue-50/50 scale-[1.02] z-10'
                                             : 'border-slate-100 shadow-[0_20px_40px_-16px_rgba(0,0,0,0.05)] hover:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] hover:-translate-y-2'
                                             }`}
                                     >
@@ -227,7 +208,7 @@ export function PricingSection({ activePlanId }: { activePlanId?: number | strin
 
                                         <div className="mb-8">
                                             {plan.promo && (
-                                                <div className="inline-flex items-center px-4 py-1.5 rounded-full text-[11px] font-black bg-emerald-50 text-emerald-600 border border-emerald-100 mb-4 animate-pulse uppercase tracking-wider">
+                                                <div className="inline-flex items-center px-4 py-1.5 rounded-full text-[11px] font-black bg-blue-50 text-blue-600 border border-blue-100 mb-4 animate-pulse uppercase tracking-wider">
                                                     ★ {plan.promo}
                                                 </div>
                                             )}
@@ -236,24 +217,16 @@ export function PricingSection({ activePlanId }: { activePlanId?: number | strin
                                                 <div className="space-y-2">
                                                     <div className="flex items-baseline flex-wrap">
                                                         <span className="text-5xl font-black text-slate-900 tracking-tight">
-                                                            ${plan.price}
+                                                            {plan.price === 'COTIZACIÓN' ? 'Cotizar' : `$${plan.price}`}
                                                         </span>
-                                                        <span className="ml-2 text-slate-400 font-bold uppercase text-[10px] tracking-widest">MXN / Vitalicio</span>
+                                                        {plan.price !== 'COTIZACIÓN' && (
+                                                            <span className="ml-2 text-slate-400 font-bold uppercase text-[10px] tracking-widest">MXN / {plan.period}</span>
+                                                        )}
                                                     </div>
-                                                    <div className="text-xs font-bold text-green-600 flex items-center gap-1.5">
-                                                        <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
-                                                        Pago único — Sin rentas
+                                                    <div className="text-xs font-bold text-blue-600 flex items-center gap-1.5">
+                                                        <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
+                                                        {plan.price === 'COTIZACIÓN' ? 'Precio según necesidades' : plan.id === 1 ? 'Acceso de por vida' : 'Suscripción mensual recurrente'}
                                                     </div>
-                                                    {plan.monthlyFrom && (
-                                                        <div className="pt-2 border-t border-slate-100">
-                                                            <p className="text-sm text-slate-600">
-                                                                o desde <span className="font-black text-blue-600">${plan.monthlyFrom}/mes</span>
-                                                            </p>
-                                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                                                                Hasta {plan.installments} MSI con tarjetas participantes
-                                                            </p>
-                                                        </div>
-                                                    )}
                                                 </div>
                                             </div>
                                         </div>
@@ -261,13 +234,12 @@ export function PricingSection({ activePlanId }: { activePlanId?: number | strin
                                             {plan.features.map((feature: string, i: number) => {
                                                 const isHighlight = feature.includes('Puntos') ||
                                                     feature.includes('APP') ||
-                                                    feature.includes('vitalicio') ||
-                                                    feature.includes('desbloqueado') ||
-                                                    feature.includes('Propiedad');
+                                                    feature.includes('ilimitados') ||
+                                                    feature.includes('IA');
                                                 return (
                                                     <li key={i} className="flex items-start group/item">
                                                         <div className={`mt-1 flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center mr-3 transition-colors ${isHighlight
-                                                            ? 'bg-purple-100 text-purple-600'
+                                                            ? 'bg-blue-100 text-blue-600'
                                                             : 'bg-green-100 text-green-600'
                                                             }`}>
                                                             <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
@@ -275,7 +247,7 @@ export function PricingSection({ activePlanId }: { activePlanId?: number | strin
                                                             </svg>
                                                         </div>
                                                         <span className={`text-sm leading-tight transition-colors ${isHighlight
-                                                            ? 'text-purple-700 font-bold'
+                                                            ? 'text-blue-700 font-bold'
                                                             : 'text-slate-600 group-hover/item:text-slate-900'
                                                             }`}>
                                                             {feature}
@@ -289,11 +261,17 @@ export function PricingSection({ activePlanId }: { activePlanId?: number | strin
                                             <div className="block w-full">
                                                 <Button
                                                     disabled={isDisabled}
-                                                    onClick={() => handleSubscribe(plan.id)}
+                                                    onClick={() => {
+                                                        if (plan.price === 'COTIZACIÓN') {
+                                                            setIsContactModalOpen(true);
+                                                        } else {
+                                                            handleSubscribe(plan.id);
+                                                        }
+                                                    }}
                                                     className={`w-full py-7 text-base font-black rounded-2xl transition-all duration-300 ${isDisabled
                                                         ? 'bg-slate-100 text-slate-400 cursor-not-allowed border-none'
                                                         : plan.popular
-                                                            ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 shadow-[0_20px_40px_-12px_rgba(34,197,94,0.35)] hover:shadow-[0_20px_40px_-12px_rgba(34,197,94,0.45)] hover:-translate-y-1'
+                                                            ? 'bg-gradient-to-r from-blue-600 to-indigo-700 text-white hover:from-blue-700 hover:to-indigo-800 shadow-[0_20px_40px_-12px_rgba(59,130,246,0.35)] hover:shadow-[0_20px_40px_-12px_rgba(59,130,246,0.45)] hover:-translate-y-1'
                                                             : 'bg-[#0f172a] text-white hover:bg-slate-800 shadow-xl hover:-translate-y-1'
                                                         }`}
                                                 >
@@ -305,13 +283,13 @@ export function PricingSection({ activePlanId }: { activePlanId?: number | strin
 
                                             <div className="flex flex-col items-center gap-2">
                                                 {plan.badge && (
-                                                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-green-50 text-green-600 text-[10px] font-black uppercase tracking-wider border border-green-100">
+                                                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-50 text-slate-600 text-[10px] font-black uppercase tracking-wider border border-slate-100">
                                                         <span>{plan.badge}</span>
                                                     </div>
                                                 )}
                                                 <div className="text-center space-y-1">
                                                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-tight">
-                                                        Inversión única • Propiedad total de tu tecnología
+                                                        {plan.price === 'COTIZACIÓN' ? 'Contacta para preventa' : plan.id === 1 ? 'Un solo pago, para siempre' : 'Cancela en cualquier momento'}
                                                     </p>
                                                 </div>
                                             </div>
