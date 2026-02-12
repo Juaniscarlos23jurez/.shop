@@ -2241,7 +2241,7 @@ export const api = {
         page: page.toString(),
         per_page: perPage.toString(),
         ...(type && { type }),
-        ...(search && { search })
+        ...(search && { search, q: search, name: search, query: search })
       });
 
       return fetch(

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, ShoppingCart, Search } from 'lucide-react';
@@ -63,8 +63,8 @@ export default function ProductosPage() {
     setLoading(true);
     try {
       const params: any = {
-        page,
-        per_page: ITEMS_PER_PAGE
+        page: search ? 1 : page,
+        per_page: search ? 500 : ITEMS_PER_PAGE
       };
 
       if (type && type !== 'all') {
@@ -178,6 +178,15 @@ export default function ProductosPage() {
       setCurrentPage(newPage);
     }
   };
+
+  const displayedProducts = useMemo(() => {
+    if (!debouncedSearch.trim()) return products;
+    const query = debouncedSearch.toLowerCase();
+    return products.filter(p =>
+      p.name.toLowerCase().includes(query) ||
+      (p.description && p.description.toLowerCase().includes(query))
+    );
+  }, [products, debouncedSearch]);
 
   const handleTypeChange = (value: string) => {
     setProductType(value);
@@ -331,7 +340,11 @@ export default function ProductosPage() {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <CardTitle>Lista de Productos</CardTitle>
             <div className="text-sm text-slate-500">
-              Mostrando {totalItems === 0 ? 0 : (currentPage - 1) * ITEMS_PER_PAGE + 1} a {Math.min(currentPage * ITEMS_PER_PAGE, totalItems)} de {totalItems} productos
+              {debouncedSearch ? (
+                `Encontrados ${displayedProducts.length} productos`
+              ) : (
+                `Mostrando ${totalItems === 0 ? 0 : (currentPage - 1) * ITEMS_PER_PAGE + 1} a ${Math.min(currentPage * ITEMS_PER_PAGE, totalItems)} de ${totalItems} productos`
+              )}
             </div>
           </div>
         </CardHeader>
@@ -374,11 +387,11 @@ export default function ProductosPage() {
               </div>
             ) : (
               <>
-                {(Array.isArray(products) ? products : []).map((product, index) => (
+                {displayedProducts.map((product, index) => (
                   <div
                     key={product.id}
-                    className="grid grid-cols-12 items-start gap-2 p-2 border-b hover:bg-slate-50 transition-colors text-sm h-16 cursor-move"
-                    draggable
+                    className={`grid grid-cols-12 items-start gap-2 p-2 border-b hover:bg-slate-50 transition-colors text-sm h-16 ${!debouncedSearch.trim() ? 'cursor-move' : 'cursor-default'}`}
+                    draggable={!debouncedSearch.trim()}
                     onDragStart={(e) => handleDragStart(e, index)}
                     onDragEnter={() => handleDragEnter(index)}
                     onDragOver={handleDragOver}
@@ -506,7 +519,7 @@ export default function ProductosPage() {
             )}
           </div>
 
-          {totalPages > 1 && (
+          {!debouncedSearch && totalPages > 1 && (
             <div className="mt-6">
               <Pagination>
                 <PaginationContent>
