@@ -1905,21 +1905,12 @@ export default function HomePage() {
             ¿Hablamos de tu estrategia de lealtad?
           </h2>
           <p className="text-green-100 text-xl mb-8 max-w-2xl mx-auto">
-            Agenda una llamada o escríbenos por WhatsApp para conocer tus objetivos y proponerte la mejor solución.
+            Empieza hoy mismo y transforma la lealtad de tus clientes en ventas recurrentes.
           </p>
-          <div className="flex flex-col sm:flex-row justify-center gap-4 max-w-md mx-auto">
-            <Link href={WHATSAPP_URL} className="w-full sm:w-auto" target="_blank" rel="noopener noreferrer">
-              <Button size="lg" className="w-full bg-white text-[#0f172a] hover:bg-gray-100 font-medium">
-                Hablar con ventas
-              </Button>
-            </Link>
-            <Link href={CALENDLY_URL} className="w-full sm:w-auto" target="_blank" rel="noopener noreferrer">
-              <Button
-                size="lg"
-                variant="outline"
-                className="w-full bg-white/10 text-white border-white hover:bg-white hover:text-[#16a34a] hover:border-white transition-colors"
-              >
-                Agendar demo
+          <div className="flex justify-center">
+            <Link href="http://localhost:3000/auth/register" className="w-full sm:w-auto">
+              <Button size="lg" className="w-full bg-white text-[#22c55e] hover:bg-gray-100 font-black px-10 rounded-2xl shadow-xl transform transition-all hover:scale-105">
+                Registrarse
               </Button>
             </Link>
           </div>
