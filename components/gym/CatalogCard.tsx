@@ -161,31 +161,31 @@ export function CatalogCard({ item, locationId, phone, initialOpen = false, poin
     if (!redeemPoints || userLoyaltyPoints === null) return null;
     const wrapperClasses =
       variant === "card"
-        ? "mt-2 rounded-xl border border-purple-100 bg-white/80 px-2 py-2 shadow-sm"
-        : "mb-6 rounded-2xl border border-purple-100 bg-purple-50 px-6 py-4";
-    const progressBg = variant === "card" ? "bg-gray-100" : "bg-white/70";
+        ? "mt-2 rounded-xl border border-zinc-800 bg-zinc-900/80 px-2 py-2 shadow-lg"
+        : "mb-8 rounded-3xl border border-blue-500/20 bg-blue-500/5 px-8 py-6 shadow-2xl relative overflow-hidden";
+    const progressBg = variant === "card" ? "bg-zinc-800" : "bg-zinc-950";
 
     return (
       <div className={wrapperClasses}>
-        <div className="flex items-center gap-1.5 text-purple-700 font-bold text-[10px] uppercase tracking-tight">
+        <div className="flex items-center gap-1.5 text-blue-400 font-black text-[10px] uppercase tracking-tight">
           <Gift className="h-3 w-3" />
           <span>{redeemPoints} pts</span>
         </div>
         <div className="mt-1.5">
-          <div className={`h-1.5 rounded-full ${progressBg} overflow-hidden`}>
+          <div className={`h-1.5 rounded-full ${progressBg} overflow-hidden border border-zinc-800/50`}>
             <div
-              className="h-full rounded-full bg-gradient-to-r from-purple-500 to-purple-700 transition-all duration-300"
+              className="h-full rounded-full bg-gradient-to-r from-blue-600 to-blue-400 transition-all duration-300 shadow-[0_0_8px_rgba(37,99,235,0.4)]"
               style={{ width: `${progressPercent}%` }}
             />
           </div>
         </div>
         {!canRedeem && pointsNeeded && (
-          <p className="text-[9px] mt-1 text-gray-500 font-medium leading-none">
+          <p className="text-[9px] mt-1.5 text-zinc-500 font-bold tracking-tighter uppercase">
             Faltan {pointsNeeded}
           </p>
         )}
         {canRedeem && (
-          <p className="text-[9px] mt-1 text-emerald-600 font-bold leading-none animate-pulse">
+          <p className="text-[9px] mt-1.5 text-blue-400 font-black tracking-widest leading-none animate-pulse uppercase">
             ¡DÉ LO GRATIS!
           </p>
         )}
@@ -196,41 +196,34 @@ export function CatalogCard({ item, locationId, phone, initialOpen = false, poin
   return (
     <>
       <Card
-        className="overflow-hidden group hover:shadow-xl transition-all duration-300 cursor-pointer"
+        className="overflow-hidden group hover:shadow-[0_0_30px_rgba(59,130,246,0.15)] transition-all duration-500 cursor-pointer bg-zinc-900 border-zinc-800 rounded-2xl border-2"
         onClick={() => setIsModalOpen(true)}
       >
         <div className="flex flex-row h-full">
-          <div className="relative w-32 sm:w-48 md:w-56 flex-shrink-0 bg-gray-100 flex flex-col items-stretch p-2 sm:p-3">
+          <div className="relative w-32 sm:w-48 md:w-56 flex-shrink-0 bg-zinc-950 flex flex-col items-stretch p-2 sm:p-3 overflow-hidden">
             <div className="flex-1 flex items-center justify-center relative min-h-[100px] sm:min-h-[140px]">
               {item.image_url ? (
                 <img
                   src={item.image_url}
                   alt={item.name}
-                  className="w-full h-auto object-contain transition-transform duration-300 group-hover:scale-105 rounded-lg"
+                  className="w-full h-auto object-contain transition-transform duration-700 group-hover:scale-110 rounded-lg"
                   style={{ maxHeight: "120px" }}
                   onLoad={() => {
                     console.log('✅ Card image loaded:', item?.image_url);
                   }}
                   onError={(e) => {
                     const img = e.target as HTMLImageElement;
-                    const currentSrc = img.src;
-                    console.error('❌ Card image failed:', {
-                      currentSrc,
-                      originalUrl: item?.image_url,
-                      productId: item?.id,
-                      productName: item?.name
-                    });
                     img.style.display = 'none';
                   }}
                 />
               ) : (
-                <div className="w-full h-24 sm:h-32 flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg">
-                  <Package className="h-10 w-10 sm:h-12 sm:w-12 text-gray-300" />
+                <div className="w-full h-24 sm:h-32 flex items-center justify-center bg-zinc-900 rounded-lg">
+                  <Package className="h-10 w-10 sm:h-12 sm:w-12 text-zinc-800" />
                 </div>
               )}
               {item.category && (
                 <div
-                  className={`absolute top-0 left-0 text-white text-[9px] sm:text-[10px] font-medium px-2 py-0.5 rounded-full shadow-lg z-10 ${!buttonColor ? 'bg-emerald-600' : ''}`}
+                  className={`absolute top-0 left-0 text-white text-[9px] sm:text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full shadow-2xl z-10 border border-white/10 ${!buttonColor ? 'bg-blue-600' : ''}`}
                   style={buttonColor ? { backgroundColor: buttonColor } : {}}
                 >
                   {item.category}
@@ -243,12 +236,12 @@ export function CatalogCard({ item, locationId, phone, initialOpen = false, poin
 
           <div className="p-5 flex flex-col flex-1 justify-between min-w-0">
             <div className="flex-1">
-              <h3 className="font-bold text-lg md:text-xl mb-2 text-gray-900 line-clamp-2">{item.name}</h3>
+              <h3 className="font-black text-lg md:text-xl mb-2 text-white uppercase tracking-tight line-clamp-2 group-hover:text-blue-400 transition-colors">{item.name}</h3>
 
               {!isService && (
                 <div className="mb-3">
                   <span
-                    className={`text-2xl md:text-3xl font-bold ${!buttonColor ? 'text-emerald-600' : ''}`}
+                    className={`text-2xl md:text-3xl font-black tracking-tighter shadow-blue-500/20 drop-shadow-xl ${!buttonColor ? 'text-blue-500' : ''}`}
                     style={buttonColor ? { color: buttonColor } : {}}
                   >
                     {formatCurrency(typeof item.price === "number" ? item.price : 0)}
@@ -257,17 +250,17 @@ export function CatalogCard({ item, locationId, phone, initialOpen = false, poin
               )}
 
               {item.description && (
-                <p className="text-sm md:text-base text-gray-600 leading-relaxed line-clamp-3">
+                <p className="text-sm md:text-base text-zinc-500 font-medium leading-relaxed line-clamp-3">
                   {item.description}
                 </p>
               )}
             </div>
 
-            <div className="mt-4 pt-3">
+            <div className="mt-4 pt-3 border-t border-zinc-800/50">
               {isService ? (
                 <Button
                   size="lg"
-                  className={`w-full text-white font-semibold shadow-md hover:shadow-lg transition-all gap-2 ${!buttonColor ? 'bg-green-600 hover:bg-green-700' : 'hover:opacity-90'}`}
+                  className={`w-full text-white font-black shadow-lg hover:shadow-xl transition-all gap-2 uppercase tracking-widest rounded-xl ${!buttonColor ? 'bg-blue-600 hover:bg-blue-700' : 'hover:opacity-90'}`}
                   style={buttonColor ? { backgroundColor: buttonColor } : {}}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -276,29 +269,29 @@ export function CatalogCard({ item, locationId, phone, initialOpen = false, poin
                   disabled={!phone}
                 >
                   <Phone className="h-5 w-5" />
-                  WhatsApp
+                  CONSULTAR
                 </Button>
               ) : quantity <= 0 ? (
                 <div className="flex flex-col sm:flex-row gap-3">
                   <Button
                     size="lg"
-                    className={`w-full sm:flex-1 text-white font-semibold shadow-md hover:shadow-lg transition-all ${!buttonColor ? 'bg-emerald-600 hover:bg-emerald-700' : 'hover:opacity-90'}`}
+                    className={`w-full sm:flex-1 text-white font-black shadow-[0_0_20px_rgba(59,130,246,0.2)] hover:shadow-[0_0_30px_rgba(59,130,246,0.3)] transition-all uppercase tracking-widest rounded-xl ${!buttonColor ? 'bg-blue-600 hover:bg-blue-700' : 'hover:opacity-90'}`}
                     style={buttonColor ? { backgroundColor: buttonColor } : {}}
                     onClick={(e) => {
                       e.stopPropagation();
                       handleAdd();
                     }}
                   >
-                    Agregar
+                    ENTRENAR
                   </Button>
 
                 </div>
               ) : (
-                <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center justify-between gap-4 bg-zinc-950 p-1 rounded-2xl border border-zinc-800">
                   <Button
                     size="icon"
-                    variant="outline"
-                    className="h-10 w-10 rounded-full border-2"
+                    variant="ghost"
+                    className="h-10 w-10 rounded-xl hover:bg-zinc-800 text-zinc-400"
                     onClick={(e) => {
                       e.stopPropagation();
                       updateQuantity(String(item.id), quantity - 1);
@@ -307,12 +300,12 @@ export function CatalogCard({ item, locationId, phone, initialOpen = false, poin
                     -
                   </Button>
                   <div className="flex flex-col items-center flex-1">
-                    <span className="text-xs uppercase tracking-wide text-gray-500">Cantidad</span>
-                    <span className="text-lg font-semibold text-gray-900">{quantity}</span>
+                    <span className="text-[10px] uppercase font-black tracking-[0.2em] text-zinc-600">Plan</span>
+                    <span className="text-lg font-black text-white">{quantity}</span>
                   </div>
                   <Button
                     size="icon"
-                    className={`h-10 w-10 rounded-full text-white shadow-md hover:shadow-lg ${!buttonColor ? 'bg-emerald-600 hover:bg-emerald-700' : 'hover:opacity-90'}`}
+                    className={`h-10 w-10 rounded-xl text-white shadow-lg ${!buttonColor ? 'bg-blue-600 hover:bg-blue-700' : 'hover:opacity-90'}`}
                     style={buttonColor ? { backgroundColor: buttonColor } : {}}
                     onClick={(e) => {
                       e.stopPropagation();
@@ -335,19 +328,19 @@ export function CatalogCard({ item, locationId, phone, initialOpen = false, poin
             onClick={() => setIsModalOpen(false)}
           />
 
-          <div className="fixed inset-x-0 bottom-0 z-50 animate-in slide-in-from-bottom duration-500">
-            <div className="bg-white rounded-t-3xl shadow-2xl max-h-[90vh] overflow-hidden flex flex-col">
-              <div className="flex justify-center pt-3 pb-2">
-                <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
+          <div className="fixed inset-x-0 bottom-0 z-50 animate-in slide-in-from-bottom duration-500 pb-safe">
+            <div className="bg-zinc-900 rounded-t-[2.5rem] shadow-[0_-20px_50px_rgba(0,0,0,0.5)] max-h-[92vh] overflow-hidden flex flex-col border-t border-zinc-800">
+              <div className="flex justify-center pt-4 pb-2">
+                <div className="w-16 h-1.5 bg-zinc-800 rounded-full" />
               </div>
 
-              <div className="overflow-y-auto px-6 pb-6">
-                <div className="sticky top-0 bg-white pt-2 pb-4 mb-4 border-b flex justify-between items-start">
+              <div className="overflow-y-auto px-6 pb-10">
+                <div className="sticky top-0 bg-zinc-900/90 backdrop-blur-md pt-2 pb-4 mb-6 border-b border-zinc-800 flex justify-between items-start z-10">
                   <div>
-                    <h2 className="text-2xl font-bold text-gray-900">{item.name}</h2>
+                    <h2 className="text-3xl font-black text-white uppercase tracking-tighter">{item.name}</h2>
                     {item.category && (
                       <Badge
-                        className={`w-fit mt-2 ${!buttonColor ? 'bg-emerald-600' : ''}`}
+                        className={`w-fit mt-2 font-bold uppercase tracking-widest text-[10px] py-1 px-3 shadow-lg ${!buttonColor ? 'bg-blue-600' : ''}`}
                         style={buttonColor ? { backgroundColor: buttonColor } : {}}
                       >
                         {item.category}
@@ -358,53 +351,42 @@ export function CatalogCard({ item, locationId, phone, initialOpen = false, poin
                     variant="ghost"
                     size="icon"
                     onClick={() => setIsModalOpen(false)}
-                    className="-mr-2 -mt-2 rounded-full"
+                    className="-mr-2 -mt-2 rounded-full text-zinc-500 hover:text-white hover:bg-zinc-800"
                   >
-                    <X className="h-6 w-6" />
+                    <X className="h-7 w-7" />
                   </Button>
                 </div>
 
                 {item.image_url ? (
-                  <div className="w-full flex items-center justify-center bg-gray-50 rounded-2xl p-6 mb-6">
+                  <div className="w-full flex items-center justify-center bg-zinc-950 rounded-[2rem] p-8 mb-8 border border-zinc-800 shadow-inner group-modal">
                     <img
                       src={item.image_url}
                       alt={item.name}
-                      className="max-w-full h-auto object-contain rounded-xl"
-                      style={{ maxHeight: "350px" }}
+                      className="max-w-full h-auto object-contain rounded-2xl transition-transform duration-500"
+                      style={{ maxHeight: "380px" }}
                       onLoad={() => {
                         console.log('✅ Product image loaded successfully:', item?.image_url);
                       }}
                       onError={(e) => {
                         const img = e.target as HTMLImageElement;
-                        const currentSrc = img.src;
-                        console.error('❌ Error loading product image:', {
-                          currentSrc,
-                          originalUrl: item?.image_url,
-                          productId: item?.id,
-                          productName: item?.name
-                        });
                         img.style.display = 'none';
-                        const parent = img.parentElement;
-                        if (parent) {
-                          parent.innerHTML = '<div class="w-full h-64 flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl"><svg class="h-24 w-24 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg></div>';
-                        }
                       }}
                     />
                   </div>
                 ) : (
-                  <div className="w-full h-64 flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl mb-6">
-                    <Package className="h-24 w-24 text-gray-300" />
+                  <div className="w-full h-72 flex items-center justify-center bg-zinc-950 rounded-[2rem] mb-8 border border-zinc-800">
+                    <Package className="h-24 w-24 text-zinc-800" />
                   </div>
                 )}
 
                 {!isService && (
                   <div
-                    className="text-center py-5 rounded-2xl mb-6"
-                    style={{ backgroundColor: buttonColor ? `${buttonColor}15` : '#ecfdf5' }} // 15% opacity for bg
+                    className="text-center py-8 rounded-[2rem] mb-8 border-2 border-dashed border-zinc-800 group"
+                    style={{ backgroundColor: buttonColor ? `${buttonColor}10` : 'rgba(37,99,235,0.05)' }}
                   >
-                    <p className="text-sm text-gray-600 mb-1 font-medium">Precio</p>
+                    <p className="text-xs text-zinc-500 mb-2 font-black uppercase tracking-[0.2em]">Costo de Membresía / Producto</p>
                     <p
-                      className={`text-4xl font-bold ${!buttonColor ? 'text-emerald-600' : ''}`}
+                      className={`text-5xl font-black tracking-tighter ${!buttonColor ? 'text-blue-500' : ''}`}
                       style={buttonColor ? { color: buttonColor } : {}}
                     >
                       {formatCurrency(typeof item.price === "number" ? item.price : 0)}
@@ -413,9 +395,12 @@ export function CatalogCard({ item, locationId, phone, initialOpen = false, poin
                 )}
 
                 {item.description && (
-                  <div className="mb-6">
-                    <h4 className="font-semibold text-lg mb-3 text-gray-900">Descripción</h4>
-                    <p className="text-base text-gray-700 leading-relaxed whitespace-pre-line">
+                  <div className="mb-8">
+                    <h4 className="font-black text-xl mb-4 text-white uppercase tracking-tight flex items-center gap-2">
+                      <span className="w-2 h-8 bg-blue-600 rounded-full inline-block" />
+                      Descripción
+                    </h4>
+                    <p className="text-lg text-zinc-400 leading-relaxed whitespace-pre-line font-medium">
                       {item.description}
                     </p>
                   </div>
@@ -423,37 +408,39 @@ export function CatalogCard({ item, locationId, phone, initialOpen = false, poin
 
                 {/* Points earning for this purchase */}
                 {!isService && estimatedPoints > 0 && (
-                  <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-6 py-4 shadow-sm">
-                    <div className="flex items-center gap-2 text-amber-700 font-semibold text-sm">
-                      <ShoppingCart className="h-4 w-4" />
-                      <span>+{estimatedPoints} puntos al comprar</span>
+                  <div className="mb-8 rounded-[2rem] border border-blue-500/20 bg-blue-500/5 px-8 py-6 shadow-2xl relative overflow-hidden group">
+                    <div className="absolute right-0 top-0 opacity-10 -mr-8 -mt-8">
+                      <Gift className="h-32 w-32 text-blue-400 rotate-12" />
                     </div>
-                    <div className="mt-3">
-                      <div className="h-2 rounded-full bg-amber-100 overflow-hidden">
+                    <div className="flex items-center gap-3 text-blue-400 font-black text-sm uppercase tracking-widest relative z-10">
+                      <ShoppingCart className="h-5 w-5" />
+                      <span>+{estimatedPoints} Puntos de Poder</span>
+                    </div>
+                    <div className="mt-4 relative z-10">
+                      <div className="h-2.5 rounded-full bg-zinc-800 overflow-hidden border border-zinc-700">
                         <div
-                          className="h-full rounded-full bg-gradient-to-r from-amber-400 to-orange-500 transition-all duration-300"
+                          className="h-full rounded-full bg-gradient-to-r from-blue-600 to-blue-400 transition-all duration-300 shadow-[0_0_15px_rgba(37,99,235,0.5)]"
                           style={{ width: '100%' }}
                         />
                       </div>
                     </div>
-                    <p className="text-sm mt-3 text-amber-800">
-                      🎁 Gana <strong>{estimatedPoints} puntos</strong> de lealtad con esta compra
+                    <p className="text-sm mt-4 text-zinc-400 font-medium relative z-10 leading-relaxed">
+                      🎁 Sumarás <strong>{estimatedPoints} puntos</strong> a tu perfil de atleta con esta adquisición.
                     </p>
                   </div>
                 )}
 
                 {typeof item.points === "number" && item.points > 0 && (
-                  <>
-
+                  <div className="mb-4">
                     {renderRedemptionProgress("modal")}
-                  </>
+                  </div>
                 )}
 
-                <div className="flex flex-col gap-3 pt-4 pb-2">
+                <div className="flex flex-col gap-4 pt-6">
                   {isService ? (
                     <Button
                       size="lg"
-                      className={`w-full text-white font-semibold shadow-lg hover:shadow-xl transition-all gap-2 h-14 text-lg rounded-xl ${!buttonColor ? 'bg-green-600 hover:bg-green-700' : 'hover:opacity-90'}`}
+                      className={`w-full text-white font-black shadow-[0_10px_30px_rgba(59,130,246,0.3)] hover:shadow-[0_15px_40px_rgba(59,130,246,0.4)] transition-all gap-3 h-16 text-xl rounded-2xl uppercase tracking-widest ${!buttonColor ? 'bg-blue-600 hover:bg-blue-700' : 'hover:opacity-95'}`}
                       style={buttonColor ? { backgroundColor: buttonColor } : {}}
                       onClick={(e) => {
                         e.stopPropagation();
@@ -461,86 +448,89 @@ export function CatalogCard({ item, locationId, phone, initialOpen = false, poin
                       }}
                       disabled={!phone}
                     >
-                      <Phone className="h-5 w-5" />
-                      WhatsApp
+                      <Phone className="h-6 w-6" />
+                      Contactar por WhatsApp
                     </Button>
                   ) : (
                     <Button
                       size="lg"
-                      className={`w-full text-white font-semibold shadow-lg hover:shadow-xl transition-all h-14 text-lg rounded-xl ${!buttonColor ? 'bg-emerald-600 hover:bg-emerald-700' : 'hover:opacity-90'}`}
+                      className={`w-full text-white font-black shadow-[0_10px_30px_rgba(59,130,246,0.3)] hover:shadow-[0_15px_40px_rgba(59,130,246,0.4)] transition-all h-16 text-xl rounded-2xl uppercase tracking-widest ${!buttonColor ? 'bg-blue-600 hover:bg-blue-700' : 'hover:opacity-95'}`}
                       style={buttonColor ? { backgroundColor: buttonColor } : {}}
                       onClick={(e) => {
                         e.stopPropagation();
                         handleAdd();
                       }}
                     >
-                      Agregar
+                      Añadir al Plan
                     </Button>
                   )}
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    className="w-full h-12 text-base rounded-xl border-2 flex items-center justify-center gap-2"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (typeof window === "undefined") return;
-                      const baseUrl = window.location.href.split("#")[0].split("?")[0];
-                      const productUrl = `${baseUrl}?product=${encodeURIComponent(String(item.id))}`;
-                      const parts: string[] = [];
-                      parts.push(item.name);
-                      if (item.description) {
-                        parts.push(`- ${item.description}`);
-                      }
-                      const text = parts.join(" ");
 
-                      const shareData: ShareData = {
-                        title: item.name,
-                        text,
-                        url: productUrl,
-                      };
+                  <div className="grid grid-cols-2 gap-4">
+                    <Button
+                      size="lg"
+                      variant="outline"
+                      className="h-14 text-sm font-black uppercase tracking-widest rounded-2xl border-2 border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-white hover:bg-zinc-800 flex items-center justify-center gap-2 group/share"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (typeof window === "undefined") return;
+                        const baseUrl = window.location.href.split("#")[0].split("?")[0];
+                        const productUrl = `${baseUrl}?product=${encodeURIComponent(String(item.id))}`;
+                        const parts: string[] = [];
+                        parts.push(item.name);
+                        if (item.description) {
+                          parts.push(`- ${item.description}`);
+                        }
+                        const text = parts.join(" ");
 
-                      if (navigator && (navigator as any).share) {
-                        (navigator as any).share(shareData).catch(() => {
-                          if (navigator.clipboard && navigator.clipboard.writeText) {
-                            navigator.clipboard.writeText(text).catch(() => {
-                              const textarea = document.createElement("textarea");
-                              textarea.value = text;
-                              document.body.appendChild(textarea);
-                              textarea.select();
-                              try {
-                                document.execCommand("copy");
-                              } finally {
-                                document.body.removeChild(textarea);
-                              }
-                            });
-                          }
-                        });
-                      } else if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
-                        navigator.clipboard.writeText(text).catch(() => {
-                          const textarea = document.createElement("textarea");
-                          textarea.value = text;
-                          document.body.appendChild(textarea);
-                          textarea.select();
-                          try {
-                            document.execCommand("copy");
-                          } finally {
-                            document.body.removeChild(textarea);
-                          }
-                        });
-                      }
-                    }}
-                  >
-                    <Share2 className="h-5 w-5" />
-                    <span>Compartir Producto</span>
-                  </Button>
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    onClick={() => setIsModalOpen(false)}
-                    className="w-full h-12 text-base rounded-xl border-2"
-                  >
-                    Cerrar
-                  </Button>
+                        const shareData: ShareData = {
+                          title: item.name,
+                          text,
+                          url: productUrl,
+                        };
+
+                        if (navigator && (navigator as any).share) {
+                          (navigator as any).share(shareData).catch(() => {
+                            if (navigator.clipboard && navigator.clipboard.writeText) {
+                              navigator.clipboard.writeText(text).catch(() => {
+                                const textarea = document.createElement("textarea");
+                                textarea.value = text;
+                                document.body.appendChild(textarea);
+                                textarea.select();
+                                try {
+                                  document.execCommand("copy");
+                                } finally {
+                                  document.body.removeChild(textarea);
+                                }
+                              });
+                            }
+                          });
+                        } else if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
+                          navigator.clipboard.writeText(text).catch(() => {
+                            const textarea = document.createElement("textarea");
+                            textarea.value = text;
+                            document.body.appendChild(textarea);
+                            textarea.select();
+                            try {
+                              document.execCommand("copy");
+                            } finally {
+                              document.body.removeChild(textarea);
+                            }
+                          });
+                        }
+                      }}
+                    >
+                      <Share2 className="h-5 w-5 group-hover/share:text-blue-400 transition-colors" />
+                      <span>Compartir</span>
+                    </Button>
+                    <Button
+                      size="lg"
+                      variant="outline"
+                      onClick={() => setIsModalOpen(false)}
+                      className="h-14 text-sm font-black uppercase tracking-widest rounded-2xl border-2 border-zinc-800 bg-zinc-900 text-zinc-500 hover:text-white hover:bg-zinc-800"
+                    >
+                      Regresar
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
