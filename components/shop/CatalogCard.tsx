@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, memo } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +9,11 @@ const { Package, Phone, Share2, X, ShoppingCart, Gift } = Lucide as any;
 import { formatCurrency } from "@/lib/utils/currency";
 import { useCart } from "@/lib/cart-context";
 import { PublicItem, PointRule } from "@/types/api";
+import {
+  Drawer,
+  DrawerContent,
+} from "@/components/ui/drawer";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface CatalogCardProps {
   item: PublicItem;
@@ -20,7 +25,7 @@ interface CatalogCardProps {
   buttonColor?: string;
 }
 
-export function CatalogCard({ item, locationId, phone, initialOpen = false, pointRules, userPoints, buttonColor }: CatalogCardProps) {
+export const CatalogCard = memo(({ item, locationId, phone, initialOpen = false, pointRules, userPoints, buttonColor }: CatalogCardProps) => {
   const { items, addItem, updateQuantity } = useCart();
   const isService = item.product_type === "service";
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -36,31 +41,9 @@ export function CatalogCard({ item, locationId, phone, initialOpen = false, poin
     }
   }, [initialOpen]);
 
-  // Prevent background scroll when modal is open
-  useEffect(() => {
-    if (isModalOpen) {
-      const scrollY = window.scrollY;
-      document.body.style.position = 'fixed';
-      document.body.style.top = `-${scrollY}px`;
-      document.body.style.width = '100%';
-      document.body.style.overflowY = 'scroll'; // Prevent layout shift
-    } else {
-      const scrollY = document.body.style.top;
-      document.body.style.position = '';
-      document.body.style.top = '';
-      document.body.style.width = '';
-      document.body.style.overflowY = '';
-      if (scrollY) {
-        window.scrollTo(0, parseInt(scrollY || '0') * -1);
-      }
-    }
-    return () => {
-      document.body.style.position = '';
-      document.body.style.top = '';
-      document.body.style.width = '';
-      document.body.style.overflowY = '';
-    };
-  }, [isModalOpen]);
+  // Scroll lock is now handled by Drawer component
+  // We can remove this effect as it might conflict with vaul/radix-ui's implementation
+  const isMobile = useIsMobile();
 
   const currentCartItem = items.find((cartItem) => cartItem.id === String(item.id));
   const quantity = currentCartItem?.quantity ?? 0;
@@ -208,6 +191,7 @@ export function CatalogCard({ item, locationId, phone, initialOpen = false, poin
                   alt={item.name}
                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                   style={{ maxHeight: "200px" }}
+                  loading="lazy"
                   onLoad={() => {
                     console.log('✅ Card image loaded:', item?.image_url);
                   }}
@@ -328,194 +312,170 @@ export function CatalogCard({ item, locationId, phone, initialOpen = false, poin
         </div>
       </Card>
 
-      {isModalOpen && (
-        <>
-          <div
-            className="fixed inset-0 bg-black/50 z-50 animate-in fade-in duration-300"
-            onClick={() => setIsModalOpen(false)}
-          />
-
-          <div className="fixed inset-x-0 bottom-0 z-50 animate-in slide-in-from-bottom duration-500">
-            <div className="bg-white rounded-t-3xl shadow-2xl max-h-[90vh] overflow-hidden flex flex-col">
-              <div className="flex justify-center pt-3 pb-2">
-                <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
-              </div>
-
-              <div className="overflow-y-auto px-6 pb-6">
-                <div className="sticky top-0 bg-white pt-2 pb-4 mb-4 border-b flex justify-between items-start">
-                  <div>
-                    <h2 className="text-2xl font-bold text-gray-900">{item.name}</h2>
-                    {item.category && (
-                      <Badge
-                        className={`w-fit mt-2 ${!buttonColor ? 'bg-emerald-600' : ''}`}
-                        style={buttonColor ? { backgroundColor: buttonColor } : {}}
-                      >
-                        {item.category}
-                      </Badge>
-                    )}
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setIsModalOpen(false)}
-                    className="-mr-2 -mt-2 rounded-full"
+      <Drawer open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DrawerContent className="max-h-[90vh] border-none bg-white rounded-t-3xl shadow-2xl overflow-hidden">
+          <div className="overflow-y-auto px-6 pb-6 pt-2">
+            <div className="sticky top-0 bg-white pt-2 pb-4 mb-4 border-b flex justify-between items-start z-10">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">{item.name}</h2>
+                {item.category && (
+                  <Badge
+                    className={`w-fit mt-2 ${!buttonColor ? 'bg-emerald-600' : ''}`}
+                    style={buttonColor ? { backgroundColor: buttonColor } : {}}
                   >
-                    <X className="h-6 w-6" />
-                  </Button>
-                </div>
+                    {item.category}
+                  </Badge>
+                )}
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsModalOpen(false)}
+                className="-mr-2 -mt-2 rounded-full"
+              >
+                <X className="h-6 w-6" />
+              </Button>
+            </div>
 
-                {item.image_url ? (
-                  <div className="w-full flex items-center justify-center bg-gray-50 rounded-2xl mb-6 overflow-hidden">
-                    <img
-                      src={item.image_url}
-                      alt={item.name}
-                      className="w-full h-auto object-cover"
-                      style={{ maxHeight: "550px" }}
-                      onLoad={() => {
-                        console.log('✅ Product image loaded successfully:', item?.image_url);
-                      }}
-                      onError={(e) => {
-                        const img = e.target as HTMLImageElement;
-                        const currentSrc = img.src;
-                        console.error('❌ Error loading product image:', {
-                          currentSrc,
-                          originalUrl: item?.image_url,
-                          productId: item?.id,
-                          productName: item?.name
-                        });
-                        img.style.display = 'none';
-                        const parent = img.parentElement;
-                        if (parent) {
-                          parent.innerHTML = '<div class="w-full h-64 flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl"><svg class="h-24 w-24 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg></div>';
-                        }
-                      }}
+            {item.image_url ? (
+              <div className="w-full flex items-center justify-center bg-gray-50 rounded-2xl mb-6 overflow-hidden">
+                <img
+                  src={item.image_url}
+                  alt={item.name}
+                  className="w-full h-auto object-cover"
+                  style={{ maxHeight: "550px" }}
+                  loading="lazy"
+                  onLoad={() => {
+                    console.log('✅ Product image loaded successfully:', item?.image_url);
+                  }}
+                  onError={(e) => {
+                    const img = e.target as HTMLImageElement;
+                    const currentSrc = img.src;
+                    console.error('❌ Error loading product image:', {
+                      currentSrc,
+                      originalUrl: item?.image_url,
+                      productId: item?.id,
+                      productName: item?.name
+                    });
+                    img.style.display = 'none';
+                    const parent = img.parentElement;
+                    if (parent) {
+                      parent.innerHTML = '<div class="w-full h-64 flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl"><svg class="h-24 w-24 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg></div>';
+                    }
+                  }}
+                />
+              </div>
+            ) : (
+              <div className="w-full h-64 flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl mb-6">
+                <Package className="h-24 w-24 text-gray-300" />
+              </div>
+            )}
+
+            {!isService && (
+              <div
+                className="text-center py-5 rounded-2xl mb-6"
+                style={{ backgroundColor: buttonColor ? `${buttonColor}15` : '#ecfdf5' }} // 15% opacity for bg
+              >
+                <p className="text-sm text-gray-600 mb-1 font-medium">Precio</p>
+                <p
+                  className={`text-4xl font-bold ${!buttonColor ? 'text-emerald-600' : ''}`}
+                  style={buttonColor ? { color: buttonColor } : {}}
+                >
+                  {formatCurrency(typeof item.price === "number" ? item.price : 0)}
+                </p>
+              </div>
+            )}
+
+            {item.description && (
+              <div className="mb-6">
+                <h4 className="font-semibold text-lg mb-3 text-gray-900">Descripción</h4>
+                <p className="text-base text-gray-700 leading-relaxed whitespace-pre-line">
+                  {item.description}
+                </p>
+              </div>
+            )}
+
+            {/* Points earning for this purchase */}
+            {!isService && estimatedPoints > 0 && (
+              <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-6 py-4 shadow-sm">
+                <div className="flex items-center gap-2 text-amber-700 font-semibold text-sm">
+                  <ShoppingCart className="h-4 w-4" />
+                  <span>+{estimatedPoints} puntos al comprar</span>
+                </div>
+                <div className="mt-3">
+                  <div className="h-2 rounded-full bg-amber-100 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-amber-400 to-orange-500 transition-all duration-300"
+                      style={{ width: '100%' }}
                     />
                   </div>
-                ) : (
-                  <div className="w-full h-64 flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl mb-6">
-                    <Package className="h-24 w-24 text-gray-300" />
-                  </div>
-                )}
+                </div>
+                <p className="text-sm mt-3 text-amber-800">
+                  🎁 Gana <strong>{estimatedPoints} puntos</strong> de lealtad con esta compra
+                </p>
+              </div>
+            )}
 
-                {!isService && (
-                  <div
-                    className="text-center py-5 rounded-2xl mb-6"
-                    style={{ backgroundColor: buttonColor ? `${buttonColor}15` : '#ecfdf5' }} // 15% opacity for bg
-                  >
-                    <p className="text-sm text-gray-600 mb-1 font-medium">Precio</p>
-                    <p
-                      className={`text-4xl font-bold ${!buttonColor ? 'text-emerald-600' : ''}`}
-                      style={buttonColor ? { color: buttonColor } : {}}
-                    >
-                      {formatCurrency(typeof item.price === "number" ? item.price : 0)}
-                    </p>
-                  </div>
-                )}
+            {typeof item.points === "number" && item.points > 0 && (
+              <>
 
-                {item.description && (
-                  <div className="mb-6">
-                    <h4 className="font-semibold text-lg mb-3 text-gray-900">Descripción</h4>
-                    <p className="text-base text-gray-700 leading-relaxed whitespace-pre-line">
-                      {item.description}
-                    </p>
-                  </div>
-                )}
+                {renderRedemptionProgress("modal")}
+              </>
+            )}
 
-                {/* Points earning for this purchase */}
-                {!isService && estimatedPoints > 0 && (
-                  <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-6 py-4 shadow-sm">
-                    <div className="flex items-center gap-2 text-amber-700 font-semibold text-sm">
-                      <ShoppingCart className="h-4 w-4" />
-                      <span>+{estimatedPoints} puntos al comprar</span>
-                    </div>
-                    <div className="mt-3">
-                      <div className="h-2 rounded-full bg-amber-100 overflow-hidden">
-                        <div
-                          className="h-full rounded-full bg-gradient-to-r from-amber-400 to-orange-500 transition-all duration-300"
-                          style={{ width: '100%' }}
-                        />
-                      </div>
-                    </div>
-                    <p className="text-sm mt-3 text-amber-800">
-                      🎁 Gana <strong>{estimatedPoints} puntos</strong> de lealtad con esta compra
-                    </p>
-                  </div>
-                )}
+            <div className="flex flex-col gap-3 pt-4 pb-2">
+              {isService ? (
+                <Button
+                  size="lg"
+                  className={`w-full text-white font-semibold shadow-lg hover:shadow-xl transition-all gap-2 h-14 text-lg rounded-xl ${!buttonColor ? 'bg-green-600 hover:bg-green-700' : 'hover:opacity-90'}`}
+                  style={buttonColor ? { backgroundColor: buttonColor } : {}}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleContact();
+                  }}
+                  disabled={!phone}
+                >
+                  <Phone className="h-5 w-5" />
+                  WhatsApp
+                </Button>
+              ) : (
+                <Button
+                  size="lg"
+                  className={`w-full text-white font-semibold shadow-lg hover:shadow-xl transition-all h-14 text-lg rounded-xl ${!buttonColor ? 'bg-emerald-600 hover:bg-emerald-700' : 'hover:opacity-90'}`}
+                  style={buttonColor ? { backgroundColor: buttonColor } : {}}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleAdd();
+                  }}
+                >
+                  Agregar
+                </Button>
+              )}
+              <Button
+                size="lg"
+                variant="outline"
+                className="w-full h-12 text-base rounded-xl border-2 flex items-center justify-center gap-2"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (typeof window === "undefined") return;
+                  const baseUrl = window.location.href.split("#")[0].split("?")[0];
+                  const productUrl = `${baseUrl}?product=${encodeURIComponent(String(item.id))}`;
+                  const parts: string[] = [];
+                  parts.push(item.name);
+                  if (item.description) {
+                    parts.push(`- ${item.description}`);
+                  }
+                  const text = parts.join(" ");
 
-                {typeof item.points === "number" && item.points > 0 && (
-                  <>
+                  const shareData: ShareData = {
+                    title: item.name,
+                    text,
+                    url: productUrl,
+                  };
 
-                    {renderRedemptionProgress("modal")}
-                  </>
-                )}
-
-                <div className="flex flex-col gap-3 pt-4 pb-2">
-                  {isService ? (
-                    <Button
-                      size="lg"
-                      className={`w-full text-white font-semibold shadow-lg hover:shadow-xl transition-all gap-2 h-14 text-lg rounded-xl ${!buttonColor ? 'bg-green-600 hover:bg-green-700' : 'hover:opacity-90'}`}
-                      style={buttonColor ? { backgroundColor: buttonColor } : {}}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleContact();
-                      }}
-                      disabled={!phone}
-                    >
-                      <Phone className="h-5 w-5" />
-                      WhatsApp
-                    </Button>
-                  ) : (
-                    <Button
-                      size="lg"
-                      className={`w-full text-white font-semibold shadow-lg hover:shadow-xl transition-all h-14 text-lg rounded-xl ${!buttonColor ? 'bg-emerald-600 hover:bg-emerald-700' : 'hover:opacity-90'}`}
-                      style={buttonColor ? { backgroundColor: buttonColor } : {}}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleAdd();
-                      }}
-                    >
-                      Agregar
-                    </Button>
-                  )}
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    className="w-full h-12 text-base rounded-xl border-2 flex items-center justify-center gap-2"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (typeof window === "undefined") return;
-                      const baseUrl = window.location.href.split("#")[0].split("?")[0];
-                      const productUrl = `${baseUrl}?product=${encodeURIComponent(String(item.id))}`;
-                      const parts: string[] = [];
-                      parts.push(item.name);
-                      if (item.description) {
-                        parts.push(`- ${item.description}`);
-                      }
-                      const text = parts.join(" ");
-
-                      const shareData: ShareData = {
-                        title: item.name,
-                        text,
-                        url: productUrl,
-                      };
-
-                      if (navigator && (navigator as any).share) {
-                        (navigator as any).share(shareData).catch(() => {
-                          if (navigator.clipboard && navigator.clipboard.writeText) {
-                            navigator.clipboard.writeText(text).catch(() => {
-                              const textarea = document.createElement("textarea");
-                              textarea.value = text;
-                              document.body.appendChild(textarea);
-                              textarea.select();
-                              try {
-                                document.execCommand("copy");
-                              } finally {
-                                document.body.removeChild(textarea);
-                              }
-                            });
-                          }
-                        });
-                      } else if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
+                  if (navigator && (navigator as any).share) {
+                    (navigator as any).share(shareData).catch(() => {
+                      if (navigator.clipboard && navigator.clipboard.writeText) {
                         navigator.clipboard.writeText(text).catch(() => {
                           const textarea = document.createElement("textarea");
                           textarea.value = text;
@@ -528,25 +488,37 @@ export function CatalogCard({ item, locationId, phone, initialOpen = false, poin
                           }
                         });
                       }
-                    }}
-                  >
-                    <Share2 className="h-5 w-5" />
-                    <span>Compartir Producto</span>
-                  </Button>
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    onClick={() => setIsModalOpen(false)}
-                    className="w-full h-12 text-base rounded-xl border-2"
-                  >
-                    Cerrar
-                  </Button>
-                </div>
-              </div>
+                    });
+                  } else if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(text).catch(() => {
+                      const textarea = document.createElement("textarea");
+                      textarea.value = text;
+                      document.body.appendChild(textarea);
+                      textarea.select();
+                      try {
+                        document.execCommand("copy");
+                      } finally {
+                        document.body.removeChild(textarea);
+                      }
+                    });
+                  }
+                }}
+              >
+                <Share2 className="h-5 w-5" />
+                <span>Compartir Producto</span>
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                onClick={() => setIsModalOpen(false)}
+                className="w-full h-12 text-base rounded-xl border-2"
+              >
+                Cerrar
+              </Button>
             </div>
           </div>
-        </>
-      )}
+        </DrawerContent>
+      </Drawer>
     </>
   );
-}
+});
