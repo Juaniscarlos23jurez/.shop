@@ -890,14 +890,14 @@ function PublicLocationProductsPageContent() {
         {/* Location Header */}
         <div className="-mt-16 sm:-mt-20 relative z-10 mb-8">
           <div className="bg-white rounded-lg shadow-lg p-6">
-            <div className="flex flex-row items-center sm:items-start gap-4 sm:gap-6">
+            <div className="flex flex-col items-center text-center gap-6">
               {/* Logo */}
               {company?.logo_url && (
                 <div className="flex-shrink-0 flex flex-col items-center gap-3">
                   <img
                     src={company.logo_url}
                     alt={company.name}
-                    className="w-24 h-24 sm:w-32 sm:h-32 object-contain rounded-lg border-4 border-white shadow-md bg-white"
+                    className="w-32 h-32 object-contain rounded-full border-4 border-white shadow-xl bg-white"
                     onLoad={() => {
                       console.log('✅ Company logo loaded successfully:', company?.logo_url);
                     }}
@@ -916,7 +916,7 @@ function PublicLocationProductsPageContent() {
                   {/* Follow Button */}
                   {user && company && (
                     <Button
-                      className={`group gap-2 shadow-lg border-2 h-12 px-4 text-sm font-semibold rounded-full transition-all ${isFollowing
+                      className={`group gap-2 shadow-lg border-2 h-12 px-5 text-sm font-bold rounded-full transition-all uppercase tracking-tight ${isFollowing
                         ? 'bg-white text-emerald-600 border-emerald-100 hover:bg-red-50 hover:text-red-600 hover:border-red-100'
                         : 'bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700'
                         }`}
@@ -944,20 +944,22 @@ function PublicLocationProductsPageContent() {
               )}
 
               {/* Location Info */}
-              <div className="flex-1">
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2 break-words">
-                  {company?.name} <span className="text-gray-400 font-normal text-xl sm:text-2xl">| {location.name}</span>
+              <div className="flex-1 w-full text-center">
+                <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-2 break-words uppercase">
+                  {location.name}
                 </h1>
                 {company?.description && (
-                  <p className="text-gray-600 mb-4">{company.description}</p>
+                  <p className="text-gray-600 mb-4 font-medium max-w-2xl mx-auto">{company.description}</p>
                 )}
 
-                {/* Contact Info Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                {/* Contact Info - Buttons (Icon Only) */}
+                <div className="flex items-center justify-center gap-3 flex-wrap mt-2">
                   {location.address && (
-                    <button
-                      type="button"
-                      className="flex items-start gap-2 text-left hover:text-emerald-700"
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      title={location.address}
+                      className="h-12 w-12 rounded-full border-gray-200 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-200 transition-all shadow-sm"
                       onClick={() => {
                         const lat = (location as any).latitude;
                         const lng = (location as any).longitude;
@@ -971,56 +973,57 @@ function PublicLocationProductsPageContent() {
                         window.open(url, '_blank');
                       }}
                     >
-                      <MapPin className="h-5 w-5 text-emerald-600 flex-shrink-0 mt-0.5" />
-                      <span className="text-gray-700 underline">
-                        {location.address}, {location.city}, {location.state}, {location.country}
-                      </span>
-                    </button>
+                      <MapPin className="h-6 w-6" />
+                    </Button>
                   )}
                   {(location as any).phone && (
-                    <div className="flex items-center gap-2">
-                      <Phone className="h-5 w-5 text-emerald-600 flex-shrink-0" />
-                      <a href={`tel:${(location as any).phone}`} className="text-gray-700 hover:text-emerald-600">
-                        {(location as any).phone}
-                      </a>
-                    </div>
+                    <a href={`tel:${(location as any).phone}`}>
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        title={(location as any).phone}
+                        className="h-12 w-12 rounded-full border-gray-200 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-200 transition-all shadow-sm"
+                      >
+                        <Phone className="h-6 w-6" />
+                      </Button>
+                    </a>
                   )}
                   {(location as any).email && (
-                    <div className="flex items-center gap-2">
-                      <Mail className="h-5 w-5 text-emerald-600 flex-shrink-0" />
-                      <a href={`mailto:${(location as any).email}`} className="text-gray-700 hover:text-emerald-600">
-                        {(location as any).email}
-                      </a>
-                    </div>
+                    <a href={`mailto:${(location as any).email}`}>
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        title={(location as any).email}
+                        className="h-12 w-12 rounded-full border-gray-200 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-200 transition-all shadow-sm"
+                      >
+                        <Mail className="h-6 w-6" />
+                      </Button>
+                    </a>
                   )}
-                  <div className="flex items-center gap-2 mt-2 sm:mt-0">
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      className="flex items-center gap-2 text-xs sm:text-sm"
-                      onClick={() => setCommentSheetOpen(true)}
-                    >
-                      <MessageSquare className="h-4 w-4" />
-                      <span>Comentar</span>
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      className="flex items-center gap-2 text-xs sm:text-sm"
-                      onClick={() => {
-                        if (typeof window === 'undefined') return;
-                        const baseText = `${company?.name || location.name} - ${company?.description || 'Mira esta sucursal en Rewin'}`;
-                        const url = shareUrl || window.location.href;
-                        const waUrl = `https://wa.me/?text=${encodeURIComponent(`${baseText} ${url}`)}`;
-                        window.open(waUrl, '_blank');
-                      }}
-                    >
-                      <Share2 className="h-4 w-4" />
-                      <span>Compartir</span>
-                    </Button>
-                  </div>
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    title="Comentar"
+                    className="h-12 w-12 rounded-full border-gray-200 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-200 transition-all shadow-sm"
+                    onClick={() => setCommentSheetOpen(true)}
+                  >
+                    <MessageSquare className="h-6 w-6" />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    title="Compartir"
+                    className="h-12 w-12 rounded-full border-gray-200 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-200 transition-all shadow-sm"
+                    onClick={() => {
+                      if (typeof window === 'undefined') return;
+                      const baseText = `${company?.name || location.name} - ${company?.description || 'Mira esta sucursal en Rewin'}`;
+                      const url = shareUrl || window.location.href;
+                      const waUrl = `https://wa.me/?text=${encodeURIComponent(`${baseText} ${url}`)}`;
+                      window.open(waUrl, '_blank');
+                    }}
+                  >
+                    <Share2 className="h-6 w-6" />
+                  </Button>
                 </div>
               </div>
             </div>

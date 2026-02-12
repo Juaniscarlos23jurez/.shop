@@ -154,7 +154,7 @@ const adminSidebarItems: SidebarItem[] = [
   },
 
   // Componentes playground
-  { icon: PieChart, label: "Componentes", href: "/dashboard/componentes" },
+  { icon: PieChart, label: "Diseño", href: "/dashboard/componentes" },
 
   // Web Section
   {

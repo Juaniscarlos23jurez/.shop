@@ -8,7 +8,7 @@ import { api } from '@/lib/api/api';
 import { PublicItem, PublicCompanyLocation } from '@/types/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import * as Lucide from 'lucide-react';
-const { MapPin, Dumbbell, Activity, Phone, Mail, Clock, Search, User, Download, Share2, X, Trophy } = Lucide as any;
+const { MapPin, Dumbbell, Activity, Phone, Mail, Clock, Search, User, Download, Share2, X, Trophy, Calendar } = Lucide as any;
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -24,7 +24,185 @@ import { PromotionsSection } from '@/components/gym/PromotionsSection';
 import { CatalogCard } from '@/components/gym/CatalogCard';
 import { WalletSection } from '@/components/gym/WalletSection';
 import { CommentSheet } from '@/components/gym/CommentSheet';
-import { MessageSquare } from 'lucide-react';
+import { MessageSquare, Send } from 'lucide-react';
+
+// Mock Views for Gym Modules
+function GymActivityView() {
+  return (
+    <div className="pb-16 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 px-1">
+      <Card className="bg-zinc-900 border-zinc-800 rounded-[2.5rem] overflow-hidden border-2 shadow-2xl">
+        <CardHeader className="p-8 pb-4">
+          <CardTitle className="text-3xl font-black text-white uppercase tracking-tighter flex items-center gap-3">
+            <Activity className="h-8 w-8 text-blue-500" />
+            Resumen Atleta
+          </CardTitle>
+          <CardDescription className="text-zinc-400 font-medium">Progreso semanal detectado</CardDescription>
+        </CardHeader>
+        <CardContent className="p-8 pt-0">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-zinc-950 p-6 rounded-3xl border border-zinc-800 text-center">
+              <span className="text-3xl font-black text-white">4.2</span>
+              <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mt-1">Horas Totales</p>
+            </div>
+            <div className="bg-zinc-950 p-6 rounded-3xl border border-zinc-800 text-center">
+              <span className="text-3xl font-black text-blue-500">12</span>
+              <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mt-1">Sesiones</p>
+            </div>
+          </div>
+
+          <div className="mt-8">
+            <h4 className="text-xs font-black text-zinc-500 uppercase tracking-[0.2em] mb-4">Actividades Recientes</h4>
+            <div className="space-y-3">
+              {[
+                { title: 'Entrenamiento de Pecho', time: 'Ayer, 6:30 PM', dur: '55 min' },
+                { title: 'Clase de Spinning', time: 'Lunes, 7:00 AM', dur: '45 min' },
+              ].map((act, i) => (
+                <div key={i} className="flex items-center justify-between p-4 bg-zinc-950 rounded-2xl border border-zinc-800/50">
+                  <div>
+                    <p className="font-bold text-white text-sm">{act.title}</p>
+                    <p className="text-[10px] text-zinc-500 font-medium uppercase tracking-tighter">{act.time}</p>
+                  </div>
+                  <Badge className="bg-blue-600/10 text-blue-400 border-none font-black text-[10px] px-3">{act.dur}</Badge>
+                </div>
+              ))}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Power Level Summary */}
+      <div className="bg-gradient-to-br from-blue-600 to-blue-900 rounded-[2.5rem] p-8 text-white shadow-xl relative overflow-hidden">
+        <div className="absolute right-0 top-0 opacity-10 -mr-10 -mt-10">
+          <Trophy className="h-40 w-40" />
+        </div>
+        <h3 className="text-xs font-black uppercase tracking-[0.3em] mb-2 opacity-80">Rango Actual</h3>
+        <p className="text-4xl font-black tracking-tighter mb-4">ELITE WARRIOR</p>
+        <div className="h-2 bg-black/20 rounded-full overflow-hidden mb-2">
+          <div className="h-full bg-white w-[75%] shadow-[0_0_10px_rgba(255,255,255,0.5)]" />
+        </div>
+        <p className="text-[10px] font-bold uppercase tracking-wider opacity-90">Faltan 250 PTS para Master Level</p>
+      </div>
+    </div>
+  );
+}
+
+function GymMessagingView() {
+  return (
+    <div className="pb-32 animate-in fade-in slide-in-from-bottom-4 duration-500 px-1">
+      <Card className="bg-zinc-900 border-zinc-800 rounded-[2.5rem] border-2 shadow-2xl h-[65vh] flex flex-col overflow-hidden">
+        <CardHeader className="p-6 border-b border-zinc-800 bg-zinc-900/50 backdrop-blur-md">
+          <div className="flex items-center gap-4">
+            <Avatar className="h-14 w-14 border-2 border-blue-500 p-0.5">
+              <AvatarImage src="https://images.unsplash.com/photo-1594381898411-846e7d193883?w=100&h=100&fit=crop" />
+              <AvatarFallback>Coach</AvatarFallback>
+            </Avatar>
+            <div>
+              <CardTitle className="text-xl font-black text-white uppercase tracking-tighter">Coach Alex</CardTitle>
+              <CardDescription className="text-[10px] text-blue-400 font-bold uppercase tracking-widest flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                En línea
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="flex-1 p-6 overflow-y-auto space-y-6">
+          <div className="bg-zinc-800 p-4 rounded-[1.5rem] rounded-tl-none max-w-[85%] text-white text-sm font-medium leading-relaxed">
+            ¡Hola! He ajustado tu rutina de hoy para enfocar un poco más en resistencia. ¿Cómo te sientes para la sesión de pierna?
+          </div>
+          <div className="bg-zinc-950 border border-zinc-800 p-4 rounded-[1.5rem] rounded-tr-none max-w-[85%] ml-auto text-white text-sm font-medium shadow-lg leading-relaxed">
+            Perfecto coach, ya estoy en el box. ¡Vamos a darle con todo hoy! 🏋️‍♂️
+          </div>
+          <div className="bg-zinc-800 p-4 rounded-[1.5rem] rounded-tl-none max-w-[85%] text-white text-sm font-medium leading-relaxed">
+            Excelente. Te veo en la zona de pesas en 5 minutos.
+          </div>
+        </CardContent>
+        <div className="p-4 bg-zinc-950 border-t border-zinc-800 flex gap-3">
+          <Input className="bg-zinc-900 border-zinc-800 text-white rounded-2xl h-14" placeholder="Escribe un mensaje al coach..." />
+          <Button size="icon" className="bg-blue-600 hover:bg-blue-700 rounded-2xl w-14 h-14 shadow-lg shadow-blue-600/20">
+            <Send className="h-6 w-6" />
+          </Button>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+function GymAttendanceView() {
+  return (
+    <div className="pb-32 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 px-1">
+      <Card className="bg-zinc-900 border-zinc-800 rounded-[2.5rem] border-2 shadow-2xl overflow-hidden">
+        <CardHeader className="p-8">
+          <CardTitle className="text-3xl font-black text-white uppercase tracking-tighter flex items-center gap-3">
+            <Calendar className="h-8 w-8 text-blue-500" />
+            Historial de Acceso
+          </CardTitle>
+          <CardDescription className="text-zinc-400 font-medium">Tus visitas al centro este mes</CardDescription>
+        </CardHeader>
+        <CardContent className="p-8 pt-0">
+          <div className="space-y-4">
+            {[
+              { date: '12 Feb 2024', time: '08:15 AM', status: 'Entrada confirmada' },
+              { date: '11 Feb 2024', time: '06:30 PM', status: 'Entrada confirmada' },
+              { date: '10 Feb 2024', time: '07:05 AM', status: 'Entrada confirmada' },
+              { date: '08 Feb 2024', time: '05:45 PM', status: 'Entrada confirmada' },
+            ].map((log, i) => (
+              <div key={i} className="flex items-center justify-between p-5 bg-zinc-950/50 rounded-2xl border border-zinc-800/30">
+                <div className="flex gap-4 items-center">
+                  <div className="bg-zinc-900 p-3 rounded-xl border border-zinc-800">
+                    <Calendar className="h-5 w-5 text-blue-500" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-white text-base">{log.date}</p>
+                    <p className="text-[10px] text-zinc-500 font-black uppercase tracking-widest">{log.time}</p>
+                  </div>
+                </div>
+                <Badge className="bg-blue-600/10 text-blue-400 border border-blue-500/20 text-[10px] uppercase font-black px-3 py-1 rounded-lg">OK</Badge>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function GymPaymentsView() {
+  return (
+    <div className="pb-32 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 px-1">
+      <Card className="bg-zinc-900 border-zinc-800 rounded-[2.5rem] border-2 shadow-2xl overflow-hidden">
+        <CardHeader className="p-8">
+          <CardTitle className="text-3xl font-black text-white uppercase tracking-tighter flex items-center gap-3">
+            <Lucide.CreditCard className="h-8 w-8 text-blue-500" />
+            Facturación y Pagos
+          </CardTitle>
+          <CardDescription className="text-zinc-400 font-medium">Control de tus transacciones</CardDescription>
+        </CardHeader>
+        <CardContent className="p-8 pt-0">
+          <div className="space-y-4">
+            {[
+              { id: '#PX-8921', date: '01 Feb 2024', title: 'Membresía Black', amount: '$1,299.00', status: 'Pagado' },
+              { id: '#PX-7742', date: '15 Ene 2024', title: 'Suplementos Proteína', amount: '$850.00', status: 'Pagado' },
+            ].map((pay, i) => (
+              <div key={i} className="p-6 bg-zinc-950 rounded-[1.5rem] border border-zinc-800 flex flex-col gap-4">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-[10px] text-zinc-600 font-black uppercase tracking-[0.2em] mb-1">{pay.id}</p>
+                    <p className="text-xl font-black text-white tracking-tighter uppercase">{pay.title}</p>
+                  </div>
+                  <p className="text-xl font-black text-blue-500 tracking-tighter">{pay.amount}</p>
+                </div>
+                <div className="flex justify-between items-center pt-4 border-t border-zinc-900">
+                  <span className="text-xs text-zinc-500 font-medium">{pay.date}</span>
+                  <Badge className="bg-blue-600/10 text-blue-400 border-none font-black text-[10px] uppercase tracking-widest px-3 py-1">{pay.status}</Badge>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
 
 declare global {
   interface Window {
@@ -119,7 +297,7 @@ function PublicLocationProductsPageContent() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [currentAnnouncement, setCurrentAnnouncement] = useState(0);
   const rotationRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const [activeSection, setActiveSection] = useState<'home' | 'promotions' | 'points' | 'wallet' | 'coupons'>('home');
+  const [activeSection, setActiveSection] = useState<'activity' | 'workout' | 'messaging' | 'attendance' | 'payments'>('workout');
   const [coupons, setCoupons] = useState<PublicCoupon[]>([]);
   const [couponsLoading, setCouponsLoading] = useState(false);
   const [couponsError, setCouponsError] = useState<string | null>(null);
@@ -588,9 +766,9 @@ function PublicLocationProductsPageContent() {
     };
   }, [announcements]);
 
-  // Fetch coupons when Coupons section becomes active
+  // Fetch coupons when Payments section becomes active
   useEffect(() => {
-    const shouldLoad = activeSection === 'coupons';
+    const shouldLoad = activeSection === 'payments';
     if (!shouldLoad) return;
     // Derive companyId from company or location
     const comp: any = company;
@@ -889,14 +1067,14 @@ function PublicLocationProductsPageContent() {
         {/* Location Header */}
         <div className="-mt-16 sm:-mt-20 relative z-10 mb-8">
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl p-6">
-            <div className="flex flex-row items-center sm:items-start gap-4 sm:gap-6">
+            <div className="flex flex-col items-center text-center gap-6">
               {/* Logo */}
               {company?.logo_url && (
                 <div className="flex-shrink-0 flex flex-col items-center gap-3">
                   <img
                     src={company.logo_url}
                     alt={company.name}
-                    className="w-24 h-24 sm:w-32 sm:h-32 object-contain rounded-full border-4 border-zinc-900 shadow-xl bg-zinc-800"
+                    className="w-32 h-32 object-contain rounded-full border-4 border-zinc-900 shadow-xl bg-zinc-800"
                     onLoad={() => {
                       console.log('✅ Company logo loaded successfully:', company?.logo_url);
                     }}
@@ -943,20 +1121,22 @@ function PublicLocationProductsPageContent() {
               )}
 
               {/* Location Info */}
-              <div className="flex-1">
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white mb-2 break-words uppercase">
-                  {company?.name} <span className="text-zinc-500 font-light text-xl sm:text-2xl">| {location.name}</span>
+              <div className="flex-1 w-full">
+                <h1 className="text-2xl md:text-3xl lg:text-4xl font-black text-white mb-2 break-words uppercase">
+                  {location.name}
                 </h1>
                 {company?.description && (
-                  <p className="text-zinc-400 mb-4 font-medium">{company.description}</p>
+                  <p className="text-zinc-400 mb-4 font-medium max-w-2xl mx-auto">{company.description}</p>
                 )}
 
-                {/* Contact Info Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                {/* Contact Info - Buttons (Icon Only) */}
+                <div className="flex items-center justify-center gap-3 flex-wrap mt-2">
                   {location.address && (
-                    <button
-                      type="button"
-                      className="flex items-start gap-2 text-left hover:text-blue-400"
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      title={location.address}
+                      className="h-12 w-12 rounded-full bg-zinc-800/50 border-zinc-700 text-blue-500 hover:bg-blue-500/10 hover:border-blue-500/50 transition-all"
                       onClick={() => {
                         const lat = (location as any).latitude;
                         const lng = (location as any).longitude;
@@ -970,56 +1150,57 @@ function PublicLocationProductsPageContent() {
                         window.open(url, '_blank');
                       }}
                     >
-                      <MapPin className="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5" />
-                      <span className="text-zinc-300 underline">
-                        {location.address}, {location.city}, {location.state}, {location.country}
-                      </span>
-                    </button>
+                      <MapPin className="h-6 w-6" />
+                    </Button>
                   )}
                   {(location as any).phone && (
-                    <div className="flex items-center gap-2">
-                      <Phone className="h-5 w-5 text-blue-500 flex-shrink-0" />
-                      <a href={`tel:${(location as any).phone}`} className="text-zinc-300 hover:text-blue-400">
-                        {(location as any).phone}
-                      </a>
-                    </div>
+                    <a href={`tel:${(location as any).phone}`}>
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        title={(location as any).phone}
+                        className="h-12 w-12 rounded-full bg-zinc-800/50 border-zinc-700 text-blue-500 hover:bg-blue-500/10 hover:border-blue-500/50 transition-all"
+                      >
+                        <Phone className="h-6 w-6" />
+                      </Button>
+                    </a>
                   )}
                   {(location as any).email && (
-                    <div className="flex items-center gap-2">
-                      <Mail className="h-5 w-5 text-blue-500 flex-shrink-0" />
-                      <a href={`mailto:${(location as any).email}`} className="text-zinc-300 hover:text-blue-400">
-                        {(location as any).email}
-                      </a>
-                    </div>
+                    <a href={`mailto:${(location as any).email}`}>
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        title={(location as any).email}
+                        className="h-12 w-12 rounded-full bg-zinc-800/50 border-zinc-700 text-blue-500 hover:bg-blue-500/10 hover:border-blue-500/50 transition-all"
+                      >
+                        <Mail className="h-6 w-6" />
+                      </Button>
+                    </a>
                   )}
-                  <div className="flex items-center gap-2 mt-2 sm:mt-0">
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      className="flex items-center gap-2 text-xs sm:text-sm"
-                      onClick={() => setCommentSheetOpen(true)}
-                    >
-                      <MessageSquare className="h-4 w-4" />
-                      <span>Comentar</span>
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      className="flex items-center gap-2 text-xs sm:text-sm"
-                      onClick={() => {
-                        if (typeof window === 'undefined') return;
-                        const baseText = `${company?.name || location.name} - ${company?.description || 'Entrena con los mejores en Rewin Gym'}`;
-                        const url = shareUrl || window.location.href;
-                        const waUrl = `https://wa.me/?text=${encodeURIComponent(`${baseText} ${url}`)}`;
-                        window.open(waUrl, '_blank');
-                      }}
-                    >
-                      <Share2 className="h-4 w-4" />
-                      <span>Compartir</span>
-                    </Button>
-                  </div>
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    title="Comentar"
+                    className="h-12 w-12 rounded-full bg-zinc-800/50 border-zinc-700 text-blue-500 hover:bg-blue-500/10 hover:border-blue-500/50 transition-all"
+                    onClick={() => setCommentSheetOpen(true)}
+                  >
+                    <MessageSquare className="h-6 w-6" />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    title="Compartir"
+                    className="h-12 w-12 rounded-full bg-zinc-800/50 border-zinc-700 text-blue-500 hover:bg-blue-500/10 hover:border-blue-500/50 transition-all"
+                    onClick={() => {
+                      if (typeof window === 'undefined') return;
+                      const baseText = `${company?.name || location.name} - ${company?.description || 'Entrena con los mejores en Rewin Gym'}`;
+                      const url = shareUrl || window.location.href;
+                      const waUrl = `https://wa.me/?text=${encodeURIComponent(`${baseText} ${url}`)}`;
+                      window.open(waUrl, '_blank');
+                    }}
+                  >
+                    <Share2 className="h-6 w-6" />
+                  </Button>
                 </div>
               </div>
             </div>
@@ -1030,7 +1211,7 @@ function PublicLocationProductsPageContent() {
         <div className="mb-2" />
 
         {/* Sections */}
-        {activeSection === 'home' && (
+        {activeSection === 'workout' && (
           <>
             {/* Announcements Carousel */}
             {announcements.length > 0 && (
@@ -1118,10 +1299,10 @@ function PublicLocationProductsPageContent() {
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
                     <div>
                       <CardTitle className="flex items-center text-2xl text-white font-black uppercase tracking-tight">
-                        <Dumbbell className="mr-3 h-8 w-8 text-blue-500" /> Membresías y Entrenamiento
+                        <Dumbbell className="mr-3 h-8 w-8 text-blue-500" /> PLANES Y CLASES
                       </CardTitle>
                       <CardDescription className="text-zinc-400 text-lg mt-1 font-medium">
-                        {items.length} opciones disponibles para tu progreso
+                        {items.length} programas diseñados para tu evolución
                       </CardDescription>
                     </div>
                   </div>
@@ -1217,120 +1398,10 @@ function PublicLocationProductsPageContent() {
           </>
         )}
 
-        {activeSection === 'promotions' && <PromotionsSection companyId={company?.id} />}
-
-        {activeSection === 'points' && (
-          user ? (
-            <PointsSection companyId={company?.id} pointRules={company?.point_rules || null} />
-          ) : (
-            <div className="pb-16">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-2xl">Tus puntos</CardTitle>
-                  <CardDescription className="text-base mt-1">
-                    Inicia sesión o descarga la app para ver y acumular tus puntos.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <p className="text-gray-700 text-sm sm:text-base">
-                      Crea una cuenta o inicia sesión para que podamos registrar tus compras y mostrarte tus puntos disponibles.
-                    </p>
-                    <div className="flex flex-col sm:flex-row gap-3">
-                      <Link href={`/gym/${companySlug}/${locationId}/auth/login`} className="sm:w-auto w-full">
-                        <Button
-                          variant="outline"
-                          className="w-full font-bold border-2 hover:bg-white/5 transition-all uppercase tracking-tight"
-                          style={{
-                            color: uiSettings?.download_app_color || '#3b82f6',
-                            borderColor: uiSettings?.download_app_color || '#3b82f6'
-                          }}
-                        >
-                          ENTRENAR AHORA
-                        </Button>
-                      </Link>
-                      <Link href="/descargar-app" className="sm:w-auto w-full">
-                        <Button
-                          variant="outline"
-                          className="w-full sm:w-auto flex items-center gap-2"
-                          onClick={() => {
-                            trackAnalyticsEvent('download_app_click', {
-                              location: 'points_section_cta',
-                              company_slug: companySlug,
-                              location_id: locationId,
-                              user_logged_in: !!user,
-                            });
-                          }}
-                        >
-                          <Download className="h-4 w-4" />
-                          <span>Descargar app</span>
-                        </Button>
-                      </Link>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )
-        )}
-
-        {activeSection === 'wallet' && (
-          <WalletSection companyName={company?.name} buttonColor={uiSettings?.cart_button_color} />
-        )}
-
-        {activeSection === 'coupons' && (
-          // Coupons section
-          <div className="pb-16">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center text-2xl">Cupones</CardTitle>
-                <CardDescription className="text-base mt-1">
-                  {couponsLoading ? 'Cargando cupones...' : `${coupons.length} cupón(es) disponible(s)`}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {couponsError ? (
-                  <div className="text-red-500">{couponsError}</div>
-                ) : couponsLoading ? (
-                  <div className="text-gray-600">Cargando...</div>
-                ) : coupons.length === 0 ? (
-                  <div className="text-center py-20 bg-zinc-800/30 rounded-3xl border border-zinc-800">
-                    <Dumbbell className="h-16 w-16 text-zinc-700 mx-auto mb-4" />
-                    <p className="text-zinc-500 text-lg font-bold uppercase tracking-widest">Sin Cupones Activos</p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {coupons.map((c) => {
-                      const isExpired = c.expires_at ? new Date(c.expires_at) < new Date() : false;
-                      return (
-                        <div key={c.id} className={`border rounded-lg p-4 shadow-sm ${isExpired ? 'opacity-60' : ''}`}>
-                          <div className="flex items-center gap-3 mb-3">
-                            {c.company?.logo_url && (
-                              <img src={c.company.logo_url} alt={c.company.name} className="w-10 h-10 rounded object-cover" />
-                            )}
-                            <div>
-                              <h3 className="font-bold text-lg">{c.name}</h3>
-                              <p className="text-xs text-gray-500">Código: <span className="font-mono font-semibold">{c.code}</span></p>
-                            </div>
-                          </div>
-                          {c.description && <p className="text-sm text-gray-700 mb-2">{c.description}</p>}
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-blue-900/30 text-blue-400 font-bold text-xs uppercase tracking-widest border border-blue-500/30">
-                              {c.type === 'percentage' ? `${c.discount_percentage ?? 0}%` : c.discount_amount ? formatCurrency(Number(c.discount_amount)) : 'Descuento'}
-                            </span>
-                            {c.expires_at && (
-                              <span className="text-gray-500">Expira: {new Date(c.expires_at).toLocaleDateString()}</span>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        )}
+        {activeSection === 'activity' && <GymActivityView />}
+        {activeSection === 'messaging' && <GymMessagingView />}
+        {activeSection === 'attendance' && <GymAttendanceView />}
+        {activeSection === 'payments' && <GymPaymentsView />}
       </div>
 
       <FloatingCartButton
@@ -1412,7 +1483,7 @@ function PublicLocationProductsPageContent() {
         onClose={() => setCommentSheetOpen(false)}
         companyId={company?.id || ''}
       />
-    </div>
+    </div >
   );
 }
 
