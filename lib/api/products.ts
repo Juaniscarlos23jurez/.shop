@@ -1,38 +1,18 @@
 import { ApiResponse } from '@/types/api';
 import { api } from './api';
-
-export interface ProductLocation {
-  id: number;
-  is_available: boolean;
-  stock?: number;
-}
-
-export interface Product {
-  id?: string;
-  name: string;
-  description: string;
-  price: number;
-  product_type: 'physical' | 'made_to_order' | 'service';
-  track_stock?: boolean;
-  is_active: boolean;
-  category: string;
-  image_url?: string;
-  locations: ProductLocation[];
-  created_at?: string;
-  updated_at?: string;
-}
-
-export interface ProductListResponse {
-  data: Product[];
-  current_page: number;
-  last_page: number;
-  total: number;
-}
+import {
+  Product,
+  ProductListResponse,
+  ProductResponse,
+  ProductCreateInput,
+  ProductUpdateInput
+} from '@/types/product';
 
 interface GetProductsParams {
   page?: number;
   per_page?: number;
   type?: 'physical' | 'made_to_order' | 'service';
+  search?: string;
 }
 
 /**
@@ -44,18 +24,17 @@ export async function getProducts(
   params?: GetProductsParams
 ): Promise<ApiResponse<ProductListResponse>> {
   return api.products.getProducts(
-    companyId, 
-    token, 
-    params?.page, 
+    companyId,
+    token,
+    params?.page,
     params?.per_page,
-    params?.type
+    params?.type,
+    params?.search
   );
 }
 
 /**
  * TEMP: Public user's products by UID (stub)
- * This is provided to satisfy imports from `app/[uid]/page.tsx`.
- * Replace with a real public endpoint integration when available.
  */
 export async function getUserProducts(uid: string): Promise<Product[]> {
   try {
@@ -74,7 +53,7 @@ export async function getProduct(
   companyId: string,
   productId: string,
   token: string
-): Promise<ApiResponse<{ product: Product }>> {
+): Promise<ApiResponse<ProductResponse>> {
   return api.products.getProduct(companyId, productId, token);
 }
 
@@ -83,9 +62,9 @@ export async function getProduct(
  */
 export async function createProduct(
   companyId: string,
-  data: Omit<Product, 'id' | 'created_at' | 'updated_at'>,
+  data: ProductCreateInput,
   token: string
-): Promise<ApiResponse<{ product: Product }>> {
+): Promise<ApiResponse<ProductResponse>> {
   return api.products.createProduct(companyId, data, token);
 }
 
@@ -95,9 +74,9 @@ export async function createProduct(
 export async function updateProduct(
   companyId: string,
   productId: string,
-  data: Partial<Product>,
+  data: ProductUpdateInput,
   token: string
-): Promise<ApiResponse<{ product: Product }>> {
+): Promise<ApiResponse<ProductResponse>> {
   return api.products.updateProduct(companyId, productId, data, token);
 }
 
@@ -108,7 +87,7 @@ export async function deleteProduct(
   companyId: string,
   productId: string,
   token: string
-): Promise<ApiResponse<{}>> {
+): Promise<ApiResponse> {
   return api.products.deleteProduct(companyId, productId, token);
 }
 
@@ -121,7 +100,7 @@ export async function updateProductStock(
   locationId: number,
   stock: number,
   token: string
-): Promise<ApiResponse<{ product: Product }>> {
+): Promise<ApiResponse<ProductResponse>> {
   return api.products.updateProductStock(companyId, productId, locationId, stock, token);
 }
 
@@ -134,7 +113,7 @@ export async function toggleProductAvailability(
   locationId: number,
   isAvailable: boolean,
   token: string
-): Promise<ApiResponse<{ product: Product }>> {
+): Promise<ApiResponse<ProductResponse>> {
   return api.products.toggleProductAvailability(companyId, productId, locationId, isAvailable, token);
 }
 
@@ -145,6 +124,6 @@ export async function reorderProducts(
   companyId: string,
   token: string,
   items: { product_id: string | number; position: number }[],
-): Promise<ApiResponse<{}>> {
+): Promise<ApiResponse> {
   return api.products.reorderProducts(companyId, items, token);
 }

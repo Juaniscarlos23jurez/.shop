@@ -19,13 +19,21 @@ interface PointRule {
 interface PointsSectionProps {
     companyId?: number;
     pointRules?: PointRule[] | null;
+    userPoints?: number;
+    companyName?: string;
 }
 
-export function PointsSection({ companyId, pointRules }: PointsSectionProps) {
-    const [pointsBalance, setPointsBalance] = useState<number>(0);
+export function PointsSection({ companyId, pointRules, userPoints, companyName }: PointsSectionProps) {
+    const [pointsBalance, setPointsBalance] = useState<number>(userPoints || 0);
     const [purchases, setPurchases] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(!userPoints);
     const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (userPoints !== undefined) {
+            setPointsBalance(userPoints);
+        }
+    }, [userPoints]);
 
     useEffect(() => {
         const fetchPointsData = async () => {

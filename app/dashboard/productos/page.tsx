@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, ShoppingCart } from 'lucide-react';
+import { Plus, ShoppingCart, Search } from 'lucide-react';
 import { getProducts, reorderProducts } from '@/lib/api/products';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -15,6 +15,7 @@ import { formatCurrency } from '@/lib/utils/currency';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { Input } from '@/components/ui/input';
 
 const ITEMS_PER_PAGE = 20;
 
@@ -48,13 +49,15 @@ export default function ProductosPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState<number>(0);
   const [productType, setProductType] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [hasOrderChanges, setHasOrderChanges] = useState(false);
   const [savingOrder, setSavingOrder] = useState(false);
 
-  const fetchProducts = async (page: number = 1, type: string = 'all') => {
+  const fetchProducts = async (page: number = 1, type: string = 'all', search: string = '') => {
     if (!token || !companyId) return;
 
     setLoading(true);
@@ -66,6 +69,10 @@ export default function ProductosPage() {
 
       if (type && type !== 'all') {
         params.type = type as 'physical' | 'made_to_order' | 'service';
+      }
+
+      if (search) {
+        params.search = search;
       }
 
       const response = await getProducts(companyId, token, params);
@@ -82,18 +89,18 @@ export default function ProductosPage() {
           ? payload.products
           : (payload?.data && !Array.isArray(payload.data) && payload.data.products && !Array.isArray(payload.data.products)
             ? payload.data.products
-            : (payload && !Array.isArray(payload) && payload.total !== undefined ? payload : null));
+            : (payload?.data?.products_pagination ? payload.data.products_pagination : (payload && !Array.isArray(payload) && payload.total !== undefined ? payload : null)));
 
         const normalized: Product[] = paginator?.data && Array.isArray(paginator.data)
           ? paginator.data
-          : Array.isArray(payload?.data)
-            ? payload.data
-            : Array.isArray(payload?.products)
-              ? payload.products
-              : Array.isArray(payload)
-                ? payload
-                : Array.isArray(payload?.data?.products)
-                  ? payload.data.products
+          : Array.isArray(payload?.data?.products)
+            ? payload.data.products
+            : Array.isArray(payload?.data)
+              ? payload.data
+              : Array.isArray(payload?.products)
+                ? payload.products
+                : Array.isArray(payload)
+                  ? payload
                   : [];
 
         console.log('[Productos] normalized products length:', normalized.length);
@@ -101,25 +108,29 @@ export default function ProductosPage() {
 
         // Intentar leer total y paginación desde múltiples formatos posibles
         const total = paginator?.total
+          ?? payload?.data?.products_pagination?.total
           ?? payload?.total
           ?? payload?.meta?.total
           ?? payload?.meta?.pagination?.total
+          ?? payload?.pagination?.total
           ?? payload?.data?.total
           ?? payload?.total_count
           ?? payload?.count
-          ?? normalized.length
+          ?? (Array.isArray(payload) ? payload.length : normalized.length)
           ?? 0;
 
         const safeTotal = Number.isFinite(Number(total)) ? Number(total) : normalized.length;
         setTotalItems(safeTotal);
 
         const lastPage = paginator?.last_page
+          ?? payload?.data?.products_pagination?.last_page
           ?? payload?.last_page
           ?? payload?.meta?.last_page
           ?? payload?.meta?.pagination?.last_page
           ?? (safeTotal ? Math.max(1, Math.ceil(safeTotal / ITEMS_PER_PAGE)) : 1);
 
         const current = paginator?.current_page
+          ?? payload?.data?.products_pagination?.current_page
           ?? payload?.current_page
           ?? payload?.meta?.current_page
           ?? payload?.meta?.pagination?.current_page
@@ -146,13 +157,21 @@ export default function ProductosPage() {
   };
 
   useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  useEffect(() => {
     if (token && companyId) {
-      fetchProducts(currentPage, productType !== 'all' ? productType : 'all');
+      fetchProducts(currentPage, productType !== 'all' ? productType : 'all', debouncedSearch);
     } else {
       // Evitar spinner infinito cuando no hay companyId/token aún
       setLoading(false);
     }
-  }, [token, companyId, currentPage, productType]);
+  }, [token, companyId, currentPage, productType, debouncedSearch]);
 
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= totalPages) {
@@ -163,6 +182,11 @@ export default function ProductosPage() {
   const handleTypeChange = (value: string) => {
     setProductType(value);
     setCurrentPage(1); // Reset to first page when changing filters
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+    setCurrentPage(1); // Reset to first page when searching
   };
 
   const handleDragStart = (
@@ -272,6 +296,16 @@ export default function ProductosPage() {
           <p className="text-slate-600 mt-1">Administra los productos de tu catálogo</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-500" />
+            <Input
+              type="search"
+              placeholder="Buscar productos..."
+              className="pl-9 w-full"
+              value={searchQuery}
+              onChange={handleSearchChange}
+            />
+          </div>
           <Select value={productType} onValueChange={handleTypeChange}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Filtrar por tipo" />
@@ -297,7 +331,7 @@ export default function ProductosPage() {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <CardTitle>Lista de Productos</CardTitle>
             <div className="text-sm text-slate-500">
-              Mostrando {Array.isArray(products) ? products.length : 0} de {totalItems} productos
+              Mostrando {totalItems === 0 ? 0 : (currentPage - 1) * ITEMS_PER_PAGE + 1} a {Math.min(currentPage * ITEMS_PER_PAGE, totalItems)} de {totalItems} productos
             </div>
           </div>
         </CardHeader>

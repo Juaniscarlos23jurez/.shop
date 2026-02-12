@@ -1,11 +1,17 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, memo } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import * as Lucide from "lucide-react";
-const { Package, Phone, Share2, X, ShoppingCart, Gift } = Lucide as any;
+import {
+  Package,
+  Phone,
+  Share2,
+  X,
+  ShoppingCart,
+  Gift
+} from "lucide-react";
 import { formatCurrency } from "@/lib/utils/currency";
 import { useCart } from "@/lib/cart-context";
 import { PublicItem, PointRule } from "@/types/api";
@@ -20,7 +26,15 @@ interface CatalogCardProps {
   buttonColor?: string;
 }
 
-export function CatalogCard({ item, locationId, phone, initialOpen = false, pointRules, userPoints, buttonColor }: CatalogCardProps) {
+export const CatalogCard = memo(function CatalogCard({
+  item,
+  locationId,
+  phone,
+  initialOpen = false,
+  pointRules,
+  userPoints,
+  buttonColor
+}: CatalogCardProps) {
   const { items, addItem, updateQuantity } = useCart();
   const isService = item.product_type === "service";
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -62,7 +76,7 @@ export function CatalogCard({ item, locationId, phone, initialOpen = false, poin
     };
   }, [isModalOpen]);
 
-  const currentCartItem = items.find((cartItem) => cartItem.id === String(item.id));
+  const currentCartItem = useMemo(() => items.find((cartItem) => cartItem.id === String(item.id)), [items, item.id]);
   const quantity = currentCartItem?.quantity ?? 0;
 
   const handleAdd = () => {
@@ -71,7 +85,7 @@ export function CatalogCard({ item, locationId, phone, initialOpen = false, poin
       name: item.name,
       description: item.description || "",
       price: typeof item.price === "number" ? item.price : (typeof item.price === "string" ? parseFloat(item.price) : 0),
-      points: typeof item.points === "number" ? item.points : (typeof item.points === "string" ? parseFloat(item.points) : undefined), // Loyalty points value for redemption
+      points: typeof item.points === "number" ? item.points : (typeof item.points === "string" ? parseFloat(item.points) : undefined),
       product_type: "made_to_order" as const,
       is_active: true,
       category: item.category || "",
@@ -206,11 +220,9 @@ export function CatalogCard({ item, locationId, phone, initialOpen = false, poin
                 <img
                   src={item.image_url}
                   alt={item.name}
+                  loading="lazy"
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                   style={{ maxHeight: "200px" }}
-                  onLoad={() => {
-                    console.log('✅ Card image loaded:', item?.image_url);
-                  }}
                   onError={(e) => {
                     const img = e.target as HTMLImageElement;
                     img.style.display = 'none';
@@ -364,9 +376,6 @@ export function CatalogCard({ item, locationId, phone, initialOpen = false, poin
                       alt={item.name}
                       className="w-full h-auto object-cover transition-transform duration-500"
                       style={{ maxHeight: "600px" }}
-                      onLoad={() => {
-                        console.log('✅ Product image loaded successfully:', item?.image_url);
-                      }}
                       onError={(e) => {
                         const img = e.target as HTMLImageElement;
                         img.style.display = 'none';
@@ -539,4 +548,4 @@ export function CatalogCard({ item, locationId, phone, initialOpen = false, poin
       )}
     </>
   );
-}
+});

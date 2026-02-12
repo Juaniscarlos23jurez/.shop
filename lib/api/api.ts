@@ -2234,12 +2234,14 @@ export const api = {
       token: string,
       page: number = 1,
       perPage: number = 15,
-      type?: 'physical' | 'made_to_order' | 'service'
+      type?: 'physical' | 'made_to_order' | 'service',
+      search?: string
     ): Promise<ApiResponse<ProductListResponse>> {
       const params = new URLSearchParams({
         page: page.toString(),
         per_page: perPage.toString(),
-        ...(type && { type })
+        ...(type && { type }),
+        ...(search && { search })
       });
 
       return fetch(

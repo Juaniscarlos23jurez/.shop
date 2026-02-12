@@ -7,8 +7,31 @@ import { publicWebApiClient } from '@/lib/api/public-web';
 import { api } from '@/lib/api/api';
 import { PublicItem, PublicCompanyLocation } from '@/types/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import * as Lucide from 'lucide-react';
-const { MapPin, Dumbbell, Activity, Phone, Mail, Clock, Search, User, Download, Share2, X, Trophy, Calendar } = Lucide as any;
+import {
+  MapPin,
+  Dumbbell,
+  Activity,
+  Phone,
+  Mail,
+  Clock,
+  Search,
+  User,
+  Download,
+  Share2,
+  X,
+  Trophy,
+  Calendar,
+  MessageSquare,
+  Send,
+  CreditCard,
+  Loader2,
+  ChevronRight,
+  Star,
+  CheckCircle2,
+  Gamepad2,
+  Sparkles,
+  ShoppingBag
+} from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -18,18 +41,26 @@ import { FloatingCartButton } from '@/components/cart/floating-cart-button';
 import { CartDrawer } from '@/components/cart/cart-drawer';
 import { clientAuthApi } from '@/lib/api/client-auth';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { BottomNav as GymBottomNav } from '@/components/gym/BottomNav';
+import { BottomNav as GymBottomNav, Section } from '@/components/gym/BottomNav';
 import { PointsSection } from '@/components/gym/PointsSection';
 import { PromotionsSection } from '@/components/gym/PromotionsSection';
 import { CatalogCard } from '@/components/gym/CatalogCard';
 import { WalletSection } from '@/components/gym/WalletSection';
 import { CommentSheet } from '@/components/gym/CommentSheet';
-import { MessageSquare, Send } from 'lucide-react';
 
-// Mock Views for Gym Modules
-function GymActivityView() {
+// --- Types & Interfaces ---
+
+interface ViewProps {
+  user?: any;
+  company?: any;
+  userPoints?: number;
+}
+
+// --- Mock Views for Gym Modules ---
+
+function GymActivityView({ user, company, userPoints }: ViewProps) {
   return (
-    <div className="pb-16 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 px-1">
+    <div className="pb-8 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 px-1">
       <Card className="bg-zinc-900 border-zinc-800 rounded-[2.5rem] overflow-hidden border-2 shadow-2xl">
         <CardHeader className="p-8 pb-4">
           <CardTitle className="text-3xl font-black text-white uppercase tracking-tighter flex items-center gap-3">
@@ -41,8 +72,8 @@ function GymActivityView() {
         <CardContent className="p-8 pt-0">
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-zinc-950 p-6 rounded-3xl border border-zinc-800 text-center">
-              <span className="text-3xl font-black text-white">4.2</span>
-              <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mt-1">Horas Totales</p>
+              <span className="text-3xl font-black text-white">{userPoints || 0}</span>
+              <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mt-1">Puntos Poder</p>
             </div>
             <div className="bg-zinc-950 p-6 rounded-3xl border border-zinc-800 text-center">
               <span className="text-3xl font-black text-blue-500">12</span>
@@ -70,6 +101,16 @@ function GymActivityView() {
         </CardContent>
       </Card>
 
+      {/* Real Points Section Integration */}
+      {company && (
+        <PointsSection
+          companyId={company?.id}
+          pointRules={company?.point_rules || []}
+          userPoints={userPoints || 0}
+          companyName={company?.name}
+        />
+      )}
+
       {/* Power Level Summary */}
       <div className="bg-gradient-to-br from-blue-600 to-blue-900 rounded-[2.5rem] p-8 text-white shadow-xl relative overflow-hidden">
         <div className="absolute right-0 top-0 opacity-10 -mr-10 -mt-10">
@@ -88,7 +129,7 @@ function GymActivityView() {
 
 function GymMessagingView() {
   return (
-    <div className="pb-32 animate-in fade-in slide-in-from-bottom-4 duration-500 px-1">
+    <div className="pb-8 animate-in fade-in slide-in-from-bottom-4 duration-500 px-1">
       <Card className="bg-zinc-900 border-zinc-800 rounded-[2.5rem] border-2 shadow-2xl h-[65vh] flex flex-col overflow-hidden">
         <CardHeader className="p-6 border-b border-zinc-800 bg-zinc-900/50 backdrop-blur-md">
           <div className="flex items-center gap-4">
@@ -129,7 +170,7 @@ function GymMessagingView() {
 
 function GymAttendanceView() {
   return (
-    <div className="pb-32 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 px-1">
+    <div className="pb-8 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 px-1">
       <Card className="bg-zinc-900 border-zinc-800 rounded-[2.5rem] border-2 shadow-2xl overflow-hidden">
         <CardHeader className="p-8">
           <CardTitle className="text-3xl font-black text-white uppercase tracking-tighter flex items-center gap-3">
@@ -166,13 +207,16 @@ function GymAttendanceView() {
   );
 }
 
-function GymPaymentsView() {
+function GymPaymentsView({ user, company }: ViewProps) {
   return (
-    <div className="pb-32 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 px-1">
+    <div className="pb-8 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 px-1">
+      {/* Wallet / Membership Info */}
+      <WalletSection />
+
       <Card className="bg-zinc-900 border-zinc-800 rounded-[2.5rem] border-2 shadow-2xl overflow-hidden">
         <CardHeader className="p-8">
           <CardTitle className="text-3xl font-black text-white uppercase tracking-tighter flex items-center gap-3">
-            <Lucide.CreditCard className="h-8 w-8 text-blue-500" />
+            <CreditCard className="h-8 w-8 text-blue-500" />
             Facturación y Pagos
           </CardTitle>
           <CardDescription className="text-zinc-400 font-medium">Control de tus transacciones</CardDescription>
@@ -284,6 +328,7 @@ function PublicLocationProductsPageContent() {
   const locationId = params.locationId as string;
   const { addItem } = useCart();
 
+  const [mounted, setMounted] = useState(false);
   const [location, setLocation] = useState<PublicCompanyLocation | null>(null);
   const [company, setCompany] = useState<any>(null);
   const [items, setItems] = useState<PublicItem[]>([]);
@@ -297,7 +342,7 @@ function PublicLocationProductsPageContent() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [currentAnnouncement, setCurrentAnnouncement] = useState(0);
   const rotationRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const [activeSection, setActiveSection] = useState<'activity' | 'workout' | 'messaging' | 'attendance' | 'payments'>('workout');
+  const [activeSection, setActiveSection] = useState<Section>('workout');
   const [coupons, setCoupons] = useState<PublicCoupon[]>([]);
   const [couponsLoading, setCouponsLoading] = useState(false);
   const [couponsError, setCouponsError] = useState<string | null>(null);
@@ -312,6 +357,20 @@ function PublicLocationProductsPageContent() {
   const [commentSheetOpen, setCommentSheetOpen] = useState(false);
   const [userPoints, setUserPoints] = useState<number>(0);
 
+  // Scroll Sync Refs
+  const sectionRefs = {
+    activity: useRef<HTMLDivElement>(null),
+    workout: useRef<HTMLDivElement>(null),
+    messaging: useRef<HTMLDivElement>(null),
+    attendance: useRef<HTMLDivElement>(null),
+    payments: useRef<HTMLDivElement>(null),
+  };
+  const isInternalScrollRef = useRef(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const trackAnalyticsEvent = (eventName: string, params: Record<string, any>) => {
     if (typeof window === 'undefined' || !window.gtag) {
       console.log('[Analytics Debug] gtag not available, event not sent:', eventName, params);
@@ -319,6 +378,57 @@ function PublicLocationProductsPageContent() {
     }
     console.log('[Analytics Debug] Sending GA event:', eventName, params);
     window.gtag('event', eventName, params);
+  };
+
+  // Intersection Observer to sync Scroll -> Nav
+  useEffect(() => {
+    if (!mounted) return;
+
+    const observerOptions = {
+      root: null,
+      rootMargin: '-20% 0px -60% 0px', // Detect middle of viewport
+      threshold: 0,
+    };
+
+    const handleIntersect = (entries: IntersectionObserverEntry[]) => {
+      if (isInternalScrollRef.current) return;
+
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          setActiveSection(entry.target.id as Section);
+        }
+      });
+    };
+
+    const observer = new IntersectionObserver(handleIntersect, observerOptions);
+
+    Object.values(sectionRefs).forEach((ref) => {
+      if (ref.current) observer.observe(ref.current);
+    });
+
+    return () => observer.disconnect();
+  }, [mounted, loading]);
+
+  const handleSectionChange = (section: Section) => {
+    setActiveSection(section);
+    isInternalScrollRef.current = true;
+
+    const element = sectionRefs[section].current;
+    if (element) {
+      const offset = 100; // Account for fixed header
+      const elementPosition = element.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - offset;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+    }
+
+    // Release internal scroll lock after animation
+    setTimeout(() => {
+      isInternalScrollRef.current = false;
+    }, 1000);
   };
 
   useEffect(() => {
@@ -888,10 +998,11 @@ function PublicLocationProductsPageContent() {
     </div>
   );
 
+  if (!mounted) return <div className="min-h-screen bg-zinc-950 flex items-center justify-center"><Loader2 className="h-10 w-10 animate-spin text-blue-500" /></div>;
+
   if (loading) {
     return <div className="flex justify-center items-center h-screen text-lg">Cargando productos de la sucursal...</div>;
   }
-
 
   if (error && typeof error === 'string' && error.toLowerCase().includes('location not found')) {
     return renderNotFound('No encontramos esta sucursal.');
@@ -905,16 +1016,15 @@ function PublicLocationProductsPageContent() {
     return renderNotFound('Sucursal no encontrada.');
   }
 
-
   return (
     <div
-      className="min-h-screen pb-32 relative overflow-x-hidden bg-zinc-950 text-white"
+      className="min-h-screen pb-32 relative overflow-x-hidden bg-zinc-950 text-white scroll-smooth"
       style={{ backgroundColor: uiSettings?.background_color ?? '#09090b' }}
     >
       {/* Banner from UI Settings */}
       {uiSettings?.banner_enabled && uiSettings.banner_text && (
         <div
-          className="w-full py-3 px-4 text-center text-white font-bold shadow-md uppercase tracking-wider"
+          className="w-full py-3 px-4 text-center text-white font-bold shadow-md uppercase tracking-wider sticky top-0 z-[60]"
           style={{ backgroundColor: uiSettings.banner_color || '#2563eb' }}
         >
           <div className="max-w-7xl mx-auto flex items-center justify-center gap-3 flex-wrap">
@@ -991,57 +1101,19 @@ function PublicLocationProductsPageContent() {
                   Mis Pedidos
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout} className="text-red-600">
-                  Cerrar Sesión
+                <DropdownMenuItem onClick={handleLogout} className="text-red-500 font-bold cursor-pointer">
+                  Cerrar sesión
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </>
         ) : (
-          <>
-            <Button
-              className="gap-2 shadow-xl text-white rounded-full h-10 sm:h-12 px-3 sm:px-5 text-xs sm:text-sm font-semibold flex hover:opacity-90 transition-opacity"
-              style={{ backgroundColor: uiSettings?.download_app_color || '#059669' }}
-              onClick={() => {
-                if (typeof window === 'undefined') return;
-
-                trackAnalyticsEvent('download_app_click', {
-                  location: 'top_right_guest',
-                  company_slug: companySlug,
-                  location_id: locationId,
-                  user_logged_in: !!user,
-                });
-
-                const IOS_URL = 'https://apps.apple.com/us/app/rewin-reward/id6748548104';
-                const ANDROID_URL = process.env.NEXT_PUBLIC_ANDROID_URL ||
-                  'https://play.google.com/store/apps/details?id=com.fynlink.BoostYou';
-
-                const userAgent = window.navigator.userAgent || '';
-                const isIOS = /iPhone|iPad|iPod/i.test(userAgent);
-                const isAndroid = /Android/i.test(userAgent);
-
-                const targetUrl = isIOS ? IOS_URL : ANDROID_URL;
-                window.location.href = targetUrl;
-              }}
-            >
-              <Download className="h-4 w-4" />
-              <span className="sm:hidden">App</span>
-              <span className="hidden sm:inline">Descargar app</span>
+          <Link href={`/gym/${companySlug}/${locationId}/login`}>
+            <Button className="gap-2 sm:gap-3 shadow-2xl bg-blue-600 text-white hover:bg-blue-700 rounded-full px-6 sm:px-10 h-10 sm:h-16 text-sm sm:text-xl font-black uppercase tracking-widest transition-all scale-100 hover:scale-105 active:scale-95 shadow-blue-600/20">
+              <User className="h-4 w-4 sm:h-6 sm:w-6" />
+              Entrar
             </Button>
-
-            <Link href={`/gym/${companySlug}/${locationId}/auth/login`}>
-              <Button
-                variant="outline"
-                className="gap-2 sm:gap-3 shadow-xl bg-transparent rounded-full h-10 sm:h-16 px-4 sm:px-6 text-sm sm:text-lg font-bold border-2 hover:bg-white/5 transition-all text-white uppercase"
-                style={{
-                  borderColor: uiSettings?.download_app_color || '#2563eb'
-                }}
-              >
-                <User className="h-5 w-5 sm:h-6 sm:w-6" />
-                <span>Iniciar Sesión</span>
-              </Button>
-            </Link>
-          </>
+          </Link>
         )}
       </div>
 
@@ -1063,259 +1135,229 @@ function PublicLocationProductsPageContent() {
         )
       }
 
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* Location Header */}
-        <div className="-mt-16 sm:-mt-20 relative z-10 mb-8">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl p-6">
-            <div className="flex flex-col items-center text-center gap-6">
-              {/* Logo */}
-              {company?.logo_url && (
-                <div className="flex-shrink-0 flex flex-col items-center gap-3">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 pt-20">
+        {/* Profile Card / Header */}
+        <div className="relative mb-16 text-center">
+          {/* Logo container */}
+          <div className="flex flex-col items-center">
+            {company?.logo_url ? (
+              <div className="relative mb-8 group">
+                <div className="absolute -inset-4 bg-blue-500/20 rounded-full blur-2xl group-hover:bg-blue-500/30 transition-all duration-700 animate-pulse" />
+                <div className="relative w-40 h-40 md:w-56 md:h-56 rounded-full border-4 border-zinc-900 shadow-2xl overflow-hidden bg-zinc-900 flex items-center justify-center p-4">
                   <img
                     src={company.logo_url}
                     alt={company.name}
-                    className="w-32 h-32 object-contain rounded-full border-4 border-zinc-900 shadow-xl bg-zinc-800"
+                    className="w-full h-full object-contain filter drop-shadow-2xl transition-transform duration-700 group-hover:scale-110"
                     onLoad={() => {
-                      console.log('✅ Company logo loaded successfully:', company?.logo_url);
+                      console.log('✅ Logo image loaded successfully:', company?.logo_url);
                     }}
                     onError={(e) => {
                       const img = e.target as HTMLImageElement;
-                      const currentSrc = img.src;
-                      console.error('❌ Error loading company logo:', {
-                        currentSrc,
-                        originalUrl: company?.logo_url,
-                        companyName: company?.name
-                      });
-                      img.style.display = 'none';
+                      console.error('❌ Logo failed to load:', company?.logo_url);
+                      img.src = '/default-logo.png'; // Fallback if available
                     }}
                   />
+                </div>
 
-                  {/* Follow Button */}
-                  {user && company && (
+                {/* Follow Button */}
+                {user && company && (
+                  <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-full flex justify-center z-10">
                     <Button
-                      className={`group gap-2 shadow-lg border-2 h-12 px-5 text-sm font-bold rounded-full transition-all uppercase tracking-tight ${isFollowing
-                        ? 'bg-transparent text-blue-400 border-blue-400/30 hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/50'
+                      className={`group gap-2 shadow-lg border-2 h-10 px-6 text-sm font-bold rounded-full transition-all uppercase tracking-tight ${isFollowing
+                        ? 'bg-zinc-900/90 backdrop-blur-md text-blue-400 border-blue-400/30 hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/50'
                         : 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700'
                         }`}
                       onClick={() => {
-                        if (isFollowing) {
-                          setIsFollowing(false);
-                        } else {
-                          setIsFollowing(true);
-                        }
+                        // Toggle logic handled partially here, would need API call
+                        setIsFollowing(!isFollowing);
                       }}
                     >
                       {isFollowing ? (
                         <>
+                          <CheckCircle2 className="h-4 w-4 group-hover:hidden" />
                           <span className="group-hover:hidden">Siguiendo</span>
+                          <X className="h-4 w-4 hidden group-hover:inline" />
                           <span className="hidden group-hover:inline">Dejar de seguir</span>
                         </>
                       ) : (
                         <>
+                          <Sparkles className="h-4 w-4" />
                           <span>Seguir</span>
                         </>
                       )}
                     </Button>
-                  )}
-                </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="w-40 h-40 md:w-56 md:h-56 rounded-full border-4 border-zinc-900 bg-zinc-900 flex items-center justify-center mb-8 shadow-2xl">
+                <Dumbbell className="h-16 w-16 md:h-24 md:w-24 text-zinc-800" />
+              </div>
+            )}
+
+            {/* Location Info */}
+            <div className="flex-1 w-full pt-4">
+              <h1 className="text-3xl md:text-5xl font-black text-white mb-2 break-words uppercase tracking-tighter">
+                {location.name}
+              </h1>
+              {company?.description && (
+                <p className="text-zinc-500 mb-6 font-medium max-w-2xl mx-auto text-lg leading-relaxed">{company.description}</p>
               )}
 
-              {/* Location Info */}
-              <div className="flex-1 w-full">
-                <h1 className="text-2xl md:text-3xl lg:text-4xl font-black text-white mb-2 break-words uppercase">
-                  {location.name}
-                </h1>
-                {company?.description && (
-                  <p className="text-zinc-400 mb-4 font-medium max-w-2xl mx-auto">{company.description}</p>
+              {/* Contact Info - Buttons (Icon Only) */}
+              <div className="flex items-center justify-center gap-4 flex-wrap mt-2">
+                {location.address && (
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    title={location.address}
+                    className="h-14 w-14 rounded-full bg-zinc-900/50 border-zinc-800 text-blue-500 hover:bg-blue-500/10 hover:border-blue-500/50 transition-all shadow-lg"
+                    onClick={() => {
+                      const lat = (location as any).latitude;
+                      const lng = (location as any).longitude;
+                      let url = '';
+                      if (lat && lng) {
+                        url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${lat},${lng}`)}`;
+                      } else {
+                        const addr = `${location.address}, ${location.city}, ${location.state}, ${location.country}`;
+                        url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr)}`;
+                      }
+                      window.open(url, '_blank');
+                    }}
+                  >
+                    <MapPin className="h-6 w-6" />
+                  </Button>
                 )}
-
-                {/* Contact Info - Buttons (Icon Only) */}
-                <div className="flex items-center justify-center gap-3 flex-wrap mt-2">
-                  {location.address && (
+                {(location as any).phone && (
+                  <a href={`tel:${(location as any).phone}`}>
                     <Button
                       size="icon"
                       variant="outline"
-                      title={location.address}
-                      className="h-12 w-12 rounded-full bg-zinc-800/50 border-zinc-700 text-blue-500 hover:bg-blue-500/10 hover:border-blue-500/50 transition-all"
-                      onClick={() => {
-                        const lat = (location as any).latitude;
-                        const lng = (location as any).longitude;
-                        let url = '';
-                        if (lat && lng) {
-                          url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${lat},${lng}`)}`;
-                        } else {
-                          const addr = `${location.address}, ${location.city}, ${location.state}, ${location.country}`;
-                          url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr)}`;
-                        }
-                        window.open(url, '_blank');
-                      }}
+                      title={(location as any).phone}
+                      className="h-14 w-14 rounded-full bg-zinc-900/50 border-zinc-800 text-blue-500 hover:bg-blue-500/10 hover:border-blue-500/50 transition-all shadow-lg"
                     >
-                      <MapPin className="h-6 w-6" />
+                      <Phone className="h-6 w-6" />
                     </Button>
-                  )}
-                  {(location as any).phone && (
-                    <a href={`tel:${(location as any).phone}`}>
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        title={(location as any).phone}
-                        className="h-12 w-12 rounded-full bg-zinc-800/50 border-zinc-700 text-blue-500 hover:bg-blue-500/10 hover:border-blue-500/50 transition-all"
-                      >
-                        <Phone className="h-6 w-6" />
-                      </Button>
-                    </a>
-                  )}
-                  {(location as any).email && (
-                    <a href={`mailto:${(location as any).email}`}>
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        title={(location as any).email}
-                        className="h-12 w-12 rounded-full bg-zinc-800/50 border-zinc-700 text-blue-500 hover:bg-blue-500/10 hover:border-blue-500/50 transition-all"
-                      >
-                        <Mail className="h-6 w-6" />
-                      </Button>
-                    </a>
-                  )}
-                  <Button
-                    size="icon"
-                    variant="outline"
-                    title="Comentar"
-                    className="h-12 w-12 rounded-full bg-zinc-800/50 border-zinc-700 text-blue-500 hover:bg-blue-500/10 hover:border-blue-500/50 transition-all"
-                    onClick={() => setCommentSheetOpen(true)}
-                  >
-                    <MessageSquare className="h-6 w-6" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="outline"
-                    title="Compartir"
-                    className="h-12 w-12 rounded-full bg-zinc-800/50 border-zinc-700 text-blue-500 hover:bg-blue-500/10 hover:border-blue-500/50 transition-all"
-                    onClick={() => {
-                      if (typeof window === 'undefined') return;
-                      const baseText = `${company?.name || location.name} - ${company?.description || 'Entrena con los mejores en Rewin Gym'}`;
-                      const url = shareUrl || window.location.href;
-                      const waUrl = `https://wa.me/?text=${encodeURIComponent(`${baseText} ${url}`)}`;
-                      window.open(waUrl, '_blank');
-                    }}
-                  >
-                    <Share2 className="h-6 w-6" />
-                  </Button>
-                </div>
+                  </a>
+                )}
+                {(location as any).email && (
+                  <a href={`mailto:${(location as any).email}`}>
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      title={(location as any).email}
+                      className="h-14 w-14 rounded-full bg-zinc-900/50 border-zinc-800 text-blue-500 hover:bg-blue-500/10 hover:border-blue-500/50 transition-all shadow-lg"
+                    >
+                      <Mail className="h-6 w-6" />
+                    </Button>
+                  </a>
+                )}
+                <Button
+                  size="icon"
+                  variant="outline"
+                  title="Comentar"
+                  className="h-14 w-14 rounded-full bg-zinc-900/50 border-zinc-800 text-blue-500 hover:bg-blue-500/10 hover:border-blue-500/50 transition-all shadow-lg"
+                  onClick={() => setCommentSheetOpen(true)}
+                >
+                  <MessageSquare className="h-6 w-6" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  title="Compartir"
+                  className="h-14 w-14 rounded-full bg-zinc-900/50 border-zinc-800 text-blue-500 hover:bg-blue-500/10 hover:border-blue-500/50 transition-all shadow-lg"
+                  onClick={() => {
+                    if (typeof window === 'undefined') return;
+                    const baseText = `${company?.name || location.name} - ${company?.description || 'Entrena con los mejores en Rewin Gym'}`;
+                    const url = shareUrl || window.location.href;
+                    const waUrl = `https://wa.me/?text=${encodeURIComponent(`${baseText} ${url}`)}`;
+                    window.open(waUrl, '_blank');
+                  }}
+                >
+                  <Share2 className="h-6 w-6" />
+                </Button>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Spacer where top nav used to be */}
-        <div className="mb-2" />
+        {/* --- STACKED SECTIONS --- */}
+        <div className="space-y-32">
+          {/* 1. Activity Section */}
+          <div id="activity" ref={sectionRefs.activity} className="scroll-mt-32">
+            <GymActivityView user={user} company={company} userPoints={userPoints} />
+          </div>
 
-        {/* Sections */}
-        {activeSection === 'workout' && (
-          <>
+          {/* 2. Workout Section (Catalog) */}
+          <div id="workout" ref={sectionRefs.workout} className="scroll-mt-32">
             {/* Announcements Carousel */}
             {announcements.length > 0 && (
               <div className="mb-10">
-                <div className="relative overflow-hidden rounded-xl shadow-lg bg-gray-100">
+                <div className="relative overflow-hidden rounded-[2.5rem] shadow-2xl bg-zinc-900 border-2 border-zinc-800">
                   {announcements[currentAnnouncement]?.image_url ? (
                     <img
                       src={announcements[currentAnnouncement].image_url as string}
                       alt={announcements[currentAnnouncement]?.title || 'Anuncio'}
-                      className="w-full h-64 sm:h-80 md:h-96 lg:h-[28rem] object-cover"
+                      className="w-full h-64 sm:h-80 md:h-96 lg:h-[28rem] object-cover transition-all duration-700"
                     />
                   ) : (
-                    <div className="w-full h-64 sm:h-80 md:h-96 lg:h-[28rem] flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
-                      <span className="text-gray-500">Anuncio</span>
+                    <div className="w-full h-64 sm:h-80 md:h-96 lg:h-[28rem] flex items-center justify-center bg-gradient-to-br from-zinc-900 to-zinc-950">
+                      <Sparkles className="h-20 w-20 text-blue-500/20" />
                     </div>
                   )}
 
                   {(announcements[currentAnnouncement]?.title || announcements[currentAnnouncement]?.text) && (
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent p-4 sm:p-6 flex items-end">
+                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent p-8 flex items-end">
                       <div className="text-white max-w-2xl">
                         {announcements[currentAnnouncement]?.title && (
-                          <h3 className="text-lg sm:text-2xl font-bold">
+                          <h3 className="text-2xl sm:text-4xl font-black uppercase tracking-tighter mb-2">
                             {announcements[currentAnnouncement].title}
                           </h3>
                         )}
-                        {announcements[currentAnnouncement]?.subtitle && (
-                          <p className="text-sm sm:text-base opacity-90">{announcements[currentAnnouncement].subtitle}</p>
-                        )}
                         {announcements[currentAnnouncement]?.text && (
-                          <p className="mt-1 text-xs sm:text-sm opacity-90 line-clamp-2">
+                          <p className="mt-1 text-sm sm:text-lg opacity-80 font-medium leading-relaxed">
                             {announcements[currentAnnouncement].text}
                           </p>
                         )}
                         {announcements[currentAnnouncement]?.link_url && (
-                          <a
-                            href={announcements[currentAnnouncement].link_url as string}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-block mt-3 text-xs sm:text-sm font-bold bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full shadow-lg uppercase tracking-wider"
+                          <Button
+                            className="mt-6 font-black bg-blue-600 hover:bg-blue-700 text-white px-8 py-6 rounded-2xl shadow-xl uppercase tracking-widest text-base"
+                            onClick={() => window.open(announcements[currentAnnouncement].link_url as string, '_blank')}
                           >
-                            ENTRENAR AHORA
-                          </a>
+                            VER PROMO
+                          </Button>
                         )}
                       </div>
                     </div>
-                  )}
-
-                  {announcements.length > 1 && (
-                    <>
-                      <button
-                        aria-label="Anterior"
-                        className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white rounded-full w-8 h-8 flex items-center justify-center"
-                        onClick={() => setCurrentAnnouncement((idx) => (idx - 1 + announcements.length) % announcements.length)}
-                      >
-                        ‹
-                      </button>
-                      <button
-                        aria-label="Siguiente"
-                        className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white rounded-full w-8 h-8 flex items-center justify-center"
-                        onClick={() => setCurrentAnnouncement((idx) => (idx + 1) % announcements.length)}
-                      >
-                        ›
-                      </button>
-
-                      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-2">
-                        {announcements.map((_, i) => (
-                          <button
-                            key={i}
-                            aria-label={`Ir al anuncio ${i + 1}`}
-                            className={`w-2.5 h-2.5 rounded-full ${i === currentAnnouncement ? 'bg-white' : 'bg-white/60 hover:bg-white'}`}
-                            onClick={() => setCurrentAnnouncement(i)}
-                          />
-                        ))}
-                      </div>
-                    </>
                   )}
                 </div>
               </div>
             )}
 
-            {/* Products Section */}
+            {/* Products Catalog */}
             <div className="pb-16">
-              <Card className="flex flex-col md:block bg-zinc-900 border-zinc-800 shadow-2xl">
-                <CardHeader className="flex-shrink-0 md:static">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+              <Card className="flex flex-col md:block bg-zinc-900 border-zinc-800 shadow-2xl rounded-[3rem] border-2 overflow-hidden">
+                <CardHeader className="p-8 sm:p-12 pb-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 mb-8">
                     <div>
-                      <CardTitle className="flex items-center text-2xl text-white font-black uppercase tracking-tight">
-                        <Dumbbell className="mr-3 h-8 w-8 text-blue-500" /> PLANES Y CLASES
+                      <CardTitle className="flex items-center text-4xl text-white font-black uppercase tracking-tighter">
+                        <ShoppingBag className="mr-4 h-10 w-10 text-blue-500" /> PLANES DE PODER
                       </CardTitle>
-                      <CardDescription className="text-zinc-400 text-lg mt-1 font-medium">
+                      <CardDescription className="text-zinc-500 text-xl mt-2 font-medium">
                         {items.length} programas diseñados para tu evolución
                       </CardDescription>
                     </div>
                   </div>
 
                   {/* Search Bar */}
-                  <div className="relative mb-6">
-                    <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-6 w-6 text-zinc-500" />
+                  <div className="relative mb-10">
+                    <Search className="absolute left-6 top-1/2 transform -translate-y-1/2 h-7 w-7 text-zinc-600" />
                     <Input
                       type="text"
-                      placeholder="Buscar planes o clases..."
+                      placeholder="Buscar tu próximo nivel..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-12 pr-4 py-3 h-14 text-base sm:text-lg w-full bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 focus:ring-blue-500"
+                      className="pl-16 pr-6 py-8 h-20 text-xl w-full bg-zinc-950 border-zinc-800 text-white rounded-3xl placeholder:text-zinc-700 focus:ring-blue-500 border-2"
                     />
                   </div>
 
@@ -1324,9 +1366,9 @@ function PublicLocationProductsPageContent() {
                     <div className="flex flex-wrap gap-3 mb-4">
                       <Badge
                         variant={selectedCategory === 'all' ? 'default' : 'outline'}
-                        className={`cursor-pointer transition-all px-6 py-3 text-sm sm:text-base rounded-full font-bold uppercase tracking-wider ${selectedCategory === 'all'
-                          ? `text-white ${!uiSettings?.cart_button_color ? 'bg-blue-600 hover:bg-blue-700 shadow-[0_0_20px_rgba(37,99,235,0.4)]' : ''}`
-                          : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:bg-zinc-700 hover:text-white'
+                        className={`cursor-pointer transition-all px-6 py-3 text-sm rounded-full font-black uppercase tracking-widest ${selectedCategory === 'all'
+                          ? `text-white ${!uiSettings?.cart_button_color ? 'bg-blue-600 hover:bg-blue-700 shadow-lg' : ''}`
+                          : 'bg-zinc-950 border-zinc-800 text-zinc-600 hover:text-white hover:border-zinc-700'
                           }`}
                         style={selectedCategory === 'all' && uiSettings?.cart_button_color ? { backgroundColor: uiSettings.cart_button_color } : {}}
                         onClick={() => setSelectedCategory('all')}
@@ -1340,9 +1382,9 @@ function PublicLocationProductsPageContent() {
                           <Badge
                             key={category}
                             variant={isCurrentActive ? 'default' : 'outline'}
-                            className={`cursor-pointer transition-all px-6 py-3 text-sm sm:text-base rounded-full font-bold uppercase tracking-wider ${isCurrentActive
-                              ? `text-white ${!uiSettings?.cart_button_color ? 'bg-blue-600 hover:bg-blue-700 shadow-[0_0_20px_rgba(37,99,235,0.4)]' : ''}`
-                              : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:bg-zinc-700 hover:text-white'
+                            className={`cursor-pointer transition-all px-6 py-3 text-sm rounded-full font-black uppercase tracking-widest ${isCurrentActive
+                              ? `text-white ${!uiSettings?.cart_button_color ? 'bg-blue-600 hover:bg-blue-700 shadow-lg' : ''}`
+                              : 'bg-zinc-950 border-zinc-800 text-zinc-600 hover:text-white hover:border-zinc-700'
                               }`}
                             style={isCurrentActive && uiSettings?.cart_button_color ? { backgroundColor: uiSettings.cart_button_color } : {}}
                             onClick={() => setSelectedCategory(category)}
@@ -1354,26 +1396,25 @@ function PublicLocationProductsPageContent() {
                     </div>
                   )}
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-4 sm:p-8 pt-0">
                   {items.length === 0 ? (
-                    <div className="text-center py-20 bg-zinc-800/50 rounded-3xl border-2 border-dashed border-zinc-700">
-                      <Activity className="h-20 w-20 text-zinc-600 mx-auto mb-6 opacity-50" />
-                      <p className="text-zinc-400 text-xl font-bold">No hay planes activos en este momento.</p>
-                      <p className="text-zinc-500 mt-2">Vuelve pronto para ver nuestras promociones.</p>
+                    <div className="text-center py-20 bg-zinc-950/50 rounded-[2.5rem] border-2 border-dashed border-zinc-800">
+                      <Activity className="h-20 w-20 text-zinc-800 mx-auto mb-6" />
+                      <p className="text-zinc-600 text-xl font-black uppercase tracking-widest">Sin planes activos</p>
                     </div>
                   ) : filteredItems.length === 0 ? (
-                    <div className="text-center py-20 bg-zinc-800/50 rounded-3xl border-2 border-dashed border-zinc-700">
-                      <Search className="h-20 w-20 text-zinc-600 mx-auto mb-6 opacity-50" />
-                      <p className="text-zinc-400 text-xl font-bold">No se encontraron resultados.</p>
+                    <div className="text-center py-20 bg-zinc-950/50 rounded-[2.5rem] border-2 border-dashed border-zinc-800">
+                      <Search className="h-20 w-20 text-zinc-800 mx-auto mb-6" />
+                      <p className="text-zinc-600 text-xl font-black uppercase tracking-widest">No hay coincidencias</p>
                       <Button
                         variant="link"
-                        className="mt-4 text-blue-400 hover:text-blue-300 text-lg"
+                        className="mt-4 text-blue-500 font-bold"
                         onClick={() => {
                           setSearchQuery('');
                           setSelectedCategory('all');
                         }}
                       >
-                        Mostrar todo de nuevo
+                        REESTABLECER FILTROS
                       </Button>
                     </div>
                   ) : (
@@ -1395,13 +1436,23 @@ function PublicLocationProductsPageContent() {
                 </CardContent>
               </Card>
             </div>
-          </>
-        )}
+          </div>
 
-        {activeSection === 'activity' && <GymActivityView />}
-        {activeSection === 'messaging' && <GymMessagingView />}
-        {activeSection === 'attendance' && <GymAttendanceView />}
-        {activeSection === 'payments' && <GymPaymentsView />}
+          {/* 3. Messaging Section */}
+          <div id="messaging" ref={sectionRefs.messaging} className="scroll-mt-32">
+            <GymMessagingView />
+          </div>
+
+          {/* 4. Attendance Section */}
+          <div id="attendance" ref={sectionRefs.attendance} className="scroll-mt-32">
+            <GymAttendanceView />
+          </div>
+
+          {/* 5. Payments Section */}
+          <div id="payments" ref={sectionRefs.payments} className="scroll-mt-32">
+            <GymPaymentsView user={user} company={company} />
+          </div>
+        </div>
       </div>
 
       <FloatingCartButton
@@ -1410,6 +1461,7 @@ function PublicLocationProductsPageContent() {
         backgroundColor={uiSettings?.cart_button_color}
         iconColor={uiSettings?.cart_icon_color}
       />
+
       <CartDrawer
         open={cartOpen}
         onClose={() => setCartOpen(false)}
@@ -1421,7 +1473,7 @@ function PublicLocationProductsPageContent() {
 
       <GymBottomNav
         activeSection={activeSection}
-        onSectionChange={setActiveSection}
+        onSectionChange={handleSectionChange}
         backgroundColor={uiSettings?.navigation_bar_color}
         activeItemColor={uiSettings?.cart_button_color}
       />
@@ -1430,15 +1482,16 @@ function PublicLocationProductsPageContent() {
       <Dialog open={popupOpen} onOpenChange={(open) => {
         setPopupOpen(open);
       }}>
-        <DialogContent className="w-[90%] sm:max-w-md rounded-2xl p-0 overflow-hidden">
+        <DialogContent className="w-[90%] sm:max-w-md rounded-[2.5rem] p-0 overflow-hidden bg-zinc-900 border-2 border-zinc-800">
           <button
             onClick={() => setPopupOpen(false)}
-            className="absolute right-4 top-4 z-50 h-8 w-8 flex items-center justify-center rounded-full bg-white border border-black hover:bg-gray-100 transition-colors shadow-sm"
+            className="absolute right-6 top-6 z-50 h-10 w-10 flex items-center justify-center rounded-full bg-black/50 backdrop-blur-md text-white border border-white/20 hover:bg-black transition-colors shadow-xl"
           >
-            <X className="h-4 w-4 text-black" />
+            <X className="h-5 w-5" />
           </button>
           {uiSettings?.popup_image_url && (
-            <div className="w-full h-64 sm:h-72 overflow-hidden">
+            <div className="w-full h-80 overflow-hidden relative">
+              <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-transparent to-transparent z-10" />
               <img
                 src={uiSettings.popup_image_url}
                 alt={uiSettings.popup_title || 'Popup'}
@@ -1446,24 +1499,24 @@ function PublicLocationProductsPageContent() {
               />
             </div>
           )}
-          <div className="px-5 py-4 space-y-4">
+          <div className="px-8 py-8 space-y-6 relative z-10">
             <DialogHeader className="p-0">
               {uiSettings?.popup_title && (
-                <DialogTitle className="text-xl font-bold">{uiSettings.popup_title}</DialogTitle>
+                <DialogTitle className="text-3xl font-black uppercase tracking-tighter text-white">{uiSettings.popup_title}</DialogTitle>
               )}
               {uiSettings?.popup_description && (
-                <DialogDescription className="text-base mt-2">
+                <DialogDescription className="text-lg mt-4 text-zinc-400 font-medium leading-relaxed">
                   {uiSettings.popup_description}
                 </DialogDescription>
               )}
             </DialogHeader>
 
             {uiSettings?.popup_button_label && uiSettings?.popup_button_url && (
-              <div className="pt-2 flex justify-center">
+              <div className="pt-4 flex justify-center">
                 <Button
-                  className="w-[90%] max-w-xs text-sm font-semibold rounded-full"
+                  className="w-full py-8 text-lg font-black rounded-3xl uppercase tracking-widest shadow-2xl transition-all hover:scale-[1.02] active:scale-[0.98]"
                   style={{
-                    backgroundColor: uiSettings.popup_button_color || '#059669',
+                    backgroundColor: uiSettings.popup_button_color || '#2563eb',
                     color: '#ffffff',
                   }}
                   onClick={() => {
