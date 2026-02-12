@@ -12,6 +12,8 @@ import { PublicItem, PointRule } from "@/types/api";
 import {
   Drawer,
   DrawerContent,
+  DrawerTitle,
+  DrawerDescription,
 } from "@/components/ui/drawer";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -317,7 +319,10 @@ export const CatalogCard = memo(({ item, locationId, phone, initialOpen = false,
           <div className="overflow-y-auto px-6 pb-6 pt-2">
             <div className="sticky top-0 bg-white pt-2 pb-4 mb-4 border-b flex justify-between items-start z-10">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">{item.name}</h2>
+                <DrawerTitle className="text-2xl font-bold text-gray-900">{item.name}</DrawerTitle>
+                <DrawerDescription className="sr-only">
+                  Detalles del producto {item.name}
+                </DrawerDescription>
                 {item.category && (
                   <Badge
                     className={`w-fit mt-2 ${!buttonColor ? 'bg-emerald-600' : ''}`}
