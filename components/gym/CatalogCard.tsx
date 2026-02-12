@@ -200,14 +200,14 @@ export function CatalogCard({ item, locationId, phone, initialOpen = false, poin
         onClick={() => setIsModalOpen(true)}
       >
         <div className="flex flex-row h-full">
-          <div className="relative w-32 sm:w-48 md:w-56 flex-shrink-0 bg-zinc-950 flex flex-col items-stretch p-2 sm:p-3 overflow-hidden">
-            <div className="flex-1 flex items-center justify-center relative min-h-[100px] sm:min-h-[140px]">
+          <div className="relative w-44 sm:w-64 md:w-80 flex-shrink-0 bg-zinc-950 flex flex-col items-stretch p-2 sm:p-3 overflow-hidden">
+            <div className="flex-1 flex items-center justify-center relative min-h-[140px] sm:min-h-[200px]">
               {item.image_url ? (
                 <img
                   src={item.image_url}
                   alt={item.name}
                   className="w-full h-auto object-contain transition-transform duration-700 group-hover:scale-110 rounded-lg"
-                  style={{ maxHeight: "120px" }}
+                  style={{ maxHeight: "170px" }}
                   onLoad={() => {
                     console.log('✅ Card image loaded:', item?.image_url);
                   }}
@@ -363,7 +363,7 @@ export function CatalogCard({ item, locationId, phone, initialOpen = false, poin
                       src={item.image_url}
                       alt={item.name}
                       className="max-w-full h-auto object-contain rounded-2xl transition-transform duration-500"
-                      style={{ maxHeight: "380px" }}
+                      style={{ maxHeight: "540px" }}
                       onLoad={() => {
                         console.log('✅ Product image loaded successfully:', item?.image_url);
                       }}
