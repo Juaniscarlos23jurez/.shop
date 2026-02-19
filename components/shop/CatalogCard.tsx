@@ -194,20 +194,7 @@ export const CatalogCard = memo(({ item, locationId, phone, initialOpen = false,
                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                   style={{ maxHeight: "200px" }}
                   loading="lazy"
-                  onLoad={() => {
-                    console.log('✅ Card image loaded:', item?.image_url);
-                  }}
-                  onError={(e) => {
-                    const img = e.target as HTMLImageElement;
-                    const currentSrc = img.src;
-                    console.error('❌ Card image failed:', {
-                      currentSrc,
-                      originalUrl: item?.image_url,
-                      productId: item?.id,
-                      productName: item?.name
-                    });
-                    img.style.display = 'none';
-                  }}
+                  onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
                 />
               ) : (
                 <div className="w-full h-24 sm:h-32 flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg">
@@ -350,24 +337,7 @@ export const CatalogCard = memo(({ item, locationId, phone, initialOpen = false,
                   className="w-full h-auto object-cover"
                   style={{ maxHeight: "550px" }}
                   loading="lazy"
-                  onLoad={() => {
-                    console.log('✅ Product image loaded successfully:', item?.image_url);
-                  }}
-                  onError={(e) => {
-                    const img = e.target as HTMLImageElement;
-                    const currentSrc = img.src;
-                    console.error('❌ Error loading product image:', {
-                      currentSrc,
-                      originalUrl: item?.image_url,
-                      productId: item?.id,
-                      productName: item?.name
-                    });
-                    img.style.display = 'none';
-                    const parent = img.parentElement;
-                    if (parent) {
-                      parent.innerHTML = '<div class="w-full h-64 flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl"><svg class="h-24 w-24 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg></div>';
-                    }
-                  }}
+                  onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
                 />
               </div>
             ) : (

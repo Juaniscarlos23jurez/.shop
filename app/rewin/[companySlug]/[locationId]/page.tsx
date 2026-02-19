@@ -1,14 +1,13 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { publicWebApiClient } from '@/lib/api/public-web';
 import { api } from '@/lib/api/api';
 import { PublicItem, PublicCompanyLocation } from '@/types/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import * as Lucide from 'lucide-react';
-const { MapPin, Package, Phone, Mail, Clock, Store, Search, User, Download, Share2, X } = Lucide as any;
+import { MapPin, Package, Phone, Mail, Store, Search, User, Download, Share2, X, MessageSquare } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -24,13 +23,6 @@ import { PromotionsSection } from '@/components/shop/PromotionsSection';
 import { CatalogCard } from '@/components/shop/CatalogCard';
 import { WalletSection } from '@/components/shop/WalletSection';
 import { CommentSheet } from '@/components/shop/CommentSheet';
-import { MessageSquare } from 'lucide-react';
-
-declare global {
-  interface Window {
-    gtag?: (...args: any[]) => void;
-  }
-}
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -47,6 +39,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
+declare global {
+  interface Window {
+    gtag?: (...args: any[]) => void;
+  }
+}
+
+// ─── Types ───────────────────────────────────────────────────────────────────
 type Announcement = {
   id: number;
   company_id: number;
@@ -73,7 +72,17 @@ type PublicCoupon = {
   company?: { id: number; name: string; logo_url?: string } | null;
 };
 
-// Simple localStorage cache helpers with TTL
+// ─── TTL constants (outside component to avoid re-creation on every render) ──
+const COMPANY_TTL = 24 * 60 * 60 * 1000; // 24 h
+const LOCATION_TTL = 24 * 60 * 60 * 1000; // 24 h
+const ITEMS_TTL = 60 * 60 * 1000; //  1 h
+const ANN_TTL = 30 * 60 * 1000; // 30 m
+const PROFILE_TTL = 15 * 60 * 1000; // 15 m
+const UI_TTL = 15 * 60 * 1000; // 15 m
+const FOLLOW_TTL = 15 * 60 * 1000; // 15 m
+const API_BASE = 'https://laravel-pkpass-backend-development-pfaawl.laravel.cloud/api';
+
+// ─── LocalStorage cache helpers ───────────────────────────────────────────────
 function getCache<T = any>(key: string): { data: T; ts: number } | null {
   try {
     const raw = typeof window !== 'undefined' ? window.localStorage.getItem(key) : null;
@@ -87,11 +96,8 @@ function getCache<T = any>(key: string): { data: T; ts: number } | null {
 function setCache<T = any>(key: string, data: T) {
   try {
     if (typeof window === 'undefined') return;
-    const payload = JSON.stringify({ data, ts: Date.now() });
-    window.localStorage.setItem(key, payload);
-  } catch {
-    // ignore
-  }
+    window.localStorage.setItem(key, JSON.stringify({ data, ts: Date.now() }));
+  } catch { /* storage full – ignore */ }
 }
 
 function isFresh(entry: { ts: number } | null, ttlMs: number) {
@@ -99,6 +105,44 @@ function isFresh(entry: { ts: number } | null, ttlMs: number) {
   return Date.now() - entry.ts < ttlMs;
 }
 
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
+function PageSkeleton() {
+  return (
+    <div className="min-h-screen bg-gray-50 animate-pulse">
+      {/* Banner skeleton */}
+      <div className="h-48 sm:h-64 w-full bg-gray-200" />
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        {/* Header card skeleton */}
+        <div className="-mt-16 relative z-10 mb-8 bg-white rounded-lg shadow-lg p-6">
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-32 h-32 rounded-full bg-gray-200" />
+            <div className="w-48 h-6 bg-gray-200 rounded-full" />
+            <div className="w-64 h-4 bg-gray-100 rounded-full" />
+            <div className="flex gap-3">
+              {[1, 2, 3].map(i => <div key={i} className="w-12 h-12 rounded-full bg-gray-200" />)}
+            </div>
+          </div>
+        </div>
+        {/* Cards skeleton */}
+        <div className="flex flex-col gap-6">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="h-44 bg-white rounded-xl shadow-sm flex overflow-hidden">
+              <div className="w-44 bg-gray-200 flex-shrink-0" />
+              <div className="flex-1 p-5 flex flex-col gap-3 justify-center">
+                <div className="h-5 bg-gray-200 rounded w-3/4" />
+                <div className="h-4 bg-gray-100 rounded w-1/2" />
+                <div className="h-4 bg-gray-100 rounded w-full" />
+                <div className="h-10 bg-gray-200 rounded-lg w-full mt-2" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main page content ────────────────────────────────────────────────────────
 function PublicLocationProductsPageContent() {
   const params = useParams();
   const router = useRouter();
@@ -106,265 +150,154 @@ function PublicLocationProductsPageContent() {
   const locationId = params.locationId as string;
   const { addItem } = useCart();
 
+  const baseKey = `plp:${companySlug}:${locationId}`;
+
+  // Core data
   const [location, setLocation] = useState<PublicCompanyLocation | null>(null);
   const [company, setCompany] = useState<any>(null);
   const [items, setItems] = useState<PublicItem[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
+
+  // UI state
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
-
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [cartOpen, setCartOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState<'home' | 'promotions' | 'points' | 'wallet' | 'coupons'>('home');
+  const [shareUrl, setShareUrl] = useState('');
+  const [initialProductId, setInitialProductId] = useState<string | null>(null);
+  const [commentSheetOpen, setCommentSheetOpen] = useState(false);
+
+  // Announcements
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [currentAnnouncement, setCurrentAnnouncement] = useState(0);
   const rotationRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const [activeSection, setActiveSection] = useState<'home' | 'promotions' | 'points' | 'wallet' | 'coupons'>('home');
+
+  // Coupons
   const [coupons, setCoupons] = useState<PublicCoupon[]>([]);
   const [couponsLoading, setCouponsLoading] = useState(false);
   const [couponsError, setCouponsError] = useState<string | null>(null);
-  const [shareUrl, setShareUrl] = useState('');
 
+  // User
   const [user, setUser] = useState<any>(null);
   const [isFollowing, setIsFollowing] = useState(false);
-  const [lastAnalyticsPayload, setLastAnalyticsPayload] = useState<any | null>(null);
-  const [uiSettings, setUiSettings] = useState<any>(null);
-  const [popupOpen, setPopupOpen] = useState(false);
-  const [initialProductId, setInitialProductId] = useState<string | null>(null);
-  const [commentSheetOpen, setCommentSheetOpen] = useState(false);
   const [userPoints, setUserPoints] = useState<number>(0);
 
-  const trackAnalyticsEvent = (eventName: string, params: Record<string, any>) => {
-    if (typeof window === 'undefined' || !window.gtag) {
-      console.log('[Analytics Debug] gtag not available, event not sent:', eventName, params);
-      return;
-    }
-    console.log('[Analytics Debug] Sending GA event:', eventName, params);
-    window.gtag('event', eventName, params);
-  };
+  // UI settings
+  const [uiSettings, setUiSettings] = useState<any>(null);
+  const [popupOpen, setPopupOpen] = useState(false);
 
+  // ── Analytics ──────────────────────────────────────────────────────────────
+  const trackAnalyticsEvent = useCallback((eventName: string, eventParams: Record<string, any>) => {
+    if (typeof window === 'undefined' || !window.gtag) return;
+    window.gtag('event', eventName, eventParams);
+  }, []);
+
+  // ── Auth check ─────────────────────────────────────────────────────────────
   useEffect(() => {
     const checkAuth = async () => {
       const token = localStorage.getItem('customer_token');
-      if (token) {
-        try {
-          // 1. Try to get stored info first for speed
-          const cachedProfile = getCache('user_profile_full');
-          let userData = null;
-
-          if (isFresh(cachedProfile, PROFILE_TTL) && cachedProfile?.data) {
-            userData = cachedProfile.data;
-            setUser(userData);
-          } else {
-            // Fallback to old raw cache if new one missing (migration)
-            const storedInfo = localStorage.getItem('customer_info');
-            if (storedInfo && !userData) {
-              userData = JSON.parse(storedInfo);
-              setUser(userData);
-            }
-
-            // Validate/Refresh with API
-            const res = await clientAuthApi.getProfile(token);
-            if (res.success && res.data) {
-              userData = (res.data as any).data || res.data;
-              setUser(userData);
-              localStorage.setItem('customer_info', JSON.stringify(userData)); // Keep for backward compat if needed
-              setCache('user_profile_full', userData);
-            } else {
-              // Token invalid
-              localStorage.removeItem('customer_token');
-              localStorage.removeItem('customer_info');
-              setUser(null);
-              return; // Stop here if auth failed
-            }
-          }
-
-          // Check if following - REMOVED redundant call here, handled by checkFollow effect
-          // We don't need to fetch here because the checkFollow effect will run as soon as user is set
-          // and it handles caching and fetching.
-        } catch (e) {
-          console.error("Auth check failed", e);
+      if (!token) return;
+      try {
+        const cachedProfile = getCache('user_profile_full');
+        if (isFresh(cachedProfile, PROFILE_TTL) && cachedProfile?.data) {
+          setUser(cachedProfile.data);
+          return;
         }
-      }
+        // Show stale data instantly while we refresh
+        const storedInfo = localStorage.getItem('customer_info');
+        if (storedInfo) {
+          try { setUser(JSON.parse(storedInfo)); } catch { /* ignore */ }
+        }
+        const res = await clientAuthApi.getProfile(token);
+        if (res.success && res.data) {
+          const userData = (res.data as any).data || res.data;
+          setUser(userData);
+          localStorage.setItem('customer_info', JSON.stringify(userData));
+          setCache('user_profile_full', userData);
+        } else {
+          localStorage.removeItem('customer_token');
+          localStorage.removeItem('customer_info');
+          setUser(null);
+        }
+      } catch { /* silent */ }
     };
     checkAuth();
   }, []);
 
-  // Read product from query string to open product modal directly when shared
+  // ── Read ?product= from URL ────────────────────────────────────────────────
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
-      const url = new URL(window.location.href);
-      const productId = url.searchParams.get('product');
-      if (productId) {
-        setInitialProductId(productId);
-      }
-    } catch (e) {
-      console.warn('Error reading product from URL', e);
-    }
-  }, []);
-
-  // Read cart from query string to pre-fill cart when shared
-  useEffect(() => {
-    if (typeof window === 'undefined' || !items || items.length === 0) return;
-
-    try {
-      const url = new URL(window.location.href);
-      const cartParam = url.searchParams.get('cart');
-
-      if (cartParam) {
-        const cartData = JSON.parse(decodeURIComponent(cartParam)) as Array<{ id: string; q: number }>;
-
-        // Agregar items al carrito
-        cartData.forEach(({ id, q }) => {
-          const product = items.find(item => String(item.id) === id);
-          if (product) {
-            // Agregar el producto q veces
-            for (let i = 0; i < q; i++) {
-              addItem(product as any);
-            }
-          }
-        });
-
-        // Limpiar el query param después de cargar
-        const newUrl = new URL(window.location.href);
-        newUrl.searchParams.delete('cart');
-        window.history.replaceState({}, '', newUrl.toString());
-      }
-    } catch (e) {
-      console.warn('Error reading cart from URL', e);
-    }
-  }, [items, addItem]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
+      const productId = new URL(window.location.href).searchParams.get('product');
+      if (productId) setInitialProductId(productId);
+    } catch { /* ignore */ }
     setShareUrl(window.location.href);
   }, []);
 
-  // Analytics: track detailed view of this location
+  // ── Pre-fill cart from ?cart= ──────────────────────────────────────────────
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined' || items.length === 0) return;
+    try {
+      const url = new URL(window.location.href);
+      const cartParam = url.searchParams.get('cart');
+      if (!cartParam) return;
+      const cartData = JSON.parse(decodeURIComponent(cartParam)) as Array<{ id: string; q: number }>;
+      cartData.forEach(({ id, q }) => {
+        const product = items.find(i => String(i.id) === id);
+        if (product) {
+          for (let k = 0; k < q; k++) addItem(product as any);
+        }
+      });
+      url.searchParams.delete('cart');
+      window.history.replaceState({}, '', url.toString());
+    } catch { /* ignore */ }
+  }, [items, addItem]);
+
+  // ── Analytics view event ───────────────────────────────────────────────────
+  useEffect(() => {
     if (!company || !location) return;
-
-    const nav = window.navigator || ({} as Navigator);
-    const screenInfo = typeof window !== 'undefined' ? window.screen : undefined;
-
-    const deviceInfo = {
-      user_agent: nav.userAgent,
-      language: nav.language,
-      languages: (nav as any).languages,
-      platform: nav.platform,
-      screen_width: screenInfo?.width,
-      screen_height: screenInfo?.height,
-      viewport_width: window.innerWidth,
-      viewport_height: window.innerHeight,
-      connection_type: (nav as any).connection?.effectiveType,
-    };
-
-    const locationInfo = {
+    trackAnalyticsEvent('view_rewin_location', {
       company_slug: companySlug,
       location_id: locationId,
-      company_id: (company as any)?.id,
-      company_name: (company as any)?.name,
-      city: (location as any)?.city,
-      state: (location as any)?.state,
-      country: (location as any)?.country,
-      timezone: (company as any)?.timezone || (location as any)?.timezone,
-    };
-
-    const userInfo = {
-      user_id: user?.id,
-      user_email: user?.email,
-      user_name: user?.name,
-    };
-
-    const payload = {
-      ...deviceInfo,
-      ...locationInfo,
-      ...userInfo,
+      company_id: company?.id,
+      company_name: company?.name,
       page_path: `/rewin/${companySlug}/${locationId}`,
-      page_location: typeof window !== 'undefined' ? window.location.href : undefined,
-      event_time: new Date().toISOString(),
-    };
+    });
+  }, [company, location, companySlug, locationId, trackAnalyticsEvent]);
 
-    console.log('[Analytics Debug] View rewin location payload:', payload);
-    setLastAnalyticsPayload(payload);
-    trackAnalyticsEvent('view_rewin_location', payload);
-  }, [company, location, user, companySlug, locationId]);
-
-  // Check follow status when user and company are available
+  // ── Follow status + user points (single API call, shared cache) ────────────
   useEffect(() => {
-    const checkFollow = async () => {
-      if (!user || !company) return;
-
-      // Try cache first
-      const cachedFollowed = getCache('followed_companies_list');
-      if (cachedFollowed && Array.isArray(cachedFollowed.data)) {
-        const isFollowed = cachedFollowed.data.some((c: any) => String(c.id) === String(company.id));
-        setIsFollowing(isFollowed);
+    if (!user || !company) return;
+    const checkFollowAndPoints = async () => {
+      const cached = getCache('followed_companies_list');
+      if (isFresh(cached, FOLLOW_TTL) && Array.isArray(cached?.data)) {
+        const match = cached.data.find((c: any) => String(c.id) === String(company.id));
+        setIsFollowing(!!match);
+        if (match && typeof match.points_balance === 'number') setUserPoints(match.points_balance);
         return;
       }
-
       const token = localStorage.getItem('customer_token');
       if (!token) return;
-
       try {
         const res = await clientAuthApi.getFollowedCompanies(token);
         if (res.success && Array.isArray(res.data)) {
-          const isFollowed = res.data.some((c: any) => String(c.id) === String(company.id));
-          setIsFollowing(isFollowed);
           setCache('followed_companies_list', res.data);
+          const match = res.data.find((c: any) => String(c.id) === String(company.id));
+          setIsFollowing(!!match);
+          if (match && typeof match.points_balance === 'number') setUserPoints(match.points_balance);
         }
-      } catch (e) {
-        console.error("Error checking follow status", e);
-      }
+      } catch { /* silent */ }
     };
-    checkFollow();
+    checkFollowAndPoints();
   }, [user, company]);
 
-  // Get user points when user and company are available
-  useEffect(() => {
-    const getUserPoints = async () => {
-      if (!user || !company) return;
-
-      const token = localStorage.getItem('customer_token');
-      if (!token) return;
-
-      try {
-        const res = await clientAuthApi.getFollowedCompanies(token);
-        if (res.success && Array.isArray(res.data)) {
-          const currentCompany = res.data.find((c: any) => String(c.id) === String(company.id));
-          if (currentCompany && typeof currentCompany.points_balance === 'number') {
-            setUserPoints(currentCompany.points_balance);
-          }
-        }
-      } catch (e) {
-        console.error("Error getting user points", e);
-      }
-    };
-    getUserPoints();
-  }, [user, company]);
-
-  const handleLogout = () => {
-    localStorage.removeItem('customer_token');
-    localStorage.removeItem('customer_info');
-    setUser(null);
-    window.location.reload();
-  };
-
-  // Cache key builder and TTLs
-  const baseKey = `plp:${companySlug}:${locationId}`;
-  const COMPANY_TTL = 24 * 60 * 60 * 1000; // 24h
-  const LOCATION_TTL = 24 * 60 * 60 * 1000; // 24h
-  const ITEMS_TTL = 60 * 60 * 1000; // 1h
-  const ANN_TTL = 30 * 60 * 1000; // 30m
-  const PROFILE_TTL = 15 * 60 * 1000; // 15 minutes
-  const FOLLOWED_TTL = 15 * 60 * 1000; // 15 minutes
-
+  // ── Main data fetch (location + items + announcements + point_rules) ────────
   useEffect(() => {
     if (!locationId) return;
 
-    // 1) Try to hydrate from cache immediately
+    // Hydrate from cache immediately
     const cachedCompany = getCache<any>(`${baseKey}:company`);
     const cachedLocation = getCache<PublicCompanyLocation>(`${baseKey}:location`);
     const cachedItems = getCache<PublicItem[]>(`${baseKey}:items_v2`);
@@ -379,83 +312,47 @@ function PublicLocationProductsPageContent() {
     let currentLocation = hasLocation ? cachedLocation!.data : null;
 
     if (hasCompany) {
-      if (currentCompany && currentCompany.slug && currentCompany.slug !== companySlug) {
+      if (currentCompany?.slug && currentCompany.slug !== companySlug) {
         router.push(`/rewin/${companySlug}`);
         return;
       }
       setCompany(cachedCompany!.data);
     }
     if (hasLocation) setLocation(cachedLocation!.data as PublicCompanyLocation);
-
     if (hasItems) {
       const normalized = cachedItems!.data as PublicItem[];
       setItems(normalized);
-      const uniqueCategories = Array.from(new Set(
-        normalized.map(i => i.category).filter(Boolean)
-      )) as string[];
-      setCategories(uniqueCategories);
+      setCategories(Array.from(new Set(normalized.map(i => i.category).filter(Boolean))) as string[]);
     }
-
     if (hasAnns) setAnnouncements(cachedAnns!.data);
 
-    // Check if we need to fetch point_rules even if we have company cached
     const needsPointRules = currentCompany && (!currentCompany.point_rules || currentCompany.point_rules.length === 0);
 
-    // If we have core data (location, company, items), we can stop loading
     if (hasLocation && hasCompany && hasItems) {
       setLoading(false);
-      // If we have everything including announcements and point_rules, we can skip fetch entirely
-      if (hasAnns && !needsPointRules) return;
+      if (hasAnns && !needsPointRules) return; // everything cached → skip network
     }
 
-    // 2) Fetch missing data
     const fetchData = async () => {
-      // Only show full page loading if we are missing core data
-      if (!hasLocation || !hasCompany || !hasItems) {
-        setLoading(true);
-      }
-
+      if (!hasLocation || !hasCompany || !hasItems) setLoading(true);
       setError(null);
       try {
-        // Fetch Location if missing
+        // ── Location + Company ──
         if (!hasLocation || !hasCompany) {
           const locationDetailsRes = await publicWebApiClient.getLocationDetailsById(locationId);
           if (locationDetailsRes.success && locationDetailsRes.data) {
-            const responseData = locationDetailsRes.data as any;
+            const rd = locationDetailsRes.data as any;
+            let loc: any = rd.data?.location ?? rd.location ?? rd;
+            let comp: any = rd.data?.company ?? rd.company ?? null;
 
-            let loc: any = null;
-            let comp: any = null;
-
-            if (responseData.data) {
-              loc = responseData.data.location;
-              comp = responseData.data.company;
-            } else if (responseData.location) {
-              loc = responseData.location;
-              comp = responseData.company;
-            } else {
-              loc = responseData;
-            }
-
-            console.log('🏢 Company data received:', {
-              company: comp,
-              logo_url: comp?.logo_url,
-              logo_url_type: typeof comp?.logo_url,
-              banner_url: comp?.banner_url
-            });
-
-            setLocation(loc as PublicCompanyLocation);
-            setCompany(comp);
-
-            // Verify if the location belongs to the company slug in the URL
-            if (comp && comp.slug && comp.slug !== companySlug) {
-              console.error(`Slug mismatch: URL has ${companySlug}, but location belongs to ${comp.slug}`);
+            if (comp?.slug && comp.slug !== companySlug) {
               router.push(`/rewin/${companySlug}`);
               return;
             }
-
-            setCache(`${baseKey}:location`, loc as PublicCompanyLocation);
+            setLocation(loc as PublicCompanyLocation);
+            setCompany(comp);
+            setCache(`${baseKey}:location`, loc);
             setCache(`${baseKey}:company`, comp);
-
             currentLocation = loc;
             currentCompany = comp;
           } else {
@@ -463,96 +360,75 @@ function PublicLocationProductsPageContent() {
           }
         }
 
-        // Fetch Items if missing
+        // ── Items ──
         if (!hasItems) {
           const itemsRes = await publicWebApiClient.getPublicItemsByLocationId(locationId);
           if (itemsRes.success && itemsRes.data) {
             let products: any[] = [];
-            if ((itemsRes.data as any).data?.products) {
-              products = (itemsRes.data as any).data.products;
-            } else if ((itemsRes.data as any).products) {
-              products = (itemsRes.data as any).products;
-            } else if (Array.isArray(itemsRes.data)) {
-              products = itemsRes.data;
-            }
+            const d = itemsRes.data as any;
+            if (d.data?.products) products = d.data.products;
+            else if (d.products) products = d.products;
+            else if (Array.isArray(d)) products = d;
 
-            if (Array.isArray(products)) {
-              const normalized: PublicItem[] = products.map((p: any) => ({
-                id: String(p.id),
-                name: p.name,
-                description: p.description ?? '',
-                price: typeof p.price === 'string' ? parseFloat(p.price) : (p.price ?? 0),
-                points: typeof p.points === 'string' ? parseFloat(p.points) : p.points ?? undefined,
-                image_url: p.image_url ?? undefined,
-                category: Array.isArray(p.categories) && p.categories.length > 0 ? p.categories[0]?.name : undefined,
-                product_type: p.product_type,
-              } as PublicItem));
-              setItems(normalized);
-              const uniqueCategories = Array.from(new Set(
-                normalized.map(item => item.category).filter(Boolean)
-              )) as string[];
-              setCategories(uniqueCategories);
-              setCache(`${baseKey}:items_v2`, normalized);
-              console.log('Items loaded:', normalized);
-            } else {
-              setItems([]);
-              setCache(`${baseKey}:items`, [] as PublicItem[]);
-            }
+            const normalized: PublicItem[] = products.map((p: any) => ({
+              id: String(p.id),
+              name: p.name,
+              description: p.description ?? '',
+              price: typeof p.price === 'string' ? parseFloat(p.price) : (p.price ?? 0),
+              points: typeof p.points === 'string' ? parseFloat(p.points) : p.points ?? undefined,
+              image_url: p.image_url ?? undefined,
+              category: Array.isArray(p.categories) && p.categories.length > 0 ? p.categories[0]?.name : undefined,
+              product_type: p.product_type,
+            } as PublicItem));
+
+            setItems(normalized);
+            setCategories(Array.from(new Set(normalized.map(i => i.category).filter(Boolean))) as string[]);
+            setCache(`${baseKey}:items_v2`, normalized);
           } else {
-            throw new Error(itemsRes.error || 'Failed to fetch products for location');
+            throw new Error(itemsRes.error || 'Failed to fetch products');
           }
         }
 
-        // Fetch Announcements if missing (and we have company ID)
+        // ── Announcements ──
         if (!hasAnns) {
           const comp = currentCompany;
           const loc = currentLocation;
-          const companyId = (comp && (comp.id || comp.company_id)) || (loc && ((loc as any).company_id || ((loc as any).company && (loc as any).company.id)));
-
+          const companyId =
+            (comp && (comp.id || comp.company_id)) ||
+            (loc && ((loc as any).company_id || (loc as any).company?.id));
           if (companyId) {
             try {
-              const url = `https://laravel-pkpass-backend-development-pfaawl.laravel.cloud/api/public/companies/${companyId}/announcements`;
-              const res = await fetch(url, { cache: 'no-store' });
+              const res = await fetch(`${API_BASE}/public/companies/${companyId}/announcements`);
               if (res.ok) {
                 const json = await res.json();
                 const rawList = (json?.data?.data ?? json?.data ?? []) as any[];
                 const now = new Date();
                 const active = rawList.filter(a => {
-                  const isActive = a.is_active !== false;
-                  const startsOk = !a.starts_at || new Date(a.starts_at) <= now;
-                  const endsOk = !a.ends_at || new Date(a.ends_at) >= now;
-                  return isActive && startsOk && endsOk;
+                  const ok = a.is_active !== false;
+                  const s = !a.starts_at || new Date(a.starts_at) <= now;
+                  const e = !a.ends_at || new Date(a.ends_at) >= now;
+                  return ok && s && e;
                 });
                 setAnnouncements(active);
                 setCache(`${baseKey}:announcements`, active);
               }
-            } catch (e) {
-              console.warn('Announcements fetch error', e);
-            }
+            } catch { /* non-critical */ }
           }
         }
 
-        // Fetch Company Details with point_rules if we have company ID and don't have point_rules yet
+        // ── Point rules ──
         const comp = currentCompany;
         const companyId = comp && (comp.id || comp.company_id);
         if (companyId && (!comp.point_rules || comp.point_rules.length === 0)) {
           try {
-            console.log('🔄 Fetching company point rules for company:', companyId);
             const companyDetailsRes = await publicWebApiClient.getCompanyById(String(companyId));
             if (companyDetailsRes.success && companyDetailsRes.data) {
-              const fullCompanyData = (companyDetailsRes.data as any).data || companyDetailsRes.data;
-              // Merge point_rules into current company data
-              const updatedCompany = {
-                ...comp,
-                point_rules: fullCompanyData.point_rules || [],
-              };
-              setCompany(updatedCompany);
-              setCache(`${baseKey}:company`, updatedCompany);
-              console.log('✅ Point rules loaded:', updatedCompany.point_rules);
+              const full = (companyDetailsRes.data as any).data || companyDetailsRes.data;
+              const updated = { ...comp, point_rules: full.point_rules || [] };
+              setCompany(updated);
+              setCache(`${baseKey}:company`, updated);
             }
-          } catch (e) {
-            console.warn('Could not fetch company point rules', e);
-          }
+          } catch { /* non-critical */ }
         }
 
       } catch (err: any) {
@@ -565,47 +441,73 @@ function PublicLocationProductsPageContent() {
     fetchData();
   }, [companySlug, locationId]);
 
-  // Auto-rotate announcements
+  // ── UI Settings (cached, deduped by companyId) ─────────────────────────────
   useEffect(() => {
-    // Reset index when announcements change
+    const comp: any = company;
+    const loc: any = location;
+    const companyId =
+      (comp && (comp.id || comp.company_id)) ||
+      (loc && (loc.company_id || loc.company?.id));
+    if (!companyId) return;
+
+    const cacheKey = `ui_settings:${companyId}:${locationId}`;
+    const cached = getCache(cacheKey);
+    if (isFresh(cached, UI_TTL) && cached?.data) {
+      setUiSettings(cached.data);
+      if (cached.data?.popup_enabled) setPopupOpen(true);
+      return;
+    }
+
+    const load = async () => {
+      try {
+        const res = await api.uiSettings.getPublic({
+          company_id: companyId,
+          location_id: locationId,
+          context: 'public_store_home',
+        });
+        if (res.success && res.data) {
+          const settings = res.data.data || res.data;
+          setUiSettings(settings);
+          setCache(cacheKey, settings);
+          if (settings?.popup_enabled) setPopupOpen(true);
+        }
+      } catch { /* non-critical */ }
+    };
+    load();
+    // Only re-run when companyId changes, NOT on every company object mutation
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [company?.id, location?.id, locationId]);
+
+  // ── Announcement auto-rotate ───────────────────────────────────────────────
+  useEffect(() => {
     setCurrentAnnouncement(0);
     if (!announcements || announcements.length <= 1) {
-      if (rotationRef.current) {
-        clearInterval(rotationRef.current);
-        rotationRef.current = null;
-      }
+      if (rotationRef.current) { clearInterval(rotationRef.current); rotationRef.current = null; }
       return;
     }
     if (rotationRef.current) clearInterval(rotationRef.current);
     rotationRef.current = setInterval(() => {
-      setCurrentAnnouncement((idx) => (idx + 1) % announcements.length);
+      setCurrentAnnouncement(idx => (idx + 1) % announcements.length);
     }, 5000);
-    return () => {
-      if (rotationRef.current) {
-        clearInterval(rotationRef.current);
-        rotationRef.current = null;
-      }
-    };
+    return () => { if (rotationRef.current) { clearInterval(rotationRef.current); rotationRef.current = null; } };
   }, [announcements]);
 
-  // Fetch coupons when Coupons section becomes active
+  // ── Coupons (lazy, on demand) ──────────────────────────────────────────────
   useEffect(() => {
-    const shouldLoad = activeSection === 'coupons';
-    if (!shouldLoad) return;
-    // Derive companyId from company or location
+    if (activeSection !== 'coupons') return;
     const comp: any = company;
     const loc: any = location;
-    const companyId = (comp && (comp.id || comp.company_id)) || (loc && (loc.company_id || (loc.company && loc.company.id)));
+    const companyId =
+      (comp && (comp.id || comp.company_id)) ||
+      (loc && (loc.company_id || loc.company?.id));
     if (!companyId) return;
-    const loadCoupons = async () => {
+
+    const load = async () => {
       try {
         setCouponsError(null);
         setCouponsLoading(true);
-        const url = `https://laravel-pkpass-backend-development-pfaawl.laravel.cloud/api/public/companies/${companyId}/coupons`;
-        const res = await fetch(url, { cache: 'no-store' });
-        if (!res.ok) {
-          throw new Error(`Error al cargar cupones (${res.status})`);
-        }
+        const res = await fetch(`${API_BASE}/public/companies/${companyId}/coupons`);
+        if (!res.ok) throw new Error(`Error al cargar cupones (${res.status})`);
         const json = await res.json();
         const list = (json?.data ?? json ?? []) as any[];
         setCoupons(Array.isArray(list) ? list : []);
@@ -615,69 +517,48 @@ function PublicLocationProductsPageContent() {
         setCouponsLoading(false);
       }
     };
-    loadCoupons();
-  }, [activeSection, company, location]);
+    load();
+  }, [activeSection, company?.id, location?.id]);
 
-  // Load UI Settings (banner + popup)
-  useEffect(() => {
-    if (!company && !location) return;
+  // ── Logout ─────────────────────────────────────────────────────────────────
+  const handleLogout = useCallback(() => {
+    localStorage.removeItem('customer_token');
+    localStorage.removeItem('customer_info');
+    setUser(null);
+    window.location.reload();
+  }, []);
 
-    const comp: any = company;
-    const loc: any = location;
-    const companyId = (comp && (comp.id || comp.company_id)) || (loc && (loc.company_id || (loc.company && loc.company.id)));
+  // ── Download app ───────────────────────────────────────────────────────────
+  const handleDownloadApp = useCallback((location_label: string) => {
+    trackAnalyticsEvent('download_app_click', {
+      location: location_label,
+      company_slug: companySlug,
+      location_id: locationId,
+      user_logged_in: !!user,
+    });
+    const ua = typeof window !== 'undefined' ? window.navigator.userAgent : '';
+    const isIOS = /iPhone|iPad|iPod/i.test(ua);
+    const target = isIOS
+      ? 'https://apps.apple.com/us/app/rewin-reward/id6748548104'
+      : (process.env.NEXT_PUBLIC_ANDROID_URL || 'https://play.google.com/store/apps/details?id=com.fynlink.BoostYou');
+    window.location.href = target;
+  }, [companySlug, locationId, user, trackAnalyticsEvent]);
 
-    if (!companyId) return;
-
-    const loadUiSettings = async () => {
-      try {
-        console.log('[UI Settings] Loading for company:', companyId, 'location:', locationId);
-        const res = await api.uiSettings.getPublic({
-          company_id: companyId,
-          location_id: locationId,
-          context: 'public_store_home',
-        });
-
-        console.log('[UI Settings] Response:', res);
-
-        if (res.success && res.data) {
-          const settings = res.data.data || res.data;
-          setUiSettings(settings);
-          console.log('[UI Settings] Loaded:', settings);
-
-          // Auto-open popup every time if enabled
-          if (settings?.popup_enabled) {
-            setPopupOpen(true);
-          }
-        }
-      } catch (e) {
-        console.error('[UI Settings] Error loading:', e);
-      }
-    };
-
-    loadUiSettings();
-  }, [company, location, locationId]);
-
-  // Filter products based on search and category
+  // ── Filtered items ─────────────────────────────────────────────────────────
   const filteredItems = useMemo(() => {
     let filtered = items;
-
-    // Filter by category
-    if (selectedCategory !== 'all') {
-      filtered = filtered.filter(item => item.category === selectedCategory);
-    }
-
-    // Filter by search query
+    if (selectedCategory !== 'all') filtered = filtered.filter(i => i.category === selectedCategory);
     if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(item =>
-        item.name.toLowerCase().includes(query) ||
-        (item.description && item.description.toLowerCase().includes(query))
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter(i =>
+        i.name.toLowerCase().includes(q) ||
+        (i.description && i.description.toLowerCase().includes(q))
       );
     }
-
     return filtered;
   }, [items, selectedCategory, searchQuery]);
 
+  // ── Not found render ───────────────────────────────────────────────────────
   const renderNotFound = (message: string) => (
     <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center px-6 py-16 relative overflow-hidden">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(16,185,129,0.18),_transparent_55%)] pointer-events-none" />
@@ -710,30 +591,27 @@ function PublicLocationProductsPageContent() {
     </div>
   );
 
-  if (loading) {
-    return <div className="flex justify-center items-center h-screen text-lg">Cargando productos de la sucursal...</div>;
-  }
-
+  // ── Guards ─────────────────────────────────────────────────────────────────
+  if (loading) return <PageSkeleton />;
 
   if (error && typeof error === 'string' && error.toLowerCase().includes('location not found')) {
     return renderNotFound('No encontramos esta sucursal.');
   }
-
   if (error) {
     return <div className="flex justify-center items-center h-screen text-red-500 text-lg">Error: {error}</div>;
   }
+  if (!location) return renderNotFound('Sucursal no encontrada.');
 
-  if (!location) {
-    return renderNotFound('Sucursal no encontrada.');
-  }
-
+  // ── Render ─────────────────────────────────────────────────────────────────
+  const appColor = uiSettings?.download_app_color || '#059669';
+  const cartColor = uiSettings?.cart_button_color;
 
   return (
     <div
       className="min-h-screen pb-32 relative overflow-x-hidden"
       style={{ backgroundColor: uiSettings?.background_color ?? '#f9fafb' }}
     >
-      {/* Banner from UI Settings */}
+      {/* ── Top notification banner ── */}
       {uiSettings?.banner_enabled && uiSettings.banner_text && (
         <div
           className="w-full py-3 px-4 text-center text-white font-medium shadow-md"
@@ -755,139 +633,76 @@ function PublicLocationProductsPageContent() {
         </div>
       )}
 
-      {/* Header Buttons (Left & Right Sides) */}
-
-      {/* Login/User Button (Right Side) + Descargar app */}
+      {/* ── Fixed header buttons ── */}
       <div className="fixed top-16 right-6 z-50 flex items-center gap-3">
+        {/* Download app button */}
+        <Button
+          className="gap-2 shadow-xl text-white rounded-full h-10 sm:h-12 px-3 sm:px-5 text-xs sm:text-sm font-semibold flex hover:opacity-90 transition-opacity"
+          style={{ backgroundColor: appColor }}
+          onClick={() => handleDownloadApp(user ? 'top_right_logged_in' : 'top_right_guest')}
+        >
+          <Download className="h-4 w-4" />
+          <span className="sm:hidden">App</span>
+          <span className="hidden sm:inline">Descargar app</span>
+        </Button>
+
         {user ? (
-          <>
-            <Button
-              className="gap-2 shadow-xl text-white rounded-full h-10 sm:h-12 px-3 sm:px-5 text-xs sm:text-sm font-semibold flex hover:opacity-90 transition-opacity"
-              style={{ backgroundColor: uiSettings?.download_app_color || '#059669' }}
-              onClick={() => {
-                if (typeof window === 'undefined') return;
-
-                trackAnalyticsEvent('download_app_click', {
-                  location: 'top_right_logged_in',
-                  company_slug: companySlug,
-                  location_id: locationId,
-                  user_logged_in: !!user,
-                });
-
-                const IOS_URL = 'https://apps.apple.com/us/app/rewin-reward/id6748548104';
-                const ANDROID_URL = process.env.NEXT_PUBLIC_ANDROID_URL ||
-                  'https://play.google.com/store/apps/details?id=com.fynlink.BoostYou';
-
-                const userAgent = window.navigator.userAgent || '';
-                const isIOS = /iPhone|iPad|iPod/i.test(userAgent);
-                const isAndroid = /Android/i.test(userAgent);
-
-                const targetUrl = isIOS ? IOS_URL : ANDROID_URL;
-                window.location.href = targetUrl;
-              }}
-            >
-              <Download className="h-4 w-4" />
-              <span className="sm:hidden">App</span>
-              <span className="hidden sm:inline">Descargar app</span>
-            </Button>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button className="gap-2 sm:gap-3 shadow-xl bg-white text-emerald-600 hover:bg-gray-50 hover:text-emerald-700 border-2 border-emerald-100 rounded-full pl-2 sm:pl-3 pr-4 sm:pr-6 h-10 sm:h-16 text-sm sm:text-lg">
-                  <Avatar className="h-7 w-7 sm:h-11 sm:w-11 border-2 border-emerald-200">
-                    <AvatarImage src={user.profile_photo_path || user.avatar_url || user.photo_url} />
-                    <AvatarFallback className="bg-emerald-100 text-emerald-700">
-                      {user.name ? user.name.substring(0, 2).toUpperCase() : 'US'}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="font-semibold max-w-[80px] sm:max-w-[140px] truncate">{user.name}</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>Mi Cuenta</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => router.push(`/rewin/${companySlug}/${locationId}/profile`)}>
-                  Perfil
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => alert("Mis Pedidos en desarrollo")}>
-                  Mis Pedidos
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout} className="text-red-600">
-                  Cerrar Sesión
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </>
-        ) : (
-          <>
-            <Button
-              className="gap-2 shadow-xl text-white rounded-full h-10 sm:h-12 px-3 sm:px-5 text-xs sm:text-sm font-semibold flex hover:opacity-90 transition-opacity"
-              style={{ backgroundColor: uiSettings?.download_app_color || '#059669' }}
-              onClick={() => {
-                if (typeof window === 'undefined') return;
-
-                trackAnalyticsEvent('download_app_click', {
-                  location: 'top_right_guest',
-                  company_slug: companySlug,
-                  location_id: locationId,
-                  user_logged_in: !!user,
-                });
-
-                const IOS_URL = 'https://apps.apple.com/us/app/rewin-reward/id6748548104';
-                const ANDROID_URL = process.env.NEXT_PUBLIC_ANDROID_URL ||
-                  'https://play.google.com/store/apps/details?id=com.fynlink.BoostYou';
-
-                const userAgent = window.navigator.userAgent || '';
-                const isIOS = /iPhone|iPad|iPod/i.test(userAgent);
-                const isAndroid = /Android/i.test(userAgent);
-
-                const targetUrl = isIOS ? IOS_URL : ANDROID_URL;
-                window.location.href = targetUrl;
-              }}
-            >
-              <Download className="h-4 w-4" />
-              <span className="sm:hidden">App</span>
-              <span className="hidden sm:inline">Descargar app</span>
-            </Button>
-
-            <Link href={`/rewin/${companySlug}/${locationId}/auth/login`}>
-              <Button
-                variant="outline"
-                className="gap-2 sm:gap-3 shadow-xl bg-white rounded-full h-10 sm:h-16 px-4 sm:px-6 text-sm sm:text-lg font-semibold border-2 hover:bg-gray-50 transition-all"
-                style={{
-                  color: uiSettings?.download_app_color || '#059669',
-                  borderColor: uiSettings?.download_app_color || '#059669'
-                }}
-              >
-                <User className="h-5 w-5 sm:h-6 sm:w-6" />
-                <span>Iniciar Sesión</span>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button className="gap-2 sm:gap-3 shadow-xl bg-white text-emerald-600 hover:bg-gray-50 hover:text-emerald-700 border-2 border-emerald-100 rounded-full pl-2 sm:pl-3 pr-4 sm:pr-6 h-10 sm:h-16 text-sm sm:text-lg">
+                <Avatar className="h-7 w-7 sm:h-11 sm:w-11 border-2 border-emerald-200">
+                  <AvatarImage src={user.profile_photo_path || user.avatar_url || user.photo_url} />
+                  <AvatarFallback className="bg-emerald-100 text-emerald-700">
+                    {user.name ? user.name.substring(0, 2).toUpperCase() : 'US'}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="font-semibold max-w-[80px] sm:max-w-[140px] truncate">{user.name}</span>
               </Button>
-            </Link>
-          </>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>Mi Cuenta</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => router.push(`/rewin/${companySlug}/${locationId}/profile`)}>
+                Perfil
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => alert('Mis Pedidos en desarrollo')}>
+                Mis Pedidos
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout} className="text-red-600">
+                Cerrar Sesión
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <Link href={`/rewin/${companySlug}/${locationId}/auth/login`}>
+            <Button
+              variant="outline"
+              className="gap-2 sm:gap-3 shadow-xl bg-white rounded-full h-10 sm:h-16 px-4 sm:px-6 text-sm sm:text-lg font-semibold border-2 hover:bg-gray-50 transition-all"
+              style={{ color: appColor, borderColor: appColor }}
+            >
+              <User className="h-5 w-5 sm:h-6 sm:w-6" />
+              <span>Iniciar Sesión</span>
+            </Button>
+          </Link>
         )}
       </div>
 
-      {/* Hero Section with Banner */}
-      {
-        company?.banner_url && (
-          <div className="relative h-48 sm:h-64 md:h-80 w-full overflow-hidden">
-            <img
-              src={company.banner_url}
-              alt={company.name || 'Banner'}
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                console.error('Error loading company banner:', company.banner_url);
-                (e.target as HTMLImageElement).style.display = 'none';
-              }}
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-          </div>
-        )
-      }
+      {/* ── Banner image ── */}
+      {company?.banner_url && (
+        <div className="relative h-48 sm:h-64 md:h-80 w-full overflow-hidden">
+          <img
+            src={company.banner_url}
+            alt={company.name || 'Banner'}
+            className="w-full h-full object-cover"
+            onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+        </div>
+      )}
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* Location Header */}
+        {/* ── Location header card ── */}
         <div className="-mt-16 sm:-mt-20 relative z-10 mb-8">
           <div className="bg-white rounded-lg shadow-lg p-6">
             <div className="flex flex-col items-center text-center gap-6">
@@ -898,52 +713,28 @@ function PublicLocationProductsPageContent() {
                     src={company.logo_url}
                     alt={company.name}
                     className="w-32 h-32 object-contain rounded-full border-4 border-white shadow-xl bg-white"
-                    onLoad={() => {
-                      console.log('✅ Company logo loaded successfully:', company?.logo_url);
-                    }}
-                    onError={(e) => {
-                      const img = e.target as HTMLImageElement;
-                      const currentSrc = img.src;
-                      console.error('❌ Error loading company logo:', {
-                        currentSrc,
-                        originalUrl: company?.logo_url,
-                        companyName: company?.name
-                      });
-                      img.style.display = 'none';
-                    }}
+                    onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
                   />
-
-                  {/* Follow Button */}
                   {user && company && (
                     <Button
                       className={`group gap-2 shadow-lg border-2 h-12 px-5 text-sm font-bold rounded-full transition-all uppercase tracking-tight ${isFollowing
-                        ? 'bg-white text-emerald-600 border-emerald-100 hover:bg-red-50 hover:text-red-600 hover:border-red-100'
-                        : 'bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700'
+                          ? 'bg-white text-emerald-600 border-emerald-100 hover:bg-red-50 hover:text-red-600 hover:border-red-100'
+                          : 'bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700'
                         }`}
-                      onClick={() => {
-                        if (isFollowing) {
-                          setIsFollowing(false);
-                        } else {
-                          setIsFollowing(true);
-                        }
-                      }}
+                      onClick={() => setIsFollowing(f => !f)}
                     >
                       {isFollowing ? (
                         <>
                           <span className="group-hover:hidden">Siguiendo</span>
                           <span className="hidden group-hover:inline">Dejar de seguir</span>
                         </>
-                      ) : (
-                        <>
-                          <span>Seguir</span>
-                        </>
-                      )}
+                      ) : <span>Seguir</span>}
                     </Button>
                   )}
                 </div>
               )}
 
-              {/* Location Info */}
+              {/* Location info */}
               <div className="flex-1 w-full text-center">
                 <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-2 break-words uppercase">
                   {location.name}
@@ -951,26 +742,19 @@ function PublicLocationProductsPageContent() {
                 {company?.description && (
                   <p className="text-gray-600 mb-4 font-medium max-w-2xl mx-auto">{company.description}</p>
                 )}
-
-                {/* Contact Info - Buttons (Icon Only) */}
                 <div className="flex items-center justify-center gap-3 flex-wrap mt-2">
                   {location.address && (
                     <Button
-                      size="icon"
-                      variant="outline"
+                      size="icon" variant="outline"
                       title={location.address}
                       className="h-12 w-12 rounded-full border-gray-200 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-200 transition-all shadow-sm"
                       onClick={() => {
                         const lat = (location as any).latitude;
                         const lng = (location as any).longitude;
-                        let url = '';
-                        if (lat && lng) {
-                          url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${lat},${lng}`)}`;
-                        } else {
-                          const addr = `${location.address}, ${location.city}, ${location.state}, ${location.country}`;
-                          url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr)}`;
-                        }
-                        window.open(url, '_blank');
+                        const q = lat && lng
+                          ? `${lat},${lng}`
+                          : `${location.address}, ${location.city}, ${location.state}, ${location.country}`;
+                        window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`, '_blank');
                       }}
                     >
                       <MapPin className="h-6 w-6" />
@@ -978,50 +762,32 @@ function PublicLocationProductsPageContent() {
                   )}
                   {(location as any).phone && (
                     <a href={`tel:${(location as any).phone}`}>
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        title={(location as any).phone}
-                        className="h-12 w-12 rounded-full border-gray-200 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-200 transition-all shadow-sm"
-                      >
+                      <Button size="icon" variant="outline" title={(location as any).phone}
+                        className="h-12 w-12 rounded-full border-gray-200 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-200 transition-all shadow-sm">
                         <Phone className="h-6 w-6" />
                       </Button>
                     </a>
                   )}
                   {(location as any).email && (
                     <a href={`mailto:${(location as any).email}`}>
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        title={(location as any).email}
-                        className="h-12 w-12 rounded-full border-gray-200 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-200 transition-all shadow-sm"
-                      >
+                      <Button size="icon" variant="outline" title={(location as any).email}
+                        className="h-12 w-12 rounded-full border-gray-200 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-200 transition-all shadow-sm">
                         <Mail className="h-6 w-6" />
                       </Button>
                     </a>
                   )}
-                  <Button
-                    size="icon"
-                    variant="outline"
-                    title="Comentar"
+                  <Button size="icon" variant="outline" title="Comentar"
                     className="h-12 w-12 rounded-full border-gray-200 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-200 transition-all shadow-sm"
-                    onClick={() => setCommentSheetOpen(true)}
-                  >
+                    onClick={() => setCommentSheetOpen(true)}>
                     <MessageSquare className="h-6 w-6" />
                   </Button>
-                  <Button
-                    size="icon"
-                    variant="outline"
-                    title="Compartir"
+                  <Button size="icon" variant="outline" title="Compartir"
                     className="h-12 w-12 rounded-full border-gray-200 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-200 transition-all shadow-sm"
                     onClick={() => {
-                      if (typeof window === 'undefined') return;
                       const baseText = `${company?.name || location.name} - ${company?.description || 'Mira esta sucursal en Rewin'}`;
                       const url = shareUrl || window.location.href;
-                      const waUrl = `https://wa.me/?text=${encodeURIComponent(`${baseText} ${url}`)}`;
-                      window.open(waUrl, '_blank');
-                    }}
-                  >
+                      window.open(`https://wa.me/?text=${encodeURIComponent(`${baseText} ${url}`)}`, '_blank');
+                    }}>
                     <Share2 className="h-6 w-6" />
                   </Button>
                 </div>
@@ -1030,13 +796,12 @@ function PublicLocationProductsPageContent() {
           </div>
         </div>
 
-        {/* Spacer where top nav used to be */}
         <div className="mb-2" />
 
-        {/* Sections */}
+        {/* ── HOME section ── */}
         {activeSection === 'home' && (
           <>
-            {/* Announcements Carousel */}
+            {/* Announcements carousel */}
             {announcements.length > 0 && (
               <div className="mb-10">
                 <div className="relative overflow-hidden rounded-xl shadow-lg bg-gray-100">
@@ -1051,28 +816,22 @@ function PublicLocationProductsPageContent() {
                       <span className="text-gray-500">Anuncio</span>
                     </div>
                   )}
-
                   {(announcements[currentAnnouncement]?.title || announcements[currentAnnouncement]?.text) && (
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent p-4 sm:p-6 flex items-end">
                       <div className="text-white max-w-2xl">
                         {announcements[currentAnnouncement]?.title && (
-                          <h3 className="text-lg sm:text-2xl font-bold">
-                            {announcements[currentAnnouncement].title}
-                          </h3>
+                          <h3 className="text-lg sm:text-2xl font-bold">{announcements[currentAnnouncement].title}</h3>
                         )}
                         {announcements[currentAnnouncement]?.subtitle && (
                           <p className="text-sm sm:text-base opacity-90">{announcements[currentAnnouncement].subtitle}</p>
                         )}
                         {announcements[currentAnnouncement]?.text && (
-                          <p className="mt-1 text-xs sm:text-sm opacity-90 line-clamp-2">
-                            {announcements[currentAnnouncement].text}
-                          </p>
+                          <p className="mt-1 text-xs sm:text-sm opacity-90 line-clamp-2">{announcements[currentAnnouncement].text}</p>
                         )}
                         {announcements[currentAnnouncement]?.link_url && (
                           <a
                             href={announcements[currentAnnouncement].link_url as string}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                            target="_blank" rel="noopener noreferrer"
                             className="inline-block mt-3 text-xs sm:text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-md shadow"
                           >
                             Ver más
@@ -1081,32 +840,23 @@ function PublicLocationProductsPageContent() {
                       </div>
                     </div>
                   )}
-
                   {announcements.length > 1 && (
                     <>
-                      <button
-                        aria-label="Anterior"
+                      <button aria-label="Anterior"
                         className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white rounded-full w-8 h-8 flex items-center justify-center"
-                        onClick={() => setCurrentAnnouncement((idx) => (idx - 1 + announcements.length) % announcements.length)}
-                      >
+                        onClick={() => setCurrentAnnouncement(i => (i - 1 + announcements.length) % announcements.length)}>
                         ‹
                       </button>
-                      <button
-                        aria-label="Siguiente"
+                      <button aria-label="Siguiente"
                         className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white rounded-full w-8 h-8 flex items-center justify-center"
-                        onClick={() => setCurrentAnnouncement((idx) => (idx + 1) % announcements.length)}
-                      >
+                        onClick={() => setCurrentAnnouncement(i => (i + 1) % announcements.length)}>
                         ›
                       </button>
-
                       <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-2">
                         {announcements.map((_, i) => (
-                          <button
-                            key={i}
-                            aria-label={`Ir al anuncio ${i + 1}`}
+                          <button key={i} aria-label={`Ir al anuncio ${i + 1}`}
                             className={`w-2.5 h-2.5 rounded-full ${i === currentAnnouncement ? 'bg-white' : 'bg-white/60 hover:bg-white'}`}
-                            onClick={() => setCurrentAnnouncement(i)}
-                          />
+                            onClick={() => setCurrentAnnouncement(i)} />
                         ))}
                       </div>
                     </>
@@ -1115,10 +865,8 @@ function PublicLocationProductsPageContent() {
               </div>
             )}
 
-            {/* Products Section */}
+            {/* Products catalog */}
             <div className="pb-16">
-              {/* En móvil dejamos que el contenido crezca y use el scroll de toda la página.
-                    La idea de panel alto tipo app se mantiene más para pantallas grandes. */}
               <Card className="flex flex-col md:block">
                 <CardHeader className="flex-shrink-0 md:static">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
@@ -1131,45 +879,35 @@ function PublicLocationProductsPageContent() {
                       </CardDescription>
                     </div>
                   </div>
-
-                  {/* Search Bar */}
                   <div className="relative mb-4">
                     <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-6 w-6 text-gray-400" />
                     <Input
                       type="text"
                       placeholder="Buscar productos..."
                       value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onChange={e => setSearchQuery(e.target.value)}
                       className="pl-12 pr-4 py-3 h-12 text-base sm:text-lg w-full"
                     />
                   </div>
-
-                  {/* Category Filter */}
                   {categories.length > 0 && (
                     <div className="flex flex-wrap gap-3 mb-4">
                       <Badge
                         variant={selectedCategory === 'all' ? 'default' : 'outline'}
-                        className={`cursor-pointer transition-all px-5 py-2.5 text-base sm:text-lg rounded-full ${selectedCategory === 'all'
-                          ? `text-white ${!uiSettings?.cart_button_color ? 'bg-emerald-600 hover:bg-emerald-700' : ''}`
-                          : 'hover:bg-gray-100'
-                          }`}
-                        style={selectedCategory === 'all' && uiSettings?.cart_button_color ? { backgroundColor: uiSettings.cart_button_color } : {}}
+                        className={`cursor-pointer transition-all px-5 py-2.5 text-base sm:text-lg rounded-full ${selectedCategory === 'all' ? `text-white ${!cartColor ? 'bg-emerald-600 hover:bg-emerald-700' : ''}` : 'hover:bg-gray-100'}`}
+                        style={selectedCategory === 'all' && cartColor ? { backgroundColor: cartColor } : {}}
                         onClick={() => setSelectedCategory('all')}
                       >
                         Todos ({items.length})
                       </Badge>
-                      {categories.map((category) => {
-                        const count = items.filter(item => item.category === category).length;
-                        const isCurrentActive = selectedCategory === category;
+                      {categories.map(category => {
+                        const count = items.filter(i => i.category === category).length;
+                        const active = selectedCategory === category;
                         return (
                           <Badge
                             key={category}
-                            variant={isCurrentActive ? 'default' : 'outline'}
-                            className={`cursor-pointer transition-all px-5 py-2.5 text-base sm:text-lg rounded-full ${isCurrentActive
-                              ? `text-white ${!uiSettings?.cart_button_color ? 'bg-emerald-600 hover:bg-emerald-700' : ''}`
-                              : 'hover:bg-gray-100'
-                              }`}
-                            style={isCurrentActive && uiSettings?.cart_button_color ? { backgroundColor: uiSettings.cart_button_color } : {}}
+                            variant={active ? 'default' : 'outline'}
+                            className={`cursor-pointer transition-all px-5 py-2.5 text-base sm:text-lg rounded-full ${active ? `text-white ${!cartColor ? 'bg-emerald-600 hover:bg-emerald-700' : ''}` : 'hover:bg-gray-100'}`}
+                            style={active && cartColor ? { backgroundColor: cartColor } : {}}
                             onClick={() => setSelectedCategory(category)}
                           >
                             {category} ({count})
@@ -1189,20 +927,13 @@ function PublicLocationProductsPageContent() {
                     <div className="text-center py-12">
                       <Search className="h-16 w-16 text-gray-300 mx-auto mb-4" />
                       <p className="text-gray-500 text-lg">No se encontraron productos con los filtros seleccionados.</p>
-                      <Button
-                        variant="outline"
-                        className="mt-4"
-                        onClick={() => {
-                          setSearchQuery('');
-                          setSelectedCategory('all');
-                        }}
-                      >
+                      <Button variant="outline" className="mt-4" onClick={() => { setSearchQuery(''); setSelectedCategory('all'); }}>
                         Limpiar filtros
                       </Button>
                     </div>
                   ) : (
                     <div className="flex flex-col gap-6">
-                      {filteredItems.map((item) => (
+                      {filteredItems.map(item => (
                         <CatalogCard
                           key={item.id}
                           item={item}
@@ -1211,7 +942,7 @@ function PublicLocationProductsPageContent() {
                           initialOpen={initialProductId === String(item.id)}
                           pointRules={company?.point_rules || null}
                           userPoints={userPoints}
-                          buttonColor={uiSettings?.cart_button_color}
+                          buttonColor={cartColor}
                         />
                       ))}
                     </div>
@@ -1239,38 +970,20 @@ function PublicLocationProductsPageContent() {
                 <CardContent>
                   <div className="space-y-4">
                     <p className="text-gray-700 text-sm sm:text-base">
-                      Crea una cuenta o inicia sesión para que podamos registrar tus compras y mostrarte tus puntos disponibles.
+                      Crea una cuenta o inicia sesión para registrar tus compras y ver tus puntos disponibles.
                     </p>
                     <div className="flex flex-col sm:flex-row gap-3">
-                      <Link href={`/${companySlug}/${locationId}/auth/login`} className="sm:w-auto w-full">
-                        <Button
-                          variant="outline"
-                          className="w-full font-semibold border-2 hover:bg-gray-50 transition-all"
-                          style={{
-                            color: uiSettings?.download_app_color || '#059669',
-                            borderColor: uiSettings?.download_app_color || '#059669'
-                          }}
-                        >
+                      <Link href={`/rewin/${companySlug}/${locationId}/auth/login`} className="sm:w-auto w-full">
+                        <Button variant="outline" className="w-full font-semibold border-2 hover:bg-gray-50 transition-all"
+                          style={{ color: appColor, borderColor: appColor }}>
                           Iniciar sesión
                         </Button>
                       </Link>
-                      <Link href="/descargar-app" className="sm:w-auto w-full">
-                        <Button
-                          variant="outline"
-                          className="w-full sm:w-auto flex items-center gap-2"
-                          onClick={() => {
-                            trackAnalyticsEvent('download_app_click', {
-                              location: 'points_section_cta',
-                              company_slug: companySlug,
-                              location_id: locationId,
-                              user_logged_in: !!user,
-                            });
-                          }}
-                        >
-                          <Download className="h-4 w-4" />
-                          <span>Descargar app</span>
-                        </Button>
-                      </Link>
+                      <Button variant="outline" className="w-full sm:w-auto flex items-center gap-2"
+                        onClick={() => handleDownloadApp('points_section_cta')}>
+                        <Download className="h-4 w-4" />
+                        <span>Descargar app</span>
+                      </Button>
                     </div>
                   </div>
                 </CardContent>
@@ -1280,11 +993,10 @@ function PublicLocationProductsPageContent() {
         )}
 
         {activeSection === 'wallet' && (
-          <WalletSection companyName={company?.name} buttonColor={uiSettings?.cart_button_color} />
+          <WalletSection companyName={company?.name} buttonColor={cartColor} />
         )}
 
         {activeSection === 'coupons' && (
-          // Coupons section
           <div className="pb-16">
             <Card>
               <CardHeader>
@@ -1305,7 +1017,7 @@ function PublicLocationProductsPageContent() {
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {coupons.map((c) => {
+                    {coupons.map(c => {
                       const isExpired = c.expires_at ? new Date(c.expires_at) < new Date() : false;
                       return (
                         <div key={c.id} className={`border rounded-lg p-4 shadow-sm ${isExpired ? 'opacity-60' : ''}`}>
@@ -1338,10 +1050,11 @@ function PublicLocationProductsPageContent() {
         )}
       </div>
 
+      {/* ── Floating widgets ── */}
       <FloatingCartButton
         onClick={() => setCartOpen(true)}
         isHidden={cartOpen}
-        backgroundColor={uiSettings?.cart_button_color}
+        backgroundColor={cartColor}
         iconColor={uiSettings?.cart_icon_color}
       />
       <CartDrawer
@@ -1352,18 +1065,15 @@ function PublicLocationProductsPageContent() {
         userPoints={userPoints}
         userName={user?.name}
       />
-
       <BottomNav
         activeSection={activeSection}
         onSectionChange={setActiveSection}
         backgroundColor={uiSettings?.navigation_bar_color}
-        activeItemColor={uiSettings?.cart_button_color}
+        activeItemColor={cartColor}
       />
 
-      {/* Popup Modal from UI Settings */}
-      <Dialog open={popupOpen} onOpenChange={(open) => {
-        setPopupOpen(open);
-      }}>
+      {/* ── Popup modal ── */}
+      <Dialog open={popupOpen} onOpenChange={setPopupOpen}>
         <DialogContent className="w-[90%] sm:max-w-md rounded-2xl p-0 overflow-hidden">
           <button
             onClick={() => setPopupOpen(false)}
@@ -1373,36 +1083,22 @@ function PublicLocationProductsPageContent() {
           </button>
           {uiSettings?.popup_image_url && (
             <div className="w-full h-64 sm:h-72 overflow-hidden">
-              <img
-                src={uiSettings.popup_image_url}
-                alt={uiSettings.popup_title || 'Popup'}
-                className="w-full h-full object-cover"
-              />
+              <img src={uiSettings.popup_image_url} alt={uiSettings.popup_title || 'Popup'} className="w-full h-full object-cover" />
             </div>
           )}
           <div className="px-5 py-4 space-y-4">
             <DialogHeader className="p-0">
-              {uiSettings?.popup_title && (
-                <DialogTitle className="text-xl font-bold">{uiSettings.popup_title}</DialogTitle>
-              )}
+              {uiSettings?.popup_title && <DialogTitle className="text-xl font-bold">{uiSettings.popup_title}</DialogTitle>}
               {uiSettings?.popup_description && (
-                <DialogDescription className="text-base mt-2">
-                  {uiSettings.popup_description}
-                </DialogDescription>
+                <DialogDescription className="text-base mt-2">{uiSettings.popup_description}</DialogDescription>
               )}
             </DialogHeader>
-
             {uiSettings?.popup_button_label && uiSettings?.popup_button_url && (
               <div className="pt-2 flex justify-center">
                 <Button
                   className="w-[90%] max-w-xs text-sm font-semibold rounded-full"
-                  style={{
-                    backgroundColor: uiSettings.popup_button_color || '#059669',
-                    color: '#ffffff',
-                  }}
-                  onClick={() => {
-                    window.open(uiSettings.popup_button_url, '_blank');
-                  }}
+                  style={{ backgroundColor: uiSettings.popup_button_color || '#059669', color: '#ffffff' }}
+                  onClick={() => window.open(uiSettings.popup_button_url, '_blank')}
                 >
                   {uiSettings.popup_button_label}
                 </Button>
@@ -1421,6 +1117,7 @@ function PublicLocationProductsPageContent() {
   );
 }
 
+// ─── Root export ──────────────────────────────────────────────────────────────
 export default function PublicLocationProductsPage() {
   return (
     <CartProvider>
