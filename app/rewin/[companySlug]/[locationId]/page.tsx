@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { publicWebApiClient } from '@/lib/api/public-web';
 import { api } from '@/lib/api/api';
 import { PublicItem, PublicCompanyLocation } from '@/types/api';
@@ -608,7 +609,7 @@ function PublicLocationProductsPageContent() {
 
   return (
     <div
-      className="min-h-screen pb-32 relative overflow-x-hidden"
+      className="min-h-[100dvh] pb-32 relative overflow-x-hidden"
       style={{ backgroundColor: uiSettings?.background_color ?? '#f9fafb' }}
     >
       {/* ── Top notification banner ── */}
@@ -634,68 +635,73 @@ function PublicLocationProductsPageContent() {
       )}
 
       {/* ── Fixed header buttons ── */}
-      <div className="fixed top-16 right-6 z-50 flex items-center gap-3">
+      <div className="fixed top-8 right-4 z-[60] flex flex-col items-end sm:flex-row sm:items-center gap-2 sm:gap-3 pointer-events-none">
         {/* Download app button */}
-        <Button
-          className="gap-2 shadow-xl text-white rounded-full h-10 sm:h-12 px-3 sm:px-5 text-xs sm:text-sm font-semibold flex hover:opacity-90 transition-opacity"
-          style={{ backgroundColor: appColor }}
-          onClick={() => handleDownloadApp(user ? 'top_right_logged_in' : 'top_right_guest')}
-        >
-          <Download className="h-4 w-4" />
-          <span className="sm:hidden">App</span>
-          <span className="hidden sm:inline">Descargar app</span>
-        </Button>
+        <div className="pointer-events-auto">
+          <Button
+            className="gap-2 shadow-xl text-white rounded-full h-10 sm:h-12 px-3 sm:px-5 text-xs sm:text-sm font-semibold flex hover:opacity-90 transition-opacity"
+            style={{ backgroundColor: appColor }}
+            onClick={() => handleDownloadApp(user ? 'top_right_logged_in' : 'top_right_guest')}
+          >
+            <Download className="h-4 w-4" />
+            <span className="sm:hidden">App</span>
+            <span className="hidden sm:inline">Descargar app</span>
+          </Button>
+        </div>
 
-        {user ? (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button className="gap-2 sm:gap-3 shadow-xl bg-white text-emerald-600 hover:bg-gray-50 hover:text-emerald-700 border-2 border-emerald-100 rounded-full pl-2 sm:pl-3 pr-4 sm:pr-6 h-10 sm:h-16 text-sm sm:text-lg">
-                <Avatar className="h-7 w-7 sm:h-11 sm:w-11 border-2 border-emerald-200">
-                  <AvatarImage src={user.profile_photo_path || user.avatar_url || user.photo_url} />
-                  <AvatarFallback className="bg-emerald-100 text-emerald-700">
-                    {user.name ? user.name.substring(0, 2).toUpperCase() : 'US'}
-                  </AvatarFallback>
-                </Avatar>
-                <span className="font-semibold max-w-[80px] sm:max-w-[140px] truncate">{user.name}</span>
+        <div className="pointer-events-auto">
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button className="gap-2 sm:gap-3 shadow-xl bg-white text-emerald-600 hover:bg-gray-50 hover:text-emerald-700 border-2 border-emerald-100 rounded-full pl-2 sm:pl-3 pr-4 sm:pr-6 h-10 sm:h-12 text-sm sm:text-lg">
+                  <Avatar className="h-6 w-6 sm:h-9 sm:w-9 border-2 border-emerald-200">
+                    <AvatarImage src={user.profile_photo_path || user.avatar_url || user.photo_url} />
+                    <AvatarFallback className="bg-emerald-100 text-emerald-700">
+                      {user.name ? user.name.substring(0, 2).toUpperCase() : 'US'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="font-semibold max-w-[80px] sm:max-w-[140px] truncate">{user.name}</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>Mi Cuenta</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => router.push(`/rewin/${companySlug}/${locationId}/profile`)}>
+                  Perfil
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => alert('Mis Pedidos en desarrollo')}>
+                  Mis Pedidos
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout} className="text-red-600">
+                  Cerrar Sesión
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Link href={`/rewin/${companySlug}/${locationId}/auth/login`}>
+              <Button
+                variant="outline"
+                className="gap-2 sm:gap-3 shadow-xl bg-white rounded-full h-10 sm:h-12 px-4 sm:px-6 text-sm sm:text-lg font-semibold border-2 hover:bg-gray-50 transition-all"
+                style={{ color: appColor, borderColor: appColor }}
+              >
+                <User className="h-5 w-5 sm:h-6 sm:w-6" />
+                <span>Iniciar Sesión</span>
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>Mi Cuenta</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => router.push(`/rewin/${companySlug}/${locationId}/profile`)}>
-                Perfil
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => alert('Mis Pedidos en desarrollo')}>
-                Mis Pedidos
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout} className="text-red-600">
-                Cerrar Sesión
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        ) : (
-          <Link href={`/rewin/${companySlug}/${locationId}/auth/login`}>
-            <Button
-              variant="outline"
-              className="gap-2 sm:gap-3 shadow-xl bg-white rounded-full h-10 sm:h-16 px-4 sm:px-6 text-sm sm:text-lg font-semibold border-2 hover:bg-gray-50 transition-all"
-              style={{ color: appColor, borderColor: appColor }}
-            >
-              <User className="h-5 w-5 sm:h-6 sm:w-6" />
-              <span>Iniciar Sesión</span>
-            </Button>
-          </Link>
-        )}
+            </Link>
+          )}
+        </div>
       </div>
 
       {/* ── Banner image ── */}
       {company?.banner_url && (
         <div className="relative h-48 sm:h-64 md:h-80 w-full overflow-hidden">
-          <img
+          <Image
             src={company.banner_url}
             alt={company.name || 'Banner'}
-            className="w-full h-full object-cover"
-            onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+            fill
+            priority
+            className="object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
         </div>
@@ -709,17 +715,19 @@ function PublicLocationProductsPageContent() {
               {/* Logo */}
               {company?.logo_url && (
                 <div className="flex-shrink-0 flex flex-col items-center gap-3">
-                  <img
-                    src={company.logo_url}
-                    alt={company.name}
-                    className="w-32 h-32 object-contain rounded-full border-4 border-white shadow-xl bg-white"
-                    onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                  />
+                  <div className="relative w-32 h-32 rounded-full border-4 border-white shadow-xl bg-white overflow-hidden">
+                    <Image
+                      src={company.logo_url}
+                      alt={company.name}
+                      fill
+                      className="object-contain"
+                    />
+                  </div>
                   {user && company && (
                     <Button
                       className={`group gap-2 shadow-lg border-2 h-12 px-5 text-sm font-bold rounded-full transition-all uppercase tracking-tight ${isFollowing
-                          ? 'bg-white text-emerald-600 border-emerald-100 hover:bg-red-50 hover:text-red-600 hover:border-red-100'
-                          : 'bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700'
+                        ? 'bg-white text-emerald-600 border-emerald-100 hover:bg-red-50 hover:text-red-600 hover:border-red-100'
+                        : 'bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700'
                         }`}
                       onClick={() => setIsFollowing(f => !f)}
                     >

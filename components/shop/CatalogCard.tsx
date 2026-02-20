@@ -9,6 +9,7 @@ const { Package, Phone, Share2, X, ShoppingCart, Gift } = Lucide as any;
 import { formatCurrency } from "@/lib/utils/currency";
 import { useCart } from "@/lib/cart-context";
 import { PublicItem, PointRule } from "@/types/api";
+import Image from "next/image";
 import {
   Drawer,
   DrawerContent,
@@ -188,13 +189,12 @@ export const CatalogCard = memo(({ item, locationId, phone, initialOpen = false,
           <div className="relative w-44 sm:w-64 md:w-80 flex-shrink-0 bg-gray-100 flex flex-col items-stretch overflow-hidden">
             <div className="flex-1 flex items-center justify-center relative min-h-[140px] sm:min-h-[200px]">
               {item.image_url ? (
-                <img
+                <Image
                   src={item.image_url}
                   alt={item.name}
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                  style={{ maxHeight: "200px" }}
-                  loading="lazy"
-                  onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                  fill
+                  className="object-cover transition-transform duration-300 group-hover:scale-105"
+                  sizes="(max-width: 768px) 176px, (max-width: 1024px) 256px, 320px"
                 />
               ) : (
                 <div className="w-full h-24 sm:h-32 flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg">
@@ -330,14 +330,13 @@ export const CatalogCard = memo(({ item, locationId, phone, initialOpen = false,
             </div>
 
             {item.image_url ? (
-              <div className="w-full flex items-center justify-center bg-gray-50 rounded-2xl mb-6 overflow-hidden">
-                <img
+              <div className="w-full relative aspect-video bg-gray-50 rounded-2xl mb-6 overflow-hidden">
+                <Image
                   src={item.image_url}
                   alt={item.name}
-                  className="w-full h-auto object-cover"
-                  style={{ maxHeight: "550px" }}
-                  loading="lazy"
-                  onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                  fill
+                  className="object-contain"
+                  priority={initialOpen}
                 />
               </div>
             ) : (

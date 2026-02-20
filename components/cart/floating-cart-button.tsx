@@ -31,7 +31,7 @@ export function FloatingCartButton({ onClick, isHidden = false, backgroundColor,
         backgroundColor: backgroundColor || (itemCount === 0 ? '#374151' : '#000000'),
         // Ensure visibility on iOS devices with notch/safe area
         // Use inline style to override Tailwind bottom/right when needed
-        bottom: 'max(env(safe-area-inset-bottom, 0px), 80px)',
+        bottom: 'max(env(safe-area-inset-bottom, 0px), 110px)',
         right: 'max(env(safe-area-inset-right, 0px), 16px)'
       }}
     >
