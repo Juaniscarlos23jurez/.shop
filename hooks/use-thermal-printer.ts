@@ -176,7 +176,7 @@ export function useThermalPrinter(): UseThermalPrinterResult {
       const htmlContent = `
         <div style="width: 100%; font-family: 'monospace'; font-size: 10pt; color: black; background: white; padding: 0; margin: 0;">
           <div style="text-align: center; font-weight: bold; font-size: 12pt; margin-bottom: 4px;">
-            ${payload.companyName?.toUpperCase() || 'TICKET DE VENTA'}
+            ${payload.companyName?.toUpperCase() || ''}
           </div>
           <div style="border-bottom: 1px dashed black; margin-bottom: 4px; padding-bottom: 4px; font-size: 9pt;">
             ${payload.saleId ? `<div>Folio: #${payload.saleId}</div>` : ''}

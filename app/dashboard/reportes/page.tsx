@@ -31,6 +31,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useCompany } from "@/contexts/CompanyContext";
 
 export default function ReportesPage() {
   const { toast } = useToast();
@@ -42,6 +43,7 @@ export default function ReportesPage() {
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const { isConnected: isPrinterConnected, connect: connectPrinter, disconnect: disconnectPrinter, printTicket } = useThermalPrinter();
+  const { company } = useCompany();
 
   const handleTogglePrinterConnection = async () => {
     try {
@@ -191,7 +193,7 @@ export default function ReportesPage() {
     const totalToPrint = sale.total ?? sale.total_amount ?? 0;
 
     printTicket({
-      companyName: "Ticket de Venta", // TODO: use real name
+      companyName: company?.name || "Ticket de Venta",
       items: itemsToPrint,
       total: typeof totalToPrint === 'string' ? parseFloat(totalToPrint) : Number(totalToPrint),
       date: new Date(sale.created_at).toLocaleString('es-MX'),

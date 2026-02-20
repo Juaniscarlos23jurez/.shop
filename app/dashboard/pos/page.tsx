@@ -1542,7 +1542,7 @@ export default function PuntoVentaPage() {
                 <p className="company-addr">{ticketToPrint.city} {ticketToPrint.state}</p>
               )}
               {ticketToPrint.phone && <p className="company-addr">Tel: {ticketToPrint.phone}</p>}
-              <p className="ticket-type">TICKET DE VENTA</p>
+              <p className="ticket-type">{ticketToPrint.companyName}</p>
             </div>
 
             <div className="ticket-info">

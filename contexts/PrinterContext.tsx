@@ -418,7 +418,7 @@ export function PrinterProvider({ children }: { children: React.ReactNode }) {
                 }
 
                 await write(esc.boldOn);
-                await write(`${payload.companyName?.toUpperCase() || 'TICKET DE VENTA'}\n`);
+                await write(`${payload.companyName?.toUpperCase() || ''}\n`);
                 await write(esc.boldOff);
 
                 if (payload.address || payload.city) {
