@@ -608,14 +608,16 @@ export default function HomePage() {
               </div>
             </div>
             <div className="flex items-center space-x-3">
-              <Link href="/auth/login">
-                <Button variant="ghost" className="text-gray-600 hover:text-gray-900 font-medium">
+              <Button asChild variant="ghost" className="text-gray-600 hover:text-gray-900 font-medium">
+                <Link href="/auth/login">
                   Iniciar sesión
-                </Button>
-              </Link>
-              <Link href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">
-                <Button className="bg-[#22c55e] hover:bg-green-600 text-white shadow-md hover:shadow-lg transition-all">Hablar con ventas</Button>
-              </Link>
+                </Link>
+              </Button>
+              <Button asChild className="bg-[#22c55e] hover:bg-green-600 text-white shadow-md hover:shadow-lg transition-all">
+                <Link href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">
+                  Hablar con ventas
+                </Link>
+              </Button>
             </div>
           </div>
         </div>
@@ -653,16 +655,16 @@ export default function HomePage() {
               </p>
 
               <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
-                <Link href="/auth/register" className="w-full sm:w-auto">
-                  <Button size="lg" className="w-full h-14 px-8 bg-[#22c55e] hover:bg-green-600 text-white text-lg font-bold rounded-2xl shadow-[0_20px_40px_-12px_rgba(34,197,94,0.35)] hover:shadow-[0_20px_40px_-12px_rgba(34,197,94,0.45)] hover:-translate-y-1 transition-all duration-300">
+                <Button asChild size="lg" className="w-full sm:w-auto h-14 px-8 bg-[#22c55e] hover:bg-green-600 text-white text-lg font-bold rounded-2xl shadow-[0_20px_40px_-12px_rgba(34,197,94,0.35)] hover:shadow-[0_20px_40px_-12px_rgba(34,197,94,0.45)] hover:-translate-y-1 transition-all duration-300">
+                  <Link href="/auth/register">
                     Obtener mi App ahora
-                  </Button>
-                </Link>
-                <Link href={CALENDLY_URL} className="w-full sm:w-auto" target="_blank" rel="noopener noreferrer">
-                  <Button size="lg" variant="outline" className="w-full h-14 px-8 border-2 border-gray-200 text-[#0f172a] text-lg font-bold rounded-2xl hover:bg-gray-50 transition-all duration-300">
+                  </Link>
+                </Button>
+                <Button asChild size="lg" variant="outline" className="w-full sm:w-auto h-14 px-8 border-2 border-gray-200 text-[#0f172a] text-lg font-bold rounded-2xl hover:bg-gray-50 transition-all duration-300">
+                  <Link href={CALENDLY_URL} target="_blank" rel="noopener noreferrer">
                     Ver cómo funciona
-                  </Button>
-                </Link>
+                  </Link>
+                </Button>
               </div>
 
               <div className="mt-12 flex flex-col items-center justify-center space-y-4">
@@ -1907,13 +1909,11 @@ export default function HomePage() {
           <p className="text-green-100 text-xl mb-8 max-w-2xl mx-auto">
             Empieza hoy mismo y transforma la lealtad de tus clientes en ventas recurrentes.
           </p>
-          <div className="flex justify-center">
-            <Link href="http://localhost:3000/auth/register" className="w-full sm:w-auto">
-              <Button size="lg" className="w-full bg-white text-[#22c55e] hover:bg-gray-100 font-black px-10 rounded-2xl shadow-xl transform transition-all hover:scale-105">
-                Registrarse
-              </Button>
+          <Button asChild size="lg" className="w-full sm:w-auto bg-white text-[#22c55e] hover:bg-gray-100 font-black px-10 rounded-2xl shadow-xl transform transition-all hover:scale-105">
+            <Link href="/auth/register">
+              Registrarse
             </Link>
-          </div>
+          </Button>
         </div>
       </section>
 
@@ -1940,9 +1940,11 @@ export default function HomePage() {
               </div>
               <h3 className="text-xl font-bold mb-2">WhatsApp</h3>
               <p className="text-base text-gray-600 mb-4">Escríbenos y te atendemos al instante.</p>
-              <Link href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">
-                <Button className="w-full bg-[#22c55e] hover:bg-green-600 text-white">Abrir WhatsApp</Button>
-              </Link>
+              <Button asChild className="w-full bg-[#22c55e] hover:bg-green-600 text-white">
+                <Link href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">
+                  Abrir WhatsApp
+                </Link>
+              </Button>
             </Card>
             <Card className="p-6 border border-gray-100 rounded-2xl text-center">
               <div className="flex items-center justify-center mb-2">
@@ -1970,9 +1972,11 @@ export default function HomePage() {
               </div>
               <h3 className="text-xl font-bold mb-2">Email</h3>
               <p className="text-base text-gray-600 mb-4">Cuéntanos sobre tu negocio y te contactamos.</p>
-              <Link href={`mailto:${SALES_EMAIL}`}>
-                <Button variant="outline" className="w-full">Enviar correo</Button>
-              </Link>
+              <Button asChild variant="outline" className="w-full">
+                <Link href={`mailto:${SALES_EMAIL}`}>
+                  Enviar correo
+                </Link>
+              </Button>
             </Card>
             <Card className="p-6 border border-gray-100 rounded-2xl text-center">
               <div className="flex items-center justify-center mb-2">
@@ -2004,9 +2008,11 @@ export default function HomePage() {
               </div>
               <h3 className="text-xl font-bold mb-2">Agendar demo</h3>
               <p className="text-base text-gray-600 mb-4">Reserva una demo de 30 minutos.</p>
-              <Link href={CALENDLY_URL} target="_blank" rel="noopener noreferrer">
-                <Button variant="outline" className="w-full">Ver disponibilidad</Button>
-              </Link>
+              <Button asChild variant="outline" className="w-full">
+                <Link href={CALENDLY_URL} target="_blank" rel="noopener noreferrer">
+                  Ver disponibilidad
+                </Link>
+              </Button>
             </Card>
           </div>
         </div>

@@ -9,6 +9,7 @@ import { api } from '@/lib/api/api';
 import { CompanyInfoForm } from '@/components/company/company-info-form';
 import { BranchInfoForm } from '@/components/company/branch-info-form';
 import { StepNavigation } from '@/components/company/step-navigation';
+import { PricingSection } from '@/components/pricing-section';
 
 interface CompanyOnboardingWizardProps {
   onComplete?: () => void;
@@ -17,10 +18,10 @@ interface CompanyOnboardingWizardProps {
 export function CompanyOnboardingWizard({ onComplete }: CompanyOnboardingWizardProps) {
   const { token } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
-  const [step, setStep] = useState<1 | 2>(1);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
 
   const [companyId, setCompanyId] = useState<string | null>(null);
-  
+
   // Logo and banner states
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string>('');
@@ -71,18 +72,28 @@ export function CompanyOnboardingWizard({ onComplete }: CompanyOnboardingWizardP
 
     (async () => {
       try {
-        const res = await api.userCompanies.get(token);
-        const existing = (res as any)?.data?.data;
-        if (res.success && existing?.id) {
-          setCompanyId(String(existing.id));
-          toast({
-            title: 'Ya tienes compañía registrada',
-            description: 'Continuemos con la configuración de tu sucursal.',
-          });
-          setStep(2);
+        const companyRes = await api.userCompanies.get(token);
+        const company = (companyRes as any)?.data?.data;
+
+        if (companyRes.success && company?.id) {
+          setCompanyId(String(company.id));
+
+          // Check if at least one location (sucursal) exists
+          const locationsRes = await api.userCompanies.getLocations(token);
+          const locations = (locationsRes as any)?.data || (locationsRes as any)?.locations || [];
+
+          if (Array.isArray(locations) && locations.length > 0) {
+            setStep(3); // Go to Payment if both exist
+          } else {
+            setStep(2); // Go to Sucursal if only company exists
+            toast({
+              title: 'Empresa registrada',
+              description: 'Continuemos con la configuración de tu primera sucursal.',
+            });
+          }
         }
-      } catch {
-        // ignore
+      } catch (error) {
+        console.error('Error checking onboarding status:', error);
       }
     })();
   }, [token]);
@@ -166,7 +177,7 @@ export function CompanyOnboardingWizard({ onComplete }: CompanyOnboardingWizardP
 
   const canCreateLocation = useMemo(() => {
     return Boolean(
-      formData.location?.name?.trim() && 
+      formData.location?.name?.trim() &&
       formData.location?.address?.trim() &&
       formData.location?.state_id &&
       formData.location?.city_id &&
@@ -250,7 +261,7 @@ export function CompanyOnboardingWizard({ onComplete }: CompanyOnboardingWizardP
       description: 'Tu compañía y sucursal quedaron configuradas.',
     });
 
-    onComplete?.();
+    setStep(3);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -273,7 +284,7 @@ export function CompanyOnboardingWizard({ onComplete }: CompanyOnboardingWizardP
         if (!canCreateLocation) {
           throw new Error('El nombre, dirección, estado, ciudad y código postal de la sucursal son obligatorios');
         }
-        
+
         // Primero crear la compañía si no existe
         if (!companyId) {
           const newCompanyId = await createCompany();
@@ -281,9 +292,16 @@ export function CompanyOnboardingWizard({ onComplete }: CompanyOnboardingWizardP
             throw new Error('No se pudo crear la compañía');
           }
         }
-        
-        // Luego crear la location
+
+        // Luego crear la location (sucursal)
+        // La función createLocation ahora cambia el step a 3 automáticamente
         await createLocation();
+        return;
+      }
+
+      if (step === 3) {
+        // En el paso 3 el usuario ya está viendo los planes
+        // El proceso de pago redirigirá fuera de aquí
         return;
       }
     } catch (err) {
@@ -299,180 +317,214 @@ export function CompanyOnboardingWizard({ onComplete }: CompanyOnboardingWizardP
   };
 
   return (
-    <div className="max-w-3xl mx-auto">
+    <div className={`mx-auto transition-all duration-500 ease-in-out ${step === 3 ? 'max-w-6xl' : 'max-w-3xl'}`}>
       <StepNavigation currentStep={step} />
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl">
-            {step === 1 && 'Información de la Empresa'}
-            {step === 2 && 'Agregar Sucursal'}
-          </CardTitle>
-          <CardDescription>
-            {step === 1 && 'Completa la información básica de tu empresa'}
-            {step === 2 && 'Configura la información de tu primera sucursal'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {step === 1 && (
-              <>
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-slate-700">Logo de la empresa</label>
-                  <div className="flex items-center justify-center w-full">
-                    <label
-                      onDragOver={handleLogoDragOver}
-                      onDrop={handleLogoDrop}
-                      className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-lg cursor-pointer bg-slate-50 hover:bg-slate-100"
-                    >
-                      <div className="flex flex-col items-center justify-center p-4">
-                        {logoPreview ? (
-                          <img
-                            src={logoPreview}
-                            alt="Logo de la empresa"
-                            className="max-h-24 max-w-full mb-2 rounded-md"
-                          />
-                        ) : (
-                          <>
-                            <svg
-                              className="w-8 h-8 mb-2 text-slate-500"
-                              aria-hidden="true"
-                              xmlns="http://www.w3.org/2000/svg"
-                              fill="none"
-                              viewBox="0 0 20 16"
-                            >
-                              <path
-                                stroke="currentColor"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"
-                              />
-                            </svg>
-                            <p className="text-sm text-slate-600">
-                              <span className="font-medium">Haz clic para subir</span> o arrastra y suelta
-                            </p>
-                            <p className="text-xs text-slate-500">PNG, JPG o SVG (MAX. 5MB)</p>
-                          </>
-                        )}
-                      </div>
-                      <input
-                        ref={logoInputRef}
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={handleLogoChange}
-                      />
-                    </label>
+      {step !== 3 ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-2xl">
+              {step === 1 && 'Información de la Empresa'}
+              {step === 2 && 'Agregar Sucursal'}
+            </CardTitle>
+            <CardDescription>
+              {step === 1 && 'Completa la información básica de tu empresa'}
+              {step === 2 && 'Configura la información de tu primera sucursal'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {step === 1 && (
+                <>
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-slate-700">Logo de la empresa</label>
+                    <div className="flex items-center justify-center w-full">
+                      <label
+                        onDragOver={handleLogoDragOver}
+                        onDrop={handleLogoDrop}
+                        className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-lg cursor-pointer bg-slate-50 hover:bg-slate-100"
+                      >
+                        <div className="flex flex-col items-center justify-center p-4">
+                          {logoPreview ? (
+                            <img
+                              src={logoPreview}
+                              alt="Logo de la empresa"
+                              className="max-h-24 max-w-full mb-2 rounded-md"
+                            />
+                          ) : (
+                            <>
+                              <svg
+                                className="w-8 h-8 mb-2 text-slate-500"
+                                aria-hidden="true"
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 20 16"
+                              >
+                                <path
+                                  stroke="currentColor"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth="2"
+                                  d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"
+                                />
+                              </svg>
+                              <p className="text-sm text-slate-600">
+                                <span className="font-medium">Haz clic para subir</span> o arrastra y suelta
+                              </p>
+                              <p className="text-xs text-slate-500">PNG, JPG o SVG (MAX. 5MB)</p>
+                            </>
+                          )}
+                        </div>
+                        <input
+                          ref={logoInputRef}
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleLogoChange}
+                        />
+                      </label>
+                    </div>
                   </div>
-                </div>
 
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-slate-700">Banner de la empresa</label>
-                  <div className="flex items-center justify-center w-full">
-                    <label
-                      onDragOver={handleBannerDragOver}
-                      onDrop={handleBannerDrop}
-                      className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-lg cursor-pointer bg-slate-50 hover:bg-slate-100"
-                    >
-                      <div className="flex flex-col items-center justify-center p-4 w-full">
-                        {bannerPreview ? (
-                          <img
-                            src={bannerPreview}
-                            alt="Banner de la empresa"
-                            className="w-full h-56 object-cover object-center mb-2 rounded-md"
-                          />
-                        ) : (
-                          <>
-                            <svg
-                              className="w-8 h-8 mb-2 text-slate-500"
-                              aria-hidden="true"
-                              xmlns="http://www.w3.org/2000/svg"
-                              fill="none"
-                              viewBox="0 0 20 16"
-                            >
-                              <path
-                                stroke="currentColor"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"
-                              />
-                            </svg>
-                            <p className="text-sm text-slate-600">
-                              <span className="font-medium">Haz clic para subir</span> o arrastra y suelta
-                            </p>
-                            <p className="text-xs text-slate-500">PNG, JPG o SVG (MAX. 5MB)</p>
-                          </>
-                        )}
-                      </div>
-                      <input
-                        ref={bannerInputRef}
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={handleBannerChange}
-                      />
-                    </label>
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-slate-700">Banner de la empresa</label>
+                    <div className="flex items-center justify-center w-full">
+                      <label
+                        onDragOver={handleBannerDragOver}
+                        onDrop={handleBannerDrop}
+                        className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-lg cursor-pointer bg-slate-50 hover:bg-slate-100"
+                      >
+                        <div className="flex flex-col items-center justify-center p-4 w-full">
+                          {bannerPreview ? (
+                            <img
+                              src={bannerPreview}
+                              alt="Banner de la empresa"
+                              className="w-full h-56 object-cover object-center mb-2 rounded-md"
+                            />
+                          ) : (
+                            <>
+                              <svg
+                                className="w-8 h-8 mb-2 text-slate-500"
+                                aria-hidden="true"
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 20 16"
+                              >
+                                <path
+                                  stroke="currentColor"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth="2"
+                                  d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"
+                                />
+                              </svg>
+                              <p className="text-sm text-slate-600">
+                                <span className="font-medium">Haz clic para subir</span> o arrastra y suelta
+                              </p>
+                              <p className="text-xs text-slate-500">PNG, JPG o SVG (MAX. 5MB)</p>
+                            </>
+                          )}
+                        </div>
+                        <input
+                          ref={bannerInputRef}
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleBannerChange}
+                        />
+                      </label>
+                    </div>
                   </div>
-                </div>
 
-                <CompanyInfoForm
-                  formData={{
-                    name: formData.name,
-                    description: formData.description,
-                    email: formData.email,
-                    phone: formData.phone,
-                    address: formData.address,
-                    city: formData.city,
-                    state: formData.state,
-                    postal_code: formData.postal_code || undefined,
-                    website: formData.website,
-                    business_type_id: formData.business_type_id,
-                  }}
-                  handleInputChange={handleInputChange}
-                  onLocationChange={({ latitude, longitude }) => {
-                    setFormData((prev: any) => ({ ...prev, latitude, longitude }));
-                  }}
-                />
-              </>
-            )}
-
-            {step === 2 && (
-              <BranchInfoForm
-                formData={formData.location || { name: '', address: '', timezone: '' }}
-                handleInputChange={handleInputChange}
-                isFirstBranch
-              />
-            )}
-
-            <div className="flex justify-end space-x-3">
-              {step === 2 && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setStep(1)}
-                  disabled={isLoading}
-                >
-                  Atrás
-                </Button>
+                  <CompanyInfoForm
+                    formData={{
+                      name: formData.name,
+                      description: formData.description,
+                      email: formData.email,
+                      phone: formData.phone,
+                      address: formData.address,
+                      city: formData.city,
+                      state: formData.state,
+                      postal_code: formData.postal_code || undefined,
+                      website: formData.website,
+                      business_type_id: formData.business_type_id,
+                    }}
+                    handleInputChange={handleInputChange}
+                    onLocationChange={({ latitude, longitude }) => {
+                      setFormData((prev: any) => ({ ...prev, latitude, longitude }));
+                    }}
+                  />
+                </>
               )}
 
-              <Button
-                type="submit"
-                className="bg-emerald-600 hover:bg-emerald-700"
-                disabled={
-                  isLoading ||
-                  (step === 1 && !canContinueCompany) ||
-                  (step === 2 && !canCreateLocation)
-                }
-              >
-                {step === 1 ? (isLoading ? 'Guardando...' : 'Guardar y continuar') : (isLoading ? 'Guardando...' : 'Finalizar')}
-              </Button>
+              {step === 2 && (
+                <BranchInfoForm
+                  formData={formData.location || { name: '', address: '', timezone: '' }}
+                  handleInputChange={handleInputChange}
+                  isFirstBranch
+                />
+              )}
+
+              <div className="flex justify-end space-x-3">
+                {step === 2 && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setStep(1)}
+                    disabled={isLoading}
+                  >
+                    Atrás
+                  </Button>
+                )}
+
+                <Button
+                  type="submit"
+                  className="bg-emerald-600 hover:bg-emerald-700"
+                  disabled={
+                    isLoading ||
+                    (step === 1 && !canContinueCompany) ||
+                    (step === 2 && !canCreateLocation)
+                  }
+                >
+                  {step === 1 ? (isLoading ? 'Guardando...' : 'Guardar y continuar') : (isLoading ? 'Guardando...' : 'Finalizar configuración')}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+          <div className="text-center mb-10">
+            <div className="inline-flex items-center space-x-2 bg-emerald-50 text-emerald-700 text-xs font-black px-3 py-1 rounded-full mb-4 uppercase tracking-[0.2em] border border-emerald-100">
+              <span>Planes Flexibles</span>
             </div>
-          </form>
-        </CardContent>
-      </Card>
+            <h2 className="text-4xl md:text-5xl font-black text-[#0f172a] mb-4 tracking-tight">
+              Impulsa tu crecimiento <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-emerald-600">con el plan perfecto</span>
+            </h2>
+            <p className="text-lg text-slate-500 max-w-2xl mx-auto font-medium">
+              Elige la solución que mejor se adapte a tu etapa actual y escala sin límites con nuestra tecnología.
+            </p>
+          </div>
+
+          <PricingSection
+            activePlanId={null}
+            showHeaders={false}
+            showBackground={false}
+            companyId={companyId}
+          />
+
+          <div className="mt-8 flex justify-center">
+            <Button
+              variant="ghost"
+              onClick={() => setStep(2)}
+              className="text-slate-500 hover:text-slate-800"
+            >
+              ← Volver a Sucursal
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

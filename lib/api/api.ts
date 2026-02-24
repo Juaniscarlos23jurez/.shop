@@ -365,6 +365,17 @@ export const api = {
         }),
       }).then(handleResponse);
     },
+
+    async forgotPassword(email: string): Promise<ApiResponse<any>> {
+      return fetch(`/api/proxy/api/auth/forgot-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      }).then(handleResponse);
+    },
   },
 
   promoters: {

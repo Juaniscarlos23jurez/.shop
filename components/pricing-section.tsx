@@ -14,7 +14,19 @@ const CALENDLY_URL = process.env.NEXT_PUBLIC_CALENDLY_URL || 'https://calendly.c
 const WHATSAPP_URL = process.env.NEXT_PUBLIC_WHATSAPP_URL || 'https://wa.me/522381638747';
 const SALES_EMAIL = process.env.NEXT_PUBLIC_SALES_EMAIL || 'info@fynlink.shop';
 
-export function PricingSection({ activePlanId }: { activePlanId?: number | string | null }) {
+export function PricingSection({
+    activePlanId,
+    showHeaders = true,
+    showBackground = true,
+    companyId: manualCompanyId,
+    companyPlanTrialUsed: manualTrialUsed
+}: {
+    activePlanId?: number | string | null,
+    showHeaders?: boolean,
+    showBackground?: boolean,
+    companyId?: string | number | null,
+    companyPlanTrialUsed?: boolean
+}) {
     const [loadingPlan, setLoadingPlan] = useState<number | string | null>(null);
     const [fetchedPlans, setFetchedPlans] = useState<any[] | null>(null);
     const [isContactModalOpen, setIsContactModalOpen] = useState(false);
@@ -22,7 +34,9 @@ export function PricingSection({ activePlanId }: { activePlanId?: number | strin
     const companyContext = useContext(CompanyContext);
 
     const token = authContext?.token;
-    const company = companyContext?.company;
+    const companyFromContext = companyContext?.company;
+    const companyId = manualCompanyId || companyFromContext?.id;
+    const trialUsed = manualTrialUsed ?? companyFromContext?.company_plan_trial_used ?? false;
 
     useEffect(() => {
         const fetchPlans = async () => {
@@ -41,37 +55,34 @@ export function PricingSection({ activePlanId }: { activePlanId?: number | strin
     const handleSubscribe = async (planId: number | string | null) => {
         console.log('handleSubscribe called with planId:', planId);
 
-        // Enterprise plan - open contact modal instead
-        if (planId === 3) {
-            console.log('Opening contact modal for Enterprise plan');
+        // Enterprise plans (Pro/Empresa) - open contact modal instead
+        // Plan 3 (Pro) and 4 (Empresa) are COTIZACIÓN
+        if (planId === 3 || planId === 4) {
+            console.log('Opening contact modal for Enterprise/Pro plan');
             setIsContactModalOpen(true);
             return;
         }
 
-        if (!token || !company) {
-            toast.error("Debes iniciar sesión para suscribirte");
+        if (!token || !companyId) {
+            toast.error("Datos de empresa no encontrados. Por favor, reintenta.");
+            console.error('Missing data:', { token: !!token, companyId });
             return;
         }
 
-        if (planId === 1 || planId === null) {
-            // Plan básico is typically free/default.
-            // If the user is on a paid plan and downgrades, you might need a specific API call or just redirect.
-            // For now, we'll assume subscribing to Basic (free) is either a no-op or handled differently.
-            toast.info("El plan básico es gratuito.");
+        if (planId === null) {
+            toast.error("Plan no válido");
             return;
         }
-
-        const isTrialUsed = company?.company_plan_trial_used || false;
 
         setLoadingPlan(planId);
         try {
             const response = await api.subscriptions.subscribe({
-                company_id: company.id,
+                company_id: companyId,
                 plan_id: planId,
-                interval: 'lifetime' as any, // Changed to lifetime ownership model
-                trial_days: 0, // No trials for lifetime ownership
-                success_url: window.location.origin + '/dashboard/subscription/success?session_id={CHECKOUT_SESSION_ID}',
-                cancel_url: window.location.origin + '/dashboard/suscripcion/planes'
+                interval: 'month', // Changed to month to match recurrente UI and backend types
+                trial_days: trialUsed ? 0 : 7, // Give 7 days trial if not used
+                success_url: window.location.origin + '/dashboard',
+                cancel_url: window.location.origin + '/onboarding/compania'
             }, token);
 
             if (response.success && response.data?.checkout_url) {
@@ -89,11 +100,11 @@ export function PricingSection({ activePlanId }: { activePlanId?: number | strin
 
     const plans = [
         {
-            id: 1,
+            id: 2,
             name: 'Plan Básico',
             subtitle: 'Ideal para emprendedores y pequeños negocios',
             price: '200',
-            period: 'único',
+            period: '1er mes',
             description: 'Comienza a fidelizar a tus clientes hoy:',
             features: [
                 'Programa de lealtad básico',
@@ -104,12 +115,13 @@ export function PricingSection({ activePlanId }: { activePlanId?: number | strin
                 'Cupones digitales (hasta 10)',
                 'Soporte por email/WhatsApp'
             ],
-            cta: 'Comprar ahora',
+            cta: 'Empezar ahora',
             popular: false,
-            badge: 'PAGO ÚNICO'
+            badge: 'PROMOCIÓN APERTURA',
+            promo: 'Luego $200/mes'
         },
         {
-            id: 2,
+            id: 3,
             name: 'Plan Pro',
             subtitle: 'Ecosistema completo y marca propia',
             price: 'COTIZACIÓN',
@@ -132,7 +144,7 @@ export function PricingSection({ activePlanId }: { activePlanId?: number | strin
             promo: '¡Potencia tu marca al máximo!'
         },
         {
-            id: 3,
+            id: 4,
             name: 'Plan Empresa',
             subtitle: 'Para cadenas y franquicias multinacionales',
             price: 'COTIZACIÓN',
@@ -156,30 +168,34 @@ export function PricingSection({ activePlanId }: { activePlanId?: number | strin
 
     return (
         <>
-            <div className="space-y-0">
-                <section id="pricing" className="py-24 relative overflow-hidden bg-white">
+            <div className="space-y-0 w-full">
+                <section id="pricing" className={`${showHeaders ? 'py-24' : 'py-6'} relative overflow-hidden bg-transparent`}>
                     {/* Background Atmosphere */}
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full -z-10 overflow-hidden">
-                        <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-50 rounded-full blur-[120px] opacity-60"></div>
-                        <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-green-50 rounded-full blur-[120px] opacity-60"></div>
-                    </div>
-
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <div className="text-center mb-20">
-                            <div className="inline-flex items-center space-x-2 bg-green-50 text-green-700 text-xs font-black px-3 py-1 rounded-full mb-6 uppercase tracking-[0.2em] border border-green-100">
-                                <span>Planes Flexibles</span>
-                            </div>
-                            <h2 className="text-5xl md:text-6xl font-black text-[#0f172a] mb-6 tracking-tight">
-                                Impulsa tu crecimiento <br />
-                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">con el plan perfecto</span>
-                            </h2>
-
-                            <p className="text-xl text-slate-500 max-w-2xl mx-auto font-medium">
-                                Elige la solución que mejor se adapte a tu etapa actual y escala sin límites con nuestra tecnología.
-                            </p>
+                    {showBackground && (
+                        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full -z-10 overflow-hidden">
+                            <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-50 rounded-full blur-[120px] opacity-60"></div>
+                            <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-green-50 rounded-full blur-[120px] opacity-60"></div>
                         </div>
+                    )}
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto items-stretch">
+                    <div className="max-w-7xl mx-auto px-0">
+                        {showHeaders && (
+                            <div className="text-center mb-20">
+                                <div className="inline-flex items-center space-x-2 bg-green-50 text-green-700 text-xs font-black px-3 py-1 rounded-full mb-6 uppercase tracking-[0.2em] border border-green-100">
+                                    <span>Planes Flexibles</span>
+                                </div>
+                                <h2 className="text-5xl md:text-6xl font-black text-[#0f172a] mb-6 tracking-tight">
+                                    Impulsa tu crecimiento <br />
+                                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">con el plan perfecto</span>
+                                </h2>
+
+                                <p className="text-xl text-slate-500 max-w-2xl mx-auto font-medium">
+                                    Elige la solución que mejor se adapte a tu etapa actual y escala sin límites con nuestra tecnología.
+                                </p>
+                            </div>
+                        )}
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 max-w-full mx-auto items-stretch">
                             {plans.map((plan, index) => {
                                 const isActive = activePlanId !== null &&
                                     activePlanId !== undefined &&
@@ -225,7 +241,7 @@ export function PricingSection({ activePlanId }: { activePlanId?: number | strin
                                                     </div>
                                                     <div className="text-xs font-bold text-blue-600 flex items-center gap-1.5">
                                                         <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
-                                                        {plan.price === 'COTIZACIÓN' ? 'Precio según necesidades' : plan.id === 1 ? 'Acceso de por vida' : 'Suscripción mensual recurrente'}
+                                                        {plan.price === 'COTIZACIÓN' ? 'Precio según necesidades' : 'Suscripción mensual recurrente'}
                                                     </div>
                                                 </div>
                                             </div>
@@ -289,7 +305,7 @@ export function PricingSection({ activePlanId }: { activePlanId?: number | strin
                                                 )}
                                                 <div className="text-center space-y-1">
                                                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-tight">
-                                                        {plan.price === 'COTIZACIÓN' ? 'Contacta para preventa' : plan.id === 1 ? 'Un solo pago, para siempre' : 'Cancela en cualquier momento'}
+                                                        {plan.price === 'COTIZACIÓN' ? 'Contacta para preventa' : 'Cancela en cualquier momento'}
                                                     </p>
                                                 </div>
                                             </div>

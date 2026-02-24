@@ -24,14 +24,14 @@ export default function LoginPage() {
       if (userRole && userRole.startsWith('employee_')) {
         router.push('/dashboard/pos');
       } else {
-        router.push(routes.dashboard);
+        router.push('/onboarding/plan');
       }
     }
   }, [isAuthenticated, userRole, router]);
 
   const handleLogin = async (email: string, password: string) => {
     setError(null);
-    
+
     try {
       // Always use general login; decide redirect by returned role
       const result = await login(email, password, isEmployee);
@@ -44,7 +44,7 @@ export default function LoginPage() {
           try {
             const companyRes = await api.userCompanies.get(accessToken);
             const hasCompany = Boolean((companyRes as any)?.data?.data?.id);
-            router.push(hasCompany ? routes.dashboard : '/onboarding/compania');
+            router.push(hasCompany ? '/onboarding/plan' : '/onboarding/compania');
           } catch {
             router.push('/onboarding/compania');
           }
@@ -74,7 +74,7 @@ export default function LoginPage() {
           try {
             const companyRes = await api.userCompanies.get(accessToken);
             const hasCompany = Boolean((companyRes as any)?.data?.data?.id);
-            router.push(hasCompany ? routes.dashboard : '/onboarding/compania');
+            router.push(hasCompany ? '/onboarding/plan' : '/onboarding/compania');
           } catch {
             router.push('/onboarding/compania');
           }
@@ -101,7 +101,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-green-50">
       <div className="absolute inset-0 bg-grid-gray-100 [mask-image:linear-gradient(0deg,white,transparent)]"></div>
-      
+
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50 border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -149,7 +149,7 @@ export default function LoginPage() {
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
-            
+
             <div className="space-y-4">
               <Button
                 type="button"

@@ -24,7 +24,7 @@ export default function RegisterPage() {
         try {
           const companyRes = await api.userCompanies.get(accessToken);
           const hasCompany = Boolean((companyRes as any)?.data?.data?.id);
-          router.push(hasCompany ? routes.dashboard : '/onboarding/compania');
+          router.push(hasCompany ? '/onboarding/plan' : '/onboarding/compania');
         } catch {
           router.push('/onboarding/compania');
         }
@@ -48,7 +48,7 @@ export default function RegisterPage() {
         try {
           const companyRes = await api.userCompanies.get(accessToken);
           const hasCompany = Boolean((companyRes as any)?.data?.data?.id);
-          router.push(hasCompany ? routes.dashboard : '/onboarding/compania');
+          router.push(hasCompany ? '/onboarding/plan' : '/onboarding/compania');
         } catch {
           router.push('/onboarding/compania');
         }

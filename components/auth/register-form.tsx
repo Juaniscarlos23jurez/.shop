@@ -8,7 +8,8 @@ import { Label } from "@/components/ui/label";
 export interface RegisterFormValues {
   name: string;
   email: string;
-  phone?: string;
+  phone: string;
+  country: string;
   password: string;
   password_confirmation: string;
 }
@@ -23,13 +24,14 @@ export function RegisterForm({ onSubmit, isLoading = false }: RegisterFormProps)
     name: "",
     email: "",
     phone: "",
+    country: "México",
     password: "",
     password_confirmation: "",
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setValues((prev) => ({ ...prev, [name]: value }));
   };
@@ -44,6 +46,14 @@ export function RegisterForm({ onSubmit, isLoading = false }: RegisterFormProps)
     }
     if (!values.email.trim()) {
       setError("El correo es requerido.");
+      return;
+    }
+    if (!values.phone.trim()) {
+      setError("El teléfono es requerido.");
+      return;
+    }
+    if (!values.country.trim()) {
+      setError("El país es requerido.");
       return;
     }
     if (!values.password) {
@@ -100,19 +110,48 @@ export function RegisterForm({ onSubmit, isLoading = false }: RegisterFormProps)
           </div>
         </div>
 
-        <div>
-          <Label htmlFor="phone" className="block text-sm font-medium text-gray-700">
-            Teléfono (opcional)
-          </Label>
-          <div className="mt-1">
-            <Input
-              id="phone"
-              name="phone"
-              type="tel"
-              autoComplete="tel"
-              value={values.phone || ""}
-              onChange={handleChange}
-            />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="country" className="block text-sm font-medium text-gray-700">
+              País
+            </Label>
+            <div className="mt-1">
+              <select
+                id="country"
+                name="country"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                value={values.country}
+                onChange={handleChange}
+                required
+              >
+                <option value="México">México</option>
+                <option value="Colombia">Colombia</option>
+                <option value="Chile">Chile</option>
+                <option value="Perú">Perú</option>
+                <option value="Argentina">Argentina</option>
+                <option value="España">España</option>
+                <option value="Estados Unidos">Estados Unidos</option>
+                <option value="Otro">Otro</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="phone" className="block text-sm font-medium text-gray-700">
+              Teléfono
+            </Label>
+            <div className="mt-1">
+              <Input
+                id="phone"
+                name="phone"
+                type="tel"
+                autoComplete="tel"
+                placeholder="Ej: +52 2381638747"
+                required
+                value={values.phone}
+                onChange={handleChange}
+              />
+            </div>
           </div>
         </div>
 

@@ -12,7 +12,8 @@ export default function CompanyOnboardingPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <CompanyOnboardingWizard
           onComplete={() => {
-            router.push(routes.dashboard);
+            // When everything is finished, go to dashboard
+            router.push('/dashboard');
             router.refresh();
           }}
         />
