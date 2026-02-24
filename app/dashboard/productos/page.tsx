@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, ShoppingCart, Search } from 'lucide-react';
+import { Plus, ShoppingCart, Search, LayoutGrid, List, ArrowUpDown } from 'lucide-react';
 import { getProducts, reorderProducts } from '@/lib/api/products';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -56,6 +56,7 @@ export default function ProductosPage() {
   const [isDragging, setIsDragging] = useState(false);
   const [hasOrderChanges, setHasOrderChanges] = useState(false);
   const [savingOrder, setSavingOrder] = useState(false);
+  const [isOrderMode, setIsOrderMode] = useState(false);
 
   const fetchProducts = async (page: number = 1, type: string = 'all', search: string = '') => {
     if (!token || !companyId) return;
@@ -63,8 +64,10 @@ export default function ProductosPage() {
     setLoading(true);
     try {
       const params: any = {
-        page: search ? 1 : page,
-        per_page: search ? 500 : ITEMS_PER_PAGE
+        page: (search || isOrderMode) ? 1 : page,
+        per_page: (search || isOrderMode) ? 500 : ITEMS_PER_PAGE,
+        orderBy: 'position',
+        orderDirection: 'asc'
       };
 
       if (type && type !== 'all') {
@@ -102,6 +105,25 @@ export default function ProductosPage() {
                 : Array.isArray(payload)
                   ? payload
                   : [];
+
+        // Check if the API is actually sending the position field
+        if (normalized.length > 0) {
+          console.log('[DEBUG] Primer producto recibido:', {
+            name: normalized[0].name,
+            position: normalized[0].position,
+            all_fields: Object.keys(normalized[0])
+          });
+
+          const hasPosition = normalized.some(p => p.position !== undefined && p.position !== null);
+          console.log('[DEBUG] ¿La API envió el campo position?:', hasPosition ? 'SÍ' : 'NO');
+        }
+
+        // Sort by position before setting state to ensure consistent order
+        normalized.sort((a, b) => {
+          const posA = typeof a.position === 'number' ? a.position : 999999;
+          const posB = typeof b.position === 'number' ? b.position : 999999;
+          return posA - posB;
+        });
 
         console.log('[Productos] normalized products length:', normalized.length);
         setProducts(normalized);
@@ -166,12 +188,16 @@ export default function ProductosPage() {
 
   useEffect(() => {
     if (token && companyId) {
-      fetchProducts(currentPage, productType !== 'all' ? productType : 'all', debouncedSearch);
+      fetchProducts(
+        isOrderMode ? 1 : currentPage,
+        productType !== 'all' ? productType : 'all',
+        debouncedSearch
+      );
     } else {
       // Evitar spinner infinito cuando no hay companyId/token aún
       setLoading(false);
     }
-  }, [token, companyId, currentPage, productType, debouncedSearch]);
+  }, [token, companyId, currentPage, productType, debouncedSearch, isOrderMode]);
 
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= totalPages) {
@@ -180,12 +206,20 @@ export default function ProductosPage() {
   };
 
   const displayedProducts = useMemo(() => {
-    if (!debouncedSearch.trim()) return products;
-    const query = debouncedSearch.toLowerCase();
-    return products.filter(p =>
-      p.name.toLowerCase().includes(query) ||
-      (p.description && p.description.toLowerCase().includes(query))
-    );
+    let list = products;
+    if (debouncedSearch.trim()) {
+      const query = debouncedSearch.toLowerCase();
+      list = products.filter(p =>
+        p.name.toLowerCase().includes(query) ||
+        (p.description && p.description.toLowerCase().includes(query))
+      );
+    }
+    // Always sort by position if available, as a fallback/safety measure
+    return [...list].sort((a, b) => {
+      const posA = a.position !== undefined ? a.position : 999999;
+      const posB = b.position !== undefined ? b.position : 999999;
+      return posA - posB;
+    });
   }, [products, debouncedSearch]);
 
   const handleTypeChange = (value: string) => {
@@ -268,6 +302,8 @@ export default function ProductosPage() {
           description: 'El orden de los productos se actualizó correctamente.',
         });
         setHasOrderChanges(false);
+        // Refresh products to ensure we have the latest positions from server
+        fetchProducts(isOrderMode ? 1 : currentPage, productType, debouncedSearch);
       } else {
         console.log('[Reorder] FAILED - response.success is false');
         console.log('[Reorder] Error message:', response?.message || response?.error);
@@ -326,6 +362,14 @@ export default function ProductosPage() {
               <SelectItem value="service">Servicios</SelectItem>
             </SelectContent>
           </Select>
+          <Button
+            variant={isOrderMode ? "default" : "outline"}
+            onClick={() => setIsOrderMode(!isOrderMode)}
+            className="whitespace-nowrap"
+          >
+            {isOrderMode ? <List className="h-4 w-4 mr-2" /> : <LayoutGrid className="h-4 w-4 mr-2" />}
+            {isOrderMode ? "Modo Lista" : "Modo Orden"}
+          </Button>
           <Button asChild>
             <Link href="/dashboard/productos/nuevo" className="whitespace-nowrap">
               <Plus className="h-4 w-4 mr-2" />
@@ -349,19 +393,21 @@ export default function ProductosPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border overflow-hidden">
-            <div className="grid grid-cols-12 items-center gap-2 p-3 font-medium text-slate-600 border-b bg-slate-50 text-sm">
-              <div className="col-span-1 pl-2 text-center">Posición</div>
-              <div className="col-span-3">Producto</div>
-              <div className="col-span-1 text-center">Categoría</div>
-              <div className="col-span-1 text-right pr-2">Precio</div>
-              <div className="col-span-1 text-center">Puntos</div>
-              <div className="col-span-1 text-center">Stock</div>
-              <div className="col-span-1 text-center">Tipo</div>
-              <div className="col-span-1">Ubicaciones</div>
-              <div className="col-span-1 text-center">Estado</div>
-              <div className="col-span-1"></div>
-            </div>
+          <div className={!isOrderMode ? "rounded-md border overflow-hidden" : ""}>
+            {!isOrderMode && (
+              <div className="grid grid-cols-12 items-center gap-2 p-3 font-medium text-slate-600 border-b bg-slate-50 text-sm">
+                <div className="col-span-1 pl-2 text-center">Posición</div>
+                <div className="col-span-3">Producto</div>
+                <div className="col-span-1 text-center">Categoría</div>
+                <div className="col-span-1 text-right pr-2">Precio</div>
+                <div className="col-span-1 text-center">Puntos</div>
+                <div className="col-span-1 text-center">Stock</div>
+                <div className="col-span-1 text-center">Tipo</div>
+                <div className="col-span-1">Ubicaciones</div>
+                <div className="col-span-1 text-center">Estado</div>
+                <div className="col-span-1"></div>
+              </div>
+            )}
 
             {error ? (
               <div className="p-8 text-center text-red-500">
@@ -384,6 +430,57 @@ export default function ProductosPage() {
                     Crear Producto
                   </Link>
                 </Button>
+              </div>
+            ) : isOrderMode ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 p-1">
+                {displayedProducts.map((product, index) => (
+                  <div
+                    key={product.id}
+                    className="flex items-center gap-3 p-2 bg-white border border-slate-200 rounded-lg hover:border-primary/50 hover:bg-slate-50/50 transition-all cursor-grab active:cursor-grabbing group shadow-sm"
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, index)}
+                    onDragEnter={() => handleDragEnter(index)}
+                    onDragOver={handleDragOver}
+                    onDragEnd={handleDragEnd}
+                    onDrop={handleDragEnd}
+                  >
+                    <div className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full bg-slate-100 text-[10px] font-bold text-slate-500">
+                      {index + 1}
+                    </div>
+
+                    <div className="flex-shrink-0 w-10 h-10 rounded border bg-white overflow-hidden flex items-center justify-center">
+                      {product.image_url ? (
+                        <img
+                          src={product.image_url}
+                          alt={product.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-slate-50 flex items-center justify-center text-slate-300">
+                          <ShoppingCart className="h-5 w-5" />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-slate-900 truncate pr-4">
+                        {product.name}
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] text-slate-400 font-medium">
+                          {formatCurrency(Number(product.price))}
+                        </span>
+                        <Badge variant="outline" className="text-[9px] h-4 px-1 py-0 bg-slate-50">
+                          {product.category || 'Sin cat.'}
+                        </Badge>
+                      </div>
+                    </div>
+
+                    <div className="flex-shrink-0 text-slate-300 group-hover:text-primary transition-colors">
+                      <ArrowUpDown className="h-4 w-4" />
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : (
               <>
@@ -519,7 +616,7 @@ export default function ProductosPage() {
             )}
           </div>
 
-          {!debouncedSearch && totalPages > 1 && (
+          {!debouncedSearch && !isOrderMode && totalPages > 1 && (
             <div className="mt-6">
               <Pagination>
                 <PaginationContent>

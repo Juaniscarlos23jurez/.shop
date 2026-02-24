@@ -83,7 +83,10 @@ export function PricingSection({
                 interval: 'month', // Changed to month to match recurrente UI and backend types
                 trial_days: trialUsed ? 0 : 7, // Give 7 days trial if not used
                 success_url: window.location.origin + '/dashboard',
-                cancel_url: window.location.origin + '/onboarding/compania'
+                cancel_url: window.location.origin + '/onboarding/compania',
+                email: authContext?.user?.firebase_email, // Explicitly set primary Stripe email
+                user_email: authContext?.user?.firebase_email,
+                company_email: companyFromContext?.email
             }, token);
 
             if (response.success && response.data?.checkout_url) {

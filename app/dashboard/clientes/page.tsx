@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Search, Filter, ArrowUpDown, Mail, Phone, User, Calendar as CalendarIcon, Loader2, CheckCircle, XCircle, Smartphone, Shield } from 'lucide-react';
+import { Plus, Search, Filter, ArrowUpDown, Mail, Phone, User, Calendar as CalendarIcon, Loader2, CheckCircle, XCircle, Smartphone, Shield, ShoppingCart } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -306,6 +306,11 @@ export default function ClientesPage() {
                     </div>
                   </th>
                   <th className="text-right py-3 px-4">
+                    <div className="flex items-center justify-end gap-1 font-medium text-slate-700">
+                      <ShoppingCart className="h-4 w-4" />
+                    </div>
+                  </th>
+                  <th className="text-right py-3 px-4">
                     <button
                       className="flex items-center gap-1 font-medium ml-auto"
                       onClick={() => handleSort('customer_since')}
@@ -418,6 +423,11 @@ export default function ClientesPage() {
                     <td className="py-4 px-4 text-right">
                       <div className="font-medium">
                         {client.points_balance || 0}
+                      </div>
+                    </td>
+                    <td className="py-4 px-4 text-right">
+                      <div className="font-medium text-blue-600">
+                        {client.total_cart_products_count || 0}
                       </div>
                     </td>
                     <td className="py-4 px-4 text-right">

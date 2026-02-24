@@ -31,6 +31,12 @@ export default function PromocionesPage() {
   const [isActive, setIsActive] = useState<boolean>(true);
   const [quantityLimit, setQuantityLimit] = useState<string>("");
   const [perUserLimit, setPerUserLimit] = useState<string>("");
+
+  const [notifyLowStock, setNotifyLowStock] = useState<boolean>(false);
+  const [lowStockThreshold, setLowStockThreshold] = useState<string>("");
+  const [notifyExpiry, setNotifyExpiry] = useState<boolean>(false);
+  const [expiryDaysThreshold, setExpiryDaysThreshold] = useState<string>("");
+
   const [promotions, setPromotions] = useState<any[]>([]);
   const [promosLoading, setPromosLoading] = useState<boolean>(false);
   const [filterProductId, setFilterProductId] = useState<string>("all");
@@ -58,12 +64,12 @@ export default function PromocionesPage() {
         const normalized: Product[] = Array.isArray(payload?.data)
           ? payload.data
           : Array.isArray(payload?.products)
-          ? payload.products
-          : Array.isArray(payload)
-          ? payload
-          : Array.isArray(payload?.data?.products)
-          ? payload.data.products
-          : [];
+            ? payload.products
+            : Array.isArray(payload)
+              ? payload
+              : Array.isArray(payload?.data?.products)
+                ? payload.data.products
+                : [];
         setProducts(normalized);
 
         // Fetch locations (sucursales)
@@ -91,6 +97,10 @@ export default function PromocionesPage() {
     setIsActive(true);
     setQuantityLimit("");
     setPerUserLimit("");
+    setNotifyLowStock(false);
+    setLowStockThreshold("");
+    setNotifyExpiry(false);
+    setExpiryDaysThreshold("");
     setEditingPromotion(null);
     setError(null);
   };
@@ -121,12 +131,12 @@ export default function PromocionesPage() {
       const list: any[] = Array.isArray(pageObj?.data)
         ? pageObj.data
         : Array.isArray(payload?.data?.data)
-        ? payload.data.data
-        : Array.isArray(payload?.data)
-        ? payload.data
-        : Array.isArray(payload)
-        ? payload
-        : [];
+          ? payload.data.data
+          : Array.isArray(payload?.data)
+            ? payload.data
+            : Array.isArray(payload)
+              ? payload
+              : [];
       setPromotions(list);
       const lastPage =
         pageObj?.last_page ??
@@ -164,6 +174,10 @@ export default function PromocionesPage() {
     setStartDate(formatDateInputValue(promo.start_at));
     setEndDate(formatDateInputValue(promo.end_at));
     setIsActive(Boolean(promo.is_active));
+    setNotifyLowStock(Boolean(promo.notify_low_stock));
+    setLowStockThreshold(promo.low_stock_threshold !== undefined && promo.low_stock_threshold !== null ? String(promo.low_stock_threshold) : "");
+    setNotifyExpiry(Boolean(promo.notify_expiry));
+    setExpiryDaysThreshold(promo.expiry_days_threshold !== undefined && promo.expiry_days_threshold !== null ? String(promo.expiry_days_threshold) : "");
   };
 
   const handleEditPromotion = (promo: any) => {
@@ -234,6 +248,24 @@ export default function PromocionesPage() {
       }
     }
 
+    let lowStockThresh: number | null = null;
+    if (notifyLowStock && lowStockThreshold.trim() !== "") {
+      const parsed = Number(lowStockThreshold);
+      if (!Number.isInteger(parsed) || parsed < 1) {
+        return setError("El umbral de stock bajo debe ser un entero mayor o igual a 1");
+      }
+      lowStockThresh = parsed;
+    }
+
+    let expiryDaysThresh: number | null = null;
+    if (notifyExpiry && expiryDaysThreshold.trim() !== "") {
+      const parsed = Number(expiryDaysThreshold);
+      if (!Number.isInteger(parsed) || parsed < 1) {
+        return setError("Los días para expirar deben ser un entero mayor o igual a 1");
+      }
+      expiryDaysThresh = parsed;
+    }
+
     setError(null);
     setSaving(true);
     try {
@@ -246,14 +278,18 @@ export default function PromocionesPage() {
         is_active: isActive,
         quantity_limit: qty,
         per_user_limit: userQty,
+        notify_low_stock: notifyLowStock,
+        low_stock_threshold: lowStockThresh,
+        notify_expiry: notifyExpiry,
+        expiry_days_threshold: expiryDaysThresh,
       } as const;
       const res = editingPromotion
         ? await api.companies.updateProductPromotion(
-            String(companyId),
-            token,
-            editingPromotion.id,
-            payload as any
-          )
+          String(companyId),
+          token,
+          editingPromotion.id,
+          payload as any
+        )
         : await api.companies.createProductPromotion(String(companyId), token, payload as any);
       if (!res?.success) {
         throw new Error(res?.message || "Error al guardar la promoción");
@@ -409,9 +445,69 @@ export default function PromocionesPage() {
               />
               <p className="text-xs text-slate-500">Si se deja vacío, no hay límite por usuario.</p>
             </div>
+
+            <div className="space-y-4 col-span-1 md:col-span-2 border-t pt-4">
+              <h3 className="text-sm font-medium text-slate-700">Notificaciones de Inventario y Expiración</h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-4 bg-slate-50 dark:bg-slate-900 p-4 rounded-lg border border-slate-200 dark:border-slate-800">
+                  <div className="flex items-center gap-3">
+                    <Switch id="notify_low_stock" checked={notifyLowStock} onCheckedChange={setNotifyLowStock} />
+                    <Label htmlFor="notify_low_stock">Avisar por stock bajo de promoción</Label>
+                  </div>
+                  {notifyLowStock && (
+                    <div className="space-y-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+                      <Label>Notificar cuando queden (cantidad)</Label>
+                      <Input
+                        type="number"
+                        min="1"
+                        step="1"
+                        value={lowStockThreshold}
+                        onChange={(e) => setLowStockThreshold(e.target.value)}
+                        placeholder="Ej. 10"
+                      />
+                      <p className="text-xs text-slate-500">Recibirás una alerta cuando la cantidad disponible para la promoción llegue a este límite.</p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-4 bg-slate-50 dark:bg-slate-900 p-4 rounded-lg border border-slate-200 dark:border-slate-800">
+                  <div className="flex items-center gap-3">
+                    <Switch id="notify_expiry" checked={notifyExpiry} onCheckedChange={(val) => {
+                      setNotifyExpiry(val);
+                      if (val && !endDate) {
+                        setError("Es necesario definir una Fecha de fin para configurar alertas de expiración.");
+                      } else if (!val) {
+                        setError(null);
+                      }
+                    }} disabled={!endDate} />
+                    <Label htmlFor="notify_expiry">Avisar antes de expirar</Label>
+                  </div>
+                  {notifyExpiry && (
+                    <div className="space-y-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+                      <Label>Notificar días antes</Label>
+                      <Input
+                        type="number"
+                        min="1"
+                        step="1"
+                        value={expiryDaysThreshold}
+                        onChange={(e) => setExpiryDaysThreshold(e.target.value)}
+                        placeholder="Ej. 3"
+                      />
+                      <p className="text-xs text-slate-500">Recibirás una alerta estos días antes de la fecha de fin de la promoción.</p>
+                    </div>
+                  )}
+                  {!endDate && (
+                    <p className="text-xs text-amber-600 mt-2">
+                      Añada una fecha de fin arriba para habilitar esta opción.
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-t pt-4">
             {isEditing && (
               <Button
                 type="button"

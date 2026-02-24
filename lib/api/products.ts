@@ -13,6 +13,8 @@ interface GetProductsParams {
   per_page?: number;
   type?: 'physical' | 'made_to_order' | 'service';
   search?: string;
+  orderBy?: string;
+  orderDirection?: 'asc' | 'desc';
 }
 
 /**
@@ -29,7 +31,9 @@ export async function getProducts(
     params?.page,
     params?.per_page,
     params?.type,
-    params?.search
+    params?.search,
+    params?.orderBy,
+    params?.orderDirection
   );
 }
 

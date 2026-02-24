@@ -524,10 +524,18 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
                         // Check for locked items in Basic Plan
                         const planName = getPlanName();
                         const isBasicPlan = planName === 'Básico';
+                        const companyFromContext = useCompany().company;
+
+                        // Identify if plan is Pro or higher (ID >= 3, assuming Básico is 2, Free is 1, etc.)
+                        const hasProPlan = Boolean(companyFromContext && companyFromContext.company_plan_id && Number(companyFromContext.company_plan_id) >= 3);
+
+                        const isWebLocked = !hasProPlan && item.label === 'Web' && (subItem.label === 'Dominio' || subItem.label === 'SEO');
+
                         const isLocked = (isBasicPlan && item.label === 'App' && subItem.label !== 'Comentarios') ||
                           (isBasicPlan && item.label === 'WhatsApp') ||
                           (isBasicPlan && item.label === 'Clientes' && subItem.label === 'Membresías') ||
-                          (isBasicPlan && item.label === 'Empleados');
+                          (isBasicPlan && item.label === 'Empleados') ||
+                          isWebLocked;
 
                         return (
                           <Button

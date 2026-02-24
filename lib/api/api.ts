@@ -486,6 +486,9 @@ export const api = {
         trial_days?: number;
         success_url?: string;
         cancel_url?: string;
+        email?: string; // Primary email for Stripe
+        user_email?: string;
+        company_email?: string;
       },
       token: string
     ): Promise<ApiResponse<{ checkout_url: string }>> {
@@ -2226,13 +2229,18 @@ export const api = {
       page: number = 1,
       perPage: number = 15,
       type?: 'physical' | 'made_to_order' | 'service',
-      search?: string
+      search?: string,
+      orderBy?: string,
+      orderDirection?: 'asc' | 'desc'
     ): Promise<ApiResponse<ProductListResponse>> {
       const params = new URLSearchParams({
         page: page.toString(),
         per_page: perPage.toString(),
         ...(type && { type }),
-        ...(search && { search, q: search, name: search, query: search })
+        ...(search && { search, q: search, name: search, query: search }),
+        ...(orderBy && { order_by: orderBy, sort: orderBy }),
+        ...(orderDirection && { order_direction: orderDirection, direction: orderDirection }),
+        _t: Date.now().toString()
       });
 
       return fetch(
@@ -2538,257 +2546,6 @@ export const api = {
       return data;
     },
   },
-};
-
-// Helper function to handle API responses
-async function handleResponse(response: Response): Promise<ApiResponse> {
-  const responseText = await response.text();
-  let data: any;
-
-  try {
-    data = responseText ? JSON.parse(responseText) : {};
-  } catch (error) {
-    console.error('Failed to parse JSON response. Response text:', responseText);
-    return {
-      success: false,
-      message: 'Invalid server response',
-      error: `Failed to parse response as JSON. Status: ${response.status} ${response.statusText}`,
-      status: response.status,
-      statusText: response.statusText,
-      responseText: responseText
-    };
-  }
-
-  if (response.ok) {
-    return {
-      success: true,
-      data: data,
-      status: response.status,
-      statusText: response.statusText,
-    };
-  }
-
-  // Handle errors
-  const errorMessage = data?.message ||
-    data?.error?.message ||
-    data?.error ||
-    (typeof data === 'string' ? data : null) ||
-    response.statusText ||
-    'An unknown error occurred';
-
-  return {
-    success: false,
-    message: errorMessage,
-    error: errorMessage,
-    status: response.status,
-    statusText: response.statusText,
-    data: data,
-    responseText: responseText
-  };
-}
-
-// Helper function to get auth header
-export function getAuthHeader(token: string) {
-  return {
-    'Authorization': `Bearer ${token}`,
-    'Accept': 'application/json',
-    'Content-Type': 'application/json',
-  };
-}
-
-// Point Rules API
-export const pointRulesApi = {
-  /**
-   * Get all point rules for a company
-   * @param companyId - ID of the company
-   * @param token - Authentication token
-   */
-  async getPointRules(companyId: string | number, token: string) {
-    const response = await fetch(
-      `${BASE_URL}/api/companies/${companyId}/point-rules`,
-      {
-        headers: getAuthHeader(token),
-      }
-    );
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || 'Failed to fetch point rules');
-    }
-
-    return data;
-  },
-
-  /**
-   * Get a specific point rule
-   * @param companyId - ID of the company
-   * @param ruleId - ID of the point rule
-   * @param token - Authentication token
-   */
-  async getPointRule(companyId: string | number, ruleId: string | number, token: string) {
-    const response = await fetch(
-      `${BASE_URL}/api/companies/${companyId}/point-rules/${ruleId}`,
-      {
-        headers: getAuthHeader(token),
-      }
-    );
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || 'Failed to fetch point rule');
-    }
-
-    return data;
-  },
-
-  /**
-   * Create a new point rule
-   * @param companyId - ID of the company
-   * @param ruleData - Point rule data
-   * @param token - Authentication token
-   */
-  async createPointRule(
-    companyId: string | number,
-    ruleData: {
-      spend_amount: number;
-      points: number;
-      is_active?: boolean;
-      starts_at?: string | null;
-      ends_at?: string | null;
-      metadata?: Record<string, any>;
-    },
-    token: string
-  ) {
-    const response = await fetch(
-      `${BASE_URL}/api/companies/${companyId}/point-rules`,
-      {
-        method: 'POST',
-        headers: getAuthHeader(token),
-        body: JSON.stringify(ruleData),
-      }
-    );
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || 'Failed to create point rule');
-    }
-
-    return data;
-  },
-
-  /**
-   * Update a point rule
-   * @param companyId - ID of the company
-   * @param ruleId - ID of the point rule
-   * @param ruleData - Updated point rule data
-   * @param token - Authentication token
-   */
-  async updatePointRule(
-    companyId: string | number,
-    ruleId: string | number,
-    ruleData: {
-      spend_amount?: number;
-      points?: number;
-      is_active?: boolean;
-      starts_at?: string | null;
-      ends_at?: string | null;
-      metadata?: Record<string, any>;
-    },
-    token: string
-  ) {
-    const response = await fetch(
-      `${BASE_URL}/api/companies/${companyId}/point-rules/${ruleId}`,
-      {
-        method: 'PUT',
-        headers: getAuthHeader(token),
-        body: JSON.stringify(ruleData),
-      }
-    );
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || 'Failed to update point rule');
-    }
-
-    return data;
-  },
-
-  /**
-   * Delete a point rule
-   * @param companyId - ID of the company
-   * @param ruleId - ID of the point rule to delete
-   * @param token - Authentication token
-   */
-  async deletePointRule(companyId: string | number, ruleId: string | number, token: string) {
-    const response = await fetch(
-      `${BASE_URL}/api/companies/${companyId}/point-rules/${ruleId}`,
-      {
-        method: 'DELETE',
-        headers: getAuthHeader(token),
-      }
-    );
-
-    if (!response.ok) {
-      const data = await response.json();
-      throw new Error(data.message || 'Failed to delete point rule');
-    }
-
-    return { success: true };
-  },
-
-  // Reviews/Comments endpoints (authenticated)
-  reviews: {
-    async list(
-      companyId: string | number,
-      token: string,
-      filters?: { status?: ReviewStatus; channel?: string }
-    ): Promise<ApiResponse<any>> {
-      const search = new URLSearchParams();
-      if (filters?.status) search.set('status', filters.status);
-      if (filters?.channel) search.set('channel', filters.channel);
-      const url = `${BASE_URL}/api/companies/${companyId}/reviews${search.toString() ? `?${search.toString()}` : ''}`;
-      return fetch(url, {
-        headers: getAuthHeader(token),
-      }).then(handleResponse);
-    },
-
-    async updateStatus(
-      companyId: string | number,
-      reviewId: number,
-      status: ReviewStatus,
-      token: string
-    ): Promise<ApiResponse<any>> {
-      return fetch(`${BASE_URL}/api/companies/${companyId}/reviews/${reviewId}/status`, {
-        method: 'PUT',
-        headers: {
-          ...getAuthHeader(token),
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ status }),
-      }).then(handleResponse);
-    },
-
-    async respond(
-      companyId: string | number,
-      reviewId: number,
-      response: string,
-      token: string
-    ): Promise<ApiResponse<any>> {
-      return fetch(`${BASE_URL}/api/companies/${companyId}/reviews/${reviewId}/respond`, {
-        method: 'POST',
-        headers: {
-          ...getAuthHeader(token),
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ response }),
-      }).then(handleResponse);
-    },
-  },
-
   // WhatsApp API
   whatsapp: {
     // Dashboard and Stats
@@ -3113,6 +2870,208 @@ export const pointRulesApi = {
       }).then(handleResponse);
     },
   },
+};
+
+// Helper function to handle API responses
+async function handleResponse(response: Response): Promise<ApiResponse> {
+  const responseText = await response.text();
+  let data: any;
+
+  try {
+    data = responseText ? JSON.parse(responseText) : {};
+  } catch (error) {
+    console.error('Failed to parse JSON response. Response text:', responseText);
+    return {
+      success: false,
+      message: 'Invalid server response',
+      error: `Failed to parse response as JSON. Status: ${response.status} ${response.statusText}`,
+      status: response.status,
+      statusText: response.statusText,
+      responseText: responseText
+    };
+  }
+
+  if (response.ok) {
+    return {
+      success: true,
+      data: data,
+      status: response.status,
+      statusText: response.statusText,
+    };
+  }
+
+  // Handle errors
+  const errorMessage = data?.message ||
+    data?.error?.message ||
+    data?.error ||
+    (typeof data === 'string' ? data : null) ||
+    response.statusText ||
+    'An unknown error occurred';
+
+  return {
+    success: false,
+    message: errorMessage,
+    error: errorMessage,
+    status: response.status,
+    statusText: response.statusText,
+    data: data,
+    responseText: responseText
+  };
+}
+
+// Helper function to get auth header
+export function getAuthHeader(token: string) {
+  return {
+    'Authorization': `Bearer ${token}`,
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+  };
+}
+
+// Point Rules API
+export const pointRulesApi = {
+  /**
+   * Get all point rules for a company
+   * @param companyId - ID of the company
+   * @param token - Authentication token
+   */
+  async getPointRules(companyId: string | number, token: string) {
+    const response = await fetch(
+      `${BASE_URL}/api/companies/${companyId}/point-rules`,
+      {
+        headers: getAuthHeader(token),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to fetch point rules');
+    }
+
+    return data;
+  },
+
+  /**
+   * Get a specific point rule
+   * @param companyId - ID of the company
+   * @param ruleId - ID of the point rule
+   * @param token - Authentication token
+   */
+  async getPointRule(companyId: string | number, ruleId: string | number, token: string) {
+    const response = await fetch(
+      `${BASE_URL}/api/companies/${companyId}/point-rules/${ruleId}`,
+      {
+        headers: getAuthHeader(token),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to fetch point rule');
+    }
+
+    return data;
+  },
+
+  /**
+   * Create a new point rule
+   * @param companyId - ID of the company
+   * @param ruleData - Point rule data
+   * @param token - Authentication token
+   */
+  async createPointRule(
+    companyId: string | number,
+    ruleData: {
+      spend_amount: number;
+      points: number;
+      is_active?: boolean;
+      starts_at?: string | null;
+      ends_at?: string | null;
+      metadata?: Record<string, any>;
+    },
+    token: string
+  ) {
+    const response = await fetch(
+      `${BASE_URL}/api/companies/${companyId}/point-rules`,
+      {
+        method: 'POST',
+        headers: getAuthHeader(token),
+        body: JSON.stringify(ruleData),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to create point rule');
+    }
+
+    return data;
+  },
+
+  /**
+   * Update a point rule
+   * @param companyId - ID of the company
+   * @param ruleId - ID of the point rule
+   * @param ruleData - Updated point rule data
+   * @param token - Authentication token
+   */
+  async updatePointRule(
+    companyId: string | number,
+    ruleId: string | number,
+    ruleData: {
+      spend_amount?: number;
+      points?: number;
+      is_active?: boolean;
+      starts_at?: string | null;
+      ends_at?: string | null;
+      metadata?: Record<string, any>;
+    },
+    token: string
+  ) {
+    const response = await fetch(
+      `${BASE_URL}/api/companies/${companyId}/point-rules/${ruleId}`,
+      {
+        method: 'PUT',
+        headers: getAuthHeader(token),
+        body: JSON.stringify(ruleData),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to update point rule');
+    }
+
+    return data;
+  },
+
+  /**
+   * Delete a point rule
+   * @param companyId - ID of the company
+   * @param ruleId - ID of the point rule to delete
+   * @param token - Authentication token
+   */
+  async deletePointRule(companyId: string | number, ruleId: string | number, token: string) {
+    const response = await fetch(
+      `${BASE_URL}/api/companies/${companyId}/point-rules/${ruleId}`,
+      {
+        method: 'DELETE',
+        headers: getAuthHeader(token),
+      }
+    );
+
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.message || 'Failed to delete point rule');
+    }
+
+    return { success: true };
+  },
+
 };
 
 // Company API with point rules

@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api/api';
+import { useToast } from '@/hooks/use-toast';
 import {
   Select,
   SelectContent,
@@ -24,6 +25,7 @@ import {
 export default function NuevaNotificacionPage() {
   const router = useRouter();
   const { token, user } = useAuth();
+  const { toast } = useToast();
   const initialCompanyId = user?.company_id ? String(user.company_id) : undefined;
 
   const [isLoading, setIsLoading] = useState(false);
@@ -39,9 +41,10 @@ export default function NuevaNotificacionPage() {
     customer_email: string;
     customer_fcm_token?: string | null;
     has_active_membership?: number;
+    total_cart_products_count?: number;
   }>>([]);
   const [selectedRecipients, setSelectedRecipients] = useState<number[]>([]);
-  const [filterMode, setFilterMode] = useState<'all' | 'both' | 'fcm_only' | 'email_only' | 'none'>('all');
+  const [filterMode, setFilterMode] = useState<'all' | 'both' | 'fcm_only' | 'email_only' | 'none' | 'in_cart'>('all');
   const [followersLoading, setFollowersLoading] = useState(false);
   const [followersError, setFollowersError] = useState<string | null>(null);
 
@@ -59,33 +62,33 @@ export default function NuevaNotificacionPage() {
       try {
         setFollowersLoading(true);
         setFollowersError(null);
-        
+
         // Step 1: Get companyId from /api/auth/profile/company
         let cid = resolvedCompanyId;
         if (!cid) {
           const companyResponse = await api.userCompanies.get(token);
-          
+
           if (companyResponse.success && companyResponse.data) {
             const data = companyResponse.data;
-            
+
             // Try multiple extraction paths
             cid = String(
-              data.id || 
-              data.company_id || 
-              data.company?.id || 
+              data.id ||
+              data.company_id ||
+              data.company?.id ||
               data.company?.company_id ||
               data.data?.id ||
               data.data?.company_id ||
               data.data?.company?.id ||
               ''
             );
-            
+
             if (cid && cid !== 'undefined') {
               setResolvedCompanyId(cid);
             }
           }
         }
-        
+
         if (!cid) {
           setFollowersError('No se pudo obtener el ID de la compañía');
           setFollowers([]);
@@ -95,7 +98,7 @@ export default function NuevaNotificacionPage() {
 
         // Build params based on filter mode
         const params: any = { per_page: 100 };
-        
+
         // Try using 'mode' parameter first (as documented)
         if (filterMode === 'both') {
           params.mode = 'both';
@@ -107,26 +110,38 @@ export default function NuevaNotificacionPage() {
           params.mode = 'none';
         }
         // 'all' mode doesn't need any filter parameter
-        
+
         console.log('[DEBUG] Fetching followers with filter:', filterMode, 'Params:', params);
-        const res = await api.companies.listFollowers(cid, token, params);
-        console.log('[DEBUG] API Response:', {
-          success: res.success,
-          dataKeys: res.data ? Object.keys(res.data) : [],
-          followersCount: res.data?.followers?.length || res.data?.data?.length || 0
-        });
-        // Try to normalize different possible shapes
+
+        // Note: For in_cart, we use userCompanies.getFollowers because it guarantees the cart count fields
+        let res: any;
+        let d: any;
         let raw: any[] = [];
-        const d = res.data;
-        if (d?.followers && Array.isArray(d.followers)) {
-          raw = d.followers;
-        } else if (d?.data?.data && Array.isArray(d.data.data)) {
-          raw = d.data.data;
-        } else if (d?.data && Array.isArray(d.data)) {
-          raw = d.data;
-        } else if (Array.isArray(d)) {
-          raw = d;
+
+        if (filterMode === 'in_cart') {
+          res = await api.userCompanies.getFollowers(token);
+          d = res.data?.data;
+          if (d?.followers && Array.isArray(d.followers)) {
+            raw = d.followers;
+          }
+        } else {
+          res = await api.companies.listFollowers(cid, token, params);
+          d = res.data;
+          if (d?.followers && Array.isArray(d.followers)) {
+            raw = d.followers;
+          } else if (d?.data?.data && Array.isArray(d.data.data)) {
+            raw = d.data.data;
+          } else if (d?.data && Array.isArray(d.data)) {
+            raw = d.data;
+          } else if (Array.isArray(d)) {
+            raw = d;
+          }
         }
+
+        console.log('[DEBUG] API Response:', {
+          success: res?.success,
+          followersCount: raw.length
+        });
 
         const mapped = raw.map((f: any) => ({
           customer_id: f.customer_id ?? f.id,
@@ -134,11 +149,12 @@ export default function NuevaNotificacionPage() {
           customer_email: f.customer_email ?? f.email ?? '',
           customer_fcm_token: f.customer_fcm_token ?? f.fcm_token ?? null,
           has_active_membership: Number(f.has_active_membership ?? 0),
+          total_cart_products_count: Number(f.total_cart_products_count ?? 0),
         }));
-        
+
         console.log('[DEBUG] Mapped followers:', mapped.length);
         console.log('[DEBUG] FCM tokens:', mapped.map(f => ({ name: f.customer_name, hasFCM: !!f.customer_fcm_token })));
-        
+
         // If backend doesn't filter correctly, apply client-side filtering as fallback
         let filtered = mapped;
         if (filterMode !== 'all' && mapped.length > 0) {
@@ -147,7 +163,8 @@ export default function NuevaNotificacionPage() {
           filtered = mapped.filter(f => {
             const hasFCM = !!f.customer_fcm_token;
             const hasEmail = !!f.customer_email;
-            
+            const inCart = (f.total_cart_products_count || 0) > 0;
+
             switch (filterMode) {
               case 'both':
                 return hasFCM && hasEmail;
@@ -157,13 +174,15 @@ export default function NuevaNotificacionPage() {
                 return hasEmail;
               case 'none':
                 return !hasFCM && !hasEmail;
+              case 'in_cart':
+                return inCart;
               default:
                 return true;
             }
           });
           console.log('[DEBUG] Client-side filtered:', filtered.length, 'followers');
         }
-        
+
         setFollowers(filtered);
         setFollowersLoading(false);
       } catch (e) {
@@ -178,7 +197,7 @@ export default function NuevaNotificacionPage() {
   // Scheduling removed in simplified flow
 
   const toggleRecipient = (id: number) => {
-    setSelectedRecipients((prev) => 
+    setSelectedRecipients((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
   };
@@ -196,15 +215,23 @@ export default function NuevaNotificacionPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!token) return;
-    
+
     // Ensure we have a companyId
     let cid = resolvedCompanyId;
     if (!cid) {
-      alert('No se pudo obtener el ID de la compañía');
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No se pudo obtener el ID de la compañía",
+      });
       return;
     }
     if (selectedRecipients.length === 0) {
-      alert('Selecciona al menos un destinatario');
+      toast({
+        variant: "destructive",
+        title: "Faltan datos",
+        description: "Selecciona al menos un destinatario",
+      });
       return;
     }
     setIsLoading(true);
@@ -233,7 +260,11 @@ export default function NuevaNotificacionPage() {
           const sendEmailRes = await api.companies.sendNotificationEmails(cid, notificationId, token);
           if (!sendEmailRes.success) {
             console.error('Error enviando correos:', sendEmailRes.message);
-            alert(`Notificación creada, pero error al enviar correos: ${sendEmailRes.message}`);
+            toast({
+              variant: "destructive",
+              title: "Error parcial",
+              description: `Notificación creada, pero error al enviar correos: ${sendEmailRes.message}`,
+            });
           } else {
             const { sent_count, failed_count } = sendEmailRes.data?.data || {};
             console.log(`Correos enviados: ${sent_count || 0} exitosos, ${failed_count || 0} fallidos`);
@@ -262,7 +293,10 @@ export default function NuevaNotificacionPage() {
           .filter((t): t is string => typeof t === 'string' && t.length > 0);
 
         if (tokens.length === 0) {
-          alert('No hay tokens FCM válidos entre los destinatarios seleccionados. Se registró la notificación push, pero no se enviaron pushes.');
+          toast({
+            title: "Sin tokens",
+            description: "No hay tokens FCM válidos. Se registró la notificación, pero no se enviaron pushes.",
+          });
           router.push('/dashboard/notificaciones');
           return;
         }
@@ -285,9 +319,13 @@ export default function NuevaNotificacionPage() {
         const sendJson = await sendRes.json();
         if (!sendRes.ok || !sendJson?.success) {
           console.error('Error enviando FCM', sendJson);
-          alert(`Notificación creada, pero error al enviar push: ${sendJson?.message || sendRes.statusText}`);
+          toast({
+            variant: "destructive",
+            title: "Error parcial",
+            description: `Notificación creada, pero error al enviar push: ${sendJson?.message || sendRes.statusText}`,
+          });
         } else {
-          alert(`Notificación enviada: ${sendJson.sent} entregadas, ${sendJson.failure} fallidas`);
+          console.log(`Notificación enviada: ${sendJson.sent} entregadas, ${sendJson.failure} fallidas`);
         }
       }
 
@@ -300,15 +338,22 @@ export default function NuevaNotificacionPage() {
       } else if (!wantsEmail && wantsPush) {
         successMessage = 'Notificaciones push enviadas exitosamente.';
       }
-      
+
       if (successMessage) {
-        alert(successMessage);
+        toast({
+          title: "Éxito",
+          description: successMessage,
+        });
       }
 
       router.push('/dashboard/notificaciones');
     } catch (err) {
       console.error(err);
-      alert((err as Error).message);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: (err as Error).message,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -369,15 +414,13 @@ export default function NuevaNotificacionPage() {
                   <button
                     type="button"
                     onClick={() => setChannelMode('email')}
-                    className={`flex items-start gap-3 rounded-lg border px-3 py-2 text-left transition shadow-sm ${
-                      channelMode === 'email'
-                        ? 'border-blue-500 bg-blue-50/70'
-                        : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
-                    }`}
+                    className={`flex items-start gap-3 rounded-lg border px-3 py-2 text-left transition shadow-sm ${channelMode === 'email'
+                      ? 'border-blue-500 bg-blue-50/70'
+                      : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                      }`}
                   >
-                    <div className={`mt-1 h-4 w-4 flex-shrink-0 rounded-full border-2 ${
-                      channelMode === 'email' ? 'border-blue-600 bg-blue-600' : 'border-slate-300'
-                    }`} />
+                    <div className={`mt-1 h-4 w-4 flex-shrink-0 rounded-full border-2 ${channelMode === 'email' ? 'border-blue-600 bg-blue-600' : 'border-slate-300'
+                      }`} />
                     <div className="flex-1">
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-sm font-semibold text-slate-900">Solo correo</span>
@@ -396,15 +439,13 @@ export default function NuevaNotificacionPage() {
                   <button
                     type="button"
                     onClick={() => setChannelMode('push')}
-                    className={`flex items-start gap-3 rounded-lg border px-3 py-2 text-left transition shadow-sm ${
-                      channelMode === 'push'
-                        ? 'border-blue-500 bg-blue-50/70'
-                        : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
-                    }`}
+                    className={`flex items-start gap-3 rounded-lg border px-3 py-2 text-left transition shadow-sm ${channelMode === 'push'
+                      ? 'border-blue-500 bg-blue-50/70'
+                      : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                      }`}
                   >
-                    <div className={`mt-1 h-4 w-4 flex-shrink-0 rounded-full border-2 ${
-                      channelMode === 'push' ? 'border-blue-600 bg-blue-600' : 'border-slate-300'
-                    }`} />
+                    <div className={`mt-1 h-4 w-4 flex-shrink-0 rounded-full border-2 ${channelMode === 'push' ? 'border-blue-600 bg-blue-600' : 'border-slate-300'
+                      }`} />
                     <div className="flex-1">
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-sm font-semibold text-slate-900">Solo notificación</span>
@@ -423,15 +464,13 @@ export default function NuevaNotificacionPage() {
                   <button
                     type="button"
                     onClick={() => setChannelMode('both')}
-                    className={`flex items-start gap-3 rounded-lg border px-3 py-2 text-left transition shadow-sm ${
-                      channelMode === 'both'
-                        ? 'border-blue-500 bg-blue-50/70'
-                        : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
-                    }`}
+                    className={`flex items-start gap-3 rounded-lg border px-3 py-2 text-left transition shadow-sm ${channelMode === 'both'
+                      ? 'border-blue-500 bg-blue-50/70'
+                      : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                      }`}
                   >
-                    <div className={`mt-1 h-4 w-4 flex-shrink-0 rounded-full border-2 ${
-                      channelMode === 'both' ? 'border-blue-600 bg-blue-600' : 'border-slate-300'
-                    }`} />
+                    <div className={`mt-1 h-4 w-4 flex-shrink-0 rounded-full border-2 ${channelMode === 'both' ? 'border-blue-600 bg-blue-600' : 'border-slate-300'
+                      }`} />
                     <div className="flex-1">
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-sm font-semibold text-slate-900">Ambos canales</span>
@@ -490,6 +529,7 @@ export default function NuevaNotificacionPage() {
                       <SelectItem value="fcm_only">Solo FCM</SelectItem>
                       <SelectItem value="email_only">Solo Email</SelectItem>
                       <SelectItem value="none">Sin FCM ni Email</SelectItem>
+                      <SelectItem value="in_cart">Con productos en carrito</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -532,8 +572,8 @@ export default function NuevaNotificacionPage() {
                     ) : (
                       <div className="divide-y divide-slate-100">
                         {followers.map((f) => (
-                          <label 
-                            key={f.customer_id} 
+                          <label
+                            key={f.customer_id}
                             className="flex items-center gap-3 p-3 hover:bg-slate-50 cursor-pointer transition-colors"
                           >
                             <input
@@ -550,6 +590,11 @@ export default function NuevaNotificacionPage() {
                                 {f.has_active_membership === 1 && (
                                   <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
                                     Miembro
+                                  </span>
+                                )}
+                                {(f.total_cart_products_count || 0) > 0 && (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                    {f.total_cart_products_count} en carrito
                                   </span>
                                 )}
                               </div>
@@ -589,8 +634,8 @@ export default function NuevaNotificacionPage() {
                       ? 'Enviar notificación push'
                       : 'Enviar por ambos canales'}
               </Button>
+            </div>
           </div>
-        </div>
         </div>
       </form>
     </div>

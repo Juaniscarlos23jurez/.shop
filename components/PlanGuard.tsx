@@ -49,7 +49,7 @@ export function PlanGuard({ children }: { children: React.ReactNode }) {
     return (
         <>
             {/* If blocked, we still render children but they are covered by the modal or blurred */}
-            <div className={showModal ? "blur-sm pointer-events-none select-none overflow-hidden h-full" : "h-full"}>
+            <div className={`flex flex-col w-full h-full overflow-hidden ${showModal ? "blur-sm pointer-events-none select-none" : ""}`}>
                 {children}
             </div>
 
