@@ -21,6 +21,7 @@ export function CompanyOnboardingWizard({ onComplete }: CompanyOnboardingWizardP
   const [step, setStep] = useState<1 | 2 | 3>(1);
 
   const [companyId, setCompanyId] = useState<string | null>(null);
+  const [locationId, setLocationId] = useState<string | null>(null);
 
   // Logo and banner states
   const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -78,11 +79,54 @@ export function CompanyOnboardingWizard({ onComplete }: CompanyOnboardingWizardP
         if (companyRes.success && company?.id) {
           setCompanyId(String(company.id));
 
+          // Pre-populate company form data
+          setFormData((prev: any) => ({
+            ...prev,
+            name: company.name || '',
+            description: company.description || '',
+            email: company.email || '',
+            phone: company.phone || '',
+            website: company.website || '',
+            address: company.address || '',
+            city: company.city || '',
+            state: company.state || '',
+            postal_code: company.postal_code || '',
+            business_type_id: company.business_type_id,
+            latitude: company.latitude,
+            longitude: company.longitude,
+          }));
+
+          if (company.logo_url) setLogoPreview(company.logo_url);
+          if (company.banner_url) setBannerPreview(company.banner_url);
+
           // Check if at least one location (sucursal) exists
           const locationsRes = await api.userCompanies.getLocations(token);
-          const locations = (locationsRes as any)?.data || (locationsRes as any)?.locations || [];
+          const locData = (locationsRes as any)?.data;
+          const locations = Array.isArray(locData) ? locData : (locData?.locations || []);
 
           if (Array.isArray(locations) && locations.length > 0) {
+            const firstLoc = locations[0];
+            setLocationId(String(firstLoc.id));
+            // Pre-populate location form data
+            setFormData((prev: any) => ({
+              ...prev,
+              location: {
+                name: firstLoc.name || '',
+                address: firstLoc.address || '',
+                phone: firstLoc.phone || '',
+                email: firstLoc.email || '',
+                contact_person: firstLoc.contact_person || '',
+                timezone: firstLoc.timezone || 'America/Mexico_City',
+                city: firstLoc.city || '',
+                state: firstLoc.state || '',
+                zip_code: firstLoc.zip_code || '',
+                latitude: firstLoc.latitude,
+                longitude: firstLoc.longitude,
+                country_id: firstLoc.country_id,
+                state_id: firstLoc.state_id,
+                city_id: firstLoc.city_id,
+              }
+            }));
             setStep(3); // Go to Payment if both exist
           } else {
             setStep(2); // Go to Sucursal if only company exists
@@ -188,36 +232,69 @@ export function CompanyOnboardingWizard({ onComplete }: CompanyOnboardingWizardP
   const createCompany = async () => {
     if (!token) throw new Error('No se encontró el token de autenticación');
 
-    const payload: any = {
-      name: formData.name?.trim(),
-      description: formData.description?.trim() || undefined,
-      phone: formData.phone?.trim() || undefined,
-      email: formData.email?.trim() || undefined,
-      address: formData.address?.trim() || undefined,
-      city: formData.city?.trim() || undefined,
-      state: formData.state?.trim() || undefined,
-      country: formData.country?.trim() || undefined,
-      zip_code: formData.postal_code?.trim() || undefined,
-      business_type_id: formData.business_type_id ? Number(formData.business_type_id) : undefined,
-      website: formData.website?.trim() || undefined,
-      timezone: formData.timezone || undefined,
-      currency: formData.currency || undefined,
-      language: formData.language || undefined,
-      latitude: formData.latitude !== undefined ? Number(formData.latitude) : undefined,
-      longitude: formData.longitude !== undefined ? Number(formData.longitude) : undefined,
+    const appendToForm = (formDataObj: FormData, key: string, value: any) => {
+      if (value !== undefined && value !== null && value !== '') {
+        formDataObj.append(key, value);
+      }
     };
 
-    // Add logo and banner if selected
-    if (logoFile) payload.logo = logoFile;
-    if (bannerFile) payload.banner = bannerFile;
+    const hasFiles = logoFile || bannerFile;
+    let payload: any;
 
-    const res = await api.userCompanies.create(payload, token);
+    if (hasFiles) {
+      payload = new FormData();
+      appendToForm(payload, 'name', formData.name?.trim());
+      appendToForm(payload, 'description', formData.description?.trim());
+      appendToForm(payload, 'phone', formData.phone?.trim());
+      appendToForm(payload, 'email', formData.email?.trim());
+      appendToForm(payload, 'address', formData.address?.trim());
+      appendToForm(payload, 'city', formData.city?.trim());
+      appendToForm(payload, 'state', formData.state?.trim());
+      appendToForm(payload, 'country', formData.country?.trim());
+      appendToForm(payload, 'zip_code', formData.postal_code?.trim());
+      if (formData.business_type_id) payload.append('business_type_id', String(formData.business_type_id));
+      appendToForm(payload, 'website', formData.website?.trim());
+      appendToForm(payload, 'timezone', formData.timezone);
+      appendToForm(payload, 'currency', formData.currency);
+      appendToForm(payload, 'language', formData.language);
+      if (formData.latitude !== undefined) payload.append('latitude', String(formData.latitude));
+      if (formData.longitude !== undefined) payload.append('longitude', String(formData.longitude));
+
+      if (logoFile) payload.append('logo', logoFile);
+      if (bannerFile) payload.append('banner', bannerFile);
+      if (companyId) payload.append('id', companyId);
+    } else {
+      payload = {
+        name: formData.name?.trim(),
+        description: formData.description?.trim() || undefined,
+        phone: formData.phone?.trim() || undefined,
+        email: formData.email?.trim() || undefined,
+        address: formData.address?.trim() || undefined,
+        city: formData.city?.trim() || undefined,
+        state: formData.state?.trim() || undefined,
+        country: formData.country?.trim() || undefined,
+        zip_code: formData.postal_code?.trim() || undefined,
+        business_type_id: formData.business_type_id ? Number(formData.business_type_id) : undefined,
+        website: formData.website?.trim() || undefined,
+        timezone: formData.timezone || undefined,
+        currency: formData.currency || undefined,
+        language: formData.language || undefined,
+        latitude: formData.latitude !== undefined ? Number(formData.latitude) : undefined,
+        longitude: formData.longitude !== undefined ? Number(formData.longitude) : undefined,
+      };
+      if (companyId) payload.id = companyId;
+    }
+
+    const res = companyId
+      ? await api.userCompanies.update(payload, token)
+      : await api.userCompanies.create(payload, token);
+
     if (!res.success || !res.data) {
-      throw new Error(res.message || 'Error al crear la compañía');
+      throw new Error(res.message || `Error al ${companyId ? 'actualizar' : 'crear'} la compañía`);
     }
 
     const created = (res.data as any)?.company || (res.data as any)?.data || (res.data as any);
-    const createdId = created?.id ? String(created.id) : null;
+    const createdId = created?.id ? String(created.id) : (companyId || null);
     if (!createdId) {
       throw new Error('No se pudo obtener el ID de la compañía');
     }
@@ -251,9 +328,17 @@ export function CompanyOnboardingWizard({ onComplete }: CompanyOnboardingWizardP
     if (formData.location.latitude !== undefined) payload.latitude = Number(formData.location.latitude);
     if (formData.location.longitude !== undefined) payload.longitude = Number(formData.location.longitude);
 
-    const res = await api.userCompanies.createLocation(payload, token);
+    const res = locationId
+      ? await api.userCompanies.updateLocation(locationId, payload, token)
+      : await api.userCompanies.createLocation(payload, token);
+
     if (!res.success) {
-      throw new Error(res.message || 'Error al crear la sucursal');
+      throw new Error(res.message || `Error al ${locationId ? 'actualizar' : 'crear'} la sucursal`);
+    }
+
+    if (!locationId && res.data) {
+      const loc = (res.data as any)?.location || (res.data as any);
+      if (loc?.id) setLocationId(String(loc.id));
     }
 
     toast({

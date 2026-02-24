@@ -42,6 +42,7 @@ export function PricingSection({
         const fetchPlans = async () => {
             try {
                 const response = await api.subscriptions.getPlans(token || undefined);
+                console.log("SERVER PLANS:", response.data);
                 if (response.success && Array.isArray(response.data) && response.data.length > 0) {
                     setFetchedPlans(response.data);
                 }

@@ -3,6 +3,7 @@ import Script from 'next/script'
 import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { CompanyProvider } from '@/contexts/CompanyContext'
 import { GA4PageViewTracker } from '@/components/analytics/GA4PageViewTracker'
 import { CookieConsent } from '@/components/cookie-consent'
 import './globals.css'
@@ -115,12 +116,14 @@ html {
       </head>
       <body>
         <AuthProvider>
-          <PrinterProvider>
-            <GA4PageViewTracker />
-            {children}
-            <CookieConsent />
-            <Toaster />
-          </PrinterProvider>
+          <CompanyProvider>
+            <PrinterProvider>
+              <GA4PageViewTracker />
+              {children}
+              <CookieConsent />
+              <Toaster />
+            </PrinterProvider>
+          </CompanyProvider>
         </AuthProvider>
       </body>
     </html>

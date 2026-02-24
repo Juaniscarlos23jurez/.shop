@@ -691,29 +691,17 @@ export const api = {
      * Create a new company for the authenticated user
      */
     async create(
-      data: {
-        name: string;
-        description?: string;
-        phone?: string;
-        email?: string;
-        address?: string;
-        city?: string;
-        state?: string;
-        country?: string;
-        zip_code?: string;
-        business_type_id?: number;
-        logo_url?: string;
-        banner_url?: string;
-      },
+      data: any,
       token: string
     ): Promise<ApiResponse<{ company: any }>> {
+      const isFormData = data instanceof FormData;
       return fetch(`${BASE_URL}/api/companies`, {
         method: 'POST',
         headers: {
           ...getAuthHeader(token),
-          'Content-Type': 'application/json',
+          ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
         },
-        body: JSON.stringify(data)
+        body: isFormData ? data : JSON.stringify(data)
       }).then(handleResponse);
     },
 
@@ -721,29 +709,21 @@ export const api = {
      * Update the authenticated user's company
      */
     async update(
-      data: {
-        name?: string;
-        description?: string;
-        phone?: string;
-        email?: string;
-        address?: string;
-        city?: string;
-        state?: string;
-        country?: string;
-        zip_code?: string;
-        business_type_id?: number;
-        logo_url?: string;
-        banner_url?: string;
-      },
+      data: any,
       token: string
     ): Promise<ApiResponse<{ company: any }>> {
-      return fetch(`${BASE_URL}/api/companies`, {
-        method: 'PUT',
+      const isFormData = data instanceof FormData;
+
+      // Some servers required POST + _method=PUT to handle multipart/form-data with files
+      const usePostFallback = isFormData;
+
+      return fetch(`${BASE_URL}/api/companies${usePostFallback ? `?_method=PUT` : ''}`, {
+        method: usePostFallback ? 'POST' : 'PUT',
         headers: {
           ...getAuthHeader(token),
-          'Content-Type': 'application/json',
+          ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
         },
-        body: JSON.stringify(data)
+        body: isFormData ? data : JSON.stringify(data)
       }).then(handleResponse);
     },
 

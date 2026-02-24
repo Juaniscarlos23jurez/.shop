@@ -317,33 +317,30 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
   // Unified toggle function with auto-scroll logic
   const toggleSection = (label: string, e: React.MouseEvent) => {
     const target = e.currentTarget as HTMLElement;
-    let isOpening = false;
 
-    if (label === 'App') {
-      setIsAppSectionExpanded((prev: boolean) => { isOpening = !prev; return !prev; });
-    } else if (label === 'Punto de Venta') {
-      setIsPOSSectionExpanded((prev: boolean) => { isOpening = !prev; return !prev; });
-    } else if (label === 'WhatsApp') {
-      setIsWhatsAppSectionExpanded((prev: boolean) => { isOpening = !prev; return !prev; });
-    } else if (label === 'Clientes') {
-      setIsClientesSectionExpanded((prev: boolean) => { isOpening = !prev; return !prev; });
-    } else if (label === 'Empleados') {
-      setIsEmpleadosSectionExpanded((prev: boolean) => { isOpening = !prev; return !prev; });
-    } else if (label === 'Compañía') {
-      setIsCompaniaSectionExpanded((prev: boolean) => { isOpening = !prev; return !prev; });
-    } else if (label === 'Reportes') {
-      setIsReportesSectionExpanded((prev: boolean) => { isOpening = !prev; return !prev; });
-    } else if (label === 'Web') {
-      setIsWebSectionExpanded((prev: boolean) => { isOpening = !prev; return !prev; });
-    } else if (label === 'Suscripción') {
-      setIsSuscripcionSectionExpanded((prev: boolean) => { isOpening = !prev; return !prev; });
-    }
+    const setters: Record<string, [boolean, React.Dispatch<React.SetStateAction<boolean>>]> = {
+      'App': [isAppSectionExpanded, setIsAppSectionExpanded],
+      'Punto de Venta': [isPOSSectionExpanded, setIsPOSSectionExpanded],
+      'WhatsApp': [isWhatsAppSectionExpanded, setIsWhatsAppSectionExpanded],
+      'Clientes': [isClientesSectionExpanded, setIsClientesSectionExpanded],
+      'Empleados': [isEmpleadosSectionExpanded, setIsEmpleadosSectionExpanded],
+      'Compañía': [isCompaniaSectionExpanded, setIsCompaniaSectionExpanded],
+      'Reportes': [isReportesSectionExpanded, setIsReportesSectionExpanded],
+      'Web': [isWebSectionExpanded, setIsWebSectionExpanded],
+      'Suscripción': [isSuscripcionSectionExpanded, setIsSuscripcionSectionExpanded],
+    };
 
-    // Scroll to the item if it's opening to ensure children are visible
-    if (isOpening) {
-      setTimeout(() => {
-        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 150); // Slightly more delay to allow the CSS transition to start
+    const entry = setters[label];
+    if (entry) {
+      const [isExpanded, setter] = entry;
+      const willOpen = !isExpanded;
+      setter(willOpen);
+
+      if (willOpen) {
+        setTimeout(() => {
+          target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 200);
+      }
     }
   };
 
@@ -474,12 +471,12 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
   }, [setIsCollapsed]);
 
   return (
-    <div className={`h-full bg-white border-r border-slate-200 flex flex-col transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'}`}>
+    <div className={`h-full bg-white border-r border-slate-200 flex flex-col overflow-hidden transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'}`}>
       {/* Logo moved to TopBar */}
       <div className="h-4" /> {/* Spacer */}
 
       {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+      <nav className="flex-1 p-4 space-y-2 overflow-y-auto min-h-0 max-h-full">
         {sidebarItems.map((item, index) => {
           const isActive = pathname === item.href ||
             (pathname.startsWith(item.href) && item.href !== '/dashboard');
