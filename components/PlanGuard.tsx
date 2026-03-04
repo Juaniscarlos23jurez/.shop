@@ -31,7 +31,9 @@ export function PlanGuard({ children }: { children: React.ReactNode }) {
         if (loading) return;
 
         if (!isEmployee && !isSubscriptionPage) {
-            const isActive = company?.company_plan_status === 'active' || company?.is_active;
+            const isActive = company?.company_plan_status === 'active' ||
+                company?.company_plan_status === 'trialing' ||
+                company?.is_active;
             if (!isActive) {
                 setShowModal(true);
             } else {

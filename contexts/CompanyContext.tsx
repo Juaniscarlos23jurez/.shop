@@ -31,6 +31,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     const [loading, setLoading] = useState(true);
 
     const fetchCompany = async () => {
+        setLoading(true);
         if (!token) {
             setLoading(false);
             return;
