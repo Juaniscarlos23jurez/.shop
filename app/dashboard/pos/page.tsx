@@ -83,7 +83,7 @@ interface AcceptedOrder {
 }
 
 export default function PuntoVentaPage() {
-  const { user, token } = useAuth();
+  const { user, token, isCompanyResolved } = useAuth();
   const { toast } = useToast();
   const authToken = token || ''; // Ensure token is always a string
   const [products, setProducts] = useState<PosProduct[]>([]);
@@ -427,8 +427,14 @@ export default function PuntoVentaPage() {
   }, []);
 
   const fetchProducts = useCallback(async () => {
-    if (!companyId || locationId === null) {
+    if (!companyId || locationId === null || !isCompanyResolved) {
       // Evitar spinner infinito si aún no tenemos credenciales completas
+      if (isCompanyResolved) setLoading(false);
+      return;
+    }
+
+    if (String(companyId) === '1') {
+      console.log('[POS] Skipping fetchProducts for placeholder companyId 1');
       setLoading(false);
       return;
     }
@@ -465,7 +471,7 @@ export default function PuntoVentaPage() {
     } finally {
       setLoading(false);
     }
-  }, [companyId, locationId]);
+  }, [companyId, locationId, isCompanyResolved]);
 
   useEffect(() => {
     fetchProducts();
@@ -482,7 +488,7 @@ export default function PuntoVentaPage() {
   useEffect(() => {
     const fetchLocations = async () => {
       try {
-        if (!token) return;
+        if (!token || !isCompanyResolved) return;
         const locResp = await api.userCompanies.getLocations(token);
         if (locResp.success) {
           const first = (locResp.data?.locations || [])[0];
@@ -501,11 +507,15 @@ export default function PuntoVentaPage() {
       }
     };
     fetchLocations();
-  }, [token]);
+  }, [token, isCompanyResolved]);
 
   // Cargar órdenes en progreso (accepted, preparing, ready)
   const fetchOrdersInProgress = async () => {
-    if (!token || !companyId) return;
+    if (!token || !companyId || !isCompanyResolved) return;
+    if (String(companyId) === '1') {
+      console.log('[POS] Skipping fetchOrdersInProgress for placeholder companyId 1');
+      return;
+    }
     try {
       setLoadingOrders(true);
       console.log('[POS] Fetching orders in progress');
@@ -539,13 +549,13 @@ export default function PuntoVentaPage() {
 
   // Cargar órdenes en progreso al montar
   useEffect(() => {
-    if (token && companyId) {
+    if (token && companyId && isCompanyResolved) {
       fetchOrdersInProgress();
       // Recargar cada 10 segundos
       const interval = setInterval(fetchOrdersInProgress, 10000);
       return () => clearInterval(interval);
     }
-  }, [token, companyId]);
+  }, [token, companyId, isCompanyResolved]);
 
   const addToCart = (product: PosProduct) => {
     setCart(prevCart => {

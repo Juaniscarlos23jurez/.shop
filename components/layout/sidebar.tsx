@@ -224,7 +224,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useLockedPlan } from "@/hooks/use-locked-plan";
 
 export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean, setIsCollapsed: (collapsed: boolean) => void }) {
-  const { user, token, logout, isEmployee, userRole } = useAuth();
+  const { user, token, logout, isEmployee, userRole, isCompanyResolved } = useAuth();
   const { getPlanName } = useCompany();
   const { toast } = useToast();
   const { showLockedToast } = useLockedPlan();
@@ -362,7 +362,13 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
   useEffect(() => {
     const fetchPendingOrdersCount = async () => {
       try {
-        if (!user?.company_id || !token) return;
+        if (!user?.company_id || !token || !isCompanyResolved) return;
+
+        // Skip if company_id is '1' (common placeholder/warm-up ID that causes 401)
+        if (String(user.company_id) === '1') {
+          console.log('[Sidebar] Skipping fetch for placeholder company_id 1');
+          return;
+        }
 
         const response = await ordersApi.getAllOrders(String(user.company_id), token, {
           status: 'pending',
@@ -420,7 +426,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
     const interval = setInterval(fetchPendingOrdersCount, 20000);
 
     return () => clearInterval(interval);
-  }, [user?.company_id, token, pathname, isNotificationMuted]); // Removed pendingOrdersCount from dependencies
+  }, [user?.company_id, token, pathname, isNotificationMuted, isCompanyResolved]);
 
   // Fetch company slug for the public link
   useEffect(() => {

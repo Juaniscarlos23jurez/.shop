@@ -87,9 +87,7 @@ type OrderStatus = 'pending' | 'accepted' | 'preparing' | 'ready' | 'completed';
 
 export default function PendingOrdersPage() {
   // Use robust hook usage to prevent "is not iterable" destructuring errors
-  const authContext = useAuth();
-  const user = authContext?.user;
-  const token = authContext?.token;
+  const { user, token, isCompanyResolved } = useAuth();
 
   const [ordersByStatus, setOrdersByStatus] = useState<Record<OrderStatus, Order[]>>({
     pending: [],
@@ -148,25 +146,25 @@ export default function PendingOrdersPage() {
   }, [companyId, token, resolvedCompanyId]);
 
   useEffect(() => {
-    console.log('[PendingOrdersPage] mounted/useEffect', {
-      user,
-      companyId,
-      resolvedCompanyId,
-      hasToken: Boolean(token),
-    });
     const idToUse = companyId || resolvedCompanyId;
-    if (idToUse && token) {
+    if (idToUse && token && isCompanyResolved) {
+      // Skip if companyId is '1' (common placeholder)
+      if (String(idToUse) === '1') {
+        console.log('[PendingOrdersPage] Skipping fetch for placeholder companyId 1');
+        return;
+      }
       console.log('[PendingOrdersPage] Trigger fetchPendingOrders');
       fetchPendingOrders();
     } else {
-      console.warn('[PendingOrdersPage] Skipping fetchPendingOrders: missing companyId or token', {
+      console.warn('[PendingOrdersPage] Skipping fetchPendingOrders: missing companyId, token or not resolved', {
         companyId: idToUse,
         tokenPresent: Boolean(token),
+        isCompanyResolved
       });
       // Allow loading to finish if we can't fetch so user isn't stuck
-      if (!token) setLoading(false);
+      if (!token || (isCompanyResolved && !idToUse)) setLoading(false);
     }
-  }, [companyId, resolvedCompanyId, token]);
+  }, [companyId, resolvedCompanyId, token, isCompanyResolved]);
 
   const fetchPendingOrders = async () => {
     const idToUse = companyId || resolvedCompanyId;
@@ -431,8 +429,8 @@ export default function PendingOrdersPage() {
             key={status}
             onClick={() => setActiveTab(status)}
             className={`px-4 py-2 font-medium transition-colors whitespace-nowrap ${activeTab === status
-                ? 'text-emerald-600 border-b-2 border-emerald-600'
-                : 'text-slate-600 hover:text-slate-900'
+              ? 'text-emerald-600 border-b-2 border-emerald-600'
+              : 'text-slate-600 hover:text-slate-900'
               }`}
           >
             {label} ({ordersByStatus[status]?.length || 0})

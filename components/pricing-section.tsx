@@ -81,7 +81,7 @@ export function PricingSection({
                 company_id: companyId,
                 plan_id: planId,
                 interval: 'month', // Changed to month to match recurrente UI and backend types
-                trial_days: trialUsed ? 0 : 7, // Give 7 days trial if not used
+                trial_days: 0,
                 success_url: window.location.origin + '/dashboard',
                 cancel_url: window.location.origin + '/onboarding/compania',
                 email: authContext?.user?.firebase_email, // Explicitly set primary Stripe email
@@ -107,8 +107,8 @@ export function PricingSection({
             id: 2,
             name: 'Plan Básico',
             subtitle: 'Ideal para emprendedores y pequeños negocios',
-            price: '200',
-            period: '1er mes',
+            price: '300',
+            period: 'hasta 3r mes',
             description: 'Comienza a fidelizar a tus clientes hoy:',
             features: [
                 'Programa de lealtad básico',
@@ -122,7 +122,7 @@ export function PricingSection({
             cta: 'Empezar ahora',
             popular: false,
             badge: 'PROMOCIÓN APERTURA',
-            promo: 'Luego $200/mes'
+            promo: 'Luego $400/mes'
         },
         {
             id: 3,

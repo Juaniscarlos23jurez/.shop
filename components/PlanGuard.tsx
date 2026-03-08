@@ -16,11 +16,12 @@ import { CreditCard, Rocket, ShieldAlert, LogOut } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 
 export function PlanGuard({ children }: { children: React.ReactNode }) {
-    const { company, loading } = useCompany();
+    const { company, loading, refreshCompany } = useCompany();
     const { userRole, logout } = useAuth();
     const router = useRouter();
     const pathname = usePathname();
     const [showModal, setShowModal] = useState(false);
+    const [hasRefreshed, setHasRefreshed] = useState(false);
 
     // If it's an employee, they don't need a plan check (usually)
     // or if they are in the subscription pages already
@@ -33,7 +34,25 @@ export function PlanGuard({ children }: { children: React.ReactNode }) {
         if (!isEmployee && !isSubscriptionPage) {
             const isActive = company?.company_plan_status === 'active' ||
                 company?.company_plan_status === 'trialing' ||
-                company?.is_active;
+                Boolean(company?.is_active) ||
+                String(company?.is_active) === '1' ||
+                company?.plan_is_active === true;
+
+            console.log('[PlanGuard] Status check:', {
+                company_id: company?.id,
+                status: company?.company_plan_status,
+                is_active: company?.is_active,
+                isActive,
+                hasRefreshed
+            });
+
+            if (!isActive && !hasRefreshed) {
+                console.log('[PlanGuard] Not active and haven\'t refreshed yet. Refreshing company data...');
+                setHasRefreshed(true);
+                refreshCompany();
+                return;
+            }
+
             if (!isActive) {
                 setShowModal(true);
             } else {
@@ -42,7 +61,7 @@ export function PlanGuard({ children }: { children: React.ReactNode }) {
         } else {
             setShowModal(false);
         }
-    }, [company, loading, isEmployee, isSubscriptionPage, pathname]);
+    }, [company, loading, isEmployee, isSubscriptionPage, pathname, hasRefreshed, refreshCompany]);
 
     if (loading) {
         return <>{children}</>;

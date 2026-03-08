@@ -19,6 +19,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isEmployee: boolean;
   userRole?: string;
+  isCompanyResolved: boolean;
 }
 
 export const AuthContext = createContext<AuthContextType | null>(null);
@@ -34,6 +35,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [isEmployee, setIsEmployee] = useState(false);
   const [userRole, setUserRole] = useState<string | undefined>(undefined);
+  const [isCompanyResolved, setIsCompanyResolved] = useState(false);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -79,6 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 ? String(derivedCompanyId)
                 : undefined,
             });
+            setIsCompanyResolved(true);
 
             // Initialize notifications after successful authentication
             if (typeof window !== 'undefined') {
@@ -101,11 +104,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         // If no token, we're not logged in
         setLoading(false);
+        setIsCompanyResolved(false);
       }
     };
 
     loadUser();
-  }, [token]); // Removed user from dependency array
+  }, [token]);
 
   const handleAuthSuccess = (access_token: string, userData: any) => {
     if (!access_token) {
@@ -125,6 +129,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         firebase_name: userData.name || userData.email.split('@')[0],
         company_id: userData.company_id || undefined,
       });
+      setIsCompanyResolved(true);
     }
 
     // Initialize notifications after successful login
@@ -267,6 +272,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem('token');
         setToken(null);
         setUser(null);
+        setIsCompanyResolved(false);
       });
     }
   };
@@ -286,6 +292,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAuthenticated: !!token && !!user,
       isEmployee,
       userRole,
+      isCompanyResolved,
     }}>
       {!loading && children}
     </AuthContext.Provider>
