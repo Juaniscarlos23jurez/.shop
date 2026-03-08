@@ -33,6 +33,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     const fetchCompany = async () => {
         setLoading(true);
         if (!token) {
+            setCompany(null); // Ensure company is null if no token
             setLoading(false);
             return;
         }
@@ -40,12 +41,19 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
         try {
             const response = await api.userCompanies.get(token);
             if (response.success && response.data) {
-                // Adjust based on common API response patterns seen in the codebase
                 const companyData = response.data.data || response.data;
-                setCompany(companyData);
+                // Only set company if it has an ID, otherwise treat as null
+                if (companyData && companyData.id) { // Reinforced validation: check for companyData.id
+                    setCompany(companyData);
+                } else {
+                    setCompany(null);
+                }
+            } else {
+                setCompany(null);
             }
         } catch (error) {
             console.error('Error fetching company context:', error);
+            setCompany(null); // Ensure company is null on error
         } finally {
             setLoading(false);
         }

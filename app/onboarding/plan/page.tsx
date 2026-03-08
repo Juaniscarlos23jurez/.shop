@@ -21,10 +21,17 @@ export default function OnboardingPlanPage() {
 
     // If they already have an active plan (or trial), they shouldn't be here during onboarding
     useEffect(() => {
-        if (company && (company.company_plan_status === 'active' || company.company_plan_status === 'trialing' || company.is_active)) {
+        if (!companyLoading && company?.id && (company.company_plan_status === 'active' || company.company_plan_status === 'trialing' || company.is_active)) {
             router.push('/dashboard');
         }
-    }, [company, router]);
+    }, [company, companyLoading, router]);
+
+    // If no company found after loading, go back to step 1
+    useEffect(() => {
+        if (!companyLoading && !company?.id && !authLoading && isAuthenticated) {
+            router.push('/onboarding/compania');
+        }
+    }, [company, companyLoading, authLoading, isAuthenticated, router]);
 
     if (authLoading || companyLoading) {
         return (

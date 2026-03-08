@@ -15,7 +15,7 @@ import { api } from "@/lib/api/api";
 export default function LoginPage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
-  const { login, loginWithGoogle, loading, isAuthenticated, userRole } = useAuth();
+  const { login, loginWithGoogle, registerWithGoogle, loading, isAuthenticated, user, userRole } = useAuth();
   const [isEmployee, setIsEmployee] = useState(false);
 
   useEffect(() => {
@@ -23,36 +23,49 @@ export default function LoginPage() {
     if (isAuthenticated) {
       if (userRole && userRole.startsWith('employee_')) {
         router.push('/dashboard/pos');
+      } else if (!user?.company_id || user?.company_id === "undefined") {
+        router.push('/onboarding/compania');
       } else {
         router.push('/onboarding/plan');
       }
     }
-  }, [isAuthenticated, userRole, router]);
+  }, [isAuthenticated, userRole, user?.company_id, router]);
+
+  const handleAuthRedirect = async (result: any) => {
+    const role = result && (result.user as any)?.role as string | undefined;
+    if (role && role.startsWith('employee_')) {
+      router.push('/dashboard/pos');
+    } else {
+      const accessToken = result?.access_token;
+      const userResult = result?.user;
+
+      if (accessToken) {
+        try {
+          const companyRes = await api.userCompanies.get(accessToken);
+          // Check ID in multiple possible locations of the API response
+          const cData = companyRes.data;
+          const companyId = cData?.data?.id || cData?.id || cData?.company?.id || userResult?.company_id;
+
+          const hasCompany = Boolean(companyId);
+          console.log('[Login] handleAuthRedirect company check:', { hasCompany, companyId });
+
+          router.push(hasCompany ? '/onboarding/plan' : '/onboarding/compania');
+        } catch (err) {
+          console.error('[Login] Error fetching company during redirect:', err);
+          router.push('/onboarding/compania');
+        }
+      } else {
+        router.push('/onboarding/compania');
+      }
+    }
+    router.refresh();
+  };
 
   const handleLogin = async (email: string, password: string) => {
     setError(null);
-
     try {
-      // Always use general login; decide redirect by returned role
       const result = await login(email, password, isEmployee);
-      const role = result && (result.user as any)?.role as string | undefined;
-      if (role && role.startsWith('employee_')) {
-        router.push('/dashboard/pos');
-      } else {
-        const accessToken = result?.access_token;
-        if (accessToken) {
-          try {
-            const companyRes = await api.userCompanies.get(accessToken);
-            const hasCompany = Boolean((companyRes as any)?.data?.data?.id);
-            router.push(hasCompany ? '/onboarding/plan' : '/onboarding/compania');
-          } catch {
-            router.push('/onboarding/compania');
-          }
-        } else {
-          router.push('/onboarding/compania');
-        }
-      }
-      router.refresh();
+      await handleAuthRedirect(result);
     } catch (error) {
       console.error('Login error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
@@ -64,25 +77,23 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      const result = await loginWithGoogle();
-      const role = result && (result.user as any)?.role as string | undefined;
-      if (role && role.startsWith('employee_')) {
-        router.push('/dashboard/pos');
-      } else {
-        const accessToken = result?.access_token;
-        if (accessToken) {
-          try {
-            const companyRes = await api.userCompanies.get(accessToken);
-            const hasCompany = Boolean((companyRes as any)?.data?.data?.id);
-            router.push(hasCompany ? '/onboarding/plan' : '/onboarding/compania');
-          } catch {
-            router.push('/onboarding/compania');
-          }
+      let result;
+      try {
+        result = await loginWithGoogle();
+      } catch (loginError: any) {
+        // Si el usuario no existe, intentamos registrarlo automáticamente
+        const errorMsg = loginError?.message?.toLowerCase() || "";
+        const isUserNotFound = errorMsg.includes('encontrado') || errorMsg.includes('not found') || errorMsg.includes('404');
+
+        if (isUserNotFound) {
+          console.log('Usuario no encontrado con Google login, intentando registro automático...');
+          result = await registerWithGoogle();
         } else {
-          router.push('/onboarding/compania');
+          throw loginError;
         }
       }
-      router.refresh();
+
+      await handleAuthRedirect(result);
     } catch (error) {
       console.error('Google login error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
