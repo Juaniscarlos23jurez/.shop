@@ -94,10 +94,18 @@ export default function LoginPage() {
       }
 
       await handleAuthRedirect(result);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Google login error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
-      setError(`No se pudo iniciar sesión con Google: ${errorMessage}`);
+      let errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+
+      // Manejo específico para popup bloqueado
+      if (errorMessage.includes('popup-blocked') || (error?.code === 'auth/popup-blocked')) {
+        setError(
+          "Tu navegador ha bloqueado la ventana emergente de Google. Para continuar, haz clic en el icono de ventana bloqueada en tu barra de búsqueda y selecciona 'Permitir siempre ventanas emergentes de fynlink.shop'. Esto es común en móviles o si tienes un bloqueador de publicidad."
+        );
+      } else {
+        setError(`No se pudo iniciar sesión con Google: ${errorMessage}`);
+      }
     }
   };
 

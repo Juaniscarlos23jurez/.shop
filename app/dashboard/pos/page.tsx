@@ -427,20 +427,15 @@ export default function PuntoVentaPage() {
   }, []);
 
   const fetchProducts = useCallback(async () => {
-    if (!companyId || locationId === null || !isCompanyResolved) {
-      // Evitar spinner infinito si aún no tenemos credenciales completas
+    if (!locationId || !isCompanyResolved) {
       if (isCompanyResolved) setLoading(false);
-      return;
-    }
-
-    if (String(companyId) === '1') {
-      console.log('[POS] Skipping fetchProducts for placeholder companyId 1');
-      setLoading(false);
       return;
     }
 
     try {
       setLoading(true);
+      console.log(`[POS] Cargando productos para la sucursal: ${locationId}...`);
+
       const response = await fetch(`${BASE_URL}/api/public/locations/${locationId}/products`, {
         method: 'GET',
         headers: {
@@ -449,29 +444,37 @@ export default function PuntoVentaPage() {
       });
 
       const data = await response.json();
+      console.log('[POS] Respuesta cruda de productos:', data);
 
       if (!response.ok) {
-        console.error('[POS] Error fetching products by location:', data);
+        console.error('[POS] Error al obtener productos:', data);
         setProducts([]);
         return;
       }
 
-      const root: any = data?.data ?? data;
-      const normalized: PosProduct[] = Array.isArray(root)
-        ? root
-        : Array.isArray(root?.data)
-          ? root.data
-          : Array.isArray(root?.products)
-            ? root.products
-            : [];
+      // Normalización mejorada de la respuesta
+      const root = data.data || data;
+      let normalized: PosProduct[] = [];
 
+      if (Array.isArray(root)) {
+        normalized = root;
+      } else if (root && typeof root === 'object') {
+        normalized = root.products || root.data || [];
+      }
+
+      console.log(`[POS] Productos encontrados y normalizados: ${normalized.length}`);
       setProducts(normalized);
     } catch (error) {
-      console.error('Error fetching products:', error);
+      console.error('[POS] Error crítico cargando productos:', error);
+      toast({
+        title: "Error de conexión",
+        description: "No se pudieron cargar los productos del servidor.",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
-  }, [companyId, locationId, isCompanyResolved]);
+  }, [locationId, isCompanyResolved]);
 
   useEffect(() => {
     fetchProducts();
