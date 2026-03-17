@@ -698,7 +698,9 @@ export const api = {
       token: string
     ): Promise<ApiResponse<{ company: any }>> {
       const isFormData = data instanceof FormData;
-      return fetch(`${BASE_URL}/api/companies`, {
+      // Using proxy to avoid CORS and ensure consistent routing
+      const url = `/api/proxy/api/companies`;
+      return fetch(url, {
         method: 'POST',
         headers: {
           ...getAuthHeader(token),
@@ -719,8 +721,9 @@ export const api = {
 
       // Some servers required POST + _method=PUT to handle multipart/form-data with files
       const usePostFallback = isFormData;
+      const url = `/api/proxy/api/companies${usePostFallback ? `?_method=PUT` : ''}`;
 
-      return fetch(`${BASE_URL}/api/companies${usePostFallback ? `?_method=PUT` : ''}`, {
+      return fetch(url, {
         method: usePostFallback ? 'POST' : 'PUT',
         headers: {
           ...getAuthHeader(token),
