@@ -241,9 +241,15 @@ export function CompanyOnboardingWizard({ onComplete }: CompanyOnboardingWizardP
     const hasFiles = logoFile || bannerFile;
     let payload: any;
 
+    // Ensure we have a name before proceeding
+    const companyName = formData.name?.trim();
+    if (!companyName) {
+      throw new Error('El nombre de la empresa es obligatorio');
+    }
+
     if (hasFiles) {
       payload = new FormData();
-      appendToForm(payload, 'name', formData.name?.trim());
+      payload.append('name', companyName);
       appendToForm(payload, 'description', formData.description?.trim());
       appendToForm(payload, 'phone', formData.phone?.trim());
       appendToForm(payload, 'email', formData.email?.trim());
@@ -265,7 +271,7 @@ export function CompanyOnboardingWizard({ onComplete }: CompanyOnboardingWizardP
       if (companyId) payload.append('id', companyId);
     } else {
       payload = {
-        name: formData.name?.trim(),
+        name: companyName,
         description: formData.description?.trim() || undefined,
         phone: formData.phone?.trim() || undefined,
         email: formData.email?.trim() || undefined,
