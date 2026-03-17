@@ -365,7 +365,13 @@ export function CompanyOnboardingWizard({ onComplete }: CompanyOnboardingWizardP
         if (!canContinueCompany) {
           throw new Error('El nombre y correo electrónico son obligatorios');
         }
-        // Solo avanzar al siguiente paso sin guardar aún
+        
+        // Guardar la compañía inmediatamente al finalizar el Paso 1
+        const newCompanyId = await createCompany();
+        if (!newCompanyId) {
+          throw new Error('No se pudo crear o actualizar la compañía');
+        }
+
         setStep(2);
         setIsLoading(false);
         return;
