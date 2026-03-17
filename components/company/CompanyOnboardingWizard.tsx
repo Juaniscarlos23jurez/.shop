@@ -10,13 +10,15 @@ import { CompanyInfoForm } from '@/components/company/company-info-form';
 import { BranchInfoForm } from '@/components/company/branch-info-form';
 import { StepNavigation } from '@/components/company/step-navigation';
 import { PricingSection } from '@/components/pricing-section';
+import { storage } from '@/lib/firebase';
+import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 interface CompanyOnboardingWizardProps {
   onComplete?: () => void;
 }
 
 export function CompanyOnboardingWizard({ onComplete }: CompanyOnboardingWizardProps) {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [step, setStep] = useState<1 | 2 | 3>(1);
 
@@ -215,6 +217,34 @@ export function CompanyOnboardingWizard({ onComplete }: CompanyOnboardingWizardP
     }
   };
 
+  const uploadLogoIfNeeded = async (resolvedId: string): Promise<string | null> => {
+    if (!logoFile) return null;
+    try {
+      const path = `companies/${resolvedId}/logo/${Date.now()}_${logoFile.name}`;
+      const fileRef = storageRef(storage, path);
+      await uploadBytes(fileRef, logoFile);
+      const url = await getDownloadURL(fileRef);
+      return url;
+    } catch (err) {
+      console.error('Error uploading logo to Firebase:', err);
+      return null;
+    }
+  };
+
+  const uploadBannerIfNeeded = async (resolvedId: string): Promise<string | null> => {
+    if (!bannerFile) return null;
+    try {
+      const path = `companies/${resolvedId}/banner/${Date.now()}_${bannerFile.name}`;
+      const fileRef = storageRef(storage, path);
+      await uploadBytes(fileRef, bannerFile);
+      const url = await getDownloadURL(fileRef);
+      return url;
+    } catch (err) {
+      console.error('Error uploading banner to Firebase:', err);
+      return null;
+    }
+  };
+
   const canContinueCompany = useMemo(() => {
     return Boolean(formData.name?.trim() && formData.email?.trim());
   }, [formData.name, formData.email]);
@@ -232,64 +262,47 @@ export function CompanyOnboardingWizard({ onComplete }: CompanyOnboardingWizardP
   const createCompany = async () => {
     if (!token) throw new Error('No se encontró el token de autenticación');
 
-    const appendToForm = (formDataObj: FormData, key: string, value: any) => {
-      if (value !== undefined && value !== null && value !== '') {
-        formDataObj.append(key, value);
-      }
-    };
-
-    const hasFiles = logoFile || bannerFile;
-    let payload: any;
-
-    // Ensure we have a name before proceeding
     const companyName = formData.name?.trim();
     if (!companyName) {
       throw new Error('El nombre de la empresa es obligatorio');
     }
 
-    if (hasFiles) {
-      payload = new FormData();
-      payload.append('name', companyName);
-      appendToForm(payload, 'description', formData.description?.trim());
-      appendToForm(payload, 'phone', formData.phone?.trim());
-      appendToForm(payload, 'email', formData.email?.trim());
-      appendToForm(payload, 'address', formData.address?.trim());
-      appendToForm(payload, 'city', formData.city?.trim());
-      appendToForm(payload, 'state', formData.state?.trim());
-      appendToForm(payload, 'country', formData.country?.trim());
-      appendToForm(payload, 'zip_code', formData.postal_code?.trim());
-      if (formData.business_type_id) payload.append('business_type_id', String(formData.business_type_id));
-      appendToForm(payload, 'website', formData.website?.trim());
-      appendToForm(payload, 'timezone', formData.timezone);
-      appendToForm(payload, 'currency', formData.currency);
-      appendToForm(payload, 'language', formData.language);
-      if (formData.latitude !== undefined) payload.append('latitude', String(formData.latitude));
-      if (formData.longitude !== undefined) payload.append('longitude', String(formData.longitude));
-
-      if (logoFile) payload.append('logo', logoFile);
-      if (bannerFile) payload.append('banner', bannerFile);
-      if (companyId) payload.append('id', companyId);
-    } else {
-      payload = {
-        name: companyName,
-        description: formData.description?.trim() || undefined,
-        phone: formData.phone?.trim() || undefined,
-        email: formData.email?.trim() || undefined,
-        address: formData.address?.trim() || undefined,
-        city: formData.city?.trim() || undefined,
-        state: formData.state?.trim() || undefined,
-        country: formData.country?.trim() || undefined,
-        zip_code: formData.postal_code?.trim() || undefined,
-        business_type_id: formData.business_type_id ? Number(formData.business_type_id) : undefined,
-        website: formData.website?.trim() || undefined,
-        timezone: formData.timezone || undefined,
-        currency: formData.currency || undefined,
-        language: formData.language || undefined,
-        latitude: formData.latitude !== undefined ? Number(formData.latitude) : undefined,
-        longitude: formData.longitude !== undefined ? Number(formData.longitude) : undefined,
-      };
-      if (companyId) payload.id = companyId;
+    const resolvedId = companyId || user?.id?.toString() || 'new';
+    
+    // Upload files to Firebase first if they exist
+    let logoUrl = null;
+    let bannerUrl = null;
+    
+    if (logoFile) {
+      logoUrl = await uploadLogoIfNeeded(resolvedId);
     }
+    
+    if (bannerFile) {
+      bannerUrl = await uploadBannerIfNeeded(resolvedId);
+    }
+
+    const payload: any = {
+      name: companyName,
+      description: formData.description?.trim() || undefined,
+      phone: formData.phone?.trim() || undefined,
+      email: formData.email?.trim() || undefined,
+      address: formData.address?.trim() || undefined,
+      city: formData.city?.trim() || undefined,
+      state: formData.state?.trim() || undefined,
+      country: formData.country?.trim() || undefined,
+      zip_code: formData.postal_code?.trim() || undefined,
+      business_type_id: formData.business_type_id ? Number(formData.business_type_id) : undefined,
+      website: formData.website?.trim() || undefined,
+      timezone: formData.timezone || undefined,
+      currency: formData.currency || undefined,
+      language: formData.language || undefined,
+      latitude: formData.latitude !== undefined ? Number(formData.latitude) : undefined,
+      longitude: formData.longitude !== undefined ? Number(formData.longitude) : undefined,
+    };
+
+    if (logoUrl) payload.logo_url = logoUrl;
+    if (bannerUrl) payload.banner_url = bannerUrl;
+    if (companyId) payload.id = companyId;
 
     const res = companyId
       ? await api.userCompanies.update(payload, token)
