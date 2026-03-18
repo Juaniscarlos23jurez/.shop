@@ -47,7 +47,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompany } from "@/contexts/CompanyContext";
 import { useRouter, usePathname } from 'next/navigation';
-import { useState, useLayoutEffect, useEffect } from 'react'; // Import useState, useLayoutEffect and useEffect
+import { useState, useLayoutEffect, useEffect, useMemo } from 'react'; // Import useState, useLayoutEffect, useEffect and useMemo
 import { ordersApi } from "@/lib/api/orders";
 import { api } from "@/lib/api/api";
 import { notificationService } from "@/lib/notifications";
@@ -119,7 +119,6 @@ const adminSidebarItems: SidebarItem[] = [
     isCollapsible: true,
     subItems: [
       { icon: Users, label: "Cuentas de Empleados", href: "/dashboard/empleados" }, // Renamed from "Empleados"
-      { icon: CreditCardIcon, label: "Nómina", href: "/dashboard/nomina" },
     ]
   },
 
@@ -157,17 +156,17 @@ const adminSidebarItems: SidebarItem[] = [
   { icon: PieChart, label: "Diseño", href: "/dashboard/componentes" },
 
   // Web Section
-  {
-    icon: Store,
-    label: "Web",
-    href: "#",
-    isCollapsible: true,
-    subItems: [
-      { icon: Globe, label: "Dominio", href: "/dashboard/web-shop-store/dominios" },
-      { icon: Activity, label: "SEO", href: "/dashboard/web-shop-store/seo" },
-      { icon: BarChart3, label: "Analíticas", href: "/dashboard/web-shop-store/analiticas" },
-    ]
-  },
+  // {
+  //   icon: Store,
+  //   label: "Web",
+  //   href: "#",
+  //  isCollapsible: true,
+  //  subItems: [
+  //    { icon: Globe, label: "Dominio", href: "/dashboard/web-shop-store/dominios" },
+  //    { icon: Activity, label: "SEO", href: "/dashboard/web-shop-store/seo" },
+  //   { icon: BarChart3, label: "Analíticas", href: "/dashboard/web-shop-store/analiticas" },
+  //  ]
+  // },
 
   // Reports Section
   {
@@ -225,7 +224,7 @@ import { useLockedPlan } from "@/hooks/use-locked-plan";
 
 export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean, setIsCollapsed: (collapsed: boolean) => void }) {
   const { user, token, logout, isEmployee, userRole, isCompanyResolved } = useAuth();
-  const { getPlanName } = useCompany();
+  const { getPlanName, company } = useCompany();
   const { toast } = useToast();
   const { showLockedToast } = useLockedPlan();
   const router = useRouter();
@@ -237,11 +236,30 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
   // Use different sidebar items based on user role
   // If it's an employee (staff account), show restricted items unless they have a specific admin/manager role
   const showRestrictedMenu = isEmployee && userRole !== 'admin' && userRole !== 'manager';
-  const sidebarItems = showRestrictedMenu ? employeeSidebarItems : adminSidebarItems;
+  const baseSidebarItems = showRestrictedMenu ? employeeSidebarItems : adminSidebarItems;
+
+  // Filter sidebar items for plan 2 (Premium - as per user request to hide WhatsApp and Membresías)
+  const sidebarItems = useMemo(() => {
+    const isPlan2 = company?.company_plan_id && Number(company.company_plan_id) === 2;
+
+    return baseSidebarItems.map(item => {
+      // Hide WhatsApp section for plan 2
+      if (isPlan2 && item.label === 'WhatsApp') return null;
+
+      // Hide Membresías sub-item for plan 2
+      if (isPlan2 && item.label === 'Clientes' && item.subItems) {
+        return {
+          ...item,
+          subItems: item.subItems.filter(sub => sub.label !== 'Membresías')
+        };
+      }
+      return item;
+    }).filter((item): item is SidebarItem => item !== null);
+  }, [baseSidebarItems, company?.company_plan_id]);
 
   // State for collapsible sections
   const [isAppSectionExpanded, setIsAppSectionExpanded] = useState(() => {
-    const appSection = adminSidebarItems.find(item => item.label === 'App');
+    const appSection = sidebarItems.find(item => item.label === 'App');
     if (appSection && appSection.subItems) {
       return appSection.subItems.some(subItem => {
         const baseHref = subItem.href.split('#')[0];
@@ -260,7 +278,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
   });
 
   const [isWhatsAppSectionExpanded, setIsWhatsAppSectionExpanded] = useState(() => {
-    const whatsappSection = adminSidebarItems.find(item => item.label === 'WhatsApp');
+    const whatsappSection = sidebarItems.find(item => item.label === 'WhatsApp');
     if (whatsappSection && whatsappSection.subItems) {
       return whatsappSection.subItems.some(subItem => pathname.startsWith(subItem.href));
     }
@@ -268,7 +286,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
   });
 
   const [isClientesSectionExpanded, setIsClientesSectionExpanded] = useState(() => {
-    const clientesSection = adminSidebarItems.find(item => item.label === 'Clientes');
+    const clientesSection = sidebarItems.find(item => item.label === 'Clientes');
     if (clientesSection && clientesSection.subItems) {
       return clientesSection.subItems.some(subItem => pathname.startsWith(subItem.href));
     }
@@ -276,7 +294,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
   });
 
   const [isEmpleadosSectionExpanded, setIsEmpleadosSectionExpanded] = useState(() => {
-    const empleadosSection = adminSidebarItems.find(item => item.label === 'Empleados');
+    const empleadosSection = sidebarItems.find(item => item.label === 'Empleados');
     if (empleadosSection && empleadosSection.subItems) {
       return empleadosSection.subItems.some(subItem => pathname.startsWith(subItem.href));
     }
@@ -284,7 +302,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
   });
 
   const [isCompaniaSectionExpanded, setIsCompaniaSectionExpanded] = useState(() => {
-    const companiaSection = adminSidebarItems.find(item => item.label === 'Compañía');
+    const companiaSection = sidebarItems.find(item => item.label === 'Compañía');
     if (companiaSection && companiaSection.subItems) {
       return companiaSection.subItems.some(subItem => pathname.startsWith(subItem.href));
     }
@@ -292,7 +310,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
   });
 
   const [isReportesSectionExpanded, setIsReportesSectionExpanded] = useState(() => {
-    const reportesSection = adminSidebarItems.find(item => item.label === 'Reportes');
+    const reportesSection = sidebarItems.find(item => item.label === 'Reportes');
     if (reportesSection && reportesSection.subItems) {
       return reportesSection.subItems.some(subItem => pathname.startsWith(subItem.href));
     }
@@ -300,7 +318,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
   });
 
   const [isWebSectionExpanded, setIsWebSectionExpanded] = useState(() => {
-    const webSection = adminSidebarItems.find(item => item.label === 'Web');
+    const webSection = sidebarItems.find(item => item.label === 'Web');
     if (webSection && webSection.subItems) {
       return webSection.subItems.some(subItem => pathname.startsWith(subItem.href));
     }
@@ -308,7 +326,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
   });
 
   const [isSuscripcionSectionExpanded, setIsSuscripcionSectionExpanded] = useState(() => {
-    const suscripcionSection = adminSidebarItems.find(item => item.label === 'Suscripción');
+    const suscripcionSection = sidebarItems.find(item => item.label === 'Suscripción');
     if (suscripcionSection && suscripcionSection.subItems) {
       return suscripcionSection.subItems.some(subItem => pathname.startsWith(subItem.href.split('#')[0]));
     }
@@ -531,7 +549,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
                         // Check for locked items in Basic Plan
                         const planName = getPlanName();
                         const isBasicPlan = planName === 'Básico';
-                        const companyFromContext = useCompany().company;
+                        const companyFromContext = company;
 
                         // Identify if plan is Pro or higher (ID >= 3, assuming Básico is 2, Free is 1, etc.)
                         const hasProPlan = Boolean(companyFromContext && companyFromContext.company_plan_id && Number(companyFromContext.company_plan_id) >= 3);

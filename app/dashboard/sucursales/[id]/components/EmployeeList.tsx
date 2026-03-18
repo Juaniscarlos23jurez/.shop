@@ -3,12 +3,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Employee, EMPLOYEE_ROLE_DISPLAY } from "@/types/branch";
 
+import { LogIn } from "lucide-react";
+
 interface EmployeeListProps {
   employees: Employee[];
   onAddEmployee: () => void;
   onEditEmployee: (employee: Employee) => void;
   onManageAccount: (employee: Employee) => void;
   onDeleteEmployee?: (employeeId: string) => void;
+  onImpersonate?: (employee: Employee) => void;
 }
 
 export function EmployeeList({
@@ -16,7 +19,8 @@ export function EmployeeList({
   onAddEmployee,
   onEditEmployee,
   onManageAccount,
-  onDeleteEmployee
+  onDeleteEmployee,
+  onImpersonate
 }: EmployeeListProps) {
 
   // Presentational component: parent controls loading state if needed
@@ -91,6 +95,18 @@ export function EmployeeList({
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
+                      {employee.account && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                          onClick={() => onImpersonate?.(employee)}
+                          title="Entrar como empleado"
+                        >
+                          <LogIn className="h-4 w-4 mr-1" />
+                          Entrar
+                        </Button>
+                      )}
                       <Button
                         variant="outline"
                         size="sm"

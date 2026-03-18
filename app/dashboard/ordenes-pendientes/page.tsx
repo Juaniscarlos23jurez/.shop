@@ -147,22 +147,19 @@ export default function PendingOrdersPage() {
 
   useEffect(() => {
     const idToUse = companyId || resolvedCompanyId;
-    if (idToUse && token && isCompanyResolved) {
-      // Skip if companyId is '1' (common placeholder)
-      if (String(idToUse) === '1') {
-        console.log('[PendingOrdersPage] Skipping fetch for placeholder companyId 1');
-        return;
-      }
-      console.log('[PendingOrdersPage] Trigger fetchPendingOrders');
+    
+    // Check if we have everything we need to fetch
+    const canFetch = Boolean(idToUse && token);
+    
+    // If we have a token and a company ID, fetch orders
+    // We don't wait for isCompanyResolved if we already have idToUse (e.g. resolved locally)
+    if (canFetch) {
+      console.log('[PendingOrdersPage] Trigger fetchPendingOrders', { idToUse });
       fetchPendingOrders();
-    } else {
-      console.warn('[PendingOrdersPage] Skipping fetchPendingOrders: missing companyId, token or not resolved', {
-        companyId: idToUse,
-        tokenPresent: Boolean(token),
-        isCompanyResolved
-      });
-      // Allow loading to finish if we can't fetch so user isn't stuck
-      if (!token || (isCompanyResolved && !idToUse)) setLoading(false);
+    } else if (isCompanyResolved || !token) {
+      // If auth finished resolving and we STILL don't have a company ID or token, stop loading
+      console.warn('[PendingOrdersPage] Stopping loading: company not found or no token');
+      setLoading(false);
     }
   }, [companyId, resolvedCompanyId, token, isCompanyResolved]);
 
