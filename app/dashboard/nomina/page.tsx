@@ -1,35 +1,34 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useState, useEffect } from 'react';
 
+// Define the shape of a payroll record
+interface PayrollItem {
+  id: number;
+  name: string;
+  position: string;
+  salary: number;
+  status: string;
+  period: string;
+}
 export default function NominaPage() {
-  // Datos de ejemplo para la nómina
-  const payrollData = [
-    {
-      id: 1,
-      name: "Juan Pérez",
-      position: "Vendedor",
-      salary: 12000,
-      status: "pending",
-      period: "01/09/2023 - 30/09/2023"
-    },
-    {
-      id: 2,
-      name: "María García",
-      position: "Gerente",
-      salary: 20000,
-      status: "approved",
-      period: "01/09/2023 - 30/09/2023"
-    },
-    {
-      id: 3,
-      name: "Carlos López",
-      position: "Almacenista",
-      salary: 10000,
-      status: "rejected",
-      period: "01/09/2023 - 30/09/2023"
-    }
-  ];
+  const [payrollData, setPayrollData] = useState<PayrollItem[]>([]);
+
+  // Fetch payroll data from API (replace URL with actual endpoint)
+  useEffect(() => {
+    const fetchPayroll = async () => {
+      try {
+        const res = await fetch('/api/payroll');
+        if (!res.ok) throw new Error('Failed to fetch payroll data');
+        const data = await res.json();
+        setPayrollData(data);
+      } catch (error) {
+        console.error('Error loading payroll data:', error);
+      }
+    };
+    fetchPayroll();
+  }, []);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -66,7 +65,7 @@ export default function NominaPage() {
               <div className="text-right">Acciones</div>
             </div>
             
-            {payrollData.map((item) => (
+            {payrollData.map((item: PayrollItem) => (
               <div key={item.id} className="grid grid-cols-6 gap-4 p-4 border-t items-center">
                 <div>{item.name}</div>
                 <div>{item.position}</div>
