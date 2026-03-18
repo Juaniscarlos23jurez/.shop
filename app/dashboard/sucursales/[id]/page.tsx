@@ -147,12 +147,8 @@ export default function BranchDetailPage() {
           console.log('Employees API Response:', employeesResponse);
           
           if (employeesResponse.success) {
-            // The employees might be directly in the data array or in a nested employees property
-            const employeesData = Array.isArray(employeesResponse.data) 
-              ? employeesResponse.data 
-              : (employeesResponse.data && Array.isArray(employeesResponse.data.data))
-                ? employeesResponse.data.data
-                : [];
+            // Normalized shape from api.ts: { employees: any[] }
+            const employeesData: any[] = employeesResponse.data?.employees ?? [];
               
             if (employeesData.length > 0) {
               // Map the API response to our Employee type
@@ -186,7 +182,7 @@ export default function BranchDetailPage() {
                     if (empId) accountsByEmployee[empId] = acc;
                   }
 
-                  const merged = formattedEmployees.map(e => {
+                  const merged = formattedEmployees.map((e: any) => {
                     const acc = accountsByEmployee[e.id];
                     if (!acc) return e;
                     return {
@@ -371,8 +367,8 @@ export default function BranchDetailPage() {
         token
       );
       
-      if (employeesResponse.success && employeesResponse.data?.employees) {
-        const formattedEmployees = employeesResponse.data.employees.map((emp: any) => ({
+      if (employeesResponse.success) {
+        const formattedEmployees = (employeesResponse.data?.employees ?? []).map((emp: any) => ({
           id: emp.id.toString(),
           name: emp.name || 'Nombre no disponible',
           email: emp.email || '',
@@ -446,8 +442,8 @@ export default function BranchDetailPage() {
         token
       );
       
-      if (employeesResponse.success && employeesResponse.data?.employees) {
-        const formattedEmployees = employeesResponse.data.employees.map((emp: any) => ({
+      if (employeesResponse.success) {
+        const formattedEmployees = (employeesResponse.data?.employees ?? []).map((emp: any) => ({
           id: emp.id.toString(),
           name: emp.name || 'Nombre no disponible',
           email: emp.email || '',
@@ -519,8 +515,8 @@ export default function BranchDetailPage() {
         token
       );
       
-      if (employeesResponse.success && employeesResponse.data?.employees) {
-        const formattedEmployees = employeesResponse.data.employees.map((emp: any) => ({
+      if (employeesResponse.success) {
+        const formattedEmployees = (employeesResponse.data?.employees ?? []).map((emp: any) => ({
           id: emp.id.toString(),
           name: emp.name || 'Nombre no disponible',
           email: emp.email || '',
@@ -655,13 +651,7 @@ export default function BranchDetailPage() {
       );
       debugLog('Employees refresh after account op', employeesResponse);
       if (employeesResponse.success) {
-        const employeesData = Array.isArray(employeesResponse.data) 
-          ? employeesResponse.data 
-          : (employeesResponse.data && Array.isArray(employeesResponse.data.data))
-            ? employeesResponse.data.data
-            : [];
-            
-        const formattedEmployees = employeesData.map((emp: any) => ({
+        const formattedEmployees = (employeesResponse.data?.employees ?? []).map((emp: any) => ({
           id: emp.id?.toString() || `emp-${Math.random().toString(36).substr(2, 9)}`,
           name: emp.name || emp.full_name || 'Nombre no disponible',
           email: emp.email || '',

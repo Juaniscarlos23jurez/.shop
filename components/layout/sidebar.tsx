@@ -235,8 +235,9 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
   const { notifications, showOrderNotification, dismissNotification } = useNotificationToast();
 
   // Use different sidebar items based on user role
-  const isSales = userRole === 'employee_sales';
-  const sidebarItems = isSales ? employeeSidebarItems : adminSidebarItems;
+  // If it's an employee (staff account), show restricted items unless they have a specific admin/manager role
+  const showRestrictedMenu = isEmployee && userRole !== 'admin' && userRole !== 'manager';
+  const sidebarItems = showRestrictedMenu ? employeeSidebarItems : adminSidebarItems;
 
   // State for collapsible sections
   const [isAppSectionExpanded, setIsAppSectionExpanded] = useState(() => {

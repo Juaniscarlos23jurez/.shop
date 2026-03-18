@@ -749,23 +749,33 @@ export const api = {
       companyId: string,
       locationId: string,
       token: string
-    ): Promise<ApiResponse<{ data: any[] }>> {
-      return fetch(
-        `${BASE_URL}/api/companies/${companyId}/locations/${locationId}/employees`,
-        {
+    ): Promise<ApiResponse<{ employees: any[] }>> {
+      const url = `${BASE_URL}/api/companies/${companyId}/locations/${locationId}/employees`;
+      console.log('%c[DEBUG] getLocationEmployees → URL:', 'color:cyan;font-weight:bold', url);
+      return fetch(url, {
           headers: getAuthHeader(token)
         }
       ).then(async (response) => {
+        console.log('%c[DEBUG] getLocationEmployees → HTTP status:', 'color:cyan', response.status, response.statusText);
         const result = await handleResponse(response);
-        // Transform the response to match the expected format
+        console.log('%c[DEBUG] getLocationEmployees → result.success:', 'color:cyan', result.success);
+        console.log('%c[DEBUG] getLocationEmployees → result.data (raw):', 'color:orange;font-weight:bold', JSON.stringify(result.data, null, 2));
         if (result.success && result.data) {
-          return {
-            ...result,
-            data: {
-              data: Array.isArray(result.data) ? result.data : result.data.data || []
-            }
-          };
+          const raw = result.data as any;
+          console.log('%c[DEBUG] keys in raw:', 'color:yellow', Object.keys(raw));
+          const employees: any[] = Array.isArray(raw)
+            ? raw
+            : Array.isArray(raw.employees)
+            ? raw.employees
+            : Array.isArray(raw.data)
+            ? raw.data
+            : Array.isArray(raw.data?.data)
+            ? raw.data.data
+            : [];
+          console.log('%c[DEBUG] getLocationEmployees → employees parsed:', 'color:lime;font-weight:bold', employees.length, 'items', employees);
+          return { ...result, data: { employees } };
         }
+        console.warn('%c[DEBUG] getLocationEmployees → request failed or no data', 'color:red', result);
         return result;
       });
     },

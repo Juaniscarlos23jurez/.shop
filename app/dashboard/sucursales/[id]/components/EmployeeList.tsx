@@ -11,9 +11,9 @@ interface EmployeeListProps {
   onDeleteEmployee?: (employeeId: string) => void;
 }
 
-export function EmployeeList({ 
+export function EmployeeList({
   employees,
-  onAddEmployee, 
+  onAddEmployee,
   onEditEmployee,
   onManageAccount,
   onDeleteEmployee
@@ -26,10 +26,10 @@ export function EmployeeList({
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-medium">Empleados1</h3>
         <Button onClick={onAddEmployee}>
-          Agregar empleado
+          Agregar empleado.
         </Button>
       </div>
-      
+
       {employees.length === 0 ? (
         <div className="text-center py-8 border rounded-lg">
           <p className="text-muted-foreground">No hay empleados registrados</p>
@@ -64,7 +64,7 @@ export function EmployeeList({
                     {employee.account ? (
                       <div>
                         <p className="text-sm font-medium">{employee.account.email}</p>
-                        <Badge 
+                        <Badge
                           variant={employee.account.is_active ? 'default' : 'secondary'}
                           className="mt-1"
                         >
@@ -91,22 +91,22 @@ export function EmployeeList({
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => onEditEmployee(employee)}
                       >
                         Editar
                       </Button>
-                      <Button 
+                      <Button
                         variant={employee.account ? 'secondary' : 'default'}
                         size="sm"
                         onClick={() => onManageAccount(employee)}
                       >
                         {employee.account ? 'Gestionar cuenta' : 'Crear cuenta'}
                       </Button>
-                      <Button 
-                        variant="ghost" 
+                      <Button
+                        variant="ghost"
                         size="sm"
                         className="text-red-500 hover:text-red-600"
                         onClick={() => onDeleteEmployee?.(employee.id)}
