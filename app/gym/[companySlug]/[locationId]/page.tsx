@@ -799,7 +799,7 @@ function PublicLocationProductsPageContent() {
 
           if (companyId) {
             try {
-              const url = `https://laravel-pkpass-backend-development-pfaawl.laravel.cloud/api/public/companies/${companyId}/announcements`;
+              const url = `https://laravel-pkpass-backend-master-6nwaa7.laravel.cloud/api/public/companies/${companyId}/announcements`;
               const res = await fetch(url, { cache: 'no-store' });
               if (res.ok) {
                 const json = await res.json();
@@ -889,7 +889,7 @@ function PublicLocationProductsPageContent() {
       try {
         setCouponsError(null);
         setCouponsLoading(true);
-        const url = `https://laravel-pkpass-backend-development-pfaawl.laravel.cloud/api/public/companies/${companyId}/coupons`;
+        const url = `https://laravel-pkpass-backend-master-6nwaa7.laravel.cloud/api/public/companies/${companyId}/coupons`;
         const res = await fetch(url, { cache: 'no-store' });
         if (!res.ok) {
           throw new Error(`Error al cargar cupones (${res.status})`);

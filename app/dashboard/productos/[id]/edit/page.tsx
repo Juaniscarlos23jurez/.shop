@@ -29,7 +29,7 @@ export default function EditarProductoPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [companyId, setCompanyId] = useState<string | null>(null);
-  const [locations, setLocations] = useState<Array<{id: number, name: string}>>([]);
+  const [locations, setLocations] = useState<Array<{ id: number, name: string }>>([]);
   const [selectedLocations, setSelectedLocations] = useState<number[]>([]);
   const [locationStocks, setLocationStocks] = useState<Record<number, number>>({});
   const [product, setProduct] = useState<Partial<Product>>({});
@@ -70,15 +70,15 @@ export default function EditarProductoPage() {
       [locationId]: value >= 0 ? value : 0,
     }));
   };
-  
+
   // Fetch product data, company and locations on component mount
   useEffect(() => {
     const fetchData = async () => {
       if (!token || !id) return;
-      
+
       try {
         setIsLoading(true);
-        
+
         // Fetch company via API helper
         const companyRes = await api.userCompanies.get(token);
         const company = companyRes.success ? (companyRes.data?.data ?? companyRes.data) : null;
@@ -89,7 +89,7 @@ export default function EditarProductoPage() {
         setCompanyId(resolvedCompanyId);
 
         // Fetch product data using backend-supported route
-        const productRes = await fetch(`https://laravel-pkpass-backend-development-pfaawl.laravel.cloud/api/products/${id}`, {
+        const productRes = await fetch(`https://laravel-pkpass-backend-master-6nwaa7.laravel.cloud/api/products/${id}`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Accept': 'application/json',
@@ -121,8 +121,8 @@ export default function EditarProductoPage() {
           try {
             const quoted = !!(productData.price_on_request || (productData.product_type === 'service' && (!productData.price || Number(productData.price) === 0)));
             setIsQuoted(quoted);
-          } catch {}
-          
+          } catch { }
+
         } else {
           throw new Error('No se pudo cargar el producto');
         }
@@ -146,7 +146,7 @@ export default function EditarProductoPage() {
         setIsLoading(false);
       }
     };
-    
+
     fetchData();
   }, [token, id]);
 
@@ -193,15 +193,15 @@ export default function EditarProductoPage() {
     console.log('fetchCategories called');
     console.log('token:', !!token);
     console.log('companyId:', id);
-    
+
     if (!token || !id) {
       console.log('Missing token or companyId, returning early');
       return;
     }
-    
+
     try {
       console.log('Fetching categories for companyId:', id);
-      
+
       const response = await api.categories.getCategories(id, token);
       console.log('Categories response:', response);
       setCategories(response.data || []);
@@ -217,7 +217,7 @@ export default function EditarProductoPage() {
     console.log('token:', !!token);
     console.log('companyId:', companyId);
     console.log('newCategoryName:', newCategoryName);
-    
+
     if (!token || !companyId || !newCategoryName.trim()) {
       toast({
         title: 'Error',
@@ -228,7 +228,7 @@ export default function EditarProductoPage() {
     }
 
     setIsCreatingCategory(true);
-    
+
     try {
       await api.categories.createCategory(
         companyId,
@@ -276,9 +276,9 @@ export default function EditarProductoPage() {
     }
 
     setIsSaving(true);
-    
+
     const uploadedUrl = await uploadImageIfNeeded();
-      
+
     try {
       const formData = new FormData(e.target as HTMLFormElement);
 
@@ -287,7 +287,7 @@ export default function EditarProductoPage() {
         console.log('[EditarProducto] productType:', productType);
         console.log('[EditarProducto] selectedLocations:', selectedLocations);
         console.log('[EditarProducto] form stock (name="stock"):', formData.get('stock'));
-      } catch {}
+      } catch { }
 
       // Lead time conversion (minutes/hours/days -> days)
       const leadTimeValue = parseFloat((formData.get('lead_time') as string) || '0');
@@ -312,9 +312,9 @@ export default function EditarProductoPage() {
         });
         try {
           console.log('[EditarProducto] stockData resolved:', stockData);
-        } catch {}
+        } catch { }
       }
-      
+
       const updateData: any = {
         name: formData.get('name') as string,
         description: formData.get('description') as string || '',
@@ -325,9 +325,9 @@ export default function EditarProductoPage() {
         sku: formData.get('sku') as string || undefined,
         ...(formData.get('category_id')
           ? {
-              category_id: parseInt(formData.get('category_id') as string),
-              category_ids: [parseInt(formData.get('category_id') as string)],
-            }
+            category_id: parseInt(formData.get('category_id') as string),
+            category_ids: [parseInt(formData.get('category_id') as string)],
+          }
           : {}),
         is_active: formData.get('is_active') === 'on',
         image_url: uploadedUrl || product.image_url,
@@ -362,7 +362,7 @@ export default function EditarProductoPage() {
 
       try {
         console.log('[EditarProducto] update response:', response);
-      } catch (logErr) {}
+      } catch (logErr) { }
 
       if (response.success) {
         toast({
@@ -383,7 +383,7 @@ export default function EditarProductoPage() {
           // @ts-ignore
           console.log('[EditarProducto] error.response:', error.response);
         }
-      } catch {}
+      } catch { }
       toast({
         title: 'Error',
         description: error instanceof Error ? error.message : 'Error al actualizar el producto',
@@ -426,40 +426,40 @@ export default function EditarProductoPage() {
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="name">Nombre del Producto</Label>
-                  <Input 
-                    id="name" 
-                    name="name" 
+                  <Input
+                    id="name"
+                    name="name"
                     defaultValue={product.name}
-                    placeholder="Ej: Camiseta de Algodón" 
-                    required 
+                    placeholder="Ej: Camiseta de Algodón"
+                    required
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="sku">SKU (Código)</Label>
-                  <Input 
-                    id="sku" 
-                    name="sku" 
+                  <Input
+                    id="sku"
+                    name="sku"
                     defaultValue={product.sku}
-                    placeholder="Ej: PROD-001" 
+                    placeholder="Ej: PROD-001"
                   />
                 </div>
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="description">Descripción</Label>
-                <Textarea 
-                  id="description" 
-                  name="description" 
+                <Textarea
+                  id="description"
+                  name="description"
                   defaultValue={product.description}
-                  placeholder="Describe el producto" 
-                  rows={4} 
+                  placeholder="Describe el producto"
+                  rows={4}
                 />
               </div>
 
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label className="block">Tipo de Producto</Label>
-                  <RadioGroup 
+                  <RadioGroup
                     value={productType}
                     onValueChange={(value) => setProductType(value as 'physical' | 'made_to_order' | 'service')}
                     className="grid gap-4 md:grid-cols-3"
@@ -468,9 +468,8 @@ export default function EditarProductoPage() {
                       <RadioGroupItem value="physical" id="physical" className="peer sr-only" />
                       <Label
                         htmlFor="physical"
-                        className={`flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer ${
-                          productType === 'physical' ? 'border-primary' : ''
-                        }`}
+                        className={`flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer ${productType === 'physical' ? 'border-primary' : ''
+                          }`}
                       >
                         <Box className="mb-2 h-6 w-6" />
                         <span>Producto Físico</span>
@@ -481,9 +480,8 @@ export default function EditarProductoPage() {
                       <RadioGroupItem value="made_to_order" id="made_to_order" className="peer sr-only" />
                       <Label
                         htmlFor="made_to_order"
-                        className={`flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer ${
-                          productType === 'made_to_order' ? 'border-primary' : ''
-                        }`}
+                        className={`flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer ${productType === 'made_to_order' ? 'border-primary' : ''
+                          }`}
                       >
                         <ClockIcon className="mb-2 h-6 w-6" />
                         <span>Bajo Pedido</span>
@@ -494,9 +492,8 @@ export default function EditarProductoPage() {
                       <RadioGroupItem value="service" id="service" className="peer sr-only" />
                       <Label
                         htmlFor="service"
-                        className={`flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer ${
-                          productType === 'service' ? 'border-primary' : ''
-                        }`}
+                        className={`flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer ${productType === 'service' ? 'border-primary' : ''
+                          }`}
                       >
                         <WrenchIcon className="mb-2 h-6 w-6" />
                         <span>Servicio</span>
@@ -517,51 +514,51 @@ export default function EditarProductoPage() {
 
                 <div className="grid gap-4 md:grid-cols-3">
                   {!(productType === 'service' && isQuoted) && (
-                  <div className="space-y-2">
-                    <Label htmlFor="price">Precio</Label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-2.5 text-slate-500">$</span>
-                      <Input
-                        id="price"
-                        name="price"
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        className="pl-8"
-                        placeholder="0.00"
-                        defaultValue={product.price}
-                        required={!(productType === 'service' && isQuoted)}
-                      />
+                    <div className="space-y-2">
+                      <Label htmlFor="price">Precio</Label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-2.5 text-slate-500">$</span>
+                        <Input
+                          id="price"
+                          name="price"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          className="pl-8"
+                          placeholder="0.00"
+                          defaultValue={product.price}
+                          required={!(productType === 'service' && isQuoted)}
+                        />
+                      </div>
                     </div>
-                  </div>
-                )}
-                  
+                  )}
+
                   {!(productType === 'service' && isQuoted) && (
                     <div className="space-y-2">
                       <Label htmlFor="points">Puntos</Label>
-                      <Input 
-                        id="points" 
-                        name="points" 
-                        type="number" 
-                        min="0" 
+                      <Input
+                        id="points"
+                        name="points"
+                        type="number"
+                        min="0"
                         defaultValue={product.points || 0}
-                        placeholder="0" 
+                        placeholder="0"
                       />
                     </div>
                   )}
-                  
+
                   {productType === 'made_to_order' && (
                     <div className="space-y-2">
                       <Label htmlFor="lead_time">Tiempo de Entrega</Label>
                       <div className="grid grid-cols-2 gap-2">
-                        <Input 
-                          id="lead_time" 
-                          name="lead_time" 
-                          type="number" 
-                          min="1" 
+                        <Input
+                          id="lead_time"
+                          name="lead_time"
+                          type="number"
+                          min="1"
                           defaultValue={product.lead_time_days || 1}
-                          placeholder="Ej: 7" 
-                          required 
+                          placeholder="Ej: 7"
+                          required
                         />
                         <select
                           id="lead_time_unit"
@@ -577,144 +574,144 @@ export default function EditarProductoPage() {
                     </div>
                   )}
                 </div>
-                
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="category_id">Categoría</Label>
-                  <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-                    <DialogTrigger asChild>
-                      <Button type="button" size="sm" className="h-8 bg-primary text-primary-foreground hover:bg-primary/90">
-                        <Plus className="h-4 w-4 mr-1" />
-                        Nueva Categoría
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Crear Nueva Categoría</DialogTitle>
-                        <DialogDescription>
-                          Agrega una nueva categoría para organizar tus productos
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="space-y-4 py-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="new-category-name">Nombre *</Label>
-                          <Input
-                            id="new-category-name"
-                            placeholder="Ej: Bebidas"
-                            value={newCategoryName}
-                            onChange={(e) => setNewCategoryName(e.target.value)}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="new-category-description">Descripción</Label>
-                          <Textarea
-                            id="new-category-description"
-                            placeholder="Descripción de la categoría (opcional)"
-                            value={newCategoryDescription}
-                            onChange={(e) => setNewCategoryDescription(e.target.value)}
-                            rows={3}
-                          />
-                        </div>
-                      </div>
-                      <DialogFooter>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => {
-                            setIsModalOpen(false);
-                            setNewCategoryName('');
-                            setNewCategoryDescription('');
-                          }}
-                          disabled={isCreatingCategory}
-                        >
-                          Cancelar
-                        </Button>
-                        <Button
-                          type="button"
-                          onClick={handleCreateCategory}
-                          disabled={isCreatingCategory || !newCategoryName.trim()}
-                        >
-                          {isCreatingCategory ? 'Creando...' : 'Crear Categoría'}
-                        </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-                <CategorySelect
-                  categories={categories}
-                  name="category_id"
-                  placeholder="Selecciona una categoría"
-                  valueKey="id"
-                  defaultValue={(() => {
-                    const firstCatId = (product as any)?.categories?.[0]?.id;
-                    return firstCatId ? String(firstCatId) : '';
-                  })()}
-                  triggerClassName="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Ubicaciones Disponibles</Label>
-                <div className="space-y-4 p-3 border rounded-md">
-                  {locations.length > 0 ? (
-                    locations.map((location) => {
-                      const productLocation = (product.locations as any)?.find((loc: any) => loc.id === location.id);
-                      const fallbackStock = Number(productLocation?.pivot?.stock ?? productLocation?.stock ?? 0);
-                      const isSelected = selectedLocations.includes(location.id);
-                      const currentStock = locationStocks[location.id] ?? fallbackStock;
 
-                      return (
-                        <div key={location.id} className="space-y-2">
-                          <div className="flex items-center space-x-2">
-                            <input
-                              type="checkbox"
-                              id={`location-${location.id}`}
-                              checked={isSelected}
-                              onChange={(e) => handleLocationToggle(location.id, e.target.checked)}
-                              className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="category_id">Categoría</Label>
+                    <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+                      <DialogTrigger asChild>
+                        <Button type="button" size="sm" className="h-8 bg-primary text-primary-foreground hover:bg-primary/90">
+                          <Plus className="h-4 w-4 mr-1" />
+                          Nueva Categoría
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Crear Nueva Categoría</DialogTitle>
+                          <DialogDescription>
+                            Agrega una nueva categoría para organizar tus productos
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4 py-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="new-category-name">Nombre *</Label>
+                            <Input
+                              id="new-category-name"
+                              placeholder="Ej: Bebidas"
+                              value={newCategoryName}
+                              onChange={(e) => setNewCategoryName(e.target.value)}
                             />
-                            <Label htmlFor={`location-${location.id}`} className="text-sm font-medium leading-none">
-                              {location.name}
-                            </Label>
                           </div>
-                          
-                          {productType === 'physical' && isSelected && (
-                            <div className="ml-6 mb-2">
-                              <Label htmlFor={`stock_${location.id}`} className="text-xs text-muted-foreground">
-                                Stock en {location.name}:
-                              </Label>
-                              <Input 
-                                id={`stock_${location.id}`}
-                                name={`stock_${location.id}`}
-                                type="number"
-                                min="0"
-                                value={currentStock}
-                                onChange={(e) => handleLocationStockChange(location.id, Number(e.target.value))}
-                                className="h-8 text-sm"
-                              />
-                            </div>
-                          )}
+                          <div className="space-y-2">
+                            <Label htmlFor="new-category-description">Descripción</Label>
+                            <Textarea
+                              id="new-category-description"
+                              placeholder="Descripción de la categoría (opcional)"
+                              value={newCategoryDescription}
+                              onChange={(e) => setNewCategoryDescription(e.target.value)}
+                              rows={3}
+                            />
+                          </div>
                         </div>
-                      );
-                    })
-                  ) : (
-                    <p className="text-sm text-muted-foreground">No hay ubicaciones disponibles</p>
-                  )}
+                        <DialogFooter>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => {
+                              setIsModalOpen(false);
+                              setNewCategoryName('');
+                              setNewCategoryDescription('');
+                            }}
+                            disabled={isCreatingCategory}
+                          >
+                            Cancelar
+                          </Button>
+                          <Button
+                            type="button"
+                            onClick={handleCreateCategory}
+                            disabled={isCreatingCategory || !newCategoryName.trim()}
+                          >
+                            {isCreatingCategory ? 'Creando...' : 'Crear Categoría'}
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                  <CategorySelect
+                    categories={categories}
+                    name="category_id"
+                    placeholder="Selecciona una categoría"
+                    valueKey="id"
+                    defaultValue={(() => {
+                      const firstCatId = (product as any)?.categories?.[0]?.id;
+                      return firstCatId ? String(firstCatId) : '';
+                    })()}
+                    triggerClassName="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  />
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Selecciona las ubicaciones donde estará disponible este producto
-                </p>
-              </div>
 
-              <div className="flex items-center space-x-2">
-                <Switch 
-                  id="is_active" 
-                  name="is_active" 
-                  defaultChecked={product.is_active !== false} 
-                />
-                <Label htmlFor="is_active">Producto activo</Label>
+                <div className="space-y-2">
+                  <Label>Ubicaciones Disponibles</Label>
+                  <div className="space-y-4 p-3 border rounded-md">
+                    {locations.length > 0 ? (
+                      locations.map((location) => {
+                        const productLocation = (product.locations as any)?.find((loc: any) => loc.id === location.id);
+                        const fallbackStock = Number(productLocation?.pivot?.stock ?? productLocation?.stock ?? 0);
+                        const isSelected = selectedLocations.includes(location.id);
+                        const currentStock = locationStocks[location.id] ?? fallbackStock;
+
+                        return (
+                          <div key={location.id} className="space-y-2">
+                            <div className="flex items-center space-x-2">
+                              <input
+                                type="checkbox"
+                                id={`location-${location.id}`}
+                                checked={isSelected}
+                                onChange={(e) => handleLocationToggle(location.id, e.target.checked)}
+                                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                              />
+                              <Label htmlFor={`location-${location.id}`} className="text-sm font-medium leading-none">
+                                {location.name}
+                              </Label>
+                            </div>
+
+                            {productType === 'physical' && isSelected && (
+                              <div className="ml-6 mb-2">
+                                <Label htmlFor={`stock_${location.id}`} className="text-xs text-muted-foreground">
+                                  Stock en {location.name}:
+                                </Label>
+                                <Input
+                                  id={`stock_${location.id}`}
+                                  name={`stock_${location.id}`}
+                                  type="number"
+                                  min="0"
+                                  value={currentStock}
+                                  onChange={(e) => handleLocationStockChange(location.id, Number(e.target.value))}
+                                  className="h-8 text-sm"
+                                />
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No hay ubicaciones disponibles</p>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Selecciona las ubicaciones donde estará disponible este producto
+                  </p>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="is_active"
+                    name="is_active"
+                    defaultChecked={product.is_active !== false}
+                  />
+                  <Label htmlFor="is_active">Producto activo</Label>
+                </div>
               </div>
-            </div>
             </CardContent>
           </Card>
 

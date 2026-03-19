@@ -27,20 +27,20 @@ export default function DetalleProductoPage() {
   const [selectedLocationId, setSelectedLocationId] = useState<number | null>(null);
   const [stockToAdd, setStockToAdd] = useState<string>('');
   const [isUpdatingStock, setIsUpdatingStock] = useState(false);
-  
+
   const fetchProduct = useCallback(async () => {
     if (!token || !id) return;
-    
+
     try {
       setIsLoading(true);
-      
-      const response = await fetch(`https://laravel-pkpass-backend-development-pfaawl.laravel.cloud/api/products/${id}`, {
+
+      const response = await fetch(`https://laravel-pkpass-backend-master-6nwaa7.laravel.cloud/api/products/${id}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Accept': 'application/json',
         },
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         // If data is an array, take the first item, otherwise use the data directly
@@ -242,7 +242,7 @@ export default function DetalleProductoPage() {
                   <p className="text-slate-800 whitespace-pre-line">{product.description}</p>
                 </div>
               )}
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <h3 className="text-sm font-medium text-slate-500 mb-1">Precio</h3>
@@ -318,7 +318,7 @@ export default function DetalleProductoPage() {
               </CardContent>
             </Card>
           )}
-          
+
           {/* Inventory Movements - Only for physical products that track stock */}
           {product.product_type === 'physical' && product.track_stock && token && (
             <InventoryMovements
@@ -328,7 +328,7 @@ export default function DetalleProductoPage() {
             />
           )}
         </div>
-        
+
         <div className="space-y-6">
           <Card>
             <CardHeader>
@@ -337,9 +337,9 @@ export default function DetalleProductoPage() {
             <CardContent>
               <div className="aspect-square bg-slate-100 rounded-lg flex items-center justify-center">
                 {product.image_url ? (
-                  <img 
-                    src={product.image_url} 
-                    alt={product.name} 
+                  <img
+                    src={product.image_url}
+                    alt={product.name}
                     className="w-full h-full object-cover rounded-lg"
                   />
                 ) : (

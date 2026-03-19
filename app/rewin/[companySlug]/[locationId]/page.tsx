@@ -81,7 +81,7 @@ const ANN_TTL = 30 * 60 * 1000; // 30 m
 const PROFILE_TTL = 15 * 60 * 1000; // 15 m
 const UI_TTL = 15 * 60 * 1000; // 15 m
 const FOLLOW_TTL = 15 * 60 * 1000; // 15 m
-const API_BASE = 'https://laravel-pkpass-backend-development-pfaawl.laravel.cloud/api';
+const API_BASE = 'https://laravel-pkpass-backend-master-6nwaa7.laravel.cloud/api';
 
 // ─── LocalStorage cache helpers ───────────────────────────────────────────────
 function getCache<T = any>(key: string): { data: T; ts: number } | null {

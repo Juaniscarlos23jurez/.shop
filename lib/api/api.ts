@@ -25,7 +25,7 @@ import { Product, ProductListResponse, ProductResponse, ProductCreateInput, Prod
 import { Category, CategoryCreateInput, CategoryUpdateInput, CategoryResponse, CategoryListResponse } from '@/types/category';
 import { ordersApi } from './orders';
 
-export const BASE_URL = 'https://laravel-pkpass-backend-development-pfaawl.laravel.cloud';
+export const BASE_URL = 'https://laravel-pkpass-backend-master-6nwaa7.laravel.cloud';
 //http://127.0.0.1:8000
 export const api = {
   // Public Geo endpoints (no auth required)
@@ -753,8 +753,8 @@ export const api = {
       const url = `${BASE_URL}/api/companies/${companyId}/locations/${locationId}/employees`;
       console.log('%c[DEBUG] getLocationEmployees → URL:', 'color:cyan;font-weight:bold', url);
       return fetch(url, {
-          headers: getAuthHeader(token)
-        }
+        headers: getAuthHeader(token)
+      }
       ).then(async (response) => {
         console.log('%c[DEBUG] getLocationEmployees → HTTP status:', 'color:cyan', response.status, response.statusText);
         const result = await handleResponse(response);
@@ -766,12 +766,12 @@ export const api = {
           const employees: any[] = Array.isArray(raw)
             ? raw
             : Array.isArray(raw.employees)
-            ? raw.employees
-            : Array.isArray(raw.data)
-            ? raw.data
-            : Array.isArray(raw.data?.data)
-            ? raw.data.data
-            : [];
+              ? raw.employees
+              : Array.isArray(raw.data)
+                ? raw.data
+                : Array.isArray(raw.data?.data)
+                  ? raw.data.data
+                  : [];
           console.log('%c[DEBUG] getLocationEmployees → employees parsed:', 'color:lime;font-weight:bold', employees.length, 'items', employees);
           return { ...result, data: { employees } };
         }

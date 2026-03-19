@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 
-const BASE_URL = 'https://laravel-pkpass-backend-development-pfaawl.laravel.cloud'
+const BASE_URL = 'https://laravel-pkpass-backend-master-6nwaa7.laravel.cloud'
 
 async function forward(req: Request, path: string) {
   const url = new URL(req.url)
@@ -68,7 +68,7 @@ export async function GET(
 ) {
   const { path } = await context.params
   const joinedPath = path.join('/')
-  
+
   try {
     return forward(req, joinedPath)
   } catch (error) {

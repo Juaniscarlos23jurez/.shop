@@ -1,5 +1,5 @@
 import { ApiResponse, PublicCompany, PublicCompanyLocation, Announcement, PublicItem, PointRule, BusinessHour, BusinessType } from '@/types/api';
-const BASE_URL = 'https://laravel-pkpass-backend-development-pfaawl.laravel.cloud';
+const BASE_URL = 'https://laravel-pkpass-backend-master-6nwaa7.laravel.cloud';
 
 export const publicWebApiClient = {
   /**

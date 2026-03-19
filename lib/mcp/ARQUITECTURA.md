@@ -81,7 +81,7 @@
                                ▼
 ┌─────────────────────────────────────────────────────────────────────┐
 │                    BACKEND APIs                                      │
-│  https://laravel-pkpass-backend-development-pfaawl.laravel.cloud   │
+│  https://laravel-pkpass-backend-master-6nwaa7.laravel.cloud   │
 │                                                                      │
 │  • GET /api/auth/profile/company                                    │
 │  • GET /api/companies/{id}/products                                 │

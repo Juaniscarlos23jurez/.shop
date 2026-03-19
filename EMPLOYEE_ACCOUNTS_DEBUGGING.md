@@ -114,7 +114,7 @@ $user->save();
 ### Con cURL
 ```bash
 curl -X POST \
-  https://laravel-pkpass-backend-development-pfaawl.laravel.cloud/api/companies/1/employee-accounts/employees/1 \
+  https://laravel-pkpass-backend-master-6nwaa7.laravel.cloud/api/companies/1/employee-accounts/employees/1 \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{

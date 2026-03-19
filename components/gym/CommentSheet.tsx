@@ -44,7 +44,7 @@ export function CommentSheet({ isOpen, onClose, companyId }: CommentSheetProps) 
       }
 
       const response = await fetch(
-        `https://laravel-pkpass-backend-development-pfaawl.laravel.cloud/api/client/auth/companies/${companyId}/reviews`,
+        `https://laravel-pkpass-backend-master-6nwaa7.laravel.cloud/api/client/auth/companies/${companyId}/reviews`,
         {
           method: 'POST',
           headers: {

@@ -43,7 +43,7 @@ export interface WorkflowStep {
     description?: string;
 }
 
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://laravel-pkpass-backend-development-pfaawl.laravel.cloud';
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://laravel-pkpass-backend-master-6nwaa7.laravel.cloud';
 
 export const API_DOCUMENTATION = {
     apiBaseUrl: API_BASE_URL,

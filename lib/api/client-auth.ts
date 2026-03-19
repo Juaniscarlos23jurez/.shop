@@ -1,6 +1,6 @@
 import { ApiResponse } from '@/types/api';
 
-const BASE_URL = 'https://laravel-pkpass-backend-development-pfaawl.laravel.cloud';
+const BASE_URL = 'https://laravel-pkpass-backend-master-6nwaa7.laravel.cloud';
 
 export interface ClientAuthResponse {
     token?: string;

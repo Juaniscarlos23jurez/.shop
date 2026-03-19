@@ -153,11 +153,11 @@ export default function EmployeeAccountsPage() {
           api.userCompanies.getEmployeeAccounts(resolvedCompanyId, token),
         ]);
 
-          if (!locationsResponse.success) {
-            throw new Error(
-              locationsResponse.message || "No se pudieron cargar las sucursales"
-            );
-          }
+        if (!locationsResponse.success) {
+          throw new Error(
+            locationsResponse.message || "No se pudieron cargar las sucursales"
+          );
+        }
 
         const rawLocations =
           (locationsResponse.data as any)?.locations ?? locationsResponse.data ?? [];
@@ -169,14 +169,14 @@ export default function EmployeeAccountsPage() {
         if (!accountsResponse.success) {
           throw new Error(
             accountsResponse.message ||
-              "No se pudieron cargar las cuentas de empleados"
+            "No se pudieron cargar las cuentas de empleados"
           );
         }
         const accountsArray: any[] = Array.isArray(accountsResponse.data)
           ? accountsResponse.data
           : Array.isArray((accountsResponse.data as any)?.data)
-          ? (accountsResponse.data as any).data
-          : [];
+            ? (accountsResponse.data as any).data
+            : [];
         setAccounts(accountsArray.map(normalizeAccount));
 
         if (parsedLocations.length) {
@@ -284,7 +284,7 @@ export default function EmployeeAccountsPage() {
         <h1 className="text-3xl font-bold tracking-tight text-gray-900">
           Cuentas de Empleados
         </h1>
-        
+
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -338,7 +338,7 @@ export default function EmployeeAccountsPage() {
         <CardHeader>
           <CardTitle className="text-xl">Sucursales y acceso</CardTitle>
           <p className="text-sm text-muted-foreground">
-            Fuente directa: https://laravel-pkpass-backend-development-pfaawl.laravel.cloud/api/locations
+            Fuente directa: https://laravel-pkpass-backend-master-6nwaa7.laravel.cloud/api/locations
           </p>
         </CardHeader>
         <CardContent>
@@ -357,11 +357,10 @@ export default function EmployeeAccountsPage() {
                 <button
                   key={location.id}
                   onClick={() => setActiveLocationId(location.id)}
-                  className={`text-left rounded-lg border p-4 transition hover:border-emerald-400 focus:outline-none ${
-                    activeLocationId === location.id
+                  className={`text-left rounded-lg border p-4 transition hover:border-emerald-400 focus:outline-none ${activeLocationId === location.id
                       ? "border-emerald-500 shadow-md"
                       : "border-slate-200"
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center justify-between">
                     <div>
@@ -408,11 +407,10 @@ export default function EmployeeAccountsPage() {
 
               {showUnassignedCard ? (
                 <div
-                  className={`rounded-lg border p-4 ${
-                    activeLocationId === "sin-sucursal"
+                  className={`rounded-lg border p-4 ${activeLocationId === "sin-sucursal"
                       ? "border-emerald-500 shadow-md"
                       : "border-slate-200"
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center justify-between">
                     <div>
