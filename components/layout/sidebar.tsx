@@ -155,6 +155,9 @@ const adminSidebarItems: SidebarItem[] = [
   // Componentes playground
   { icon: PieChart, label: "Diseño", href: "/dashboard/componentes" },
 
+  // Bio Link - standalone page builder
+  { icon: Globe, label: "Bio Link", href: "/dashboard/social-bio" },
+
   // Web Section
   // {
   //   icon: Store,

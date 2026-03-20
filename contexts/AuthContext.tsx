@@ -84,7 +84,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setIsCompanyResolved(true);
 
             // Initialize notifications after successful authentication
-            if (typeof window !== 'undefined') {
+            // Only if NOT on a public bio page to avoid FCM 401 errors
+            if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/bio/')) {
               notificationService.initialize().catch(error => {
                 console.warn('Failed to initialize notification service:', error);
               });
@@ -133,7 +134,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     // Initialize notifications after successful login
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/bio/')) {
       notificationService.initialize().catch(error => {
         console.warn('Failed to initialize notification service:', error);
       });
