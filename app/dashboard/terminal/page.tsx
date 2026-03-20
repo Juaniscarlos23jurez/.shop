@@ -80,7 +80,7 @@ export default function TerminalPage() {
         try {
             await printViaBluetooth({
                 logoUrl: "https://firebasestorage.googleapis.com/v0/b/finansas-mvapq7.firebasestorage.app/o/companies%2F1%2Flogo%2F1759896439034_logo_1754281609717.jpeg?alt=media&token=9523f0d7-78bd-4f37-83f9-24ea1c9b2714",
-                companyName: "Miel de sol",
+                companyName: "negocio",
                 items: [{ name: "Producto de Prueba", quantity: 1, price: 100 }],
                 total: 100,
             });
@@ -132,8 +132,8 @@ export default function TerminalPage() {
                         <button
                             onClick={() => setActiveTab("bluetooth")}
                             className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all duration-200 ${activeTab === "bluetooth"
-                                    ? "bg-white text-emerald-600 shadow-sm ring-1 ring-slate-200"
-                                    : "text-slate-500 hover:text-slate-700 hover:bg-white/50"
+                                ? "bg-white text-emerald-600 shadow-sm ring-1 ring-slate-200"
+                                : "text-slate-500 hover:text-slate-700 hover:bg-white/50"
                                 }`}
                         >
                             <Bluetooth className="h-4 w-4" />
@@ -142,8 +142,8 @@ export default function TerminalPage() {
                         <button
                             onClick={() => setActiveTab("usb")}
                             className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all duration-200 ${activeTab === "usb"
-                                    ? "bg-white text-blue-600 shadow-sm ring-1 ring-slate-200"
-                                    : "text-slate-500 hover:text-slate-700 hover:bg-white/50"
+                                ? "bg-white text-blue-600 shadow-sm ring-1 ring-slate-200"
+                                : "text-slate-500 hover:text-slate-700 hover:bg-white/50"
                                 }`}
                         >
                             <Usb className="h-4 w-4" />

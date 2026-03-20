@@ -158,22 +158,7 @@ export default function ClientDetailPage() {
           if (Array.isArray(ci)) {
             setCartItems(ci as CartItem[]);
           } else {
-            // Data for demo based on user request if empty
-            if (follower.total_cart_products_count > 0) {
-              setCartItems([
-                {
-                  id: 1,
-                  product_name: 'Miel de sol',
-                  product_description: 'Bebida a tu elección más llavero',
-                  quantity: 1,
-                  price: '220.00',
-                  updated_at: '2025-12-26 10:00:00',
-                  status: 'Activo'
-                }
-              ]);
-            } else {
-              setCartItems([]);
-            }
+            setCartItems([]);
           }
         } else {
           console.error('Follower not found or not a follower of your company');
