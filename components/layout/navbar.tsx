@@ -40,9 +40,9 @@ export function Navbar({ WHATSAPP_URL }: NavbarProps) {
           </div>
           <div className="flex items-center space-x-3">
             <Button asChild variant="ghost" className="text-gray-600 hover:text-gray-900 font-medium">
-              <Link href="/auth/login">
+              <a href="/auth/login">
                 Iniciar sesión
-              </Link>
+              </a>
             </Button>
             <Button asChild className="bg-[#22c55e] hover:bg-green-600 text-white shadow-md hover:shadow-lg transition-all">
               <Link href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">

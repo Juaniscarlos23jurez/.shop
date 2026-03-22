@@ -26,7 +26,7 @@ export default function LoginPage() {
       } else if (!user?.company_id || user?.company_id === "undefined") {
         router.push('/onboarding/compania');
       } else {
-        router.push('/onboarding/plan');
+        router.push('/dashboard');
       }
     }
   }, [isAuthenticated, userRole, user?.company_id, router]);
@@ -42,14 +42,13 @@ export default function LoginPage() {
       if (accessToken) {
         try {
           const companyRes = await api.userCompanies.get(accessToken);
-          // Check ID in multiple possible locations of the API response
           const cData = companyRes.data;
           const companyId = cData?.data?.id || cData?.id || cData?.company?.id || userResult?.company_id;
 
           const hasCompany = Boolean(companyId);
           console.log('[Login] handleAuthRedirect company check:', { hasCompany, companyId });
 
-          router.push(hasCompany ? '/onboarding/plan' : '/onboarding/compania');
+          router.push(hasCompany ? '/dashboard' : '/onboarding/compania');
         } catch (err) {
           console.error('[Login] Error fetching company during redirect:', err);
           router.push('/onboarding/compania');

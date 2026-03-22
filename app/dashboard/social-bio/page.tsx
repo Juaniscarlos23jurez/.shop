@@ -119,6 +119,11 @@ export default function SocialBioPage() {
           const settings: any = (res.data as any).data || res.data;
           if (settings) {
             setLinks(settings.links || []);
+            setPrimaryColor(settings.primaryColor || defaultPrimary);
+            setButtonTextColor(settings.buttonTextColor || "#ffffff");
+            setBackgroundColor(settings.backgroundColor || defaultBg);
+            setGlobalTextColor(settings.globalTextColor || "#0f172a");
+            setBioDescription(settings.bioDescription || "¡Bienvenidos a nuestra página oficial! Encuentra todos nuestros enlaces aquí.");
             setInitialSettings(settings);
           } else {
             const defaults = {
@@ -145,7 +150,7 @@ export default function SocialBioPage() {
     };
 
     loadSettings();
-  }, [token, user?.company_id, bioDescription]);
+  }, [token, user?.company_id]);
 
   // Check for changes
   const hasChanges = JSON.stringify({
