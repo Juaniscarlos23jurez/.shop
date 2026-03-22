@@ -29,6 +29,7 @@ export const CompanyInfoForm: React.FC<CompanyInfoFormProps> = ({ formData, hand
   const [businessTypes, setBusinessTypes] = useState<Array<{ id: number; name: string; slug: string }>>([]);
   const [loadingBusinessTypes, setLoadingBusinessTypes] = useState<boolean>(false);
   const [searchTerm, setSearchTerm] = useState<string>('');
+  const [isManualAddress, setIsManualAddress] = useState<boolean>(false);
 
   // Filter business types based on search term
   const filteredBusinessTypes = useMemo(() => {
@@ -179,10 +180,21 @@ export const CompanyInfoForm: React.FC<CompanyInfoFormProps> = ({ formData, hand
       </div>
 
       <div>
-        <label htmlFor="address" className="block text-sm font-medium text-slate-700 mb-1">
-          Dirección
-        </label>
-        {hasApiKey && isLoaded ? (
+        <div className="flex justify-between items-center mb-1">
+          <label htmlFor="address" className="block text-sm font-medium text-slate-700">
+            Dirección
+          </label>
+          {hasApiKey && isLoaded && (
+            <button
+              type="button"
+              onClick={() => setIsManualAddress(!isManualAddress)}
+              className="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
+            >
+              {isManualAddress ? 'Usar buscador de Google' : 'Ingresar manualmente'}
+            </button>
+          )}
+        </div>
+        {hasApiKey && isLoaded && !isManualAddress ? (
           <Autocomplete
             onLoad={(ac) => (autocompleteRef.current = ac)}
             onPlaceChanged={onPlaceChanged}
@@ -208,7 +220,7 @@ export const CompanyInfoForm: React.FC<CompanyInfoFormProps> = ({ formData, hand
             className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
           />
         )}
-        {hasApiKey && isLoaded && markerPos && (
+        {hasApiKey && isLoaded && !isManualAddress && markerPos && (
           <div className="mt-3 h-48 w-full overflow-hidden rounded-md border border-slate-200">
             <GoogleMap
               mapContainerStyle={{ width: '100%', height: '100%' }}

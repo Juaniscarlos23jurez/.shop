@@ -37,6 +37,7 @@ export const BranchInfoForm: React.FC<BranchInfoFormProps> = ({ formData, handle
   const [countries, setCountries] = useState<Array<{ id: number; name: string }>>([]);
   const [states, setStates] = useState<Array<{ id: number; name: string }>>([]);
   const [cities, setCities] = useState<Array<{ id: number; name: string }>>([]);
+  const [isManualAddress, setIsManualAddress] = useState<boolean>(false);
 
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
   const hasApiKey = Boolean(apiKey);
@@ -173,10 +174,21 @@ export const BranchInfoForm: React.FC<BranchInfoFormProps> = ({ formData, handle
         </div>
 
         <div>
-          <label htmlFor="locationAddress" className="block text-sm font-medium text-slate-700 mb-1">
-            Dirección <span className="text-red-500">*</span>
-          </label>
-          {hasApiKey && isLoaded ? (
+          <div className="flex justify-between items-center mb-1">
+            <label htmlFor="locationAddress" className="block text-sm font-medium text-slate-700">
+              Dirección <span className="text-red-500">*</span>
+            </label>
+            {hasApiKey && isLoaded && (
+              <button
+                type="button"
+                onClick={() => setIsManualAddress(!isManualAddress)}
+                className="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
+              >
+                {isManualAddress ? 'Usar buscador de Google' : 'Ingresar manualmente'}
+              </button>
+            )}
+          </div>
+          {hasApiKey && isLoaded && !isManualAddress ? (
             <Autocomplete
               onLoad={(ac) => (autocompleteRef.current = ac)}
               onPlaceChanged={onPlaceChanged}
@@ -204,7 +216,7 @@ export const BranchInfoForm: React.FC<BranchInfoFormProps> = ({ formData, handle
               required
             />
           )}
-          {hasApiKey && isLoaded && markerPos && (
+          {hasApiKey && isLoaded && !isManualAddress && markerPos && (
             <div className="mt-3 h-48 w-full overflow-hidden rounded-md border border-slate-200">
               <GoogleMap
                 mapContainerStyle={{ width: '100%', height: '100%' }}
