@@ -34,7 +34,8 @@ export default function BioLinkClient({ slug }: { slug: string }) {
   useEffect(() => {
     const fetchBio = async () => {
       try {
-        const res = await fetch(`/api/bio/${encodeURIComponent(slug)}`);
+        // Añadimos un timestamp para evitar cualquier tipo de caché en el navegador o la red
+        const res = await fetch(`/api/bio/${encodeURIComponent(slug)}?t=${Date.now()}`);
         if (!res.ok) {
           setNotFound(true);
           return;

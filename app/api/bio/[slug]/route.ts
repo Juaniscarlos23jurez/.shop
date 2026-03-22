@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 
 const BASE_URL = "https://laravel-pkpass-backend-master-6nwaa7.laravel.cloud";
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 /**
  * Public API route: GET /api/bio/[slug]
  * Fetches the social bio settings for a company by its slug.
@@ -22,7 +25,7 @@ export async function GET(
           Accept: "application/json",
           "Content-Type": "application/json"
         },
-        next: { revalidate: 30 }, // cache for 30 seconds
+        cache: 'no-store', // force instant fetch, bypass cache
       }
     );
 
