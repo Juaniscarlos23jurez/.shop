@@ -250,6 +250,24 @@ export default function NuevoProductoPage() {
     );
   };
 
+  // Synchronize location stocks with variants if isClothing is true
+  useEffect(() => {
+    if (isClothing) {
+      const totalStock = variants.reduce((sum, v) => sum + (Number(v.stock) || 0), 0);
+      setLocationStocks((prev) => {
+        const next = { ...prev };
+        let changed = false;
+        selectedLocations.forEach(id => {
+          if (next[id] !== totalStock) {
+            next[id] = totalStock;
+            changed = true;
+          }
+        });
+        return changed ? next : prev;
+      });
+    }
+  }, [isClothing, variants, selectedLocations]);
+
   const handleClothingToggle = (checked: boolean) => {
     setIsClothing(checked);
     localStorage.setItem('isClothingPreferred', checked.toString());
@@ -668,15 +686,21 @@ export default function NuevoProductoPage() {
                               <Label htmlFor={`stock_${location.id}`} className="text-xs text-muted-foreground">
                                 Stock en {location.name}:
                               </Label>
-                              <Input
+                               <Input
                                 id={`stock_${location.id}`}
                                 name={`stock_${location.id}`}
                                 type="number"
                                 min="0"
                                 value={currentStock}
                                 onChange={(e) => handleLocationStockChange(location.id, Number(e.target.value))}
-                                className="h-8 text-sm"
+                                disabled={isClothing}
+                                className={`h-8 text-sm ${isClothing ? 'bg-slate-50 border-dashed opacity-80 cursor-not-allowed' : ''}`}
                               />
+                              {isClothing && (
+                                <p className="text-[10px] text-blue-600 mt-1 italic">
+                                  * El stock se calcula automáticamente por las tallas.
+                                </p>
+                              )}
                             </div>
                           )}
                         </div>

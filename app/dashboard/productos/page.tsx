@@ -397,7 +397,7 @@ export default function ProductosPage() {
             {!isOrderMode && (
               <div className="grid grid-cols-12 items-center gap-2 p-3 font-medium text-slate-600 border-b bg-slate-50 text-sm">
                 <div className="col-span-1 pl-2 text-center">Posición</div>
-                <div className="col-span-3">Producto</div>
+                <div className="col-span-3">Producto / SKU</div>
                 <div className="col-span-1 text-center">Categoría</div>
                 <div className="col-span-1 text-right pr-2">Precio</div>
                 <div className="col-span-1 text-center">Puntos</div>
@@ -473,6 +473,11 @@ export default function ProductosPage() {
                         <Badge variant="outline" className="text-[9px] h-4 px-1 py-0 bg-slate-50">
                           {product.category || 'Sin cat.'}
                         </Badge>
+                        {product.sku && (
+                          <span className="text-[9px] text-slate-500 font-mono">
+                            | {product.sku}
+                          </span>
+                        )}
                       </div>
                     </div>
 
@@ -528,9 +533,16 @@ export default function ProductosPage() {
                       </div>
                       <div className="min-w-0 ml-2">
                         <p className="font-medium text-slate-900 truncate text-sm leading-tight">{product.name}</p>
-                        {product.category && (
-                          <p className="text-xs text-slate-500 truncate leading-tight">{product.category}</p>
-                        )}
+                        <div className="flex items-center gap-2 mt-0.5">
+                          {product.category && (
+                            <p className="text-[11px] text-slate-500 truncate leading-tight">{product.category}</p>
+                          )}
+                          {product.sku && (
+                            <span className="text-[10px] bg-slate-100 text-slate-600 px-1 rounded font-mono">
+                              {product.sku}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                     <div className="col-span-1 text-center flex items-center h-full justify-center">

@@ -95,6 +95,24 @@ export default function EditarProductoPage() {
     );
   };
 
+  // Synchronize location stocks with variants if isClothing is true
+  useEffect(() => {
+    if (isClothing) {
+      const totalStock = variants.reduce((sum, v) => sum + (Number(v.stock) || 0), 0);
+      setLocationStocks((prev) => {
+        const next = { ...prev };
+        let changed = false;
+        selectedLocations.forEach(id => {
+          if (next[id] !== totalStock) {
+            next[id] = totalStock;
+            changed = true;
+          }
+        });
+        return changed ? next : prev;
+      });
+    }
+  }, [isClothing, variants, selectedLocations]);
+
   // Fetch product data, company and locations on component mount
   useEffect(() => {
     const fetchData = async () => {
@@ -150,10 +168,18 @@ export default function EditarProductoPage() {
           if (Array.isArray(productData.locations)) {
             const initialStocks: Record<number, number> = {};
             const locationIds: number[] = [];
+            
+            // If it's clothing, the stock should be the sum of variants
+            const variantStockTotal = productData.is_clothing && Array.isArray(productData.variants)
+              ? productData.variants.reduce((sum: number, v: any) => sum + (Number(v.stock) || 0), 0)
+              : null;
+
             productData.locations.forEach((loc: any) => {
               if (loc?.id) {
                 locationIds.push(loc.id);
-                initialStocks[loc.id] = Number(loc?.pivot?.stock ?? loc?.stock ?? 0);
+                initialStocks[loc.id] = variantStockTotal !== null 
+                  ? variantStockTotal 
+                  : Number(loc?.pivot?.stock ?? loc?.stock ?? 0);
               }
             });
             if (productData.product_type === 'physical') {
@@ -802,8 +828,14 @@ export default function EditarProductoPage() {
                                   min="0"
                                   value={currentStock}
                                   onChange={(e) => handleLocationStockChange(location.id, Number(e.target.value))}
-                                  className="h-8 text-sm"
+                                  disabled={isClothing}
+                                  className={`h-8 text-sm ${isClothing ? 'bg-slate-50 border-dashed opacity-80 cursor-not-allowed' : ''}`}
                                 />
+                                {isClothing && (
+                                  <p className="text-[10px] text-blue-600 mt-1 italic">
+                                    * El stock se calcula automáticamente por las tallas.
+                                  </p>
+                                )}
                               </div>
                             )}
                           </div>

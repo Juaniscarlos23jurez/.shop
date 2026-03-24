@@ -33,7 +33,7 @@ export default function StockPage() {
     product_id: string;
   }>({
     from_date: format(new Date(new Date().setDate(new Date().getDate() - 30)), 'yyyy-MM-dd'),
-    to_date: format(new Date(), 'yyyy-MM-dd'),
+    to_date: format(new Date(new Date().setDate(new Date().getDate() + 1)), 'yyyy-MM-dd'), // +1 to account for UTC
     type: 'all',
     location_id: '',
     product_id: 'all',
@@ -47,26 +47,12 @@ export default function StockPage() {
       setLoadingProducts(true);
       const response = await api.products.getProducts(user.company_id, token);
 
-      console.log('Products API Response:', response);
-      console.log('Response data:', response.data);
-
-      console.log('Products state:', products);
-      console.log('Loading products:', loadingProducts);
-      console.log('Products length:', products.length);
-
       if (response.success && response.data) {
-        const productsData = (response.data as any).data.products || [];
-        console.log('Products array:', productsData);
-        console.log('Products array length:', productsData?.length);
-
-        if (productsData && productsData.length > 0) {
-          console.log('First product:', productsData[0]);
-          console.log('First product track_stock:', productsData[0].track_stock);
-        }
-
+        // Handle various response data structures correctly
+        const rawData = response.data as any;
+        const productsData = rawData.products || rawData.data?.products || rawData.data || [];
+        
         const filteredProducts = Array.isArray(productsData) ? productsData.filter((p: Product) => p.track_stock) : [];
-        console.log('Filtered products:', filteredProducts);
-        console.log('Setting products state to:', filteredProducts);
         setProducts(filteredProducts);
       }
     } catch (error) {
@@ -94,14 +80,9 @@ export default function StockPage() {
         ...(filters.product_id !== 'all' && { product_id: Number(filters.product_id) }),
       });
 
-      console.log('API Response:', response);
-      console.log('Response data:', response.data);
-      console.log('Response data data:', response.data?.data);
-
       if (response.success && response.data) {
         const responseData = response.data.data as unknown as LaravelPaginator<InventoryMovement>;
         const movementsData = responseData?.data || [];
-        console.log('Movements array:', movementsData);
         setMovements(Array.isArray(movementsData) ? movementsData : []);
         setPagination(responseData || null);
       } else {
@@ -380,8 +361,7 @@ export default function StockPage() {
                         const productData = products.find(p => p.id === movement.product_id);
                         const isClothingProduct = productData?.is_clothing;
                         const totalVariantStock = productData?.variants?.reduce((sum, v) => sum + (Number(v.stock) || 0), 0) || 0;
-                        const isGeneralMovement = !movement.variant_name;
-
+                        
                         return (
                           <>
                             <td className="py-3 px-2">
@@ -407,45 +387,46 @@ export default function StockPage() {
                             </td>
                             <td className="py-3 px-2">
                               <div className="flex items-center justify-center gap-1">
-                                {isClothingProduct && isGeneralMovement && movement.quantity_change === 0 ? (
-                                  <span className="text-sm font-bold text-slate-900">
-                                    +{totalVariantStock}
-                                  </span>
-                                ) : (
-                                  <>
-                                    {movement.quantity_change > 0 ? (
-                                      <ArrowUpRight className="h-4 w-4 text-green-600" />
-                                    ) : (
-                                      <ArrowDownRight className="h-4 w-4 text-red-600" />
-                                    )}
-                                    <span className={`text-sm font-medium ${movement.quantity_change > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                      {movement.quantity_change > 0 ? '+' : ''}{movement.quantity_change}
-                                    </span>
-                                  </>
-                                )}
+                                {movement.quantity_change > 0 ? (
+                                  <ArrowUpRight className="h-4 w-4 text-green-600" />
+                                ) : movement.quantity_change < 0 ? (
+                                  <ArrowDownRight className="h-4 w-4 text-red-600" />
+                                ) : null}
+                                <span className={`text-sm font-medium ${movement.quantity_change > 0 ? 'text-green-600' : movement.quantity_change < 0 ? 'text-red-600' : 'text-slate-400'}`}>
+                                  {movement.quantity_change > 0 ? '+' : ''}{movement.quantity_change}
+                                </span>
                               </div>
                             </td>
                             <td className="py-3 px-2">
                               <div className="text-center text-sm">
-                                {isClothingProduct && isGeneralMovement ? (
-                                  <div className="flex flex-col items-center">
-                                    <span className="font-bold text-slate-900 border-b pb-0.5 mb-1 w-full">{totalVariantStock}</span>
-                                    <div className="grid grid-cols-1 gap-0.5 w-full">
-                                      {productData.variants?.map((v) => (
-                                        <div key={v.size} className="flex justify-between items-center text-[10px] text-slate-500 gap-2 px-1">
-                                          <span>{v.size}:</span>
-                                          <span className="font-medium text-slate-700">{v.stock}</span>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                ) : (
-                                  <>
+                                <div className="flex flex-col items-center">
+                                  <div className="flex items-center gap-1.5 mb-1">
                                     <span className="text-slate-500">{movement.stock_before}</span>
-                                    <span className="mx-1">→</span>
-                                    <span className="font-medium">{movement.stock_after}</span>
-                                  </>
-                                )}
+                                    <span className="text-slate-400">→</span>
+                                    <span className={`font-bold ${isClothingProduct && totalVariantStock !== movement.stock_after ? 'text-amber-600' : 'text-slate-900'}`}>
+                                      {movement.stock_after}
+                                    </span>
+                                  </div>
+                                  
+                                  {isClothingProduct && (
+                                    <div className="w-full mt-1 pt-1 border-t border-slate-100">
+                                      <div className={`text-[10px] font-bold mb-1 ${totalVariantStock !== movement.stock_after ? 'text-amber-600' : 'text-slate-500'}`}>
+                                        Total Tallas: {totalVariantStock}
+                                        {totalVariantStock !== movement.stock_after && (
+                                          <span className="ml-1 cursor-help" title="Desajuste con stock general">⚠️</span>
+                                        )}
+                                      </div>
+                                      <div className="grid grid-cols-1 gap-0.5">
+                                        {productData.variants?.map((v) => (
+                                          <div key={v.size} className="flex justify-between items-center text-[10px] text-slate-500 gap-2 px-1">
+                                            <span>{v.size}:</span>
+                                            <span className="font-medium text-slate-700">{v.stock}</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
                               </div>
                             </td>
                             <td className="py-3 px-2">

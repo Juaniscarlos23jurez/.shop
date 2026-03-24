@@ -211,7 +211,9 @@ export default function DetalleProductoPage() {
                 {typeLabel}
               </Badge>
               {product.sku && (
-                <span className="text-sm text-slate-500">SKU: {product.sku}</span>
+                <Badge variant="secondary" className="bg-slate-100 text-slate-600 border-slate-200 font-mono text-xs">
+                  SKU: {product.sku}
+                </Badge>
               )}
             </div>
           </div>
@@ -252,6 +254,12 @@ export default function DetalleProductoPage() {
                   <h3 className="text-sm font-medium text-slate-500 mb-1">Puntos</h3>
                   <p className="text-lg font-semibold text-blue-600">{product.points || 0}</p>
                 </div>
+                {product.sku && (
+                  <div>
+                    <h3 className="text-sm font-medium text-slate-500 mb-1">Código (SKU)</h3>
+                    <p className="text-base font-mono bg-slate-50 px-2 py-1 rounded border border-slate-100 w-fit">{product.sku}</p>
+                  </div>
+                )}
                 {product.product_type === 'physical' && (
                   <div>
                     <h3 className="text-sm font-medium text-slate-500 mb-1">Stock Total</h3>
