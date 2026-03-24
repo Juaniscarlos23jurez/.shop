@@ -42,28 +42,28 @@ export default function StockPage() {
   // Fetch products for filter
   const fetchProducts = async () => {
     if (!token || !user?.company_id) return;
-    
+
     try {
       setLoadingProducts(true);
       const response = await api.products.getProducts(user.company_id, token);
-      
+
       console.log('Products API Response:', response);
       console.log('Response data:', response.data);
-      
+
       console.log('Products state:', products);
       console.log('Loading products:', loadingProducts);
       console.log('Products length:', products.length);
-      
+
       if (response.success && response.data) {
         const productsData = (response.data as any).data.products || [];
         console.log('Products array:', productsData);
         console.log('Products array length:', productsData?.length);
-        
+
         if (productsData && productsData.length > 0) {
           console.log('First product:', productsData[0]);
           console.log('First product track_stock:', productsData[0].track_stock);
         }
-        
+
         const filteredProducts = Array.isArray(productsData) ? productsData.filter((p: Product) => p.track_stock) : [];
         console.log('Filtered products:', filteredProducts);
         console.log('Setting products state to:', filteredProducts);
@@ -165,11 +165,12 @@ export default function StockPage() {
 
   const exportToCSV = () => {
     const csvContent = [
-      ['Fecha', 'Tipo', 'Producto', 'Ubicación', 'Cantidad', 'Stock Anterior', 'Stock Nuevo', 'Referencia', 'Notas'],
+      ['Fecha', 'Tipo', 'Producto', 'Talla', 'Ubicación', 'Cantidad', 'Stock Anterior', 'Stock Nuevo', 'Referencia', 'Notas'],
       ...movements.map(m => [
         format(new Date(m.created_at), 'dd/MM/yyyy HH:mm', { locale: es }),
         getMovementTypeLabel(m.type),
         m.product?.name || '',
+        m.variant_name || '-',
         m.location?.name || '',
         m.quantity_change.toString(),
         m.stock_before.toString(),
@@ -189,7 +190,7 @@ export default function StockPage() {
   // Filter movements by search term
   const filteredMovements = movements.filter(movement => {
     if (!searchTerm) return true;
-    
+
     const searchLower = searchTerm.toLowerCase();
     return (
       movement.product?.name?.toLowerCase().includes(searchLower) ||
@@ -198,6 +199,8 @@ export default function StockPage() {
       movement.notes?.toLowerCase().includes(searchLower)
     );
   });
+
+  const selectedProduct = products.find(p => String(p.id) === filters.product_id);
 
   return (
     <div className="space-y-6">
@@ -299,6 +302,42 @@ export default function StockPage() {
         </CardContent>
       </Card>
 
+      {/* Variant Stock Summary (only if a clothing product is selected) */}
+      {selectedProduct?.is_clothing && selectedProduct.variants && selectedProduct.variants.length > 0 && (
+        <Card className="bg-slate-50 border-slate-200">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Package className="h-4 w-4" />
+              Resumen de Existencias por Talla: {selectedProduct.name}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              {selectedProduct.variants.map((variant) => (
+                <div key={variant.size} className="bg-white p-3 rounded-lg border shadow-sm">
+                  <div className="text-xs text-slate-500 font-medium mb-1">{variant.size}</div>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-xl font-bold">{variant.stock}</span>
+                    <span className="text-[10px] text-slate-400 uppercase">Unid.</span>
+                  </div>
+                  {variant.price && (
+                    <div className="text-[10px] text-blue-600 mt-1 font-medium">
+                      ${variant.price}
+                    </div>
+                  )}
+                </div>
+              ))}
+              <div className="bg-slate-100 p-3 rounded-lg border border-dashed flex flex-col justify-center">
+                <div className="text-xs text-slate-500 font-medium mb-1">Total</div>
+                <div className="text-xl font-bold">
+                  {selectedProduct.variants.reduce((sum, v) => sum + (v.stock || 0), 0)}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Movements Table */}
       <Card>
         <CardHeader>
@@ -337,47 +376,89 @@ export default function StockPage() {
                 <tbody>
                   {filteredMovements.map((movement) => (
                     <tr key={movement.id} className="border-b hover:bg-slate-50">
-                      <td className="py-3 px-2">
-                        <div className="text-sm">
-                          {format(new Date(movement.created_at), 'dd/MM/yyyy', { locale: es })}
-                        </div>
-                        <div className="text-xs text-slate-500">
-                          {format(new Date(movement.created_at), 'HH:mm', { locale: es })}
-                        </div>
-                      </td>
-                      <td className="py-3 px-2">
-                        <div className="font-medium text-sm">{movement.product?.name || '-'}</div>
-                      </td>
-                      <td className="py-3 px-2 text-sm">
-                        {movement.location?.name || '-'}
-                      </td>
-                      <td className="py-3 px-2">
-                        <div className="flex items-center justify-center gap-1">
-                          {movement.quantity_change > 0 ? (
-                            <ArrowUpRight className="h-4 w-4 text-green-600" />
-                          ) : (
-                            <ArrowDownRight className="h-4 w-4 text-red-600" />
-                          )}
-                          <span className={`text-sm font-medium ${movement.quantity_change > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            {movement.quantity_change > 0 ? '+' : ''}{movement.quantity_change}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="py-3 px-2">
-                        <div className="text-center text-sm">
-                          <span className="text-slate-500">{movement.stock_before}</span>
-                          <span className="mx-1">→</span>
-                          <span className="font-medium">{movement.stock_after}</span>
-                        </div>
-                      </td>
-                      <td className="py-3 px-2">
-                        <Badge variant={getMovementTypeColor(movement.type) as any}>
-                          {getMovementTypeLabel(movement.type)}
-                        </Badge>
-                      </td>
-                      <td className="py-3 px-2 text-sm">
-                        {movement.reference || '-'}
-                      </td>
+                      {(() => {
+                        const productData = products.find(p => p.id === movement.product_id);
+                        const isClothingProduct = productData?.is_clothing;
+                        const totalVariantStock = productData?.variants?.reduce((sum, v) => sum + (Number(v.stock) || 0), 0) || 0;
+                        const isGeneralMovement = !movement.variant_name;
+
+                        return (
+                          <>
+                            <td className="py-3 px-2">
+                              <div className="text-sm">
+                                {format(new Date(movement.created_at), 'dd/MM/yyyy', { locale: es })}
+                              </div>
+                              <div className="text-xs text-slate-500">
+                                {format(new Date(movement.created_at), 'HH:mm', { locale: es })}
+                              </div>
+                            </td>
+                            <td className="py-3 px-2">
+                              <div className="font-medium text-sm">
+                                {movement.product?.name || '-'}
+                                {movement.variant_name && (
+                                  <span className="ml-2 px-1.5 py-0.5 text-[10px] font-bold bg-slate-100 text-slate-600 rounded">
+                                    {movement.variant_name}
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="py-3 px-2 text-sm">
+                              {movement.location?.name || '-'}
+                            </td>
+                            <td className="py-3 px-2">
+                              <div className="flex items-center justify-center gap-1">
+                                {isClothingProduct && isGeneralMovement && movement.quantity_change === 0 ? (
+                                  <span className="text-sm font-bold text-slate-900">
+                                    +{totalVariantStock}
+                                  </span>
+                                ) : (
+                                  <>
+                                    {movement.quantity_change > 0 ? (
+                                      <ArrowUpRight className="h-4 w-4 text-green-600" />
+                                    ) : (
+                                      <ArrowDownRight className="h-4 w-4 text-red-600" />
+                                    )}
+                                    <span className={`text-sm font-medium ${movement.quantity_change > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                      {movement.quantity_change > 0 ? '+' : ''}{movement.quantity_change}
+                                    </span>
+                                  </>
+                                )}
+                              </div>
+                            </td>
+                            <td className="py-3 px-2">
+                              <div className="text-center text-sm">
+                                {isClothingProduct && isGeneralMovement ? (
+                                  <div className="flex flex-col items-center">
+                                    <span className="font-bold text-slate-900 border-b pb-0.5 mb-1 w-full">{totalVariantStock}</span>
+                                    <div className="grid grid-cols-1 gap-0.5 w-full">
+                                      {productData.variants?.map((v) => (
+                                        <div key={v.size} className="flex justify-between items-center text-[10px] text-slate-500 gap-2 px-1">
+                                          <span>{v.size}:</span>
+                                          <span className="font-medium text-slate-700">{v.stock}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <>
+                                    <span className="text-slate-500">{movement.stock_before}</span>
+                                    <span className="mx-1">→</span>
+                                    <span className="font-medium">{movement.stock_after}</span>
+                                  </>
+                                )}
+                              </div>
+                            </td>
+                            <td className="py-3 px-2">
+                              <Badge variant={getMovementTypeColor(movement.type) as any}>
+                                {getMovementTypeLabel(movement.type)}
+                              </Badge>
+                            </td>
+                            <td className="py-3 px-2 text-sm">
+                              {movement.reference || '-'}
+                            </td>
+                          </>
+                        );
+                      })()}
                     </tr>
                   ))}
                 </tbody>

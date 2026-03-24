@@ -548,8 +548,10 @@ export default function ProductosPage() {
                     </div>
                     <div className="col-span-1 text-center flex items-center h-full justify-center">
                       {product.track_stock ? (
-                        <span className="px-1.5 py-0.5 bg-slate-100 rounded text-xs">
-                          {product.locations?.reduce((sum, loc) => sum + (Number(loc.stock) || 0), 0) || 0}
+                        <span className="px-1.5 py-0.5 bg-slate-100 rounded text-xs font-bold">
+                          {product.is_clothing && product.variants && product.variants.length > 0
+                            ? product.variants.reduce((sum, v) => sum + (Number(v.stock) || 0), 0)
+                            : (product.locations?.reduce((sum, loc) => sum + (Number(loc.stock) || 0), 0) || 0)}
                         </span>
                       ) : (
                         <span className="text-xs text-slate-400">-</span>

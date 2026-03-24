@@ -1,3 +1,9 @@
+export type ProductVariant = {
+  size: string;
+  stock: number;
+  price?: number | string;
+};
+
 export type Product = {
   id: number | string;
   name: string;
@@ -10,6 +16,8 @@ export type Product = {
   image_url?: string;
   points?: number;
   locations: ProductLocation[];
+  variants?: ProductVariant[];
+  is_clothing?: boolean;
   created_at?: string;
   updated_at?: string;
   sku?: string;
@@ -19,6 +27,7 @@ export type Product = {
 
 export type ProductLocation = {
   id: number;
+  name?: string;
   is_available: boolean;
   stock?: number;  // Only for physical products
 };

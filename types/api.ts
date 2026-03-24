@@ -55,6 +55,7 @@ export interface InventoryMovement {
   };
   reference?: string | null;
   notes?: string | null;
+  variant_name?: string | null;
   created_at: string;
   updated_at: string;
   product?: {

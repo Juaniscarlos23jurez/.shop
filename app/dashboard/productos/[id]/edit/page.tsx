@@ -42,6 +42,14 @@ export default function EditarProductoPage() {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isQuoted, setIsQuoted] = useState(false);
+  const [isClothing, setIsClothing] = useState(false);
+  const [basePrice, setBasePrice] = useState('');
+  const [editedVariants, setEditedVariants] = useState<string[]>([]);
+  const [variants, setVariants] = useState<Array<{size: string, stock: number, price: string}>>([
+    { size: 'Chica', stock: 0, price: '' },
+    { size: 'Mediana', stock: 0, price: '' },
+    { size: 'Grande', stock: 0, price: '' }
+  ]);
 
   const handleLocationToggle = (locationId: number, checked: boolean) => {
     setSelectedLocations((prev) => {
@@ -69,6 +77,22 @@ export default function EditarProductoPage() {
       ...prev,
       [locationId]: value >= 0 ? value : 0,
     }));
+  };
+
+  const handleBasePriceChange = (value: string) => {
+    setBasePrice(value);
+    setVariants((prev) =>
+      prev.map((v) => (editedVariants.includes(v.size) ? v : { ...v, price: value }))
+    );
+  };
+
+  const handleVariantChange = (size: string, field: 'stock' | 'price', value: any) => {
+    if (field === 'price') {
+      setEditedVariants((prev) => [...new Set([...prev, size])]);
+    }
+    setVariants((prev) =>
+      prev.map((v) => (v.size === size ? { ...v, [field]: value } : v))
+    );
   };
 
   // Fetch product data, company and locations on component mount
@@ -103,6 +127,26 @@ export default function EditarProductoPage() {
           }
           setProduct(productData);
           setProductType(productData.product_type);
+          setBasePrice(productData.price ? String(productData.price) : '');
+          
+          if (productData.is_clothing) {
+            setIsClothing(true);
+            if (Array.isArray(productData.variants)) {
+              const loadedVariants = productData.variants.map((v: any) => ({
+                size: v.size,
+                stock: v.stock || 0,
+                price: v.price ? String(v.price) : ''
+              }));
+              setVariants(loadedVariants);
+              
+              // Mark as edited those that have different prices from base
+              const edited = loadedVariants
+                .filter((v: any) => v.price !== '' && v.price !== String(productData.price))
+                .map((v: any) => v.size);
+              setEditedVariants(edited);
+            }
+          }
+
           if (Array.isArray(productData.locations)) {
             const initialStocks: Record<number, number> = {};
             const locationIds: number[] = [];
@@ -339,6 +383,19 @@ export default function EditarProductoPage() {
           is_available: true,
           ...(productType === 'physical' ? { stock: stockData[locId] || 0 } : {}),
         })),
+        ...(productType === 'physical' ? { price_on_request: false } : {}),
+        ...(productType === 'physical' && isClothing && {
+          is_clothing: true,
+          variants: variants.map(v => ({
+            size: v.size,
+            stock: Number(v.stock),
+            price: v.price ? parseFloat(v.price) : undefined
+          }))
+        }),
+        ...(productType === 'physical' && !isClothing && {
+          is_clothing: false,
+          variants: []
+        }),
         ...(productType === 'made_to_order' ? { lead_time_days: computeLeadTimeDays(leadTimeValue, leadTimeUnit) } : {}),
         ...(productType === 'service' ? { price_on_request: isQuoted } : {}),
       };
@@ -526,7 +583,8 @@ export default function EditarProductoPage() {
                           min="0"
                           className="pl-8"
                           placeholder="0.00"
-                          defaultValue={product.price}
+                          value={basePrice}
+                          onChange={(e) => handleBasePriceChange(e.target.value)}
                           required={!(productType === 'service' && isQuoted)}
                         />
                       </div>
@@ -574,6 +632,63 @@ export default function EditarProductoPage() {
                     </div>
                   )}
                 </div>
+
+                {productType === 'physical' && (
+                  <div className="space-y-4 pt-2 border-t mt-4">
+                    <div className="flex items-center justify-between rounded-md border p-3 bg-slate-50">
+                      <div>
+                        <Label htmlFor="is_clothing" className="text-sm font-medium">¿Es ropa / tiene tallas?</Label>
+                        <p className="text-xs text-muted-foreground">Si lo activas, podrás registrar stock por talla (Chica, Mediana, Grande).</p>
+                      </div>
+                      <Switch 
+                        id="is_clothing" 
+                        checked={isClothing} 
+                        onCheckedChange={setIsClothing} 
+                      />
+                    </div>
+
+                    {isClothing && (
+                      <div className="space-y-4 p-4 border rounded-md bg-white">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          {variants.map((v) => (
+                            <div key={v.size} className="space-y-4 p-3 border rounded-lg bg-slate-50">
+                              <div className="font-semibold text-sm border-b pb-1 mb-2">{v.size}</div>
+                              <div className="space-y-2">
+                                <Label htmlFor={`size_stock_${v.size}`} className="text-xs">Stock</Label>
+                                <Input
+                                  id={`size_stock_${v.size}`}
+                                  type="number"
+                                  min="0"
+                                  placeholder="0"
+                                  value={v.stock}
+                                  onChange={(e) => handleVariantChange(v.size, 'stock', Number(e.target.value))}
+                                  className="h-8"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor={`size_price_${v.size}`} className="text-xs">Precio (Opcional)</Label>
+                                <div className="relative">
+                                  <span className="absolute left-2 top-1.5 text-slate-500 text-xs">$</span>
+                                  <Input
+                                    id={`size_price_${v.size}`}
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    placeholder="0.00"
+                                    value={v.price}
+                                    onChange={(e) => handleVariantChange(v.size, 'price', e.target.value)}
+                                    className="pl-6 h-8 text-sm"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        <p className="text-xs text-muted-foreground italic">* Si dejas el precio vacío, se usará el precio general del producto.</p>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">

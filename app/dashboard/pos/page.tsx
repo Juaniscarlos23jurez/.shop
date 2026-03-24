@@ -30,6 +30,13 @@ type PosProduct = {
   sku?: string;
   image_url?: string;
   points?: number; // Loyalty points value for redemption
+  is_clothing?: boolean;
+  variants?: Array<{
+    size: string;
+    stock: number;
+    price?: number | string;
+  }>;
+  track_stock?: boolean;
   [key: string]: any;
 };
 
@@ -40,6 +47,7 @@ interface CartItem extends PosProduct {
   quantity: number;
   sku?: string;
   images?: Array<{ url: string }>;
+  selectedSize?: string;
 }
 
 interface Order {
@@ -116,6 +124,10 @@ export default function PuntoVentaPage() {
   const [printerName, setPrinterName] = useState('');
   const [ticketToPrint, setTicketToPrint] = useState<any | null>(null);
 
+  // Estados para selección de tallas
+  const [isSizeModalOpen, setIsSizeModalOpen] = useState(false);
+  const [selectedProductForSize, setSelectedProductForSize] = useState<PosProduct | null>(null);
+
   // New Bluetooth logic
   const { isBluetoothConnected, btPrinterName, printViaBluetooth, settings } = usePrinter();
   const { company } = useCompany();
@@ -181,11 +193,17 @@ export default function PuntoVentaPage() {
     }
 
     try {
-      const itemsToPrint = (sale.items || []).map((item: any) => ({
-        name: item.product?.name || item.product_name || `Producto #${item.product_id || '?'}`,
-        quantity: item.quantity || 1,
-        price: parseFloat(item.unit_price || item.price || '0')
-      }));
+      const itemsToPrint = (sale.items || []).map((item: any) => {
+        let name = item.product?.name || item.product_name || `Producto #${item.product_id || '?'}`;
+        if (item.variant_name) {
+          name = `${name} (${item.variant_name})`;
+        }
+        return {
+          name: name,
+          quantity: item.quantity || 1,
+          price: parseFloat(item.unit_price || item.price || '0')
+        };
+      });
 
       const totalToPrint = parseFloat(sale.total || '0');
 
@@ -366,14 +384,36 @@ export default function PuntoVentaPage() {
     return loc?.pivot || null;
   };
 
-  const getAvailableStock = (product: any): number => {
+  const getAvailableStock = (product: PosProduct, selectedSize?: string): number => {
+    const trackStock = Boolean(product?.track_stock);
+    if (!trackStock) return 0;
+
+    if (product.is_clothing && product.variants && product.variants.length > 0) {
+      if (selectedSize) {
+        const variant = product.variants.find(v => v.size === selectedSize);
+        return variant ? Number(variant.stock) : 0;
+      }
+      // Si no hay talla seleccionada, devolver el total de variantes
+      return product.variants.reduce((sum, v) => sum + (Number(v.stock) || 0), 0);
+    }
+
     const pivot = getProductLocationPivot(product);
     return Number(pivot?.stock) || 0;
   };
 
-  const isProductAvailableForSale = (product: any): boolean => {
+  const isProductAvailableForSale = (product: PosProduct, selectedSize?: string): boolean => {
     const trackStock = Boolean(product?.track_stock);
     if (!trackStock) return true;
+
+    if (product.is_clothing && product.variants && product.variants.length > 0) {
+      if (selectedSize) {
+        const variant = product.variants.find(v => v.size === selectedSize);
+        return variant ? Number(variant.stock) > 0 : false;
+      }
+      // Para mostrar el botón inicial: disponible si alguna variante tiene stock
+      return product.variants.some(v => Number(v.stock) > 0);
+    }
+
     const pivot = getProductLocationPivot(product);
     const isAvailable = pivot?.is_available !== false;
     return isAvailable && getAvailableStock(product) > 0;
@@ -560,46 +600,74 @@ export default function PuntoVentaPage() {
     }
   }, [token, companyId, isCompanyResolved]);
 
-  const addToCart = (product: PosProduct) => {
-    setCart(prevCart => {
-      const existingItem = prevCart.find(item => item.id === product.id);
+  const addToCart = (product: PosProduct, size?: string) => {
+    // Si el producto es ropa y aún no se ha seleccionado talla, abrir modal
+    if (product.is_clothing && !size) {
+      setSelectedProductForSize(product);
+      setIsSizeModalOpen(true);
+      return;
+    }
 
-      const trackStock = Boolean((product as any)?.track_stock);
+    setCart(prevCart => {
+      // Un item es único por su ID y su Talla (en caso de ropa)
+      const existingItem = prevCart.find(item =>
+        item.id === product.id && item.selectedSize === size
+      );
+
+      const trackStock = Boolean(product?.track_stock);
       if (trackStock) {
-        const availableStock = getAvailableStock(product);
+        const availableStock = getAvailableStock(product, size);
         const currentQty = existingItem?.quantity || 0;
-        if (!isProductAvailableForSale(product) || currentQty + 1 > availableStock) {
+        if (!isProductAvailableForSale(product, size) || currentQty + 1 > availableStock) {
           toast({
             title: 'Stock insuficiente',
-            description: `Disponible: ${availableStock} unidad(es)`,
+            description: size
+              ? `Talla ${size} - Disponible: ${availableStock} unidad(es)`
+              : `Disponible: ${availableStock} unidad(es)`,
             variant: 'destructive',
           });
           return prevCart;
         }
       }
 
+      // Si tiene talla, buscar el precio de la talla en variants
+      let finalPrice = product.price;
+      if (size && product.variants) {
+        const variant = product.variants.find(v => v.size === size);
+        if (variant?.price) {
+          finalPrice = String(variant.price);
+        }
+      }
+
       if (existingItem) {
         return prevCart.map(item =>
-          item.id === product.id
-            ? { ...item, quantity: item.quantity + 1 }
+          (item.id === product.id && item.selectedSize === size)
+            ? { ...item, quantity: item.quantity + 1, price: finalPrice }
             : item
         );
       }
-      return [...prevCart, { ...product, quantity: 1 }];
+      return [...prevCart, { ...product, price: finalPrice, quantity: 1, selectedSize: size }];
     });
+
+    // Cerrar modal si estaba abierto
+    setIsSizeModalOpen(false);
   };
 
-  const removeFromCart = (productId: number) => {
+  const removeFromCart = (productId: number, size?: string) => {
     setCart(prevCart => {
-      const existingItem = prevCart.find(item => item.id === productId);
+      const existingItem = prevCart.find(item =>
+        item.id === productId && item.selectedSize === size
+      );
       if (existingItem && existingItem.quantity > 1) {
         return prevCart.map(item =>
-          item.id === productId
+          (item.id === productId && item.selectedSize === size)
             ? { ...item, quantity: item.quantity - 1 }
             : item
         );
       }
-      return prevCart.filter(item => item.id !== productId);
+      return prevCart.filter(item =>
+        !(item.id === productId && item.selectedSize === size)
+      );
     });
   };
 
@@ -650,6 +718,7 @@ export default function PuntoVentaPage() {
       const mappedItems = cart.map((item) => ({
         product_id: item.id,
         quantity: item.quantity,
+        variant_name: item.selectedSize || undefined,
         notes: paymentData.note || undefined,
       }));
       const locId = locationId ?? 1;
@@ -719,7 +788,11 @@ export default function PuntoVentaPage() {
       const fullSaleData = {
         ...saleData,
         items: cart.map(item => ({
-          product: { name: item.name },
+          product: { 
+            name: item.selectedSize 
+              ? `${item.name} (${item.selectedSize})` 
+              : item.name 
+          },
           quantity: item.quantity,
           unit_price: item.price
         })),
@@ -983,7 +1056,9 @@ export default function PuntoVentaPage() {
                               <p className="font-bold mt-1">${parseFloat(product.price).toFixed(2)}</p>
                               {trackStock && (
                                 <p className={`mt-1 text-xs ${stock && stock > 0 ? 'text-slate-600' : 'text-red-600 font-semibold'}`}>
-                                  Stock: {stock}
+                                  Stock: {product.is_clothing && product.variants
+                                    ? product.variants.reduce((sum, v) => sum + (Number(v.stock) || 0), 0)
+                                    : (stock)}
                                 </p>
                               )}
                             </div>
@@ -1011,10 +1086,17 @@ export default function PuntoVentaPage() {
                     <div className="space-y-4">
                       <div className="space-y-2 max-h-96 overflow-y-auto pr-2">
                         {cart.map((item) => (
-                          <div key={item.id} className="border-b pb-2">
+                          <div key={`${item.id}-${item.selectedSize || 'none'}`} className="border-b pb-2">
                             <div className="flex justify-between items-start">
                               <div>
-                                <h4 className="font-medium">{item.name}</h4>
+                                <h4 className="font-medium">
+                                  {item.name}
+                                  {item.selectedSize && (
+                                    <span className="ml-2 px-1.5 py-0.5 text-[10px] font-bold bg-slate-100 text-slate-600 rounded">
+                                      {item.selectedSize}
+                                    </span>
+                                  )}
+                                </h4>
                                 <p className="text-sm text-muted-foreground">${parseFloat(item.price).toFixed(2)} c/u</p>
                               </div>
                               <div className="flex items-center space-x-2">
@@ -1024,7 +1106,7 @@ export default function PuntoVentaPage() {
                                   className="h-8 w-8 p-0"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    removeFromCart(item.id);
+                                    removeFromCart(item.id, item.selectedSize);
                                   }}
                                 >
                                   <Minus className="h-4 w-4" />
@@ -1035,7 +1117,7 @@ export default function PuntoVentaPage() {
                                   size="sm"
                                   className="h-8 w-8 p-0"
                                   type="button"
-                                  onClick={() => addToCart(item)}
+                                  onClick={() => addToCart(item, item.selectedSize)}
                                 >
                                   <Plus className="h-4 w-4" />
                                 </Button>
@@ -1414,6 +1496,49 @@ export default function PuntoVentaPage() {
         totalPointsRequired={cartTotalPointsRequired > 0 ? cartTotalPointsRequired : undefined}
         onPaymentComplete={handlePaymentComplete}
       />
+
+      {/* Modal de Selección de Talla */}
+      <Dialog open={isSizeModalOpen} onOpenChange={setIsSizeModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Seleccionar Talla</DialogTitle>
+            <DialogDescription>
+              {selectedProductForSize?.name} - Elige una talla para continuar
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-1 gap-3 py-4">
+            {selectedProductForSize?.variants?.map((variant) => {
+              const inStock = Number(variant.stock) > 0;
+              return (
+                <Button
+                  key={variant.size}
+                  variant="outline"
+                  className={`flex justify-between items-center h-auto py-3 px-4 ${!inStock ? 'opacity-50 cursor-not-allowed' : 'hover:border-primary hover:bg-primary/5'}`}
+                  disabled={!inStock}
+                  onClick={() => addToCart(selectedProductForSize, variant.size)}
+                >
+                  <div className="text-left">
+                    <p className="font-bold text-base">{variant.size}</p>
+                    <p className="text-xs text-slate-500">
+                      {inStock ? `Stock: ${variant.stock} unidades` : 'Agotado'}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold text-primary">
+                      ${parseFloat(String(variant.price || selectedProductForSize.price)).toFixed(2)}
+                    </p>
+                  </div>
+                </Button>
+              );
+            })}
+          </div>
+          <div className="flex justify-end">
+            <Button variant="ghost" onClick={() => setIsSizeModalOpen(false)}>
+              Cancelar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Sale Detail Modal */}
       <Dialog open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen}>
