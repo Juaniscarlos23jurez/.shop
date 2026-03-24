@@ -146,19 +146,23 @@ export default function StockPage() {
 
   const exportToCSV = () => {
     const csvContent = [
-      ['Fecha', 'Tipo', 'Producto', 'Talla', 'Ubicación', 'Cantidad', 'Stock Anterior', 'Stock Nuevo', 'Referencia', 'Notas'],
-      ...movements.map(m => [
-        format(new Date(m.created_at), 'dd/MM/yyyy HH:mm', { locale: es }),
-        getMovementTypeLabel(m.type),
-        m.product?.name || '',
-        m.variant_name || '-',
-        m.location?.name || '',
-        m.quantity_change.toString(),
-        m.stock_before.toString(),
-        m.stock_after.toString(),
-        m.reference || '',
-        m.notes || '',
-      ])
+      ['Fecha', 'Tipo', 'Producto', 'SKU', 'Talla', 'Ubicación', 'Cantidad', 'Stock Anterior', 'Stock Nuevo', 'Referencia', 'Notas'],
+      ...movements.map(m => {
+        const p = products.find(prod => prod.id === m.product_id);
+        return [
+          format(new Date(m.created_at), 'dd/MM/yyyy HH:mm', { locale: es }),
+          getMovementTypeLabel(m.type),
+          m.product?.name || '',
+          p?.sku || m.product?.sku || '-',
+          m.variant_name || '-',
+          m.location?.name || '',
+          m.quantity_change.toString(),
+          m.stock_before.toString(),
+          m.stock_after.toString(),
+          m.reference || '',
+          m.notes || '',
+        ];
+      })
     ].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -347,6 +351,7 @@ export default function StockPage() {
                   <tr className="border-b">
                     <th className="text-left py-3 px-2 text-sm font-medium text-slate-700">Fecha</th>
                     <th className="text-left py-3 px-2 text-sm font-medium text-slate-700">Producto</th>
+                    <th className="text-left py-3 px-2 text-sm font-medium text-slate-700">SKU</th>
                     <th className="text-left py-3 px-2 text-sm font-medium text-slate-700">Ubicación</th>
                     <th className="text-center py-3 px-2 text-sm font-medium text-slate-700">Movimiento</th>
                     <th className="text-center py-3 px-2 text-sm font-medium text-slate-700">Stock</th>
@@ -381,6 +386,9 @@ export default function StockPage() {
                                   </span>
                                 )}
                               </div>
+                            </td>
+                            <td className="py-3 px-2 text-sm">
+                              {productData?.sku || movement.product?.sku || '-'}
                             </td>
                             <td className="py-3 px-2 text-sm">
                               {movement.location?.name || '-'}

@@ -61,6 +61,7 @@ export interface InventoryMovement {
   product?: {
     id: number;
     name: string;
+    sku?: string;
     price: string;
     image_url?: string | null;
     track_stock: boolean;
