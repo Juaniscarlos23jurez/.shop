@@ -319,7 +319,7 @@ export function PricingSection({
                             })}
                         </div>
 
-                        {/* Extras Section */}
+                        {/* Extras Section  
                         <div className="mt-20 max-w-4xl mx-auto">
                             <div className="group relative bg-slate-50/50 backdrop-blur-sm border border-slate-100 rounded-[2.5rem] p-8 md:p-10">
                                 <h3 className="text-2xl font-black text-[#0f172a] mb-8 flex items-center gap-3">
@@ -356,7 +356,7 @@ export function PricingSection({
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        </div>*/}
                     </div>
                 </section>
 

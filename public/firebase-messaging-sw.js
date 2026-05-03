@@ -8,12 +8,12 @@ importScripts('https://www.gstatic.com/firebasejs/8.10.0/firebase-messaging.js')
 // IMPORTANTE: Estos valores deben coincidir con los de tu proyecto Firebase
 // Puedes ajustarlos si cambian en el futuro.
 firebase.initializeApp({
-  apiKey: 'AIzaSyBovARunwRXUnSWy0fzZXGhdv0hKx2s2n0',
+  apiKey: 'AIzaSyBovARiwMMBb3TT5eZ5rjjZy6jwYYKmoiU',
   authDomain: 'menushenu-2828b.firebaseapp.com',
   projectId: 'menushenu-2828b',
   storageBucket: 'menushenu-2828b.firebasestorage.app',
   messagingSenderId: '680910624455',
-  appId: '1:680910624455:web:xxxxxxxxxxxxxxxx', // opcional, no crítico para FCM en SW
+  appId: '1:680910624455:web:13fc4da605a218eb4810e2'
 });
 
 const messaging = firebase.messaging();

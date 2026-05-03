@@ -14,7 +14,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { storage } from "@/lib/firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import * as Lucide from "lucide-react";
-const { Megaphone, Sparkles, LayoutTemplate, MousePointerClick, Palette } = Lucide as any;
+const { Megaphone, Sparkles, LayoutTemplate, MousePointerClick, Palette, ShoppingCart, Download, MousePointer, Monitor, Menu, Laptop, Star, Type, Square, Crown } = Lucide as any;
 
 export default function ComponentesPlaygroundPage() {
   const { token, user } = useAuth();
@@ -48,6 +48,12 @@ export default function ComponentesPlaygroundPage() {
   const [navigationBarColor, setNavigationBarColor] = useState("#1f2937"); // gray-800 por defecto
   const [downloadAppColor, setDownloadAppColor] = useState("#3b82f6"); // blue-500 por defecto
   const [backgroundColor, setBackgroundColor] = useState("#f9fafb"); // gray-50 por defecto
+
+  // Loyality design colors
+  const [primaryColor, setPrimaryColor] = useState("#059669"); // verde Starbucks
+  const [rewardAccentColor, setRewardAccentColor] = useState("#eab308"); // dorado estrellas
+  const [surfaceColor, setSurfaceColor] = useState("#ffffff"); // blanco para tarjetas
+  const [buttonTextColor, setButtonTextColor] = useState("#ffffff"); // texto sobre primario
 
   // Loading / saving state
   const [loadingSettings, setLoadingSettings] = useState(false);
@@ -94,6 +100,12 @@ export default function ComponentesPlaygroundPage() {
             if (typeof settings.navigation_bar_color === "string") setNavigationBarColor(settings.navigation_bar_color);
             if (typeof settings.download_app_color === "string") setDownloadAppColor(settings.download_app_color);
             if (typeof settings.background_color === "string") setBackgroundColor(settings.background_color);
+
+            // Cargar colores loyality
+            if (typeof settings.primary_color === "string") setPrimaryColor(settings.primary_color);
+            if (typeof settings.reward_accent_color === "string") setRewardAccentColor(settings.reward_accent_color);
+            if (typeof settings.surface_color === "string") setSurfaceColor(settings.surface_color);
+            if (typeof settings.button_text_color === "string") setButtonTextColor(settings.button_text_color);
           }
         }
       } catch (e) {
@@ -177,6 +189,10 @@ export default function ComponentesPlaygroundPage() {
         navigation_bar_color: navigationBarColor,
         download_app_color: downloadAppColor,
         background_color: backgroundColor,
+        primary_color: primaryColor,
+        reward_accent_color: rewardAccentColor,
+        surface_color: surfaceColor,
+        button_text_color: buttonTextColor,
       };
 
       console.log("[UI Settings] Enviando payload a api.uiSettings.upsert", payload);
@@ -238,204 +254,317 @@ export default function ComponentesPlaygroundPage() {
         <TabsContent value="custom-design" className="mt-4">
           <div className="grid gap-6 lg:grid-cols-1">
             {/* Custom Design Configuration */}
-            <Card className="border-dashed">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <Palette className="h-5 w-5 text-purple-600" />
-                  Personalización de colores
-                </CardTitle>
-                <CardDescription>
-                  Configura los colores de los elementos principales de tu tienda. Estos colores se aplicarán a botones, banners y otros elementos visuales.
-                </CardDescription>
+            <Card className="border-none shadow-xl bg-gradient-to-b from-card to-muted/20">
+              <CardHeader className="pb-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <CardTitle className="flex items-center gap-2 text-2xl font-bold">
+                      <div className="p-2 rounded-xl bg-purple-600/10 text-purple-600">
+                        <Palette className="h-6 w-6" />
+                      </div>
+                      Identidad Visual
+                    </CardTitle>
+                    <CardDescription className="text-base">
+                      Personaliza la paleta cromática de tu tienda digital para alinearla con tu marca.
+                    </CardDescription>
+                  </div>
+                  <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                    Premium Design
+                  </Badge>
+                </div>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              <CardContent className="space-y-8">
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                   {/* Botón Agregar al Carrito */}
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="w-6 h-6 rounded"
-                        style={{ backgroundColor: cartButtonColor }}
-                      />
-                      <label className="font-medium text-sm">Botón "Agregar al carrito"</label>
+                  <div className="group relative flex flex-col space-y-3 p-5 rounded-2xl border bg-card hover:border-purple-200 hover:shadow-md transition-all duration-300">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-emerald-50 text-emerald-600 group-hover:scale-110 transition-transform">
+                        <ShoppingCart className="h-4 w-4" />
+                      </div>
+                      <label className="font-semibold text-sm">Botón</label>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
+                      <div className="relative flex-1">
+                        <Input
+                          value={cartButtonColor}
+                          onChange={(e) => setCartButtonColor(e.target.value)}
+                          className="pl-10 h-10 text-xs font-mono bg-muted/30 border-none"
+                        />
+                        <div
+                          className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full shadow-sm ring-2 ring-background"
+                          style={{ backgroundColor: cartButtonColor }}
+                        />
+                      </div>
                       <input
                         type="color"
                         value={cartButtonColor}
                         onChange={(e) => setCartButtonColor(e.target.value)}
-                        className="h-8 w-8 cursor-pointer rounded border border-input bg-background p-1"
-                      />
-                      <Input
-                        value={cartButtonColor}
-                        onChange={(e) => setCartButtonColor(e.target.value)}
-                        className="text-xs"
-                        placeholder="#059669"
+                        className="h-10 w-10 cursor-pointer rounded-xl border-none bg-transparent p-0 transition-transform hover:scale-110"
                       />
                     </div>
-                    <div className="text-xs text-muted-foreground">
-                      Color principal del botón para agregar productos
-                    </div>
+                    <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">
+                      Acción principal (CTA)
+                    </p>
                   </div>
 
                   {/* Icono del Carrito */}
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="w-6 h-6 rounded border"
-                        style={{ backgroundColor: cartIconColor }}
-                      />
-                      <label className="font-medium text-sm">Icono del carrito</label>
+                  <div className="group relative flex flex-col space-y-3 p-5 rounded-2xl border bg-card hover:border-blue-200 hover:shadow-md transition-all duration-300">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-blue-50 text-blue-600 group-hover:scale-110 transition-transform">
+                        <MousePointer className="h-4 w-4" />
+                      </div>
+                      <label className="font-semibold text-sm">Contraste de Iconos</label>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
+                      <div className="relative flex-1">
+                        <Input
+                          value={cartIconColor}
+                          onChange={(e) => setCartIconColor(e.target.value)}
+                          className="pl-10 h-10 text-xs font-mono bg-muted/30 border-none"
+                        />
+                        <div
+                          className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full shadow-sm ring-2 ring-background border"
+                          style={{ backgroundColor: cartIconColor }}
+                        />
+                      </div>
                       <input
                         type="color"
                         value={cartIconColor}
                         onChange={(e) => setCartIconColor(e.target.value)}
-                        className="h-8 w-8 cursor-pointer rounded border border-input bg-background p-1"
-                      />
-                      <Input
-                        value={cartIconColor}
-                        onChange={(e) => setCartIconColor(e.target.value)}
-                        className="text-xs"
-                        placeholder="#ffffff"
+                        className="h-10 w-10 cursor-pointer rounded-xl border-none bg-transparent p-0 transition-transform hover:scale-110"
                       />
                     </div>
-                    <div className="text-xs text-muted-foreground">
-                      Color del icono dentro del botón del carrito
-                    </div>
+                    <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">
+                      Simbolismos y Glifos
+                    </p>
                   </div>
 
                   {/* Barra de Navegación */}
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="w-6 h-6 rounded"
-                        style={{ backgroundColor: navigationBarColor }}
-                      />
-                      <label className="font-medium text-sm">Barra de navegación</label>
+                  <div className="group relative flex flex-col space-y-3 p-5 rounded-2xl border bg-card hover:border-slate-200 hover:shadow-md transition-all duration-300">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-slate-100 text-slate-700 group-hover:scale-110 transition-transform">
+                        <Menu className="h-4 w-4" />
+                      </div>
+                      <label className="font-semibold text-sm">Navegación Superior</label>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
+                      <div className="relative flex-1">
+                        <Input
+                          value={navigationBarColor}
+                          onChange={(e) => setNavigationBarColor(e.target.value)}
+                          className="pl-10 h-10 text-xs font-mono bg-muted/30 border-none"
+                        />
+                        <div
+                          className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full shadow-sm ring-2 ring-background"
+                          style={{ backgroundColor: navigationBarColor }}
+                        />
+                      </div>
                       <input
                         type="color"
                         value={navigationBarColor}
                         onChange={(e) => setNavigationBarColor(e.target.value)}
-                        className="h-8 w-8 cursor-pointer rounded border border-input bg-background p-1"
-                      />
-                      <Input
-                        value={navigationBarColor}
-                        onChange={(e) => setNavigationBarColor(e.target.value)}
-                        className="text-xs"
-                        placeholder="#1f2937"
+                        className="h-10 w-10 cursor-pointer rounded-xl border-none bg-transparent p-0 transition-transform hover:scale-110"
                       />
                     </div>
-                    <div className="text-xs text-muted-foreground">
-                      Color de fondo del menú de navegación
-                    </div>
+                    <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">
+                      Fondo del Header
+                    </p>
                   </div>
 
                   {/* Botón Descargar App */}
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="w-6 h-6 rounded"
-                        style={{ backgroundColor: downloadAppColor }}
-                      />
-                      <label className="font-medium text-sm">Botón "Descargar app"</label>
+                  <div className="group relative flex flex-col space-y-3 p-5 rounded-2xl border bg-card hover:border-indigo-200 hover:shadow-md transition-all duration-300">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-indigo-50 text-indigo-600 group-hover:scale-110 transition-transform">
+                        <Download className="h-4 w-4" />
+                      </div>
+                      <label className="font-semibold text-sm">Botón de App</label>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
+                      <div className="relative flex-1">
+                        <Input
+                          value={downloadAppColor}
+                          onChange={(e) => setDownloadAppColor(e.target.value)}
+                          className="pl-10 h-10 text-xs font-mono bg-muted/30 border-none"
+                        />
+                        <div
+                          className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full shadow-sm ring-2 ring-background"
+                          style={{ backgroundColor: downloadAppColor }}
+                        />
+                      </div>
                       <input
                         type="color"
                         value={downloadAppColor}
                         onChange={(e) => setDownloadAppColor(e.target.value)}
-                        className="h-8 w-8 cursor-pointer rounded border border-input bg-background p-1"
-                      />
-                      <Input
-                        value={downloadAppColor}
-                        onChange={(e) => setDownloadAppColor(e.target.value)}
-                        className="text-xs"
-                        placeholder="#3b82f6"
+                        className="h-10 w-10 cursor-pointer rounded-xl border-none bg-transparent p-0 transition-transform hover:scale-110"
                       />
                     </div>
-                    <div className="text-xs text-muted-foreground">
-                      Color del botón para descargar la aplicación
-                    </div>
+                    <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">
+                      Promoción Instalable
+                    </p>
                   </div>
 
                   {/* Color de Fondo */}
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="w-6 h-6 rounded border"
-                        style={{ backgroundColor: backgroundColor }}
-                      />
-                      <label className="font-medium text-sm">Color de fondo</label>
+                  <div className="group relative flex flex-col space-y-3 p-5 rounded-2xl border bg-card hover:border-orange-200 hover:shadow-md transition-all duration-300">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-orange-50 text-orange-600 group-hover:scale-110 transition-transform">
+                        <Monitor className="h-4 w-4" />
+                      </div>
+                      <label className="font-semibold text-sm">Fondo Global</label>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
+                      <div className="relative flex-1">
+                        <Input
+                          value={backgroundColor}
+                          onChange={(e) => setBackgroundColor(e.target.value)}
+                          className="pl-10 h-10 text-xs font-mono bg-muted/30 border-none"
+                        />
+                        <div
+                          className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full shadow-sm ring-2 ring-background border"
+                          style={{ backgroundColor: backgroundColor }}
+                        />
+                      </div>
                       <input
                         type="color"
                         value={backgroundColor}
                         onChange={(e) => setBackgroundColor(e.target.value)}
-                        className="h-8 w-8 cursor-pointer rounded border border-input bg-background p-1"
-                      />
-                      <Input
-                        value={backgroundColor}
-                        onChange={(e) => setBackgroundColor(e.target.value)}
-                        className="text-xs"
-                        placeholder="#f9fafb"
+                        className="h-10 w-10 cursor-pointer rounded-xl border-none bg-transparent p-0 transition-transform hover:scale-110"
                       />
                     </div>
-                    <div className="text-xs text-muted-foreground">
-                      Color de fondo general de la tienda
-                    </div>
+                    <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">
+                      Canvas del Sitio
+                    </p>
                   </div>
-                </div>
-
-                {/* Vista previa */}
-                <div className="mt-8 p-6 border rounded-lg" style={{ backgroundColor: backgroundColor }}>
-                  <div className="space-y-4">
-                    {/* Preview de navegación */}
-                    <div
-                      className="p-4 rounded-lg text-white"
-                      style={{ backgroundColor: navigationBarColor }}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium">Mi Tienda</span>
-                        <div className="flex items-center gap-2">
-                          <div
-                            className="p-2 rounded"
-                            style={{ backgroundColor: cartButtonColor }}
-                          >
-                            <svg
-                              className="w-5 h-5"
-                              style={{ color: cartIconColor }}
-                              fill="currentColor"
-                              viewBox="0 0 20 20"
-                            >
-                              <path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
-                            </svg>
-                          </div>
-                        </div>
+                  {/* Primary Brand Color */}
+                  <div className="group relative flex flex-col space-y-3 p-5 rounded-2xl border bg-card hover:border-emerald-200 hover:shadow-md transition-all duration-300">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-emerald-50 text-emerald-600 group-hover:scale-110 transition-transform">
+                        <Crown className="h-4 w-4" />
                       </div>
+                      <label className="font-semibold text-sm">Primario (Marca)</label>
                     </div>
+                    <div className="flex items-center gap-3">
+                      <div className="relative flex-1">
+                        <Input
+                          value={primaryColor}
+                          onChange={(e) => setPrimaryColor(e.target.value)}
+                          className="pl-10 h-10 text-xs font-mono bg-muted/30 border-none"
+                        />
+                        <div
+                          className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full shadow-sm ring-2 ring-background border"
+                          style={{ backgroundColor: primaryColor }}
+                        />
+                      </div>
+                      <input
+                        type="color"
+                        value={primaryColor}
+                        onChange={(e) => setPrimaryColor(e.target.value)}
+                        className="h-10 w-10 cursor-pointer rounded-xl border-none bg-transparent p-0 transition-transform hover:scale-110"
+                      />
+                    </div>
+                    <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">
+                      Identidad fuerte
+                    </p>
+                  </div>
 
-                    {/* Preview de botones */}
-                    <div className="flex flex-wrap gap-4">
-                      <button
-                        className="px-4 py-2 rounded-lg text-white font-medium"
-                        style={{ backgroundColor: cartButtonColor }}
-                      >
-                        Agregar al carrito
-                      </button>
-                      <button
-                        className="px-4 py-2 rounded-lg text-white font-medium"
-                        style={{ backgroundColor: downloadAppColor }}
-                      >
-                        Descargar app
-                      </button>
+                  {/* Text on Primary */}
+                  <div className="group relative flex flex-col space-y-3 p-5 rounded-2xl border bg-card hover:border-slate-300 hover:shadow-md transition-all duration-300">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-slate-100 text-slate-700 group-hover:scale-110 transition-transform">
+                        <Type className="h-4 w-4" />
+                      </div>
+                      <label className="font-semibold text-sm">Texto en Primario</label>
                     </div>
+                    <div className="flex items-center gap-3">
+                      <div className="relative flex-1">
+                        <Input
+                          value={buttonTextColor}
+                          onChange={(e) => setButtonTextColor(e.target.value)}
+                          className="pl-10 h-10 text-xs font-mono bg-muted/30 border-none"
+                        />
+                        <div
+                          className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full shadow-sm ring-2 ring-background border"
+                          style={{ backgroundColor: buttonTextColor }}
+                        />
+                      </div>
+                      <input
+                        type="color"
+                        value={buttonTextColor}
+                        onChange={(e) => setButtonTextColor(e.target.value)}
+                        className="h-10 w-10 cursor-pointer rounded-xl border-none bg-transparent p-0 transition-transform hover:scale-110"
+                      />
+                    </div>
+                    <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">
+                      Contraste sobre marca
+                    </p>
+                  </div>
+
+                  {/* Reward Accent Color */}
+                  <div className="group relative flex flex-col space-y-3 p-5 rounded-2xl border bg-card hover:border-yellow-200 hover:shadow-md transition-all duration-300">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-yellow-50 text-yellow-600 group-hover:scale-110 transition-transform">
+                        <Star className="h-4 w-4" />
+                      </div>
+                      <label className="font-semibold text-sm">Acento (Recompensas)</label>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="relative flex-1">
+                        <Input
+                          value={rewardAccentColor}
+                          onChange={(e) => setRewardAccentColor(e.target.value)}
+                          className="pl-10 h-10 text-xs font-mono bg-muted/30 border-none"
+                        />
+                        <div
+                          className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full shadow-sm ring-2 ring-background border"
+                          style={{ backgroundColor: rewardAccentColor }}
+                        />
+                      </div>
+                      <input
+                        type="color"
+                        value={rewardAccentColor}
+                        onChange={(e) => setRewardAccentColor(e.target.value)}
+                        className="h-10 w-10 cursor-pointer rounded-xl border-none bg-transparent p-0 transition-transform hover:scale-110"
+                      />
+                    </div>
+                    <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">
+                      Puntos, estrellas, progreso
+                    </p>
+                  </div>
+
+                  {/* Surface Color */}
+                  <div className="group relative flex flex-col space-y-3 p-5 rounded-2xl border bg-card hover:border-gray-200 hover:shadow-md transition-all duration-300">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-gray-100 text-gray-600 group-hover:scale-110 transition-transform">
+                        <Square className="h-4 w-4" />
+                      </div>
+                      <label className="font-semibold text-sm">Superficie (Tarjetas)</label>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="relative flex-1">
+                        <Input
+                          value={surfaceColor}
+                          onChange={(e) => setSurfaceColor(e.target.value)}
+                          className="pl-10 h-10 text-xs font-mono bg-muted/30 border-none"
+                        />
+                        <div
+                          className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full shadow-sm ring-2 ring-background border"
+                          style={{ backgroundColor: surfaceColor }}
+                        />
+                      </div>
+                      <input
+                        type="color"
+                        value={surfaceColor}
+                        onChange={(e) => setSurfaceColor(e.target.value)}
+                        className="h-10 w-10 cursor-pointer rounded-xl border-none bg-transparent p-0 transition-transform hover:scale-110"
+                      />
+                    </div>
+                    <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">
+                      Fondo de las tarjetas
+                    </p>
                   </div>
                 </div>
+
+                {/* Live Preview Mockup */}
+
               </CardContent>
             </Card>
           </div>
@@ -444,102 +573,134 @@ export default function ComponentesPlaygroundPage() {
         <TabsContent value="componentes" className="mt-4">
           <div className="grid gap-6 lg:grid-cols-2">
             {/* Banner demo + config */}
-            <Card className="border-dashed">
-              <CardHeader className="flex flex-row items-center justify-between gap-4">
-                <div>
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <Megaphone className="h-5 w-5 text-emerald-600" />
-                    Banner promocional
+            <Card className="border-none shadow-xl bg-gradient-to-br from-card to-emerald-50/10">
+              <CardHeader className="flex flex-row items-center justify-between gap-4 pb-2">
+                <div className="space-y-1">
+                  <CardTitle className="flex items-center gap-2 text-xl font-bold">
+                    <div className="p-2 rounded-xl bg-emerald-600/10 text-emerald-600">
+                      <Megaphone className="h-5 w-5" />
+                    </div>
+                    Banner Promocional
                   </CardTitle>
                   <CardDescription>
-                    Aquí podrás diseñar banners hero que luego se mostrarán en tu web o app.
+                    Diseña banners de alto impacto para destacar ofertas o anuncios importantes.
                   </CardDescription>
                 </div>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <span>Habilitado</span>
+                <div className="flex items-center gap-2 bg-muted/50 p-2 rounded-xl border">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Estado</span>
                   <Switch checked={bannerEnabled} onCheckedChange={setBannerEnabled} />
                 </div>
               </CardHeader>
-              <CardContent className="space-y-6">
+              <CardContent className="space-y-8">
                 {/* Preview */}
-                {bannerEnabled ? (
-                  <div
-                    className="rounded-2xl border px-6 py-4 text-white shadow-lg"
-                    style={{ backgroundColor: bannerColor || "#059669" }}
-                  >
-                    <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
-                      <p className="text-sm sm:text-base font-medium leading-snug">
-                        {bannerText}
-                      </p>
-                      <Button
-                        size="sm"
-                        className="bg-white text-emerald-700 hover:bg-emerald-50 whitespace-nowrap"
-                        asChild={!!bannerButtonUrl}
-                      >
-                        {bannerButtonUrl ? (
-                          <a href={bannerButtonUrl} target="_blank" rel="noreferrer">
-                            {bannerButtonLabel}
-                          </a>
-                        ) : (
-                          <span>{bannerButtonLabel}</span>
-                        )}
-                      </Button>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground/60">Vista Previa</h4>
+                    <span className="text-[10px] text-emerald-600 font-medium">Actualización en vivo</span>
+                  </div>
+                  {bannerEnabled ? (
+                    <div
+                      className="rounded-3xl border px-8 py-6 text-white shadow-2xl transition-all duration-500 hover:scale-[1.01]"
+                      style={{
+                        backgroundColor: bannerColor || "#059669",
+                        backgroundImage: 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 100%)'
+                      }}
+                    >
+                      <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="space-y-1">
+                          <Badge className="bg-white/20 text-white border-none backdrop-blur-md mb-2">Destacado</Badge>
+                          <p className="text-sm sm:text-lg font-bold leading-tight max-w-md">
+                            {bannerText}
+                          </p>
+                        </div>
+                        <Button
+                          size="lg"
+                          className="bg-white text-emerald-700 hover:bg-emerald-50 font-bold rounded-2xl shadow-lg transition-all hover:shadow-xl active:scale-95"
+                          asChild={!!bannerButtonUrl}
+                        >
+                          {bannerButtonUrl ? (
+                            <a href={bannerButtonUrl} target="_blank" rel="noreferrer">
+                              {bannerButtonLabel}
+                            </a>
+                          ) : (
+                            <span>{bannerButtonLabel}</span>
+                          )}
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                ) : (
-                  <div className="rounded-xl border border-dashed border-muted-foreground/20 p-4 text-xs text-muted-foreground">
-                    El banner está deshabilitado. Activa el switch para verlo en la vista previa.
-                  </div>
-                )}
+                  ) : (
+                    <div className="group rounded-3xl border-2 border-dashed border-muted-foreground/10 p-12 text-center transition-colors hover:border-emerald-500/20 bg-muted/5 tracking-tight">
+                      <div className="mx-auto w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center mb-4 text-muted-foreground/30 group-hover:text-emerald-500/50 transition-colors">
+                        <Megaphone className="h-6 w-6" />
+                      </div>
+                      <p className="text-sm text-muted-foreground font-medium">El banner está inactivo</p>
+                      <p className="text-xs text-muted-foreground/60">Activa el switch superior para gestionar el contenido.</p>
+                    </div>
+                  )}
+                </div>
 
                 {/* Config form */}
-                <div className="grid gap-4 text-sm sm:grid-cols-2">
-                  <div className="space-y-1 sm:col-span-2">
-                    <label className="font-medium">Texto del banner</label>
+                <div className="grid gap-6 text-sm">
+                  <div className="space-y-2">
+                    <label className="font-bold flex items-center gap-2">
+                      <LayoutTemplate className="h-4 w-4 text-muted-foreground" />
+                      Mensaje principal
+                    </label>
                     <Textarea
                       value={bannerText}
                       onChange={(e) => setBannerText(e.target.value)}
-                      rows={2}
+                      placeholder="Escribe aquí tu mensaje promocional..."
+                      className="rounded-2xl bg-muted/30 border-none min-h-[100px] focus-visible:ring-emerald-500/30"
                     />
                   </div>
-                  <div className="space-y-1">
-                    <label className="font-medium text-xs uppercase tracking-wide text-muted-foreground">
-                      Texto del botón
-                    </label>
-                    <Input
-                      value={bannerButtonLabel}
-                      onChange={(e) => setBannerButtonLabel(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="font-medium text-xs uppercase tracking-wide text-muted-foreground">
-                      Link del botón
-                    </label>
-                    <Input
-                      placeholder="https://tutienda.com/promo"
-                      value={bannerButtonUrl}
-                      onChange={(e) => setBannerButtonUrl(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-1 sm:col-span-2">
-                    <label className="font-medium text-xs uppercase tracking-wide text-muted-foreground">
-                      Color de fondo
-                    </label>
-                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                      <input
-                        type="color"
-                        value={bannerColor}
-                        onChange={(e) => setBannerColor(e.target.value)}
-                        className="h-9 w-9 cursor-pointer rounded-md border border-input bg-background p-1"
-                      />
+
+                  <div className="grid sm:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="font-bold flex items-center gap-2">
+                        <MousePointerClick className="h-4 w-4 text-muted-foreground" />
+                        Texto del Botón
+                      </label>
                       <Input
-                        value={bannerColor}
-                        onChange={(e) => setBannerColor(e.target.value)}
-                        className="max-w-[140px] text-xs"
+                        value={bannerButtonLabel}
+                        onChange={(e) => setBannerButtonLabel(e.target.value)}
+                        className="rounded-xl bg-muted/30 border-none h-11"
                       />
-                      <span className="hidden sm:inline">
-                        Ejemplo: #059669
-                      </span>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="font-bold flex items-center gap-2">
+                        <Sparkles className="h-4 w-4 text-muted-foreground" />
+                        Enlace de Destino
+                      </label>
+                      <Input
+                        placeholder="https://tutienda.com/promo"
+                        value={bannerButtonUrl}
+                        onChange={(e) => setBannerButtonUrl(e.target.value)}
+                        className="rounded-xl bg-muted/30 border-none h-11"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 p-4 rounded-2xl bg-muted/20">
+                    <label className="font-bold flex items-center gap-2">
+                      <Palette className="h-4 w-4 text-muted-foreground" />
+                      Cromatismo
+                    </label>
+                    <div className="flex items-center gap-4">
+                      <div className="relative">
+                        <input
+                          type="color"
+                          value={bannerColor}
+                          onChange={(e) => setBannerColor(e.target.value)}
+                          className="h-12 w-12 cursor-pointer rounded-xl border-none bg-transparent p-0 transition-transform hover:scale-110"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <Input
+                          value={bannerColor}
+                          onChange={(e) => setBannerColor(e.target.value)}
+                          className="text-xs font-mono bg-background/50 border-none h-11"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -547,125 +708,137 @@ export default function ComponentesPlaygroundPage() {
             </Card>
 
             {/* Modal demo + config */}
-            <Card className="border-dashed">
-              <CardHeader className="flex flex-row items-center justify-between gap-4">
-                <div>
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <MousePointerClick className="h-5 w-5 text-sky-600" />
-                    Modal / Pop-up
+            <Card className="border-none shadow-xl bg-gradient-to-br from-card to-sky-50/10">
+              <CardHeader className="flex flex-row items-center justify-between gap-4 pb-2">
+                <div className="space-y-1">
+                  <CardTitle className="flex items-center gap-2 text-xl font-bold">
+                    <div className="p-2 rounded-xl bg-sky-600/10 text-sky-600">
+                      <MousePointerClick className="h-5 w-5" />
+                    </div>
+                    Modal Inteligente
                   </CardTitle>
                   <CardDescription>
-                    Ejemplo de modal que luego podrás adaptar para anuncios, formularios o confirmaciones.
+                    Interacciones emergentes para captar la atención de tus clientes de forma elegante.
                   </CardDescription>
                 </div>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <span>Habilitado</span>
+                <div className="flex items-center gap-2 bg-muted/50 p-2 rounded-xl border">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Estado</span>
                   <Switch checked={popupEnabled} onCheckedChange={setPopupEnabled} />
                 </div>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <p className="text-sm text-muted-foreground">
-                  Configura el contenido del pop-up y luego pruébalo con el botón de vista previa.
-                </p>
-                <div className="flex flex-wrap gap-3">
+              <CardContent className="space-y-8">
+                <div className="flex flex-col items-center justify-center p-8 rounded-3xl bg-muted/20 border-2 border-dashed border-sky-200/50 space-y-4">
+                  <div className="w-16 h-16 rounded-3xl bg-sky-500/10 flex items-center justify-center text-sky-600 shadow-inner">
+                    <Sparkles className="h-8 w-8" />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm font-bold">¿Listo para probar?</p>
+                    <p className="text-xs text-muted-foreground mb-4">Lanza la previsualización del pop-up configurado.</p>
+                  </div>
                   <Button
-                    size="sm"
+                    size="lg"
                     disabled={!popupEnabled}
                     onClick={() => popupEnabled && setOpenDemoModal(true)}
+                    className="rounded-2xl bg-sky-600 hover:bg-sky-700 shadow-lg shadow-sky-200 transition-all active:scale-95"
                   >
-                    Abrir pop-up de ejemplo
+                    Lanzar Vista Previa
                   </Button>
                 </div>
 
                 {/* Config form */}
-                <div className="grid gap-4 text-sm">
-                  <div className="space-y-1">
-                    <label className="font-medium">Imagen del pop-up</label>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="block w-full text-sm text-muted-foreground file:mr-3 file:rounded-md file:border file:border-input file:bg-background file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-foreground hover:file:bg-accent hover:file:text-accent-foreground"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        console.log("[UI Settings] onChange imagen pop-up", { hasFile: !!file, file });
-                        if (!file) return;
-                        const objectUrl = URL.createObjectURL(file);
-                        console.log("[UI Settings] objectUrl generado para previsualización", { objectUrl });
-                        setPopupImageUrl(objectUrl);
-                        setPopupImageFile(file);
-                      }}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Selecciona una imagen desde tu dispositivo para previsualizar el pop-up.
-                    </p>
+                <div className="grid gap-6 text-sm">
+                  <div className="space-y-2">
+                    <label className="font-bold flex items-center gap-2">
+                      <Monitor className="h-4 w-4 text-muted-foreground" />
+                      Imagen / Multimedia
+                    </label>
+                    <div className="relative group">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          const objectUrl = URL.createObjectURL(file);
+                          setPopupImageUrl(objectUrl);
+                          setPopupImageFile(file);
+                        }}
+                      />
+                      <div className="p-4 border-2 border-dashed rounded-2xl bg-muted/30 text-center transition-all group-hover:bg-muted/50 group-hover:border-sky-300">
+                        <p className="text-xs font-bold text-muted-foreground">Haz clic para subir o arrastra una imagen</p>
+                        <p className="text-[10px] text-muted-foreground/60 mt-1">Soporta PNG, JPG, WebP</p>
+                      </div>
+                    </div>
                     {popupImageUrl && (
-                      <div className="mt-2 overflow-hidden rounded-lg border bg-muted">
+                      <div className="mt-4 relative group rounded-2xl overflow-hidden shadow-xl ring-4 ring-muted/30">
                         <img
                           src={popupImageUrl}
                           alt="Preview del pop-up"
-                          className="h-32 w-full object-cover"
+                          className="h-48 w-full object-cover transition-transform duration-700 group-hover:scale-110"
                         />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
+                          <span className="text-white text-[10px] font-bold uppercase tracking-widest">Previsualización del Asset</span>
+                        </div>
                       </div>
                     )}
                   </div>
-                  <div className="space-y-1">
-                    <label className="font-medium">Título</label>
-                    <Input value={popupTitle} onChange={(e) => setPopupTitle(e.target.value)} />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="font-medium">Descripción</label>
-                    <Textarea
-                      value={popupDescription}
-                      onChange={(e) => setPopupDescription(e.target.value)}
-                      rows={3}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="font-medium text-xs uppercase tracking-wide text-muted-foreground">
-                      Texto del botón
-                    </label>
-                    <Input
-                      value={popupButtonLabel}
-                      onChange={(e) => setPopupButtonLabel(e.target.value)}
-                      placeholder="Ej: Ir al grupo de WhatsApp"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="font-medium text-xs uppercase tracking-wide text-muted-foreground">
-                      Link del botón
-                    </label>
-                    <Input
-                      value={popupButtonUrl}
-                      onChange={(e) => setPopupButtonUrl(e.target.value)}
-                      placeholder="https://..."
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="font-medium text-xs uppercase tracking-wide text-muted-foreground">
-                      Color del botón
-                    </label>
-                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                      <input
-                        type="color"
-                        value={popupButtonColor}
-                        onChange={(e) => setPopupButtonColor(e.target.value)}
-                        className="h-9 w-9 cursor-pointer rounded-md border border-input bg-background p-1"
-                      />
+
+                  <div className="grid sm:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="font-bold flex items-center gap-2">Título del Modal</label>
                       <Input
-                        value={popupButtonColor}
-                        onChange={(e) => setPopupButtonColor(e.target.value)}
-                        className="max-w-[140px] text-xs"
+                        value={popupTitle}
+                        onChange={(e) => setPopupTitle(e.target.value)}
+                        className="rounded-xl bg-muted/30 border-none h-11"
                       />
-                      <span className="hidden sm:inline">Ejemplo: #059669</span>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="font-bold flex items-center gap-2">Cuerpo del Mensaje</label>
+                      <Textarea
+                        value={popupDescription}
+                        onChange={(e) => setPopupDescription(e.target.value)}
+                        rows={2}
+                        className="rounded-xl bg-muted/30 border-none focus-visible:ring-sky-500/30"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid sm:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="font-bold flex items-center gap-2">Etiqueta del Botón</label>
+                      <Input
+                        value={popupButtonLabel}
+                        onChange={(e) => setPopupButtonLabel(e.target.value)}
+                        placeholder="Ej: Ir al grupo de WhatsApp"
+                        className="rounded-xl bg-muted/30 border-none h-11"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="font-bold flex items-center gap-2">Color de Acción</label>
+                      <div className="flex items-center gap-3 p-1 bg-muted/30 rounded-xl">
+                        <input
+                          type="color"
+                          value={popupButtonColor}
+                          onChange={(e) => setPopupButtonColor(e.target.value)}
+                          className="h-9 w-9 cursor-pointer rounded-lg border-none bg-transparent p-0 overflow-hidden"
+                        />
+                        <Input
+                          value={popupButtonColor}
+                          onChange={(e) => setPopupButtonColor(e.target.value)}
+                          className="text-xs font-mono bg-transparent border-none h-9 grow"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Dialog preview */}
+                {/* Dialog preview actual representation */}
                 <Dialog open={openDemoModal && popupEnabled} onOpenChange={setOpenDemoModal}>
-                  <DialogContent className="w-[90%] sm:max-w-md rounded-2xl p-0 overflow-hidden">
+                  <DialogContent className="sm:max-w-[440px] rounded-[2.5rem] p-0 overflow-hidden border-none shadow-2xl animate-in zoom-in-95 duration-300">
                     {popupImageUrl && (
-                      <div className="w-full h-64 sm:h-72 overflow-hidden">
+                      <div className="w-full h-72 overflow-hidden relative">
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent z-10" />
                         <img
                           src={popupImageUrl}
                           alt={popupTitle}
@@ -673,16 +846,16 @@ export default function ComponentesPlaygroundPage() {
                         />
                       </div>
                     )}
-                    <div className="px-5 py-4 space-y-4">
-                      <DialogHeader className="p-0">
-                        <DialogTitle>{popupTitle}</DialogTitle>
-                        <DialogDescription>{popupDescription}</DialogDescription>
-                      </DialogHeader>
+                    <div className="px-8 py-8 space-y-6 bg-card">
+                      <div className="space-y-2 text-center">
+                        <h3 className="text-2xl font-bold tracking-tight">{popupTitle}</h3>
+                        <p className="text-muted-foreground text-sm leading-relaxed">{popupDescription}</p>
+                      </div>
 
                       {popupButtonLabel && popupButtonUrl && (
-                        <div className="pt-2 flex justify-center">
+                        <div className="flex justify-center">
                           <Button
-                            className="w-[90%] max-w-xs text-sm font-semibold rounded-full"
+                            className="w-full h-14 text-sm font-bold rounded-2xl shadow-xl transition-all active:scale-95"
                             style={{
                               backgroundColor: popupButtonColor || '#059669',
                               color: '#ffffff',
@@ -695,6 +868,10 @@ export default function ComponentesPlaygroundPage() {
                           </Button>
                         </div>
                       )}
+
+                      <p className="text-[10px] text-center text-muted-foreground/40 font-medium">
+                        Haz clic fuera para cerrar este modal
+                      </p>
                     </div>
                   </DialogContent>
                 </Dialog>

@@ -6,8 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { toast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api/api';
-import { CompanyInfoForm } from '@/components/company/company-info-form';
-import { BranchInfoForm } from '@/components/company/branch-info-form';
+import { OnboardingCompanyInfoForm } from '@/components/company/wizard/onboarding-company-info-form';
+import { OnboardingBranchInfoForm } from '@/components/company/wizard/onboarding-branch-info-form';
 import { StepNavigation } from '@/components/company/step-navigation';
 import { PricingSection } from '@/components/pricing-section';
 import { storage } from '@/lib/firebase';
@@ -427,7 +427,7 @@ export function CompanyOnboardingWizard({ onComplete }: CompanyOnboardingWizardP
   };
 
   return (
-    <div className={`mx-auto transition-all duration-500 ease-in-out ${step === 3 ? 'max-w-6xl' : 'max-w-3xl'}`}>
+    <div className={`mx-auto transition-all duration-500 ease-in-out ${step === 3 ? 'max-w-6xl' : 'max-w-5xl'}`}>
       <StepNavigation currentStep={step} />
 
       {step !== 3 ? (
@@ -445,14 +445,15 @@ export function CompanyOnboardingWizard({ onComplete }: CompanyOnboardingWizardP
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               {step === 1 && (
-                <>
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-slate-700">Logo de la empresa</label>
-                    <div className="flex items-center justify-center w-full">
-                      <label
-                        onDragOver={handleLogoDragOver}
-                        onDrop={handleLogoDrop}
-                        className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-lg cursor-pointer bg-slate-50 hover:bg-slate-100"
+                <div className="space-y-8">
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div className="lg:col-span-1 space-y-2 flex flex-col">
+                      <label className="block text-sm font-semibold text-slate-700">Logo de la empresa</label>
+                      <div className="flex items-center justify-center w-full flex-1">
+                        <label
+                          onDragOver={handleLogoDragOver}
+                          onDrop={handleLogoDrop}
+                          className="flex flex-col items-center justify-center w-full h-full min-h-[12rem] border-2 border-dashed border-slate-300 rounded-2xl cursor-pointer bg-slate-50/50 hover:bg-emerald-50 hover:border-emerald-400 transition-all duration-300 group overflow-hidden"
                       >
                         <div className="flex flex-col items-center justify-center p-4">
                           {logoPreview ? (
@@ -464,7 +465,7 @@ export function CompanyOnboardingWizard({ onComplete }: CompanyOnboardingWizardP
                           ) : (
                             <>
                               <svg
-                                className="w-8 h-8 mb-2 text-slate-500"
+                                className="w-10 h-10 mb-3 text-slate-400 group-hover:text-emerald-500 transition-colors duration-300"
                                 aria-hidden="true"
                                 xmlns="http://www.w3.org/2000/svg"
                                 fill="none"
@@ -478,8 +479,8 @@ export function CompanyOnboardingWizard({ onComplete }: CompanyOnboardingWizardP
                                   d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"
                                 />
                               </svg>
-                              <p className="text-sm text-slate-600">
-                                <span className="font-medium">Haz clic para subir</span> o arrastra y suelta
+                              <p className="text-sm text-slate-600 transition-colors duration-300 group-hover:text-emerald-700">
+                                <span className="font-semibold text-emerald-600">Haz clic para subir</span> o arrastra y suelta
                               </p>
                               <p className="text-xs text-slate-500">PNG, JPG o SVG (MAX. 5MB)</p>
                             </>
@@ -494,15 +495,15 @@ export function CompanyOnboardingWizard({ onComplete }: CompanyOnboardingWizardP
                         />
                       </label>
                     </div>
-                  </div>
+                    </div>
 
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-slate-700">Banner de la empresa</label>
-                    <div className="flex items-center justify-center w-full">
-                      <label
-                        onDragOver={handleBannerDragOver}
-                        onDrop={handleBannerDrop}
-                        className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-lg cursor-pointer bg-slate-50 hover:bg-slate-100"
+                    <div className="lg:col-span-2 space-y-2 flex flex-col">
+                      <label className="block text-sm font-semibold text-slate-700">Banner Corporativo</label>
+                      <div className="flex items-center justify-center w-full flex-1">
+                        <label
+                          onDragOver={handleBannerDragOver}
+                          onDrop={handleBannerDrop}
+                          className="flex flex-col items-center justify-center w-full h-full min-h-[12rem] border-2 border-dashed border-slate-300 rounded-2xl cursor-pointer bg-slate-50/50 hover:bg-emerald-50 hover:border-emerald-400 transition-all duration-300 group overflow-hidden"
                       >
                         <div className="flex flex-col items-center justify-center p-4 w-full">
                           {bannerPreview ? (
@@ -514,7 +515,7 @@ export function CompanyOnboardingWizard({ onComplete }: CompanyOnboardingWizardP
                           ) : (
                             <>
                               <svg
-                                className="w-8 h-8 mb-2 text-slate-500"
+                                className="w-10 h-10 mb-3 text-slate-400 group-hover:text-emerald-500 transition-colors duration-300"
                                 aria-hidden="true"
                                 xmlns="http://www.w3.org/2000/svg"
                                 fill="none"
@@ -528,8 +529,8 @@ export function CompanyOnboardingWizard({ onComplete }: CompanyOnboardingWizardP
                                   d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"
                                 />
                               </svg>
-                              <p className="text-sm text-slate-600">
-                                <span className="font-medium">Haz clic para subir</span> o arrastra y suelta
+                              <p className="text-sm text-slate-600 transition-colors duration-300 group-hover:text-emerald-700">
+                                <span className="font-semibold text-emerald-600">Haz clic para subir</span> o arrastra y suelta
                               </p>
                               <p className="text-xs text-slate-500">PNG, JPG o SVG (MAX. 5MB)</p>
                             </>
@@ -544,9 +545,12 @@ export function CompanyOnboardingWizard({ onComplete }: CompanyOnboardingWizardP
                         />
                       </label>
                     </div>
+                    </div>
                   </div>
 
-                  <CompanyInfoForm
+                  <div className="border-t border-slate-100 pt-8 mb-4">
+
+                  <OnboardingCompanyInfoForm
                     formData={{
                       name: formData.name,
                       description: formData.description,
@@ -564,11 +568,12 @@ export function CompanyOnboardingWizard({ onComplete }: CompanyOnboardingWizardP
                       setFormData((prev: any) => ({ ...prev, latitude, longitude }));
                     }}
                   />
-                </>
+                  </div>
+                </div>
               )}
 
               {step === 2 && (
-                <BranchInfoForm
+                <OnboardingBranchInfoForm
                   formData={formData.location || { name: '', address: '', timezone: '' }}
                   handleInputChange={handleInputChange}
                   isFirstBranch
@@ -589,7 +594,7 @@ export function CompanyOnboardingWizard({ onComplete }: CompanyOnboardingWizardP
 
                 <Button
                   type="submit"
-                  className="bg-emerald-600 hover:bg-emerald-700"
+                  className="bg-emerald-600 hover:bg-emerald-700 shadow-md hover:shadow-lg transition-all rounded-xl px-6 py-2"
                   disabled={
                     isLoading ||
                     (step === 1 && !canContinueCompany) ||

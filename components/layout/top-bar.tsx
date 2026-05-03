@@ -118,8 +118,6 @@ export function TopBar({ isCollapsed, setIsCollapsed }: TopBarProps) {
                     </Link>
                 )}
 
-                {/* Feedback Button */}
-                <FeedbackButton variant="navbar" />
 
                 <div className="h-10 w-[1px] bg-slate-100 mx-1 hidden md:block" />
 

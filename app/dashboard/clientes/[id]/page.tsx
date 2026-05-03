@@ -15,9 +15,12 @@ import { formatCurrency } from '@/lib/utils/currency';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api/api';
 import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface Client {
   id: string;
+  companyId: string;
   firstName: string;
   lastName: string;
   email: string;
@@ -40,6 +43,8 @@ interface Client {
   updatedAt: string;
   totalFollowedCompanies: number;
   totalCartProducts: number;
+  membershipId?: number | null;
+  membershipName?: string | null;
 }
 
 interface RecentSaleItem {
@@ -100,6 +105,13 @@ export default function ClientDetailPage() {
   const [favoriteProducts, setFavoriteProducts] = useState<FavoriteProduct[]>([]);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
 
+  // Membership states
+  const [availableMemberships, setAvailableMemberships] = useState<any[]>([]);
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+  const [selectedMembershipId, setSelectedMembershipId] = useState<string>('');
+  const [isCanceling, setIsCanceling] = useState(false);
+  const [isAssigning, setIsAssigning] = useState(false);
+
   useEffect(() => {
     const fetchClient = async () => {
       if (!id || !token) return;
@@ -112,6 +124,7 @@ export default function ClientDetailPage() {
 
           const mapped: Client = {
             id: String(follower.customer_id),
+            companyId: String(follower.company_id),
             firstName: follower.customer_name,
             lastName: '',
             email: follower.customer_email,
@@ -134,6 +147,8 @@ export default function ClientDetailPage() {
             updatedAt: follower.following_since,
             totalFollowedCompanies: follower.total_followed_companies_count || 0,
             totalCartProducts: follower.total_cart_products_count || 0,
+            membershipId: follower.membership_id,
+            membershipName: follower.membership_name,
           };
 
           setClient(mapped);
@@ -194,6 +209,69 @@ export default function ClientDetailPage() {
       console.error('Error updating client:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchMemberships = async (companyId: string) => {
+    try {
+      const res = await api.memberships.getMemberships(companyId, token!);
+      if (res.success && res.data?.data) {
+        setAvailableMemberships(res.data.data);
+      }
+    } catch (err) {
+      console.error('Error fetching memberships', err);
+    }
+  };
+
+  const handleOpenAssignModal = () => {
+    if (client?.companyId && availableMemberships.length === 0) {
+      fetchMemberships(client.companyId);
+    }
+    setIsAssignModalOpen(true);
+  };
+
+  const handleAssignMembership = async () => {
+    if (!client || !selectedMembershipId) return;
+    setIsAssigning(true);
+    try {
+      const response = await api.userCompanies.assignCustomerMembership(client.companyId, client.id, selectedMembershipId, token!);
+      if (response.success) {
+        const mem = availableMemberships.find(m => String(m.id) === selectedMembershipId);
+        setClient({
+          ...client,
+          membership: (mem?.name?.toLowerCase().includes('oro') ? 'gold' : mem?.name?.toLowerCase().includes('platino') ? 'platinum' : mem?.name?.toLowerCase().includes('plata') ? 'silver' : mem?.name?.toLowerCase().includes('bronce') ? 'bronze' : 'none') as any,
+          isActive: true,
+          membershipId: Number(selectedMembershipId),
+          membershipName: mem?.name || 'Membresía',
+        });
+        setIsAssignModalOpen(false);
+      }
+    } catch(e) {
+      console.error('Error assigning membership', e);
+    } finally {
+      setIsAssigning(false);
+    }
+  };
+
+  const handleCancelMembership = async () => {
+    if (!client || !client.membershipId) return;
+    if (!confirm('¿Estás seguro de que deseas cancelar la membresía de este cliente?')) return;
+    setIsCanceling(true);
+    try {
+      const response = await api.userCompanies.cancelCustomerMembership(client.companyId, client.id, client.membershipId, token!);
+      if (response.success) {
+        setClient({
+          ...client,
+          membership: 'none',
+          isActive: false,
+          membershipId: null,
+          membershipName: null
+        });
+      }
+    } catch(e) {
+      console.error('Error canceling membership', e);
+    } finally {
+      setIsCanceling(false);
     }
   };
 
@@ -367,10 +445,20 @@ export default function ClientDetailPage() {
               <User className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold capitalize">{client.membership === 'none' ? 'Sin membresía' : client.membership}</div>
-              <p className="text-xs text-muted-foreground">
-                {client.acceptMarketing ? 'Acepta promociones' : 'No acepta promociones'}
-              </p>
+              <div className="text-xl font-bold capitalize truncate">
+                {client.membershipId ? client.membershipName : 'Sin membresía'}
+              </div>
+              <div className="mt-2 flex items-center justify-between">
+                {client.membershipId ? (
+                  <Button variant="outline" size="sm" onClick={handleCancelMembership} disabled={isCanceling} className="h-7 text-xs text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700">
+                    {isCanceling ? 'Cancelando...' : 'Cancelar'}
+                  </Button>
+                ) : (
+                  <Button variant="outline" size="sm" onClick={handleOpenAssignModal} className="h-7 text-xs text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-700">
+                    Asignar
+                  </Button>
+                )}
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -548,6 +636,42 @@ export default function ClientDetailPage() {
           </div>
         </div>
       </div>
+
+      <Dialog open={isAssignModalOpen} onOpenChange={setIsAssignModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Asignar Membresía</DialogTitle>
+            <DialogDescription>
+              Selecciona una membresía para asignar a este cliente.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Label className="mb-2 block text-sm font-medium">Seleccionar Membresía</Label>
+            {availableMemberships.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Cargando membresías o no hay disponibles...</p>
+            ) : (
+              <Select value={selectedMembershipId} onValueChange={setSelectedMembershipId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Elige una membresía" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableMemberships.map((m) => (
+                    <SelectItem key={m.id} value={String(m.id)}>
+                      {m.name} - {formatCurrency(Number(m.price))}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAssignModalOpen(false)} disabled={isAssigning}>Cancelar</Button>
+            <Button onClick={handleAssignMembership} disabled={!selectedMembershipId || isAssigning}>
+              {isAssigning ? 'Asignando...' : 'Asignar Membresía'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

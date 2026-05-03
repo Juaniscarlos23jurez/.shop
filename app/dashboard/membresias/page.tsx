@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatCurrency } from '@/lib/utils/currency';
-import { Plus, User, Clock, Tag, Percent, CheckSquare } from 'lucide-react';
+import { Plus, User, Clock, Tag, Percent, CheckSquare, Edit, Star } from 'lucide-react';
 
 // Icon aliases for readability
 const UserIcon = User;
@@ -17,6 +17,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api/api';
 
 import { Benefit, Membership } from '@/types/api';
+import { MembershipCard } from '@/components/membresias/MembershipCard';
 
 export default function MembershipsPage() {
   const router = useRouter();
@@ -218,83 +219,38 @@ export default function MembershipsPage() {
         </Card>
       </div>      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {memberships.map((membership) => (
-          <Card key={membership.id} className="overflow-hidden">
-            <CardHeader className="bg-gradient-to-r from-emerald-50 to-emerald-50 p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-2xl font-bold">{membership.name}</CardTitle>
-                  <CardDescription>{membership.description}</CardDescription>
-                </div>
-                <div className="rounded-full bg-emerald-100 p-3">
-                  <CheckIcon className="h-6 w-6 text-emerald-600" />
-                </div>
-              </div>
-              <div className="mt-4">
-                <div className="text-3xl font-bold">
-                  {membership.price.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' })}
-                  <span className="text-sm font-normal text-muted-foreground">/{membership.duration} meses</span>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="p-6">
-              <div className="space-y-4">
-                <div className="flex items-center text-sm">
-                  <ClockIcon className="mr-2 h-4 w-4 text-muted-foreground" />
-                  <span>{membership.duration} {membership.duration_unit}</span>
-                </div>
-                {membership.early_renewal_discount && (
-                  <div className="flex items-center text-sm">
-                    <PercentIcon className="mr-2 h-4 w-4 text-muted-foreground" />
-                    <span>{membership.early_renewal_discount}% descuento por renovación anticipada</span>
-                  </div>
-                )}
-                {membership.max_users && (
-                  <div className="flex items-center text-sm">
-                    <UserIcon className="mr-2 h-4 w-4 text-muted-foreground" />
-                    <span>Límite: {membership.max_users} usuarios</span>
-                  </div>
-                )}
-                <div className="flex flex-wrap gap-2">
-                  {membership.welcome_gift && (
-                    <span className="inline-flex items-center rounded-md bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
-                      Regalo de bienvenida
-                    </span>
-                  )}
-                  {membership.birthday_gift && (
-                    <span className="inline-flex items-center rounded-md bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
-                      Regalo de cumpleaños
-                    </span>
-                  )}
-                  {membership.is_recurring && (
-                    <span className="inline-flex items-center rounded-md bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
-                      Renovación automática
-                    </span>
-                  )}
-                </div>
-                <div className="pt-2">
-                  <h4 className="mb-2 text-sm font-medium">Beneficios:</h4>
-                  <ul className="space-y-2">
-                    {membership.benefits.map((benefit, index) => (
-                      <li key={index} className="flex items-center text-sm">
-                        <span className="mr-2 h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
-                        <div>
-                          <div className="font-medium">{benefit.text}</div>
-                          {benefit.description && (
-                            <p className="text-xs text-muted-foreground">{benefit.description}</p>
-                          )}
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <div className="pt-2">
-                  <Button variant="outline" className="w-full" onClick={() => router.push(`/dashboard/membresias/${membership.id}`)}>
-                    Editar membresía
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <MembershipCard
+            key={membership.id}
+            name={membership.name}
+            description={membership.description || ''}
+            price={membership.price}
+            duration={membership.duration}
+            durationUnit={membership.duration_unit}
+            badgeText={membership.badge_text || ''}
+            isPopular={membership.is_popular}
+            maxUsers={membership.max_users}
+            welcomeGift={membership.welcome_gift}
+            birthdayGift={membership.birthday_gift}
+            benefits={membership.benefits}
+            cardColorHex={membership.card_color_hex}
+            textColorHex={membership.text_color_hex}
+            accentColorHex={membership.accent_color_hex}
+            backgroundImageUrl={membership.background_image_url}
+            imageUrl={membership.image_url}
+          >
+            <div className="flex gap-2.5 mt-2">
+              <Button variant="outline" className="flex-1 bg-white text-slate-700 border-slate-200 hover:bg-emerald-50 hover:text-emerald-700 shadow-sm transition-colors" onClick={() => router.push(`/dashboard/membresias/${membership.id}`)}>
+                <Edit className="w-4 h-4 mr-2 opacity-70" />
+                Gestionar
+              </Button>
+              {membership.is_popular && (
+                <Button className="bg-amber-400 hover:bg-amber-500 text-amber-950 border-none shadow-sm transition-colors font-semibold">
+                  <Star className="w-4 h-4 mr-1.5 fill-amber-950" />
+                  Destacar
+                </Button>
+              )}
+            </div>
+          </MembershipCard>
         ))}
       </div>
     </div>

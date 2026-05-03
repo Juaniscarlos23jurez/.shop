@@ -2,7 +2,25 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-// Icons removed due to import issues
+import { 
+  Building2, 
+  Globe, 
+  Mail, 
+  Phone, 
+  MapPin, 
+  Tag, 
+  Briefcase, 
+  Edit, 
+  ExternalLink, 
+  Calendar, 
+  Clock, 
+  Coins, 
+  Languages, 
+  Image as ImageIcon, 
+  UploadCloud, 
+  ChevronRight,
+  Plus
+} from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { CompanyInfo } from "@/components/company/company-info";
@@ -101,15 +119,15 @@ export default function CompaniaPage() {
       fetchCompanyData();
     }
   }, [token]); // Re-fetch if token changes
-  
+
   // Check for edit mode and step in URL
   const isEditing = searchParams.get('edit') === 'true';
   const urlStep = searchParams.get('step');
-  
+
   // Set initial step from URL
   useEffect(() => {
     if (isLoading) return; // Don't update step while loading
-    
+
     if (isEditing) {
       setCurrentStep(urlStep ? parseInt(urlStep) : 1);
     } else {
@@ -244,7 +262,7 @@ export default function CompaniaPage() {
   // Toggle edit mode
   const toggleEditMode = useCallback((edit: boolean, step: number = 1) => {
     if (isLoading) return; // Prevent toggling while loading
-    
+
     if (edit) {
       const params = new URLSearchParams();
       params.set('edit', 'true');
@@ -270,24 +288,24 @@ export default function CompaniaPage() {
   // Fetch company data
   const fetchCompanyData = useCallback(async () => {
     console.log('Starting to fetch company data...');
-    
+
     if (!token) {
       console.error('No token available');
       setIsLoading(false);
       return;
     }
-    
+
     try {
       setIsLoading(true);
       console.log('Fetching company data with token...');
       const response = await api.userCompanies.get(token);
       console.log('Company API response:', response);
-      
+
       if (response.success && response.data && response.data.data) {
         // The API returns company data in response.data.data
         const company = response.data.data;
         console.log('Raw company data:', company);
-        
+
         // Ensure we're getting the correct data structure
         const companyData = {
           id: company.id,
@@ -309,27 +327,29 @@ export default function CompaniaPage() {
           timezone: company.timezone,
           currency: company.currency,
           language: company.language,
-          is_active: company.is_active
+          is_active: company.is_active,
+          created_at: company.created_at,
+          updated_at: company.updated_at
         };
-        
+
         console.log('Processed company data:', companyData);
         setCompanyData(companyData);
-        
+
         // Initialize form data with company data
         setFormData(prev => ({
           ...prev,
           ...company,
           location: company.location || prev.location
         }));
-        
+
         // Force a re-render by updating the component
         console.log('Company data set successfully:', company);
-        
+
         // Also try to fetch locations for this company
         try {
           const locationsResponse = await api.userCompanies.getLocations(token);
           console.log('Locations response:', locationsResponse);
-          
+
           if (locationsResponse.success && locationsResponse.data?.locations) {
             const locations = locationsResponse.data.locations;
             setCompanyData(prev => prev ? {
@@ -340,7 +360,7 @@ export default function CompaniaPage() {
         } catch (locationsError) {
           console.error('Error fetching locations:', locationsError);
         }
-        
+
         // Ensure null values are converted to undefined
         const sanitizedCompany = {
           ...company,
@@ -348,7 +368,7 @@ export default function CompaniaPage() {
           postal_code: company.postal_code || undefined,
           website: company.website || undefined,
         };
-        
+
         setFormData(prev => ({
           ...prev,
           ...sanitizedCompany,
@@ -364,10 +384,10 @@ export default function CompaniaPage() {
       }
     } catch (error) {
       console.error('Error in fetchCompanyData:', error);
-      toast({ 
-        title: 'Error', 
-        description: 'Error al cargar los datos de la empresa', 
-        variant: 'destructive' 
+      toast({
+        title: 'Error',
+        description: 'Error al cargar los datos de la empresa',
+        variant: 'destructive'
       });
       setCompanyData(null);
     } finally {
@@ -380,7 +400,7 @@ export default function CompaniaPage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    
+
     // Handle nested state for location object
     if (name.startsWith('location.')) {
       const locationField = name.split('.')[1];
@@ -402,7 +422,7 @@ export default function CompaniaPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!token) {
       toast({
         title: 'Error',
@@ -411,9 +431,9 @@ export default function CompaniaPage() {
       });
       return;
     }
-    
+
     setIsLoading(true);
-    
+
     // Log token information (without exposing the full token)
     console.log('Token info:', {
       exists: !!token,
@@ -421,7 +441,7 @@ export default function CompaniaPage() {
       startsWith: token?.substring(0, 10) + '...',
       endsWith: '...' + token?.substring(token.length - 10)
     });
-    
+
     if (!token) {
       console.error('No token available');
       toast({
@@ -431,7 +451,7 @@ export default function CompaniaPage() {
       });
       return;
     }
-    
+
     try {
       // If we're in step 2 (creating a location)
       if (currentStep === 2) {
@@ -441,10 +461,6 @@ export default function CompaniaPage() {
 
         if (!formData.location?.name || !formData.location?.address) {
           throw new Error('El nombre y la dirección de la sucursal son obligatorios');
-        }
-        
-        if (!companyData?.id) {
-          throw new Error('No se encontró el ID de la compañía');
         }
 
         const locationPayload: any = {
@@ -461,7 +477,7 @@ export default function CompaniaPage() {
           is_primary: true,
           is_active: true,
         };
-        
+
         // Include geo IDs if present
         if (formData.location.country_id) {
           locationPayload.country_id = Number(formData.location.country_id);
@@ -472,7 +488,7 @@ export default function CompaniaPage() {
         if (formData.location.city_id) {
           locationPayload.city_id = Number(formData.location.city_id);
         }
-        
+
         // Include coordinates if present
         if (formData.location.latitude !== undefined) {
           locationPayload.latitude = Number(formData.location.latitude);
@@ -482,25 +498,25 @@ export default function CompaniaPage() {
         }
 
         console.log('Sending location payload:', JSON.stringify(locationPayload, null, 2));
-        
+
         // Create the new location
         const locationResponse = await api.userCompanies.createLocation(locationPayload, token);
-        
+
         if (!locationResponse.success) {
           throw new Error(locationResponse.message || 'Error al crear la sucursal');
         }
-        
+
         // Show success message
         toast({
           title: '¡Éxito!',
           description: 'Sucursal creada correctamente',
         });
-        
+
         // Redirect to the previous page after a short delay
         setTimeout(() => {
           router.back();
         }, 1500);
-        
+
         return; // Exit early since we're redirecting
       }
 
@@ -582,7 +598,7 @@ export default function CompaniaPage() {
       // Move to the next step
       setCurrentStep(currentStep + 1);
       toggleEditMode(false);
-      
+
       toast({
         title: '¡Éxito!',
         description: 'Información de la compañía guardada correctamente. Continúa con el siguiente paso.',
@@ -602,8 +618,11 @@ export default function CompaniaPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <span className="text-lg animate-pulse">Cargando...</span>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-12 w-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+          <span className="text-slate-600 font-medium animate-pulse text-lg">Cargando...</span>
+        </div>
       </div>
     );
   }
@@ -612,8 +631,8 @@ export default function CompaniaPage() {
   // If we don't have company data yet, show loading
   if (!companyData) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <span className="text-lg animate-pulse">Cargando datos de la empresa...</span>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <span className="text-lg animate-pulse text-slate-500">Cargando datos de la empresa...</span>
       </div>
     );
   }
@@ -621,126 +640,129 @@ export default function CompaniaPage() {
   // Show the form if we're in edit mode
   if (isEditing) {
     return (
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-4xl mx-auto space-y-8 pb-20 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Configuración de Empresa</h1>
+              <p className="text-slate-500 mt-1">Actualiza la identidad y detalles de tu negocio</p>
+            </div>
+            <Button 
+               variant="outline" 
+               onClick={() => toggleEditMode(false)}
+               className="border-slate-200 text-slate-600 hover:bg-slate-100"
+            >
+              Cancelar Edición
+            </Button>
+        </div>
+
         <StepNavigation currentStep={currentStep} />
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl">
-              {currentStep === 1 && 'Información de la Empresa'}
-              {currentStep === 2 && 'Agregar Sucursal'}
+        <Card className="border-none shadow-2xl bg-white/80 backdrop-blur-sm overflow-hidden">
+          <CardHeader className="bg-slate-50/50 border-b pb-6">
+            <CardTitle className="text-2xl font-bold flex items-center gap-2 text-slate-800">
+               {currentStep === 1 ? (
+                 <><Building2 className="w-6 h-6 text-emerald-600" /> Información de la Empresa</>
+               ) : (
+                 <><MapPin className="w-6 h-6 text-emerald-600" /> Agregar Sucursal</>
+               )}
             </CardTitle>
-            <CardDescription>
-              {currentStep === 1 && 'Completa la información básica de tu empresa'}
-              {currentStep === 2 && 'Configura la información de tu sucursal'}
-             </CardDescription>
+            <CardDescription className="text-slate-500 text-base">
+              {currentStep === 1 && 'Personaliza el logo, banner y datos de contacto de tu empresa.'}
+              {currentStep === 2 && 'Configura los detalles de tu nueva ubicación.'}
+            </CardDescription>
           </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-4">
+          <CardContent className="p-0">
+            <form onSubmit={handleSubmit}>
+              <div className="p-6 md:p-8 space-y-10">
                 {currentStep === 1 && (
                   <>
-                    <div className="space-y-2">
-                      <label className="block text-sm font-medium text-slate-700">Logo de la empresa</label>
-                      <div className="flex items-center justify-center w-full">
-                        <label
+                    {/* Visual Asset Management */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                      {/* Logo Section */}
+                      <div className="space-y-4">
+                        <label className="text-sm font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                           Logo
+                           <span className="text-[10px] bg-slate-200 px-1.5 py-0.5 rounded text-slate-600">PREVIEW</span>
+                        </label>
+                        <div 
                           onDragOver={handleLogoDragOver}
                           onDrop={handleLogoDrop}
-                          className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-lg cursor-pointer bg-slate-50 hover:bg-slate-100"
+                          onClick={handleOpenLogoDialog}
+                          className="relative aspect-square rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 overflow-hidden group cursor-pointer hover:border-emerald-400 transition-all hover:bg-emerald-50/30"
                         >
-                          <div className="flex flex-col items-center justify-center p-4">
-                            {logoPreview || companyData?.logo_url ? (
-                              <img
-                                src={logoPreview || (companyData?.logo_url as string)}
-                                alt="Logo de la empresa"
-                                className="max-h-24 max-w-full mb-2 rounded-md"
-                              />
-                            ) : (
-                              <>
-                                <svg
-                                  className="w-8 h-8 mb-2 text-slate-500"
-                                  aria-hidden="true"
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  fill="none"
-                                  viewBox="0 0 20 16"
-                                >
-                                  <path
-                                    stroke="currentColor"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth="2"
-                                    d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"
-                                  />
-                                </svg>
-                                <p className="text-sm text-slate-600">
-                                  <span className="font-medium">Haz clic para subir</span> o arrastra y suelta
-                                </p>
-                                <p className="text-xs text-slate-500">PNG, JPG o SVG (MAX. 5MB)</p>
-                              </>
-                            )}
-                          </div>
-                          <input
-                            ref={logoInputRef}
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={handleLogoChange}
-                          />
+                           {logoPreview || companyData?.logo_url ? (
+                             <img
+                               src={logoPreview || (companyData?.logo_url as string)}
+                               alt="Logo de la empresa"
+                               className="w-full h-full object-contain p-4 transition-transform group-hover:scale-105"
+                             />
+                           ) : (
+                             <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
+                               <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mb-3 group-hover:bg-emerald-100 group-hover:text-emerald-600 transition-colors">
+                                 <ImageIcon className="w-6 h-6 text-slate-400 group-hover:text-emerald-500" />
+                               </div>
+                               <p className="text-sm font-medium text-slate-700">Subir Logo</p>
+                               <p className="text-xs text-slate-400 mt-1">Arrastra o haz clic</p>
+                             </div>
+                           )}
+                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                             <UploadCloud className="text-white w-8 h-8" />
+                           </div>
+                        </div>
+                        <input
+                          ref={logoInputRef}
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleLogoChange}
+                        />
+                        <p className="text-[11px] text-slate-400 leading-tight">Recomendado: 500x500px, PNG o SVG con fondo transparente.</p>
+                      </div>
+
+                      {/* Banner Section */}
+                      <div className="lg:col-span-2 space-y-4">
+                        <label className="text-sm font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                           Banner / Portada
+                           <span className="text-[10px] bg-slate-200 px-1.5 py-0.5 rounded text-slate-600">PREVIEW</span>
                         </label>
+                        <div 
+                           onDragOver={handleBannerDragOver}
+                           onDrop={handleBannerDrop}
+                           onClick={handleOpenBannerDialog}
+                           className="relative h-40 md:h-full min-h-[160px] rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 overflow-hidden group cursor-pointer hover:border-emerald-400 transition-all hover:bg-emerald-50/30"
+                        >
+                          {bannerPreview || companyData?.banner_url ? (
+                            <img
+                              src={bannerPreview || (companyData?.banner_url as string)}
+                              alt="Banner de la empresa"
+                              className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                            />
+                          ) : (
+                            <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
+                               <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mb-3 group-hover:bg-emerald-100 group-hover:text-emerald-600 transition-colors">
+                                 <ImageIcon className="w-6 h-6 text-slate-400 group-hover:text-emerald-500" />
+                               </div>
+                               <p className="text-sm font-medium text-slate-700">Subir Imagen de Portada</p>
+                               <p className="text-xs text-slate-400 mt-1">Aspecto recomendado 16:9</p>
+                            </div>
+                          )}
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                             <UploadCloud className="text-white w-8 h-8" />
+                          </div>
+                        </div>
+                        <input
+                          ref={bannerInputRef}
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleBannerChange}
+                        />
                       </div>
                     </div>
 
-                    <div className="space-y-2">
-                      <label className="block text-sm font-medium text-slate-700">Banner de la empresa</label>
-                      <div className="flex items-center justify-center w-full">
-                        <label
-                          onDragOver={handleBannerDragOver}
-                          onDrop={handleBannerDrop}
-                          className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-lg cursor-pointer bg-slate-50 hover:bg-slate-100"
-                        >
-                          <div className="flex flex-col items-center justify-center p-4 w-full">
-                            {bannerPreview || companyData?.banner_url ? (
-                              <img
-                                src={bannerPreview || (companyData?.banner_url as string)}
-                                alt="Banner de la empresa"
-                                className="w-full h-56 object-cover object-center mb-2 rounded-md"
-                              />
-                            ) : (
-                              <>
-                                <svg
-                                  className="w-8 h-8 mb-2 text-slate-500"
-                                  aria-hidden="true"
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  fill="none"
-                                  viewBox="0 0 20 16"
-                                >
-                                  <path
-                                    stroke="currentColor"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth="2"
-                                    d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"
-                                  />
-                                </svg>
-                                <p className="text-sm text-slate-600">
-                                  <span className="font-medium">Haz clic para subir</span> o arrastra y suelta
-                                </p>
-                                <p className="text-xs text-slate-500">PNG, JPG o SVG (MAX. 5MB)</p>
-                              </>
-                            )}
-                          </div>
-                          <input
-                            ref={bannerInputRef}
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={handleBannerChange}
-                          />
-                        </label>
-                      </div>
-                    </div>
+                    <div className="h-px bg-slate-100 my-4" />
 
-                    <CompanyInfoForm 
+                    <CompanyInfoForm
                       formData={{
                         name: formData.name,
                         description: formData.description,
@@ -752,45 +774,46 @@ export default function CompaniaPage() {
                         postal_code: formData.postal_code || undefined,
                         website: formData.website,
                         business_type_id: formData.business_type_id
-                      }} 
+                      }}
                       handleInputChange={handleInputChange}
                       onLocationChange={({ latitude, longitude }) => {
                         setFormData(prev => ({ ...prev, latitude, longitude }));
-                      }} 
+                      }}
                     />
                   </>
                 )}
                 {/* Branch Information Step */}
                 {currentStep === 2 && (
-                  <BranchInfoForm 
-                    formData={formData.location || { name: '', address: '', timezone: '' }} 
-                    handleInputChange={handleInputChange} 
+                  <BranchInfoForm
+                    formData={formData.location || { name: '', address: '', timezone: '' }}
+                    handleInputChange={handleInputChange}
                     isFirstBranch={!companyData?.locations || companyData.locations.length === 0}
                   />
                 )}
               </div>
-              <div className="flex justify-end space-x-3">
+              <div className="bg-slate-50/80 p-6 md:p-8 flex justify-end gap-4 border-t">
                 {currentStep === 1 ? (
-                  <Button 
+                  <Button
                     type="submit"
-                    className="bg-emerald-600 hover:bg-emerald-700"
+                    className="h-12 px-8 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg shadow-emerald-200 transition-all hover:scale-[1.02] active:scale-[0.98]"
                     disabled={isLoading || !formData.name || !formData.email}
                   >
-                    {isLoading ? 'Guardando...' : 'Guardar Datos'}
+                    {isLoading ? 'Guardando...' : 'Guardar Información'}
                   </Button>
                 ) : (
-                  <div className="flex space-x-3">
-                    <Button 
+                  <div className="flex gap-4">
+                    <Button
                       type="button"
                       variant="outline"
                       onClick={() => setCurrentStep(currentStep - 1)}
+                      className="h-12 px-6 rounded-xl border-slate-200"
                     >
-                      Atrás
+                      Regresar
                     </Button>
                     {currentStep === 2 ? (
-                      <Button 
+                      <Button
                         type="submit"
-                        className="bg-emerald-600 hover:bg-emerald-700"
+                        className="h-12 px-8 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg shadow-emerald-200"
                         disabled={
                           isLoading ||
                           !formData.location?.name ||
@@ -800,16 +823,16 @@ export default function CompaniaPage() {
                           !formData.location?.zip_code
                         }
                       >
-                        {isLoading ? 'Guardando...' : 'Crear Sucursal'}
+                        {isLoading ? 'Guardando...' : 'Confirmar y Crear'}
                       </Button>
                     ) : (
-                      <Button 
+                      <Button
                         type="submit"
-                        className="bg-emerald-600 hover:bg-emerald-700"
+                        className="h-12 px-8 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg shadow-emerald-200"
                         onClick={() => setCurrentStep(currentStep + 1)}
                         disabled={isLoading}
                       >
-                        Siguiente
+                        Siguiente Paso
                       </Button>
                     )}
                   </div>
@@ -824,54 +847,276 @@ export default function CompaniaPage() {
 
   // Show the main view when not editing
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center mb-6">
+    <div className="space-y-8 animate-in fade-in duration-700 pb-12">
+      {/* Header with Title */}
+      <div className="flex justify-between items-end">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">Compañía</h1>
-          <p className="text-slate-600 mt-1">Administra la información de tu empresa</p>
+          <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Tu Compañía</h1>
+          <p className="text-slate-500 mt-2 font-medium">Gestiona la identidad y sucursales de tu organización</p>
         </div>
-        <div className="text-xs text-gray-500">
-          Data: {companyData?.name || 'No name'} | ID: {companyData?.id || 'No ID'}
+        <div className="hidden md:block">
+           <div className="flex items-center gap-2 text-xs font-bold text-slate-400 bg-slate-100 px-3 py-1.5 rounded-full uppercase tracking-tighter">
+             <span className="w-2 h-2 rounded-full bg-emerald-500" />
+             ID: {companyData?.id || '—'}
+           </div>
         </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <CompanyInfo
-          companyData={companyData || {
-            name: '',
-            description: '',
-            email: '',
-            phone: '',
-            address: '',
-            website: '',
-            city: '',
-            state: '',
-            country: '',
-            postal_code: ''
-          }}
-          isEditing={isEditing}
-          isLoading={isLoading}
-          formData={formData}
-          onSubmit={handleSubmit}
-          onInputChange={handleInputChange}
-          toggleEditMode={toggleEditMode}
-        />
-        {!isEditing && (
-          <div className="mt-4">
-            <Button 
-              variant="outline" 
-              className="text-emerald-600 border-emerald-200 hover:bg-emerald-50"
-              onClick={() => toggleEditMode(true)}
+      {/* Hero Section */}
+      <div className="relative group">
+        <div className="relative h-64 md:h-80 w-full rounded-[2rem] overflow-hidden shadow-2xl border border-slate-200 bg-slate-100">
+          {/* Banner */}
+          <div className="absolute inset-0">
+            {companyData?.banner_url ? (
+              <img
+                src={companyData.banner_url}
+                alt="Banner de la empresa"
+                className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
+              />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-emerald-600 via-emerald-500 to-emerald-800" />
+            )}
+            {/* Gradient Overlay for better contrast */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+          </div>
+
+          {/* Edit Button on Hero */}
+          <div className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-opacity">
+            <Button
+              variant="secondary"
+              className="bg-white/90 backdrop-blur-md border-white/30 text-emerald-900 hover:bg-white shadow-xl rounded-xl font-bold"
+              onClick={() => toggleEditMode(true, 1)}
             >
-              Editar Información
+              <Edit className="w-4 h-4 mr-2" />
+              Editar Perfil
             </Button>
           </div>
-        )}
-        <BranchesList 
-          companyId={companyData?.id?.toString() || ''} 
-          onAddBranchClick={() => toggleEditMode(true, 2)} 
-        />
+
+          {/* Logo and Identity */}
+          <div className="absolute bottom-0 left-0 right-0 p-8 md:p-10 flex flex-col md:flex-row items-center md:items-end gap-8 text-center md:text-left">
+            <div className="relative shrink-0">
+              <div className="h-32 w-32 md:h-40 md:w-40 rounded-[2.5rem] overflow-hidden border-[6px] border-white shadow-2xl bg-white flex items-center justify-center">
+                {companyData?.logo_url ? (
+                  <img
+                    src={companyData.logo_url}
+                    alt="Logo"
+                    className="w-full h-full object-contain p-4"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-slate-50 text-slate-300">
+                    <Building2 className="w-16 h-16" />
+                  </div>
+                )}
+              </div>
+              <div className="absolute -bottom-2 -right-2 bg-emerald-500 border-4 border-white h-10 w-10 rounded-full flex items-center justify-center shadow-lg">
+                <div className="w-3 h-3 bg-white rounded-full animate-pulse" />
+              </div>
+            </div>
+
+            <div className="flex-1 pb-4 space-y-2">
+              <div className="flex items-center justify-center md:justify-start gap-4">
+                <h2 className="text-3xl md:text-5xl font-black text-white tracking-tight drop-shadow-xl">
+                  {companyData?.name || 'Nombre no definido'}
+                </h2>
+                {companyData?.is_active && (
+                  <span className="hidden md:inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black bg-emerald-400 text-emerald-950 uppercase tracking-widest shadow-lg">
+                    Activo
+                  </span>
+                )}
+              </div>
+              
+              <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 md:gap-6">
+                <div className="flex items-center gap-2 text-emerald-50/80 font-medium bg-emerald-950/20 backdrop-blur-sm px-3 py-1 rounded-lg">
+                  <Globe className="w-4 h-4" />
+                  <a href={companyData?.website?.startsWith('http') ? companyData.website : `https://${companyData?.website}`} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
+                    {companyData?.website || 'Sin sitio web'}
+                  </a>
+                </div>
+                <div className="flex items-center gap-2 text-emerald-50/80 font-medium">
+                  <Tag className="w-4 h-4" />
+                  {companyData?.business_type || 'Giro no especificado'}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Profile Info Left */}
+        <div className="lg:col-span-8 space-y-8">
+          <Card className="border-none shadow-xl bg-white overflow-hidden rounded-[2rem]">
+            <CardHeader className="border-b border-slate-50 bg-slate-50/30 px-8 py-6">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-xl font-bold flex items-center gap-3 text-slate-800">
+                  <Briefcase className="w-6 h-6 text-emerald-600" />
+                  Detalles del Negocio
+                </CardTitle>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-emerald-600 font-bold hover:bg-emerald-50"
+                  onClick={() => toggleEditMode(true, 1)}
+                >
+                  <Edit className="w-4 h-4 mr-2" />
+                  Editar
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="p-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                <div className="space-y-6">
+                  <div>
+                    <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Información de Contacto</h4>
+                    <div className="space-y-5">
+                      <div className="flex items-center gap-4 group">
+                        <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 shadow-inner group-hover:bg-indigo-600 group-hover:text-white transition-all">
+                          <Mail className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <p className="text-xs text-slate-400 font-medium">Correo Directo</p>
+                          <p className="text-slate-700 font-bold">{companyData?.email || 'No disponible'}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4 group">
+                        <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 shadow-inner group-hover:bg-amber-600 group-hover:text-white transition-all">
+                          <Phone className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <p className="text-xs text-slate-400 font-medium">Línea Telefónica</p>
+                          <p className="text-slate-700 font-bold">{companyData?.phone || 'No disponible'}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-6">
+                  <div>
+                    <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Ubicación Matriz</h4>
+                    <div className="space-y-5">
+                      <div className="flex items-start gap-4 group">
+                        <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 shadow-inner group-hover:bg-emerald-600 group-hover:text-white transition-all">
+                          <MapPin className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <p className="text-xs text-slate-400 font-medium">Dirección Fiscal/Matriz</p>
+                          <p className="text-slate-700 font-bold leading-snug">
+                            {companyData?.address || 'No especificada'}
+                          </p>
+                          <p className="text-sm text-slate-500 mt-0.5">
+                            {companyData?.city}, {companyData?.state} {companyData?.postal_code && `• CP ${companyData.postal_code}`}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Description Section */}
+              <div className="mt-10 pt-10 border-t border-slate-50">
+                <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 text-center md:text-left">Historia y Descripción</h4>
+                <div className="bg-slate-50/50 p-6 rounded-3xl border border-slate-100">
+                  <p className="text-slate-600 leading-relaxed text-sm italic py-2 md:px-4">
+                    {companyData?.description || 'Nuestra empresa aún no cuenta con una biografía. Agrega una descripción atractiva para que tus clientes te conozcan mejor.'}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Branches Section - Now part of the main flow */}
+          <div className="pt-4">
+            <BranchesList
+              companyId={companyData?.id?.toString() || ''}
+              onAddBranchClick={() => toggleEditMode(true, 2)}
+            />
+          </div>
+        </div>
+
+        {/* Sidebar Status/Stats Right */}
+        <div className="lg:col-span-4 space-y-8">
+          {/* Status Card */}
+          <Card className="border-none shadow-xl bg-gradient-to-br from-slate-900 to-slate-800 text-white overflow-hidden rounded-[2rem]">
+            <CardContent className="p-8">
+              <div className="flex items-center justify-between mb-8">
+                <div className="h-12 w-12 rounded-2xl bg-white/10 flex items-center justify-center">
+                  <Calendar className="w-6 h-6 text-emerald-400" />
+                </div>
+                <span className="text-[10px] font-black bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full uppercase tracking-widest border border-emerald-500/30">
+                  Sistema Activo
+                </span>
+              </div>
+              <div className="space-y-1">
+                <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Miembro desde</p>
+                <p className="text-2xl font-black italic">
+                  {companyData?.created_at ? new Date(companyData.created_at).toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' }) : 'Reciente'}
+                </p>
+              </div>
+              <div className="mt-8 pt-8 border-t border-white/10 grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <p className="text-[10px] text-slate-500 font-bold uppercase">Estado</p>
+                  <p className="text-emerald-400 font-black">Verificado</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[10px] text-slate-500 font-bold uppercase">Sucursales</p>
+                  <p className="text-white font-black">{companyData?.locations?.length || 0}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Regional Settings Card */}
+          <Card className="border-none shadow-xl bg-white overflow-hidden rounded-[2rem]">
+            <CardHeader className="pb-2 px-8 pt-8">
+              <CardTitle className="text-sm font-black text-slate-400 uppercase tracking-widest">Configuración Regional</CardTitle>
+            </CardHeader>
+            <CardContent className="p-8 pt-4 space-y-6">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                  <Clock className="w-5 h-5" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-[10px] text-slate-400 font-bold uppercase">Zona Horaria</p>
+                  <p className="text-slate-700 font-bold text-sm truncate">{companyData?.timezone || 'GMT-6'}</p>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                  <Coins className="w-5 h-5" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-[10px] text-slate-400 font-bold uppercase">Moneda Operativa</p>
+                  <p className="text-slate-700 font-bold text-sm tracking-widest">{companyData?.currency || 'MXN'}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
+                  <Languages className="w-5 h-5" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-[10px] text-slate-400 font-bold uppercase">Idioma Principal</p>
+                  <p className="text-slate-700 font-bold text-sm uppercase">{companyData?.language || 'Español'}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Quick Action */}
+          <Button 
+            className="w-full h-16 rounded-[2rem] bg-slate-900 hover:bg-slate-800 text-white font-bold text-lg shadow-2xl transition-transform hover:scale-105 active:scale-95 group"
+            onClick={() => toggleEditMode(true, 2)}
+          >
+            <Plus className="w-6 h-6 mr-3 group-hover:rotate-90 transition-transform" />
+            Nueva Sucursal
+          </Button>
+        </div>
       </div>
     </div>
   );
 }
+

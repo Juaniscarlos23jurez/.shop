@@ -113,20 +113,57 @@ export const getFcmBrowserToken = async (): Promise<string | null> => {
       return null;
     }
 
+    console.log('🔍 VAPID Key validation:', {
+      length: vapidKey.trim().length,
+      isTrimmed: vapidKey === vapidKey.trim(),
+      start: vapidKey.substring(0, 5) + '...'
+    });
+
     const msg = getFirebaseMessaging();
     if (!msg) {
       console.warn('⚠️  Firebase Messaging is not available.');
       return null;
     }
 
-    const token = await getToken(msg, { vapidKey });
-    if (!token) {
-      console.warn('⚠️  Failed to obtain FCM browser token.');
-      return null;
+    // Explicitly register and wait for service worker to ensure it's in a good state
+    console.log('🔄 Registering Service Worker for FCM...');
+    let registration;
+    try {
+      registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
+        scope: '/',
+      });
+      
+      // Wait for the service worker to be ready and active
+      await navigator.serviceWorker.ready;
+      console.log('✅ Service Worker is ready and active');
+    } catch (swError) {
+      console.error('❌ Failed to register Service Worker:', swError);
     }
 
-    console.log('✅ Obtained FCM browser token:', token);
-    return token;
+    console.log('🔄 Requesting FCM token (this may fail if VAPID key is mismatched)...');
+    try {
+      const token = await getToken(msg, { 
+        vapidKey: vapidKey.trim(),
+        serviceWorkerRegistration: registration
+      });
+
+      if (!token) {
+        console.warn('⚠️  Failed to obtain FCM browser token (returned empty).');
+        return null;
+      }
+
+      console.log('✅ Obtained FCM browser token successfully');
+      return token;
+    } catch (getTokenError: any) {
+      if (getTokenError.message?.includes('missing required authentication credential')) {
+        console.error('❌ FCM AUTH ERROR: "Missing authentication credential".');
+        console.error('   POSSIBLE CAUSES:');
+        console.error('   1. The VAPID Key in .env does not match the one in Firebase Console (Settings -> Cloud Messaging -> Web Push certificates).');
+        console.error('   2. The API Key used has "API Restrictions" in Google Cloud Console that do not include "Firebase Cloud Messaging API".');
+        console.error('   3. The Firebase Messaging Service is not enabled for this project.');
+      }
+      throw getTokenError;
+    }
   } catch (error) {
     console.error('❌ Error while obtaining FCM browser token:', error);
     return null;

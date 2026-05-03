@@ -172,6 +172,13 @@ export interface Membership {
   valid_from: string;
   valid_until: string | null;
   benefits: Benefit[];
+  image_url: string | null;
+  background_image_url: string | null;
+  card_color_hex: string | null;
+  accent_color_hex: string | null;
+  text_color_hex: string | null;
+  badge_text: string | null;
+  is_popular: boolean;
   created_at: string;
   updated_at: string;
 }

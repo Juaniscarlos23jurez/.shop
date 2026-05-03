@@ -89,23 +89,28 @@ export default function PaymentMethodsPage() {
 
     try {
       setStripeSaving(true);
-      const nextPublishable = options?.publishableKey ?? publishableKey;
-      const nextSecret = options?.secretKey ?? secretKey;
       const nextEnabled = typeof options?.enabled === 'boolean' ? options.enabled : stripeEnabled;
 
       const payload: any = {
-        stripe_publishable_key: nextPublishable || null,
         stripe_enabled: nextEnabled,
       };
 
+      // Only include keys if they are explicitly passed (from modal) or if we're in edit mode
+      // This prevents sending 'null' and overwriting existing keys when just toggling
+      if (options?.publishableKey !== undefined) {
+        payload.stripe_publishable_key = options.publishableKey || null;
+      }
+      
       if (options?.secretKey !== undefined || secretKeyDirty) {
+        const nextSecret = options?.secretKey ?? secretKey;
         payload.stripe_secret_key = nextSecret || null;
       }
+
       await api.companies.updateCompany(resolvedCompanyId, payload as any, token);
       setCompanyId(resolvedCompanyId);
 
-      if (options?.publishableKey !== undefined) setPublishableKey(nextPublishable);
-      if (options?.secretKey !== undefined) setSecretKey(nextSecret);
+      if (options?.publishableKey !== undefined) setPublishableKey(options.publishableKey);
+      if (options?.secretKey !== undefined) setSecretKey(options.secretKey);
       setStripeEnabled(nextEnabled);
 
       setStripeEditMode(false);
@@ -161,8 +166,12 @@ export default function PaymentMethodsPage() {
       if (resolvedCompanyId) {
         const profilePayload: any = {
           mercadopago_enabled: nextActive,
-          mercadopago_public_key: nextData.public_key || null,
         };
+
+        // Only include keys if they are explicitly passed (from modal)
+        if (options?.data?.public_key !== undefined) {
+          profilePayload.mercadopago_public_key = options.data.public_key || null;
+        }
 
         if (options?.data?.access_token !== undefined || mercadoPagoAccessTokenDirty) {
           profilePayload.mercadopago_access_token = nextData.access_token || null;
@@ -174,12 +183,15 @@ export default function PaymentMethodsPage() {
       const methodPayload: any = {
         type: 'mercado_pago' as const,
         display_name: nextData.display_name,
-        public_key: nextData.public_key,
         integrator_id: nextData.integrator_id,
         webhook_url: nextData.webhook_url,
         instructions: nextData.instructions,
         is_active: !!nextActive,
       };
+
+      if (options?.data?.public_key !== undefined) {
+        methodPayload.public_key = options.data.public_key;
+      }
 
       if (options?.data?.access_token !== undefined || mercadoPagoAccessTokenDirty) {
         methodPayload.access_token = nextData.access_token;
@@ -388,99 +400,120 @@ export default function PaymentMethodsPage() {
   };
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="p-6 space-y-8 bg-slate-50/50 min-h-screen">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-            <CreditCardIcon className="h-6 w-6 text-emerald-600" /> Métodos de cobro
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900 flex items-center gap-3">
+            <div className="p-2 bg-emerald-100 rounded-xl">
+              <CreditCardIcon className="h-7 w-7 text-emerald-600" />
+            </div>
+            Métodos de cobro
           </h1>
-          <p className="text-slate-500">Configura los métodos de cobro disponibles para tu compañía.</p>
+          <p className="text-slate-500 mt-1 text-lg">Configura cómo tus clientes pagan por tus productos y servicios.</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-8">
+        {/* Efectivo Card */}
         <Card
           role="button"
           tabIndex={0}
           onClick={() => setCashModalOpen(true)}
-          onKeyDown={(event) => cardKeyDown(event, () => setCashModalOpen(true))}
-          className="transition hover:border-emerald-200 hover:shadow"
+          className="group relative overflow-hidden transition-all hover:shadow-xl hover:-translate-y-1 border-slate-200/60 bg-white"
         >
-          <CardHeader className="flex flex-row items-start justify-between">
-            <div>
-              <CardTitle>Efectivo</CardTitle>
-              <CardDescription>Pagos presenciales o contra entrega.</CardDescription>
+          <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+          <CardHeader className="flex flex-row items-start justify-between pb-2">
+            <div className="space-y-1">
+              <div className="p-2 w-fit bg-emerald-50 rounded-lg group-hover:bg-emerald-100 transition-colors">
+                <WalletCards className="h-6 w-6 text-emerald-600" />
+              </div>
+              <CardTitle className="text-xl mt-4">Efectivo</CardTitle>
+              <CardDescription className="text-slate-500">Pagos presenciales o contra entrega.</CardDescription>
             </div>
             <div
-              className="flex items-center gap-2"
+              className="flex flex-col items-end gap-2"
               onClick={(event) => event.stopPropagation()}
-              onMouseDown={(event) => event.stopPropagation()}
             >
               <Switch
                 checked={cashActive}
                 disabled={loading || initializing}
                 onCheckedChange={handleToggleCash}
+                className="data-[state=checked]:bg-emerald-500"
               />
-              <span className="text-sm text-slate-500">{cashActive ? "Activo" : "Inactivo"}</span>
+              <span className={`text-xs font-bold uppercase tracking-wider ${cashActive ? 'text-emerald-600' : 'text-slate-400'}`}>
+                {cashActive ? "Activo" : "Inactivo"}
+              </span>
             </div>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center gap-3 text-sm text-slate-600">
-              <WalletCards className="h-4 w-4 text-emerald-600" />
-              <div className="flex flex-col">
-                <span className="font-medium text-slate-900">{cash.display_name}</span>
-                <span>{cash.instructions || "Pagar al recibir en sucursal"}</span>
+          <CardContent className="space-y-6 pt-4">
+            <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-3">
+              <div className="flex items-center gap-3 text-sm">
+                <span className="font-semibold text-slate-700 w-24">Nombre:</span>
+                <span className="text-slate-900">{cash.display_name}</span>
+              </div>
+              <div className="flex items-start gap-3 text-sm">
+                <span className="font-semibold text-slate-700 w-24">Instrucciones:</span>
+                <span className="text-slate-600 italic flex-1">{cash.instructions || "Pagar al recibir en sucursal"}</span>
               </div>
             </div>
             <Button
               variant="outline"
-              className="w-full"
+              className="w-full bg-white hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 transition-all border-slate-200"
               onClick={(event) => {
                 event.stopPropagation();
                 setCashModalOpen(true);
               }}
             >
-              Configurar efectivo
+              Personalizar efectivo
             </Button>
           </CardContent>
         </Card>
 
+        {/* SPEI Card */}
         <Card
           role="button"
           tabIndex={0}
           onClick={() => setSpeiModalOpen(true)}
-          onKeyDown={(event) => cardKeyDown(event, () => setSpeiModalOpen(true))}
-          className="transition hover:border-emerald-200 hover:shadow"
+          className="group relative overflow-hidden transition-all hover:shadow-xl hover:-translate-y-1 border-slate-200/60 bg-white"
         >
-          <CardHeader className="flex flex-row items-start justify-between">
-            <div>
-              <CardTitle>Transferencia SPEI</CardTitle>
-              <CardDescription>Comparte tus datos bancarios con clientes.</CardDescription>
+          <div className="absolute top-0 left-0 w-1 h-full bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+          <CardHeader className="flex flex-row items-start justify-between pb-2">
+            <div className="space-y-1">
+              <div className="p-2 w-fit bg-blue-50 rounded-lg group-hover:bg-blue-100 transition-colors">
+                <Landmark className="h-6 w-6 text-blue-600" />
+              </div>
+              <CardTitle className="text-xl mt-4">Transferencia SPEI</CardTitle>
+              <CardDescription className="text-slate-500">Comparte tus datos bancarios con clientes.</CardDescription>
             </div>
             <div
-              className="flex items-center gap-2"
+              className="flex flex-col items-end gap-2"
               onClick={(event) => event.stopPropagation()}
-              onMouseDown={(event) => event.stopPropagation()}
             >
               <Switch
                 checked={speiActive}
                 disabled={loading || initializing}
                 onCheckedChange={handleToggleSpei}
+                className="data-[state=checked]:bg-blue-500"
               />
-              <span className="text-sm text-slate-500">{speiActive ? "Activo" : "Inactivo"}</span>
+              <span className={`text-xs font-bold uppercase tracking-wider ${speiActive ? 'text-blue-600' : 'text-slate-400'}`}>
+                {speiActive ? "Activo" : "Inactivo"}
+              </span>
             </div>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center gap-3 text-sm text-slate-600">
-              <Landmark className="h-4 w-4 text-emerald-600" />
-              <div className="flex flex-col">
-                <span className="font-medium text-slate-900">{spei.display_name}</span>
-                <span>{spei.bank_name ? `${spei.bank_name} · ${spei.account_holder}` : "Configura tu cuenta bancaria"}</span>
+          <CardContent className="space-y-6 pt-4">
+            <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-3">
+              <div className="flex items-center gap-3 text-sm">
+                <span className="font-semibold text-slate-700 w-24">Banco:</span>
+                <span className="text-slate-900 font-medium">{spei.bank_name || "No configurado"}</span>
+              </div>
+              <div className="flex items-center gap-3 text-sm">
+                <span className="font-semibold text-slate-700 w-24">Titular:</span>
+                <span className="text-slate-900 truncate">{spei.account_holder || "—"}</span>
               </div>
             </div>
             <Button
               variant="outline"
-              className="w-full"
+              className="w-full bg-white hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200 transition-all border-slate-200"
               onClick={(event) => {
                 event.stopPropagation();
                 setSpeiModalOpen(true);
@@ -491,50 +524,60 @@ export default function PaymentMethodsPage() {
           </CardContent>
         </Card>
 
+        {/* Stripe Card */}
         <Card
           role="button"
           tabIndex={0}
           onClick={() => isBasicPlan ? showLockedToast() : setStripeModalOpen(true)}
-          onKeyDown={(event) => cardKeyDown(event, () => isBasicPlan ? showLockedToast() : setStripeModalOpen(true))}
-          className={`transition ${isBasicPlan ? 'opacity-80' : 'hover:border-emerald-200 hover:shadow'}`}
+          className={`group relative overflow-hidden transition-all border-slate-200/60 bg-white ${isBasicPlan ? 'opacity-80 grayscale-[0.5]' : 'hover:shadow-xl hover:-translate-y-1'}`}
         >
-          <CardHeader className="flex flex-row items-start justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
+          <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+          <CardHeader className="flex flex-row items-start justify-between pb-2">
+            <div className="space-y-1">
+              <div className="p-2 w-fit bg-indigo-50 rounded-lg group-hover:bg-indigo-100 transition-colors">
+                <CreditCardIcon className="h-6 w-6 text-indigo-600" />
+              </div>
+              <CardTitle className="text-xl mt-4 flex items-center gap-2">
                 Stripe
                 {isBasicPlan && <Lock className="h-4 w-4 text-slate-400" />}
               </CardTitle>
-              <CardDescription>Pagos con tarjeta conectados a tu cuenta.</CardDescription>
+              <CardDescription className="text-slate-500">Pagos con tarjeta automáticos.</CardDescription>
             </div>
             <div
-              className="flex items-center gap-2"
+              className="flex flex-col items-end gap-2"
               onClick={(event) => {
                 event.stopPropagation();
                 if (isBasicPlan) showLockedToast();
               }}
-              onMouseDown={(event) => event.stopPropagation()}
             >
               <Switch
                 checked={stripeEnabled}
                 disabled={stripeSaving || initializing}
                 onCheckedChange={(checked) => isBasicPlan ? showLockedToast() : handleToggleStripe(checked)}
+                className="data-[state=checked]:bg-indigo-500"
               />
-              <span className="text-sm text-slate-500">{stripeEnabled ? "Activo" : "Inactivo"}</span>
+              <span className={`text-xs font-bold uppercase tracking-wider ${stripeEnabled ? 'text-indigo-600' : 'text-slate-400'}`}>
+                {stripeEnabled ? "Activo" : "Inactivo"}
+              </span>
             </div>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center gap-3 text-sm text-slate-600">
-              <CreditCardIcon className="h-4 w-4 text-emerald-600" />
-              <div className="flex flex-col">
-                <span className="font-medium text-slate-900">
-                  {publishableKey ? "Llaves configuradas" : "Sin llaves registradas"}
+          <CardContent className="space-y-6 pt-4">
+            <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className={`h-2.5 w-2.5 rounded-full ${publishableKey ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`} />
+                <span className="text-sm font-medium text-slate-700">
+                  {publishableKey ? "Conectado correctamente" : "Pendiente de configurar"}
                 </span>
-                <span>Administra las llaves directamente desde el modal.</span>
               </div>
+              {!isBasicPlan && (
+                <span className="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-bold uppercase tracking-tight">
+                  Auto
+                </span>
+              )}
             </div>
             <Button
               variant="outline"
-              className="w-full"
+              className="w-full bg-white hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-200 transition-all border-slate-200"
               disabled={isBasicPlan}
               onClick={(event) => {
                 event.stopPropagation();
@@ -550,52 +593,55 @@ export default function PaymentMethodsPage() {
           </CardContent>
         </Card>
 
+        {/* Mercado Pago Card */}
         <Card
           role="button"
           tabIndex={0}
           onClick={() => isBasicPlan ? showLockedToast() : setMercadoPagoModalOpen(true)}
-          onKeyDown={(event) => cardKeyDown(event, () => isBasicPlan ? showLockedToast() : setMercadoPagoModalOpen(true))}
-          className={`transition ${isBasicPlan ? 'opacity-80' : 'hover:border-emerald-200 hover:shadow'}`}
+          className={`group relative overflow-hidden transition-all border-slate-200/60 bg-white ${isBasicPlan ? 'opacity-80 grayscale-[0.5]' : 'hover:shadow-xl hover:-translate-y-1'}`}
         >
-          <CardHeader className="flex flex-row items-start justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
+          <div className="absolute top-0 left-0 w-1 h-full bg-sky-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+          <CardHeader className="flex flex-row items-start justify-between pb-2">
+            <div className="space-y-1">
+              <div className="p-2 w-fit bg-sky-50 rounded-lg group-hover:bg-sky-100 transition-colors">
+                <Store className="h-6 w-6 text-sky-600" />
+              </div>
+              <CardTitle className="text-xl mt-4 flex items-center gap-2">
                 Mercado Pago
                 {isBasicPlan && <Lock className="h-4 w-4 text-slate-400" />}
               </CardTitle>
-              <CardDescription>Integra cobros con QR y links de pago.</CardDescription>
+              <CardDescription className="text-slate-500">QR, Link de pago y tarjetas.</CardDescription>
             </div>
             <div
-              className="flex items-center gap-2"
+              className="flex flex-col items-end gap-2"
               onClick={(event) => {
                 event.stopPropagation();
                 if (isBasicPlan) showLockedToast();
               }}
-              onMouseDown={(event) => event.stopPropagation()}
             >
               <Switch
                 checked={mercadoPagoActive}
                 disabled={loading || initializing}
                 onCheckedChange={(checked) => isBasicPlan ? showLockedToast() : handleToggleMercadoPago(checked)}
+                className="data-[state=checked]:bg-sky-500"
               />
-              <span className="text-sm text-slate-500">{mercadoPagoActive ? "Activo" : "Inactivo"}</span>
+              <span className={`text-xs font-bold uppercase tracking-wider ${mercadoPagoActive ? 'text-sky-600' : 'text-slate-400'}`}>
+                {mercadoPagoActive ? "Activo" : "Inactivo"}
+              </span>
             </div>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center gap-3 text-sm text-slate-600">
-              <Store className="h-4 w-4 text-emerald-600" />
-              <div className="flex flex-col">
-                <span className="font-medium text-slate-900">{mercadoPago.display_name}</span>
-                <span>
-                  {mercadoPago.public_key
-                    ? "Credenciales configuradas"
-                    : "Configura tu integración primero"}
+          <CardContent className="space-y-6 pt-4">
+            <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className={`h-2.5 w-2.5 rounded-full ${mercadoPago.public_key ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`} />
+                <span className="text-sm font-medium text-slate-700">
+                  {mercadoPago.public_key ? "Integración activa" : "Faltan credenciales"}
                 </span>
               </div>
             </div>
             <Button
               variant="outline"
-              className="w-full"
+              className="w-full bg-white hover:bg-sky-50 hover:text-sky-700 hover:border-sky-200 transition-all border-slate-200"
               disabled={isBasicPlan}
               onClick={(event) => {
                 event.stopPropagation();
@@ -606,7 +652,7 @@ export default function PaymentMethodsPage() {
                 setMercadoPagoModalOpen(true);
               }}
             >
-              {isBasicPlan ? "Restringido (Plan Básico)" : "Administrar Mercado Pago"}
+              {isBasicPlan ? "Restringido (Plan Básico)" : "Configurar Mercado Pago"}
             </Button>
           </CardContent>
         </Card>
@@ -614,33 +660,35 @@ export default function PaymentMethodsPage() {
 
       {/* Cash modal */}
       <Dialog open={cashModalOpen} onOpenChange={setCashModalOpen}>
-        <DialogContent className="sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Configurar efectivo</DialogTitle>
-            <DialogDescription>
+        <DialogContent className="sm:max-w-2xl border-none shadow-2xl p-0 overflow-hidden">
+          <div className="bg-emerald-600 p-6 text-white">
+            <DialogTitle className="text-2xl font-bold">Configurar efectivo</DialogTitle>
+            <DialogDescription className="text-emerald-100 mt-1">
               Personaliza las instrucciones para tus pedidos pagados en sucursal o contra entrega.
             </DialogDescription>
-          </DialogHeader>
+          </div>
           <form
-            className="space-y-4"
+            className="p-6 space-y-6 bg-white"
             onSubmit={async (event) => {
               event.preventDefault();
-              await handleSaveCash();
+              await handleSaveCash({ data: cash });
               setCashModalOpen(false);
             }}
           >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label>Nombre para mostrar</Label>
+                <Label className="text-slate-700 font-semibold">Nombre para mostrar</Label>
                 <Input
+                  className="bg-slate-50 border-slate-200 focus:bg-white transition-all"
                   placeholder="Pago en efectivo"
                   value={cash.display_name}
                   onChange={(e) => setCash({ ...cash, display_name: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
-                <Label>Límite de efectivo (MXN)</Label>
+                <Label className="text-slate-700 font-semibold">Límite de efectivo (MXN)</Label>
                 <Input
+                  className="bg-slate-50 border-slate-200 focus:bg-white transition-all"
                   type="number"
                   step="0.01"
                   placeholder="500.00"
@@ -649,16 +697,18 @@ export default function PaymentMethodsPage() {
                 />
               </div>
               <div className="md:col-span-2 space-y-2">
-                <Label>Instrucciones</Label>
+                <Label className="text-slate-700 font-semibold">Instrucciones para el cliente</Label>
                 <Input
+                  className="bg-slate-50 border-slate-200 focus:bg-white transition-all h-20"
                   placeholder="Pagar al recibir en sucursal"
                   value={cash.instructions}
                   onChange={(e) => setCash({ ...cash, instructions: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
-                <Label>Orden</Label>
+                <Label className="text-slate-700 font-semibold">Orden de visualización</Label>
                 <Input
+                  className="bg-slate-50 border-slate-200 focus:bg-white transition-all"
                   type="number"
                   placeholder="1"
                   value={typeof cash.sort_order === 'number' ? cash.sort_order : ''}
@@ -666,12 +716,12 @@ export default function PaymentMethodsPage() {
                 />
               </div>
             </div>
-            <div className="flex items-center justify-end gap-2 pt-2">
+            <div className="flex items-center justify-end gap-3 pt-4 border-t">
               <Button type="button" variant="ghost" onClick={() => setCashModalOpen(false)}>
                 Cancelar
               </Button>
-              <Button type="submit" disabled={loading || initializing}>
-                {loading ? 'Guardando...' : 'Guardar'}
+              <Button type="submit" disabled={loading || initializing} className="bg-emerald-600 hover:bg-emerald-700 px-8">
+                {loading ? 'Guardando...' : 'Guardar cambios'}
               </Button>
             </div>
           </form>
@@ -680,41 +730,44 @@ export default function PaymentMethodsPage() {
 
       {/* Mercado Pago modal */}
       <Dialog open={mercadoPagoModalOpen} onOpenChange={setMercadoPagoModalOpen}>
-        <DialogContent className="sm:max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>Configurar Mercado Pago</DialogTitle>
-            <DialogDescription>
+        <DialogContent className="sm:max-w-3xl border-none shadow-2xl p-0 overflow-hidden">
+          <div className="bg-sky-600 p-6 text-white">
+            <DialogTitle className="text-2xl font-bold">Configurar Mercado Pago</DialogTitle>
+            <DialogDescription className="text-sky-100 mt-1">
               Ingresa las credenciales y datos requeridos por Mercado Pago para autorizar tus cobros.
             </DialogDescription>
-          </DialogHeader>
+          </div>
           <form
-            className="space-y-4"
+            className="p-6 space-y-6 bg-white"
             onSubmit={async (event) => {
               event.preventDefault();
-              await handleSaveMercadoPago();
+              await handleSaveMercadoPago({ data: mercadoPago });
               setMercadoPagoModalOpen(false);
             }}
           >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label>Nombre para mostrar</Label>
+                <Label className="text-slate-700 font-semibold">Nombre para mostrar</Label>
                 <Input
+                  className="bg-slate-50 border-slate-200 focus:bg-white transition-all"
                   placeholder="Mercado Pago"
                   value={mercadoPago.display_name}
                   onChange={(e) => setMercadoPago({ ...mercadoPago, display_name: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
-                <Label>Public Key</Label>
+                <Label className="text-slate-700 font-semibold">Public Key</Label>
                 <Input
+                  className="bg-slate-50 border-slate-200 focus:bg-white transition-all font-mono text-xs"
                   placeholder="APP_USR-XXXXXXXXXXXXXXXX"
                   value={mercadoPago.public_key}
                   onChange={(e) => setMercadoPago({ ...mercadoPago, public_key: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
-                <Label>Access Token</Label>
+                <Label className="text-slate-700 font-semibold">Access Token</Label>
                 <Input
+                  className="bg-slate-50 border-slate-200 focus:bg-white transition-all font-mono text-xs"
                   type="password"
                   placeholder="APP_USR-XXXXXXXXXXXXXXX"
                   value={mercadoPago.access_token}
@@ -725,35 +778,38 @@ export default function PaymentMethodsPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Integrator ID (opcional)</Label>
+                <Label className="text-slate-700 font-semibold">Integrator ID (opcional)</Label>
                 <Input
+                  className="bg-slate-50 border-slate-200 focus:bg-white transition-all"
                   placeholder="dev_123456789"
                   value={mercadoPago.integrator_id}
                   onChange={(e) => setMercadoPago({ ...mercadoPago, integrator_id: e.target.value })}
                 />
               </div>
               <div className="space-y-2 md:col-span-2">
-                <Label>Webhook URL</Label>
+                <Label className="text-slate-700 font-semibold">Webhook URL</Label>
                 <Input
+                  className="bg-slate-50 border-slate-200 focus:bg-white transition-all text-sm"
                   placeholder="https://midominio.com/api/mercadopago/webhook"
                   value={mercadoPago.webhook_url}
                   onChange={(e) => setMercadoPago({ ...mercadoPago, webhook_url: e.target.value })}
                 />
               </div>
               <div className="space-y-2 md:col-span-2">
-                <Label>Instrucciones internas</Label>
+                <Label className="text-slate-700 font-semibold">Instrucciones internas</Label>
                 <Input
+                  className="bg-slate-50 border-slate-200 focus:bg-white transition-all"
                   placeholder="Ej. Revisar pagos en Mercado Pago Dashboard"
                   value={mercadoPago.instructions}
                   onChange={(e) => setMercadoPago({ ...mercadoPago, instructions: e.target.value })}
                 />
               </div>
             </div>
-            <div className="flex items-center justify-end gap-2 pt-2">
+            <div className="flex items-center justify-end gap-3 pt-4 border-t">
               <Button type="button" variant="ghost" onClick={() => setMercadoPagoModalOpen(false)}>
                 Cancelar
               </Button>
-              <Button type="submit" disabled={loading || initializing}>
+              <Button type="submit" disabled={loading || initializing} className="bg-sky-600 hover:bg-sky-700 px-8">
                 {loading ? 'Guardando...' : 'Guardar configuración'}
               </Button>
             </div>
@@ -763,98 +819,110 @@ export default function PaymentMethodsPage() {
 
       {/* SPEI modal */}
       <Dialog open={speiModalOpen} onOpenChange={setSpeiModalOpen}>
-        <DialogContent className="sm:max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>Configurar transferencia SPEI</DialogTitle>
-            <DialogDescription>
+        <DialogContent className="sm:max-w-3xl border-none shadow-2xl p-0 overflow-hidden">
+          <div className="bg-blue-600 p-6 text-white">
+            <DialogTitle className="text-2xl font-bold">Configurar transferencia SPEI</DialogTitle>
+            <DialogDescription className="text-blue-100 mt-1">
               Agrega los datos bancarios que compartirás con tus clientes.
             </DialogDescription>
-          </DialogHeader>
-          <Alert>
-            <AlertTitle>Importante</AlertTitle>
-            <AlertDescription>
-              Estos datos se mostrarán a los clientes. Guarda esta configuración en tu servidor vía API protegida.
-            </AlertDescription>
-          </Alert>
+          </div>
+          <div className="px-6 pt-6">
+            <Alert className="bg-blue-50 border-blue-200 text-blue-800">
+              <AlertTitle className="font-bold flex items-center gap-2">
+                <Lock className="h-4 w-4" /> Importante
+              </AlertTitle>
+              <AlertDescription>
+                Estos datos se mostrarán directamente a tus clientes al finalizar su pedido.
+              </AlertDescription>
+            </Alert>
+          </div>
           <form
-            className="space-y-4"
+            className="p-6 space-y-6 bg-white"
             onSubmit={async (event) => {
               event.preventDefault();
-              await handleSaveSpei();
+              await handleSaveSpei({ data: spei });
               setSpeiModalOpen(false);
             }}
           >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label>Nombre para mostrar</Label>
+                <Label className="text-slate-700 font-semibold">Nombre para mostrar</Label>
                 <Input
+                  className="bg-slate-50 border-slate-200 focus:bg-white transition-all"
                   placeholder="Transferencia SPEI"
                   value={spei.display_name}
                   onChange={(e) => setSpei({ ...spei, display_name: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
-                <Label>Titular de la cuenta</Label>
+                <Label className="text-slate-700 font-semibold">Titular de la cuenta</Label>
                 <Input
+                  className="bg-slate-50 border-slate-200 focus:bg-white transition-all font-medium"
                   placeholder="Mi Empresa SA de CV"
                   value={spei.account_holder}
                   onChange={(e) => setSpei({ ...spei, account_holder: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
-                <Label>Banco</Label>
+                <Label className="text-slate-700 font-semibold">Banco</Label>
                 <Input
+                  className="bg-slate-50 border-slate-200 focus:bg-white transition-all"
                   placeholder="BBVA, Banorte, Santander..."
                   value={spei.bank_name}
                   onChange={(e) => setSpei({ ...spei, bank_name: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
-                <Label>Número de cuenta</Label>
+                <Label className="text-slate-700 font-semibold">Número de cuenta</Label>
                 <Input
+                  className="bg-slate-50 border-slate-200 focus:bg-white transition-all font-mono"
                   placeholder="0123456789"
                   value={spei.account_number}
                   onChange={(e) => setSpei({ ...spei, account_number: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
-                <Label>CLABE</Label>
+                <Label className="text-slate-700 font-semibold">CLABE (18 dígitos)</Label>
                 <Input
+                  className="bg-slate-50 border-slate-200 focus:bg-white transition-all font-mono"
                   placeholder="18 dígitos"
                   value={spei.clabe}
                   onChange={(e) => setSpei({ ...spei, clabe: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
-                <Label>Referencia</Label>
+                <Label className="text-slate-700 font-semibold">Referencia (opcional)</Label>
                 <Input
+                  className="bg-slate-50 border-slate-200 focus:bg-white transition-all"
                   placeholder="Ej. PEDIDO-12345"
                   value={spei.reference}
                   onChange={(e) => setSpei({ ...spei, reference: e.target.value })}
                 />
               </div>
               <div className="md:col-span-2 space-y-2">
-                <Label>Instrucciones</Label>
+                <Label className="text-slate-700 font-semibold">Instrucciones adicionales</Label>
                 <Input
+                  className="bg-slate-50 border-slate-200 focus:bg-white transition-all"
                   placeholder="Enviar comprobante por WhatsApp"
                   value={spei.instructions}
                   onChange={(e) => setSpei({ ...spei, instructions: e.target.value })}
                 />
               </div>
               <div className="md:col-span-2 space-y-2">
-                <Label>URL del QR (opcional)</Label>
+                <Label className="text-slate-700 font-semibold">URL del QR de pago (opcional)</Label>
                 <Input
+                  className="bg-slate-50 border-slate-200 focus:bg-white transition-all text-xs"
                   placeholder="https://.../spei-qr.png"
                   value={spei.qr_image_url}
                   onChange={(e) => setSpei({ ...spei, qr_image_url: e.target.value })}
                 />
               </div>
             </div>
-            <div className="flex items-center justify-end gap-2 pt-2">
+            <div className="flex items-center justify-end gap-3 pt-4 border-t">
               <Button type="button" variant="ghost" onClick={() => setSpeiModalOpen(false)}>
                 Cancelar
               </Button>
-              <Button type="submit" disabled={loading || initializing}>
+              <Button type="submit" disabled={loading || initializing} className="bg-blue-600 hover:bg-blue-700 px-8">
                 {loading ? 'Guardando...' : 'Guardar SPEI'}
               </Button>
             </div>
@@ -864,62 +932,71 @@ export default function PaymentMethodsPage() {
 
       {/* Stripe modal */}
       <Dialog open={stripeModalOpen} onOpenChange={setStripeModalOpen}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Administrar llaves de Stripe</DialogTitle>
-            <DialogDescription>Conecta tu cuenta de Stripe para aceptar pagos con tarjeta.</DialogDescription>
-          </DialogHeader>
+        <DialogContent className="sm:max-w-lg border-none shadow-2xl p-0 overflow-hidden">
+          <div className="bg-indigo-600 p-6 text-white">
+            <DialogTitle className="text-2xl font-bold">Administrar Stripe</DialogTitle>
+            <DialogDescription className="text-indigo-100 mt-1">
+              Conecta tu cuenta de Stripe para aceptar pagos con tarjeta de forma automática.
+            </DialogDescription>
+          </div>
           <form
-            className="space-y-4"
+            className="p-6 space-y-6 bg-white"
             onSubmit={async (event) => {
               event.preventDefault();
-              await handleSaveStripe();
-              setStripeEnabled(Boolean((publishableKey && publishableKey.length) || (secretKey && secretKey.length)));
+              await handleSaveStripe({ publishableKey, secretKey });
               setStripeModalOpen(false);
             }}
           >
-            <div className="space-y-2">
-              <Label htmlFor="pk">Publishable Key</Label>
-              <Input
-                id="pk"
-                placeholder="pk_live_..."
-                value={publishableKey}
-                onChange={(e) => setPublishableKey(e.target.value)}
-              />
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="pk" className="text-slate-700 font-semibold">Publishable Key</Label>
+                <Input
+                  id="pk"
+                  className="bg-slate-50 border-slate-200 focus:bg-white transition-all font-mono text-xs"
+                  placeholder="pk_live_..."
+                  value={publishableKey}
+                  onChange={(e) => setPublishableKey(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="sk" className="text-slate-700 font-semibold">Secret Key</Label>
+                <Input
+                  id="sk"
+                  type="password"
+                  className="bg-slate-50 border-slate-200 focus:bg-white transition-all font-mono text-xs"
+                  placeholder="sk_live_..."
+                  value={secretKey}
+                  onChange={(e) => {
+                    setSecretKey(e.target.value);
+                    setSecretKeyDirty(true);
+                  }}
+                />
+              </div>
+              <div className="p-4 bg-slate-50 rounded-lg flex items-center justify-between border border-slate-100">
+                <div className="flex items-center gap-2 text-sm text-slate-600">
+                  <CreditCardIcon className="h-4 w-4" />
+                  <span>Obtén tus llaves en el Dashboard</span>
+                </div>
+                <Link
+                  className="text-xs font-bold text-indigo-600 hover:text-indigo-700 underline"
+                  href="https://dashboard.stripe.com/apikeys"
+                  target="_blank"
+                >
+                  Abrir Stripe Dashboard
+                </Link>
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="sk">Secret Key</Label>
-              <Input
-                id="sk"
-                type="password"
-                placeholder="sk_live_..."
-                value={secretKey}
-                onChange={(e) => {
-                  setSecretKey(e.target.value);
-                  setSecretKeyDirty(true);
-                }}
-              />
-            </div>
-            <Link
-              className="text-sm text-emerald-700 hover:text-emerald-800 underline inline-flex"
-              href="https://dashboard.stripe.com/"
-              target="_blank"
-            >
-              Ir al Stripe Dashboard
-            </Link>
-            <Separator className="my-2" />
-            <div className="flex items-center justify-end gap-2">
+            <div className="flex items-center justify-end gap-3 pt-4 border-t">
               <Button
                 type="button"
                 variant="ghost"
                 onClick={() => {
                   setStripeModalOpen(false);
-                  setStripeEnabled(Boolean((publishableKey && publishableKey.length) || (secretKey && secretKey.length)));
                 }}
               >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={stripeSaving}>
+              <Button type="submit" disabled={stripeSaving} className="bg-indigo-600 hover:bg-indigo-700 px-8">
                 {stripeSaving ? 'Guardando...' : 'Guardar llaves'}
               </Button>
             </div>

@@ -54,9 +54,16 @@ export default function DashboardLayout({
         (async () => {
             try {
                 const res = await api.userCompanies.get(token);
-                const hasCompany = Boolean((res as any)?.data?.data?.id);
+                const company = (res as any)?.data?.data;
+                const hasCompany = Boolean(company?.id);
+                
+                // Stricter check for active plan status
+                const isActive = company?.company_plan_status === 'active' || 
+                                 company?.company_plan_status === 'trialing' || 
+                                 company?.plan_is_active === true;
+                
                 if (!cancelled) {
-                    if (!hasCompany) {
+                    if (!hasCompany || !isActive) {
                         router.replace('/onboarding/compania');
                         return;
                     }

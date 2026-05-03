@@ -183,6 +183,140 @@ export const api = {
     },
   },
 
+  giftCards: {
+    async list(companyId: string | number, token: string): Promise<ApiResponse<any>> {
+      const url = `${BASE_URL}/api/companies/${companyId}/gift-cards`;
+      return fetch(url, {
+        method: 'GET',
+        headers: getAuthHeader(token),
+      }).then(handleResponse);
+    },
+
+    async create(
+      companyId: string | number,
+      data: {
+        amount: number;
+        quantity?: number;
+        recipient_email?: string;
+        recipient_name?: string;
+        message?: string;
+        expires_at?: string;
+        design_metadata?: {
+          card_color_hex?: string;
+          theme?: string;
+        };
+      },
+      token: string
+    ): Promise<ApiResponse<any>> {
+      const url = `${BASE_URL}/api/companies/${companyId}/gift-cards`;
+      return fetch(url, {
+        method: 'POST',
+        headers: {
+          ...getAuthHeader(token),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      }).then(handleResponse);
+    },
+
+    async update(
+      companyId: string | number,
+      giftCardId: string | number,
+      data: {
+        status?: 'active' | 'empty' | 'expired' | 'cancelled';
+        expires_at?: string;
+        design_metadata?: {
+          card_color_hex?: string;
+          theme?: string;
+        };
+      },
+      token: string
+    ): Promise<ApiResponse<any>> {
+      const url = `${BASE_URL}/api/companies/${companyId}/gift-cards/${giftCardId}`;
+      return fetch(url, {
+        method: 'PUT',
+        headers: {
+          ...getAuthHeader(token),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      }).then(handleResponse);
+    },
+  },
+
+  giftCardTemplates: {
+    async list(companyId: string | number, token: string): Promise<ApiResponse<any>> {
+      const url = `${BASE_URL}/api/companies/${companyId}/gift-card-templates`;
+      return fetch(url, {
+        method: 'GET',
+        headers: getAuthHeader(token),
+      }).then(handleResponse);
+    },
+
+    async create(
+      companyId: string | number,
+      data: {
+        amount: number;
+        name?: string;
+        description?: string;
+        design_metadata?: {
+          card_color_hex?: string;
+          theme?: string;
+        };
+        is_active?: boolean;
+      },
+      token: string
+    ): Promise<ApiResponse<any>> {
+      const url = `${BASE_URL}/api/companies/${companyId}/gift-card-templates`;
+      return fetch(url, {
+        method: 'POST',
+        headers: {
+          ...getAuthHeader(token),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      }).then(handleResponse);
+    },
+
+    async update(
+      companyId: string | number,
+      templateId: string | number,
+      data: {
+        amount?: number;
+        name?: string;
+        description?: string;
+        is_active?: boolean;
+        design_metadata?: {
+          card_color_hex?: string;
+          theme?: string;
+        };
+      },
+      token: string
+    ): Promise<ApiResponse<any>> {
+      const url = `${BASE_URL}/api/companies/${companyId}/gift-card-templates/${templateId}`;
+      return fetch(url, {
+        method: 'PUT',
+        headers: {
+          ...getAuthHeader(token),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      }).then(handleResponse);
+    },
+
+    async delete(
+      companyId: string | number,
+      templateId: string | number,
+      token: string
+    ): Promise<ApiResponse<any>> {
+      const url = `${BASE_URL}/api/companies/${companyId}/gift-card-templates/${templateId}`;
+      return fetch(url, {
+        method: 'DELETE',
+        headers: getAuthHeader(token),
+      }).then(handleResponse);
+    },
+  },
+
   inventory: {
     /**
      * Kardex / Inventory Movements (authenticated)
@@ -688,6 +822,42 @@ export const api = {
         console.error('Error in getFollowerDetail:', error);
         throw error;
       }
+    },
+
+    /**
+     * Cancel a customer's membership
+     */
+    async cancelCustomerMembership(
+      companyId: string | number,
+      customerId: string | number,
+      membershipId: string | number,
+      token: string
+    ): Promise<ApiResponse<any>> {
+      const url = `${BASE_URL}/api/companies/${companyId}/customers/${customerId}/memberships/${membershipId}/cancel`;
+      return fetch(url, {
+        method: 'POST',
+        headers: getAuthHeader(token),
+      }).then(handleResponse);
+    },
+
+    /**
+     * Assign a membership to a customer
+     */
+    async assignCustomerMembership(
+      companyId: string | number,
+      customerId: string | number,
+      membershipId: string | number,
+      token: string
+    ): Promise<ApiResponse<any>> {
+      const url = `${BASE_URL}/api/companies/${companyId}/customers/${customerId}/memberships`;
+      return fetch(url, {
+        method: 'POST',
+        headers: {
+          ...getAuthHeader(token),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ membership_id: membershipId }),
+      }).then(handleResponse);
     },
 
     /**
@@ -1858,6 +2028,22 @@ export const api = {
       }
     }>> {
       return fetch(`${BASE_URL}/api/companies/${companyId}/memberships`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+        },
+      }).then(handleResponse);
+    },
+
+    /**
+     * Get a single membership detail
+     */
+    async getMembership(
+      companyId: string,
+      membershipId: string,
+      token: string
+    ): Promise<ApiResponse<{ data: Membership }>> {
+      return fetch(`${BASE_URL}/api/companies/${companyId}/memberships/${membershipId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Accept': 'application/json',
