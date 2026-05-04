@@ -185,6 +185,25 @@ export default function FinanzasPage() {
         }
     };
 
+    const allTransactions = stats ? [
+        ...(stats.recent_transactions || []).map(tx => ({ ...tx, source_type: 'order' })),
+        ...(stats.recent_gift_cards || []).map(gc => ({ ...gc, source_type: 'gift_card' })),
+        ...(stats.recent_memberships || []).map(ms => ({ ...ms, source_type: 'membership' }))
+    ].filter(tx => {
+        const txDate = new Date(tx.date || tx.created_at);
+        if (dateFrom && txDate < new Date(dateFrom)) return false;
+        if (dateTo) {
+            const end = new Date(dateTo);
+            end.setHours(23, 59, 59, 999);
+            if (txDate > end) return false;
+        }
+        return true;
+    }).sort((a, b) => {
+        const dateA = new Date(a.date || a.created_at || 0).getTime();
+        const dateB = new Date(b.date || b.created_at || 0).getTime();
+        return dateB - dateA;
+    }) : [];
+
     const sourceData = [
         { name: 'Órdenes', value: allTransactions.filter(t => t.source_type === 'order').reduce((acc, t) => acc + Number(t.amount), 0), fill: '#10b981' },
         { name: 'Gift Cards', value: allTransactions.filter(t => t.source_type === 'gift_card').reduce((acc, t) => acc + Number(t.amount), 0), fill: '#3b82f6' },
@@ -207,26 +226,6 @@ export default function FinanzasPage() {
     }, []);
 
     const totalFilteredRevenue = allTransactions.reduce((acc, tx) => acc + Number(tx.amount), 0);
-
-
-    const allTransactions = stats ? [
-        ...(stats.recent_transactions || []).map(tx => ({ ...tx, source_type: 'order' })),
-        ...(stats.recent_gift_cards || []).map(gc => ({ ...gc, source_type: 'gift_card' })),
-        ...(stats.recent_memberships || []).map(ms => ({ ...ms, source_type: 'membership' }))
-    ].filter(tx => {
-        const txDate = new Date(tx.date || tx.created_at);
-        if (dateFrom && txDate < new Date(dateFrom)) return false;
-        if (dateTo) {
-            const end = new Date(dateTo);
-            end.setHours(23, 59, 59, 999);
-            if (txDate > end) return false;
-        }
-        return true;
-    }).sort((a, b) => {
-        const dateA = new Date(a.date || a.created_at || 0).getTime();
-        const dateB = new Date(b.date || b.created_at || 0).getTime();
-        return dateB - dateA;
-    }) : [];
 
     // Trend data calculation (group by day from allTransactions)
     const trendData = stats ? [...allTransactions].reverse().reduce((acc: any[], tx: any) => {

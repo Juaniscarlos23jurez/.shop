@@ -13,10 +13,26 @@ export function getFirebaseAdminApp() {
     throw new Error('Missing Firebase Admin env vars: FIREBASE_ADMIN_PROJECT_ID/CLIENT_EMAIL/PRIVATE_KEY');
   }
 
-  // Handle escaped newlines from .env (\n)
-  if (privateKey?.includes('\\n')) {
+  // Debugging private key format
+  console.log('--- DEBUG PRIVATE KEY ---');
+  console.log('Original length:', privateKey.length);
+  console.log('Starts with:', privateKey.substring(0, 10));
+  console.log('Ends with:', privateKey.substring(privateKey.length - 10));
+  console.log('Has raw newlines:', privateKey.includes('\n'));
+  console.log('Has escaped newlines:', privateKey.includes('\\n'));
+  console.log('Has quotes:', privateKey.startsWith('"') || privateKey.startsWith("'"));
+
+  // Clean the private key
+  privateKey = privateKey.replace(/^['"]|['"]$/g, '');
+  if (privateKey.includes('\\n')) {
     privateKey = privateKey.replace(/\\n/g, '\n');
   }
+
+  console.log('Cleaned length:', privateKey.length);
+  console.log('Cleaned starts with:', privateKey.substring(0, 10));
+  console.log('Cleaned ends with:', privateKey.substring(privateKey.length - 10));
+  console.log('Cleaned has raw newlines:', privateKey.includes('\n'));
+  console.log('-------------------------');
 
   if (!admin.apps.length) {
     app = admin.initializeApp({

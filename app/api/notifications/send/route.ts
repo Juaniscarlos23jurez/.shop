@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
     const tokens: string[] = Array.isArray(body?.tokens) ? body.tokens.filter(Boolean) : [];
-    const notification: { title: string; body: string } | undefined = body?.notification;
+    const notification: { title: string; body: string; image?: string } | undefined = body?.notification;
     const data: Record<string, string> | undefined = body?.data;
 
     if (!tokens.length) {
@@ -27,10 +27,22 @@ export async function POST(req: NextRequest) {
       notification: {
         title: notification.title,
         body: notification.body,
+        ...(notification.image && { imageUrl: notification.image }),
       },
       data: data ? Object.fromEntries(Object.entries(data).map(([k, v]) => [k, String(v)])) : undefined,
-      android: { priority: 'high' },
-      apns: { headers: { 'apns-priority': '10' } },
+      android: {
+        priority: 'high',
+        ...(notification.image && { notification: { imageUrl: notification.image } }),
+      },
+      apns: {
+        headers: { 'apns-priority': '10' },
+        payload: {
+          aps: {
+            mutableContent: true,
+          },
+        },
+        ...(notification.image && { fcmOptions: { imageUrl: notification.image } }),
+      },
     });
 
     const result = {
