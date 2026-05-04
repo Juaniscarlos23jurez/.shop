@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import Image from "next/image"
+import { useRegion } from "@/hooks/use-region"
 
 interface HeroSectionProps {
   CALENDLY_URL: string
@@ -12,6 +13,7 @@ interface HeroSectionProps {
 const words = ["y vende más", "y gana más", "y crece más"]
 
 export function HeroSection({ CALENDLY_URL }: HeroSectionProps) {
+  const { isEurope } = useRegion()
   const [wordIndex, setWordIndex] = useState(0)
   const [charIndex, setCharIndex] = useState(0)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -72,11 +74,13 @@ export function HeroSection({ CALENDLY_URL }: HeroSectionProps) {
           </p>
 
           <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
-            <Button asChild size="lg" className="w-full sm:w-auto h-14 px-8 bg-[#22c55e] hover:bg-green-600 text-white text-lg font-bold rounded-2xl shadow-[0_20px_40px_-12px_rgba(34,197,94,0.35)] hover:shadow-[0_20px_40px_-12px_rgba(34,197,94,0.45)] hover:-translate-y-1 transition-all duration-300">
-              <Link href="/auth/register">
-                Obtener mi App ahora
-              </Link>
-            </Button>
+            {!isEurope && (
+              <Button asChild size="lg" className="w-full sm:w-auto h-14 px-8 bg-[#22c55e] hover:bg-green-600 text-white text-lg font-bold rounded-2xl shadow-[0_20px_40px_-12px_rgba(34,197,94,0.35)] hover:shadow-[0_20px_40px_-12px_rgba(34,197,94,0.45)] hover:-translate-y-1 transition-all duration-300">
+                <Link href="/auth/register">
+                  Obtener mi App ahora
+                </Link>
+              </Button>
+            )}
             <Button asChild size="lg" variant="outline" className="w-full sm:w-auto h-14 px-8 border-2 border-gray-200 text-[#0f172a] text-lg font-bold rounded-2xl hover:bg-gray-50 transition-all duration-300">
               <Link href={CALENDLY_URL} target="_blank" rel="noopener noreferrer">
                 Ver cómo funciona
@@ -152,7 +156,7 @@ export function HeroSection({ CALENDLY_URL }: HeroSectionProps) {
                 />
               </div>
               <div className="text-sm font-black text-[#0f172a]">Mercado Pago</div>
-              <p className="text-[10px] text-gray-500 mt-1">Acepta tarjetas de crédito, débito y efectivo en OXXO.</p>
+              <p className="text-[10px] text-gray-500 mt-1">Acepta tarjetas de crédito y débito</p>
             </div>
 
             <div className="absolute -right-20 top-6 hidden lg:block bg-white p-6 rounded-3xl shadow-2xl border border-gray-100 max-w-[210px] animate-bounce z-20 transition-all hover:scale-110" style={{ animationDuration: '4s' }}>

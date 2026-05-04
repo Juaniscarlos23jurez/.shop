@@ -99,6 +99,7 @@ const adminSidebarItems: SidebarItem[] = [
     subItems: [
       { icon: ShoppingCart, label: "Punto de Venta", href: "/dashboard/pos" },
       { icon: Smartphone, label: "Terminal", href: "/dashboard/terminal" },
+      { icon: TicketIcon, label: "Otorgar Puntos", href: "/dashboard/otorgar-puntos" },
     ]
   },
   // { icon: Clock4, label: "Órdenes Pendientes", href: "/dashboard/ordenes-pendientes" },
@@ -223,6 +224,7 @@ const employeeSidebarItems: SidebarItem[] = [
     subItems: [
       { icon: ShoppingCart, label: "Punto de Venta", href: "/dashboard/pos" },
       { icon: Smartphone, label: "Terminal", href: "/dashboard/terminal" },
+      { icon: TicketIcon, label: "Otorgar Puntos", href: "/dashboard/otorgar-puntos" },
     ]
   }
 ];
@@ -253,29 +255,14 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
     const showRestrictedMenu = isEmployee && userRole !== 'admin' && userRole !== 'manager';
     const baseItems = showRestrictedMenu ? employeeSidebarItems : adminSidebarItems;
     const isPlan2 = company?.company_plan_id && Number(company.company_plan_id) === 2;
-    // Check if POS is enabled (default to false as per user request)
-    const posEnabled = company?.pos === true;
 
     return baseItems.map(item => {
-      // Handle POS items when POS is disabled
-      if (!posEnabled && (item.label === 'Productos' || item.label === 'Stock')) {
-        return null;
-      }
-      if (!posEnabled && item.label === 'Punto de Venta') {
-        return {
-          icon: TicketIcon,
-          label: 'Otorgar Puntos',
-          href: '/dashboard/otorgar-puntos',
-          isCollapsible: false,
-        };
-      }
-
       // Logic for filtering plan 2 items
       if (isPlan2 && item.label === 'WhatsApp') return null;
 
       return item;
     }).filter((item): item is SidebarItem => item !== null);
-  }, [isEmployee, userRole, company?.company_plan_id, company?.pos]);
+  }, [isEmployee, userRole, company?.company_plan_id]);
 
   // Initial expand logic based on pathname
   useEffect(() => {

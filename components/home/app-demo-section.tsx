@@ -15,7 +15,7 @@ export function AppDemoSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-20 text-center">
           <div className="inline-flex items-center space-x-2 bg-blue-50 text-blue-700 text-xs font-black px-3 py-1 rounded-full mb-4 uppercase tracking-widest border border-blue-100">
-            <span>App & Web</span>
+            <span>App Móvil</span>
           </div>
           <h2 className="text-4xl md:text-5xl font-black text-[#0f172a] mb-6">
             Tu marca en el bolsillo <br />
@@ -29,111 +29,6 @@ export function AppDemoSection() {
           </p>
         </div>
 
-        {/* Web Section */}
-        <div className="mb-24">
-          <div className="flex items-center space-x-4 mb-12">
-            <div className="h-px flex-1 bg-gray-200"></div>
-            <h3 className="text-2xl font-black text-[#0f172a] uppercase tracking-tighter bg-white px-4">Acceso Web & APP</h3>
-            <div className="h-px flex-1 bg-gray-200"></div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            {/* iPhone Mockup with wallet.mp4 */}
-            <div className="flex justify-center lg:justify-start">
-              <div className="relative w-full max-w-sm">
-                <div className="relative mx-auto h-[520px] w-[260px] sm:h-[600px] sm:w-[300px] rounded-[3rem] border border-gray-300 bg-black shadow-2xl overflow-hidden">
-                  <div className="absolute top-3 left-1/2 -translate-x-1/2 w-28 h-5 bg-black rounded-full flex items-center justify-center z-10">
-                    <div className="w-16 h-3 bg-gray-900 rounded-full" />
-                  </div>
-                  <div className="absolute -left-0.5 top-24 h-10 w-1 rounded-r-full bg-gray-300" />
-                  <div className="absolute -left-0.5 top-40 h-16 w-1 rounded-r-full bg-gray-300" />
-                  <div className="absolute inset-4 rounded-[2.4rem] bg-black overflow-hidden">
-                    <video
-                      src="/wallet_safari.mp4"
-                      className="h-full w-full object-cover"
-                      muted
-                      loop
-                      playsInline
-                      autoPlay
-                      onError={handleVideoError}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Features bullets */}
-            <div className="space-y-8">
-              <div className="flex items-start gap-4 group">
-                <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-[#22c55e] to-[#16a34a] flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                  </svg>
-                </div>
-                <div className="flex-1">
-                  <h4 className="text-xl font-bold text-[#0f172a] mb-2">Catálogo digital interactivo</h4>
-                  <p className="text-[#64748b] leading-relaxed">Muestra todos tus productos con imágenes de alta calidad, descripciones detalladas, precios actualizados y categorías organizadas. Tus clientes pueden explorar, buscar y filtrar fácilmente desde cualquier dispositivo.</p>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    <span className="text-xs px-2 py-1 bg-green-50 text-green-700 rounded-full">Búsqueda inteligente</span>
-                    <span className="text-xs px-2 py-1 bg-green-50 text-green-700 rounded-full">Filtros avanzados</span>
-                    <span className="text-xs px-2 py-1 bg-green-50 text-green-700 rounded-full">Actualización en tiempo real</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-4 group">
-                <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-[#3b82f6] to-[#2563eb] flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <div className="flex-1">
-                  <h4 className="text-xl font-bold text-[#0f172a] mb-2">Sistema de puntos de lealtad</h4>
-                  <p className="text-[#64748b] leading-relaxed">Permite que tus clientes acumulen puntos automáticamente con cada compra y los canjeen por recompensas exclusivas, descuentos especiales o productos gratis. Visualizan su progreso y beneficios en tiempo real.</p>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    <span className="text-xs px-2 py-1 bg-blue-50 text-blue-700 rounded-full">Acumulación automática</span>
-                    <span className="text-xs px-2 py-1 bg-blue-50 text-blue-700 rounded-full">Recompensas personalizadas</span>
-                    <span className="text-xs px-2 py-1 bg-blue-50 text-blue-700 rounded-full">Historial completo</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-4 group">
-                <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-[#f59e0b] to-[#d97706] flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                  </svg>
-                </div>
-                <div className="flex-1">
-                  <h4 className="text-xl font-bold text-[#0f172a] mb-2">Cupones y promociones inteligentes</h4>
-                  <p className="text-[#64748b] leading-relaxed">Envía ofertas exclusivas personalizadas según las preferencias de tus clientes, descuentos especiales en sus productos favoritos y promociones por tiempo limitado. Ellos activan sus cupones con un solo clic.</p>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    <span className="text-xs px-2 py-1 bg-amber-50 text-amber-700 rounded-full">Ofertas personalizadas</span>
-                    <span className="text-xs px-2 py-1 bg-amber-50 text-amber-700 rounded-full">Activación instantánea</span>
-                    <span className="text-xs px-2 py-1 bg-amber-50 text-amber-700 rounded-full">Alertas de vencimiento</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-4 group">
-                <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-[#8b5cf6] to-[#7c3aed] flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                  </svg>
-                </div>
-                <div className="flex-1">
-                  <h4 className="text-xl font-bold text-[#0f172a] mb-2">Wallet / PKPass integrado</h4>
-                  <p className="text-[#64748b] leading-relaxed">Tus clientes guardan su tarjeta de lealtad digital en Apple Wallet o Google Pay para acceso instantáneo. Reciben notificaciones automáticas de sus puntos, ofertas y actualizaciones sin abrir la app.</p>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    <span className="text-xs px-2 py-1 bg-purple-50 text-purple-700 rounded-full">Apple Wallet</span>
-                    <span className="text-xs px-2 py-1 bg-purple-50 text-purple-700 rounded-full">Google Pay</span>
-                    <span className="text-xs px-2 py-1 bg-purple-50 text-purple-700 rounded-full">Acceso offline</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
 
         {/* Mobile Section */}
         <div className="mb-16">
@@ -246,14 +141,6 @@ export function AppDemoSection() {
             Disponible para tus clientes
           </h3>
           <div className="flex justify-center items-center gap-8">
-            <div className="flex flex-col items-center">
-              <div className="w-16 h-16 bg-blue-500 rounded-2xl flex items-center justify-center mb-3 shadow-lg">
-                <svg className="w-10 h-10 text-white" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
-                </svg>
-              </div>
-              <span className="text-sm font-medium text-[#64748b]">Web</span>
-            </div>
 
             <div className="flex flex-col items-center">
               <div className="w-16 h-16 bg-green-500 rounded-2xl flex items-center justify-center mb-3 shadow-lg">

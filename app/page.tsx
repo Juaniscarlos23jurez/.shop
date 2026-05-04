@@ -15,7 +15,7 @@ import { FloatingButtons } from "@/components/home/floating-buttons"
 
 const WHATSAPP_URL = "https://wa.me/525540306126?text=Hola,%20me%20gustaría%20saber%20más%20sobre%20Fynlink+"
 const SALES_EMAIL = "hola@fynlink.com"
-const CALENDLY_URL = "https://calendly.com/fynlink/30min"
+const CALENDLY_URL = "https://calendly.com/juancarlosjuarez26/30min"
 
 export default function HomePage() {
   return (

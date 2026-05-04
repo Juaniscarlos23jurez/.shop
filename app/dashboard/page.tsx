@@ -14,9 +14,11 @@ import { SalesChart } from "@/components/charts/sales-chart";
 import { ConversionChart } from "@/components/charts/conversion-chart";
 import { ActivityFeed, type ActivityItem } from "@/components/activity/activity-feed";
 import { QuickStats } from "@/components/cards/quick-stats";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { format } from 'date-fns';
+import QRCode from 'qrcode';
+import { Download, QrCode } from 'lucide-react';
 
 // Local state for API-driven data
 type SalesPoint = { month: string; sales: number; revenue: number };
@@ -47,13 +49,45 @@ export default function Dashboard() {
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [avgBadge, setAvgBadge] = useState<string>('-');
+  const [qrImageUrl, setQrImageUrl] = useState<string>('');
 
   // Redirect to login if not authenticated
   useEffect(() => {
     if (!loading && !user) {
       router.push('/auth/login');
     }
-  }, [user, loading, router]);
+  }, [loading, user, router]);
+
+  // Generate QR Code
+  useEffect(() => {
+    if (companyId) {
+      const generateQR = async () => {
+        try {
+          const url = await QRCode.toDataURL(`REWIN_FOLLOW:${companyId}`, {
+            width: 400,
+            margin: 2,
+            color: {
+              dark: '#000000',
+              light: '#ffffff',
+            },
+          });
+          setQrImageUrl(url);
+        } catch (err) {
+          console.error('[Dashboard] Error generating QR:', err);
+        }
+      };
+      generateQR();
+    }
+  }, [companyId]);
+
+  const downloadQR = () => {
+    const link = document.createElement('a');
+    link.href = qrImageUrl;
+    link.download = `QR_Negocio_${companyId}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   // Load company, locations and dashboard stats
   useEffect(() => {
@@ -575,6 +609,55 @@ export default function Dashboard() {
               <ActivityFeed activities={activities} />
             </div>
             
+            <div className="lg:col-span-1">
+              <Card className="h-full border-emerald-100 shadow-emerald-500/5">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <QrCode className="h-5 w-5 text-emerald-600" />
+                    QR del Negocio
+                  </CardTitle>
+                  <CardDescription>
+                    Tus clientes pueden escanear este código para seguir tu negocio en la app.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="flex flex-col items-center justify-center space-y-6 pt-4">
+                  {qrImageUrl ? (
+                    <div className="relative group p-4 bg-white rounded-2xl shadow-inner border border-slate-100">
+                      <img 
+                        src={qrImageUrl} 
+                        alt="QR Code" 
+                        className="w-48 h-48 rounded-lg"
+                      />
+                      <div className="mt-4 text-center">
+                        <p className="text-xs font-mono text-slate-400 bg-slate-50 py-1 px-2 rounded">
+                          REWIN_FOLLOW:{companyId}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="w-48 h-48 bg-slate-50 animate-pulse rounded-2xl flex items-center justify-center">
+                      <QrCode className="h-10 w-10 text-slate-200" />
+                    </div>
+                  )}
+
+                  <div className="text-center space-y-2">
+                    <p className="text-sm font-medium text-slate-700">¡Haz crecer tu comunidad!</p>
+                    <p className="text-xs text-slate-500 max-w-[200px] mx-auto">
+                      Descarga e imprime este código y colócalo en tu mostrador.
+                    </p>
+                  </div>
+
+                  <Button 
+                    onClick={downloadQR}
+                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20 gap-2"
+                    disabled={!qrImageUrl}
+                  >
+                    <Download className="h-4 w-4" />
+                    Descargar QR
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </main>
       </div>

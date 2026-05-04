@@ -30,6 +30,8 @@ export function PricingSection({
     const [loadingPlan, setLoadingPlan] = useState<number | string | null>(null);
     const [fetchedPlans, setFetchedPlans] = useState<any[] | null>(null);
     const [isContactModalOpen, setIsContactModalOpen] = useState(false);
+    const [isEur, setIsEur] = useState(false);
+    const [showCurrencyToggle, setShowCurrencyToggle] = useState(false);
     const authContext = useContext(AuthContext);
     const companyContext = useContext(CompanyContext);
 
@@ -39,10 +41,36 @@ export function PricingSection({
     const trialUsed = manualTrialUsed ?? companyFromContext?.company_plan_trial_used ?? false;
 
     useEffect(() => {
+        // 1. Check if the user has a manually saved preference
+        const savedCurrency = typeof window !== 'undefined' ? localStorage.getItem('fynlink_currency') : null;
+        
+        if (savedCurrency) {
+            setIsEur(savedCurrency === 'EUR');
+            return;
+        }
+
+        // 2. If no preference, attempt automatic timezone detection
+        try {
+            const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            if (tz && tz.startsWith('Europe/')) {
+                setIsEur(true);
+                setShowCurrencyToggle(true); // Only show the toggle if they are in Europe
+            }
+        } catch (e) {}
+    }, []);
+
+    const toggleCurrency = () => {
+        const newVal = !isEur;
+        setIsEur(newVal);
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('fynlink_currency', newVal ? 'EUR' : 'MXN');
+        }
+    };
+
+    useEffect(() => {
         const fetchPlans = async () => {
             try {
                 const response = await api.subscriptions.getPlans(token || undefined);
-                console.log("SERVER PLANS:", response.data);
                 if (response.success && Array.isArray(response.data) && response.data.length > 0) {
                     setFetchedPlans(response.data);
                 }
@@ -54,19 +82,13 @@ export function PricingSection({
     }, [token]);
 
     const handleSubscribe = async (planId: number | string | null) => {
-        console.log('handleSubscribe called with planId:', planId);
-
-        // Enterprise plans (Pro/Empresa) - open contact modal instead
-        // Plan 3 (Pro) and 4 (Empresa) are COTIZACIÓN
         if (planId === 3 || planId === 4) {
-            console.log('Opening contact modal for Enterprise/Pro plan');
             setIsContactModalOpen(true);
             return;
         }
 
         if (!token || !companyId) {
             toast.error("Datos de empresa no encontrados. Por favor, reintenta.");
-            console.error('Missing data:', { token: !!token, companyId });
             return;
         }
 
@@ -80,11 +102,11 @@ export function PricingSection({
             const response = await api.subscriptions.subscribe({
                 company_id: companyId,
                 plan_id: planId,
-                interval: 'month', // Changed to month to match recurrente UI and backend types
+                interval: 'month',
                 trial_days: 0,
                 success_url: window.location.origin + '/dashboard',
                 cancel_url: window.location.origin + '/onboarding/compania',
-                email: authContext?.user?.firebase_email, // Explicitly set primary Stripe email
+                email: authContext?.user?.firebase_email,
                 user_email: authContext?.user?.firebase_email,
                 company_email: companyFromContext?.email
             }, token);
@@ -108,6 +130,7 @@ export function PricingSection({
             name: 'Plan Básico',
             subtitle: 'Ideal para emprendedores y pequeños negocios',
             price: '300',
+            priceEur: '17',
             period: 'hasta 3r mes',
             description: 'Comienza a fidelizar a tus clientes hoy:',
             features: [
@@ -128,8 +151,10 @@ export function PricingSection({
             id: 3,
             name: 'Plan Pro',
             subtitle: 'Ecosistema completo y marca propia',
-            price: 'COTIZACIÓN',
-            period: 'personalizado',
+            price: '5,000',
+            priceEur: '275',
+            period: 'mes',
+            isStartingFrom: true,
             description: 'Lleva tu negocio al siguiente nivel:',
             features: [
                 'Todo en el Plan Básico',
@@ -174,7 +199,6 @@ export function PricingSection({
         <>
             <div className="space-y-0 w-full">
                 <section id="pricing" className={`${showHeaders ? 'py-24' : 'py-6'} relative overflow-hidden bg-transparent`}>
-                    {/* Background Atmosphere */}
                     {showBackground && (
                         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full -z-10 overflow-hidden">
                             <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-50 rounded-full blur-[120px] opacity-60"></div>
@@ -235,12 +259,30 @@ export function PricingSection({
 
                                             <div className="h-32 flex flex-col justify-end">
                                                 <div className="space-y-2">
-                                                    <div className="flex items-baseline flex-wrap">
+                                                    <div className="flex items-baseline flex-wrap gap-x-2">
+                                                        {plan.isStartingFrom && (
+                                                            <span className="text-lg font-bold text-slate-400 uppercase tracking-tight w-full">Desde</span>
+                                                        )}
                                                         <span className="text-5xl font-black text-slate-900 tracking-tight">
-                                                            {plan.price === 'COTIZACIÓN' ? 'Cotizar' : `$${plan.price}`}
+                                                            {plan.price === 'COTIZACIÓN' 
+                                                                ? 'Cotizar' 
+                                                                : (isEur ? `€${plan.priceEur}` : `$${plan.price}`)
+                                                            }
                                                         </span>
                                                         {plan.price !== 'COTIZACIÓN' && (
-                                                            <span className="ml-2 text-slate-400 font-bold uppercase text-[10px] tracking-widest">MXN / {plan.period}</span>
+                                                            <div className="flex flex-col">
+                                                                <span className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">
+                                                                    {isEur ? 'EUR' : 'MXN'} / {plan.period}
+                                                                </span>
+                                                                {showCurrencyToggle && (
+                                                                    <button 
+                                                                        onClick={toggleCurrency}
+                                                                        className="text-blue-500 hover:text-blue-600 font-bold text-[10px] uppercase tracking-tighter text-left transition-colors"
+                                                                    >
+                                                                        Ver en {isEur ? 'Pesos (MXN)' : 'Euros (EUR)'}
+                                                                    </button>
+                                                                )}
+                                                            </div>
                                                         )}
                                                     </div>
                                                     <div className="text-xs font-bold text-blue-600 flex items-center gap-1.5">
@@ -318,49 +360,8 @@ export function PricingSection({
                                 );
                             })}
                         </div>
-
-                        {/* Extras Section  
-                        <div className="mt-20 max-w-4xl mx-auto">
-                            <div className="group relative bg-slate-50/50 backdrop-blur-sm border border-slate-100 rounded-[2.5rem] p-8 md:p-10">
-                                <h3 className="text-2xl font-black text-[#0f172a] mb-8 flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center font-black">
-                                        +
-                                    </div>
-                                    Recursos Ilimitados
-                                </h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="relative group/extra p-6 bg-white rounded-3xl border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:-translate-y-1">
-                                        <div className="flex items-center justify-between">
-                                            <div className="space-y-1">
-                                                <p className="text-base font-black text-slate-900">Mensajería</p>
-                                                <p className="text-xs font-medium text-slate-500">WhatsApp & Notificaciones</p>
-                                            </div>
-                                            <div className="text-right">
-                                                <p className="text-2xl font-black text-emerald-600">UNLIMITED</p>
-                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Desbloqueado</p>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="relative group/extra p-6 bg-white rounded-3xl border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:-translate-y-1">
-                                        <div className="flex items-center justify-between">
-                                            <div className="space-y-1">
-                                                <p className="text-base font-black text-slate-900">Email Marketing</p>
-                                                <p className="text-xs font-medium text-slate-500">Campañas y avisos</p>
-                                            </div>
-                                            <div className="text-right">
-                                                <p className="text-2xl font-black text-emerald-600">UNLIMITED</p>
-                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Desbloqueado</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>*/}
                     </div>
                 </section>
-
-
             </div>
 
             <ContactModal

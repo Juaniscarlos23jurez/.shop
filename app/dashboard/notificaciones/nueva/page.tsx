@@ -240,6 +240,8 @@ export default function NuevaNotificacionPage() {
       const wantsEmail = channelMode === 'email' || channelMode === 'both';
 
       // 1) Registrar notificaciones en el backend según canal seleccionado
+      // El backend se encarga de procesar y enviar (vía Jobs) tanto para email como para push
+      
       if (wantsEmail) {
         const emailPayload = {
           channel: 'email' as const,
@@ -253,23 +255,8 @@ export default function NuevaNotificacionPage() {
 
         const emailRes = await api.companies.createNotification(cid, emailPayload, token);
         if (!emailRes.success) throw new Error(emailRes.message || 'Error creando notificación por correo');
-
-        // 2) Enviar correos inmediatamente (Paso 2)
-        const notificationId = emailRes.data?.data?.notification?.id;
-        if (notificationId) {
-          const sendEmailRes = await api.companies.sendNotificationEmails(cid, notificationId, token);
-          if (!sendEmailRes.success) {
-            console.error('Error enviando correos:', sendEmailRes.message);
-            toast({
-              variant: "destructive",
-              title: "Error parcial",
-              description: `Notificación creada, pero error al enviar correos: ${sendEmailRes.message}`,
-            });
-          } else {
-            const { sent_count, failed_count } = sendEmailRes.data?.data || {};
-            console.log(`Correos enviados: ${sent_count || 0} exitosos, ${failed_count || 0} fallidos`);
-          }
-        }
+        
+        console.log('Notificación por correo registrada y encolada en el backend');
       }
 
       if (wantsPush) {
@@ -285,58 +272,18 @@ export default function NuevaNotificacionPage() {
 
         const pushRes = await api.companies.createNotification(cid, pushPayload, token);
         if (!pushRes.success) throw new Error(pushRes.message || 'Error creando notificación push');
-
-        // 2) Enviar push a dispositivos móviles desde el frontend vía API route segura
-        const selected = followers.filter(f => selectedRecipients.includes(f.customer_id));
-        const tokens = selected
-          .map(f => f.customer_fcm_token)
-          .filter((t): t is string => typeof t === 'string' && t.length > 0);
-
-        if (tokens.length === 0) {
-          toast({
-            title: "Sin tokens",
-            description: "No hay tokens FCM válidos. Se registró la notificación, pero no se enviaron pushes.",
-          });
-          router.push('/dashboard/notificaciones');
-          return;
-        }
-
-        const sendBody = {
-          tokens,
-          notification: { title, body: message },
-          data: deepLink ? { deepLink: String(deepLink) } : undefined,
-        };
-
-        const sendRes = await fetch('/api/notifications/send', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-          body: JSON.stringify(sendBody),
-        });
-
-        const sendJson = await sendRes.json();
-        if (!sendRes.ok || !sendJson?.success) {
-          console.error('Error enviando FCM', sendJson);
-          toast({
-            variant: "destructive",
-            title: "Error parcial",
-            description: `Notificación creada, pero error al enviar push: ${sendJson?.message || sendRes.statusText}`,
-          });
-        } else {
-          console.log(`Notificación enviada: ${sendJson.sent} entregadas, ${sendJson.failure} fallidas`);
-        }
+        
+        console.log('Notificación push registrada y encolada en el backend');
       }
 
-      // Mostrar mensaje final según el resultado
+      // Mostrar mensaje final
       let successMessage = '';
       if (wantsEmail && wantsPush) {
-        successMessage = 'Notificación enviada por correo y push exitosamente.';
+        successMessage = 'Notificaciones encoladas exitosamente para envío por correo y push.';
       } else if (wantsEmail && !wantsPush) {
-        successMessage = 'Correos enviados exitosamente.';
+        successMessage = 'Notificación por correo encolada exitosamente.';
       } else if (!wantsEmail && wantsPush) {
-        successMessage = 'Notificaciones push enviadas exitosamente.';
+        successMessage = 'Notificación push encolada exitosamente.';
       }
 
       if (successMessage) {

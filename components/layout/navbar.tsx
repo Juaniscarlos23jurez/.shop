@@ -3,12 +3,14 @@
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import Image from "next/image"
+import { useRegion } from "@/hooks/use-region"
 
 interface NavbarProps {
   WHATSAPP_URL: string
 }
 
 export function Navbar({ WHATSAPP_URL }: NavbarProps) {
+  const { isEurope } = useRegion();
   return (
     <header className="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50 border-b border-gray-100">
       <div className="w-full px-4 sm:px-6">
@@ -39,11 +41,13 @@ export function Navbar({ WHATSAPP_URL }: NavbarProps) {
             </div>
           </div>
           <div className="flex items-center space-x-3">
-            <Button asChild variant="ghost" className="text-gray-600 hover:text-gray-900 font-medium">
-              <a href="/auth/login">
-                Iniciar sesión
-              </a>
-            </Button>
+            {!isEurope && (
+              <Button asChild variant="ghost" className="text-gray-600 hover:text-gray-900 font-medium">
+                <a href="/auth/login">
+                  Iniciar sesión
+                </a>
+              </Button>
+            )}
             <Button asChild className="bg-[#22c55e] hover:bg-green-600 text-white shadow-md hover:shadow-lg transition-all">
               <Link href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">
                 Hablar con ventas

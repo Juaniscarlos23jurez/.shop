@@ -76,15 +76,7 @@ export function TopBar({ isCollapsed, setIsCollapsed }: TopBarProps) {
                         </div>
                         <div className="hidden sm:block">
                             <h1 className="text-xl font-bold text-slate-900 leading-tight">Dashboard</h1>
-                            {companySlug && (
-                                <Link
-                                    href={`https://fynlink.shop/rewin/${companySlug}`}
-                                    target="_blank"
-                                    className="text-[10px] font-medium text-emerald-600 hover:text-emerald-700 flex items-center gap-1 uppercase tracking-wider"
-                                >
-                                    Abrir tienda <ExternalLink className="h-2 w-2" />
-                                </Link>
-                            )}
+
                         </div>
                     </div>
                 </div>
