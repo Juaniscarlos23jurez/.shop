@@ -76,7 +76,7 @@ export function CompanyOnboardingWizard({ onComplete }: CompanyOnboardingWizardP
     (async () => {
       try {
         const companyRes = await api.userCompanies.get(token);
-        const company = (companyRes as any)?.data?.data;
+        const company = (companyRes as any)?.data?.data || (companyRes as any)?.data;
 
         if (companyRes.success && company?.id) {
           setCompanyId(String(company.id));

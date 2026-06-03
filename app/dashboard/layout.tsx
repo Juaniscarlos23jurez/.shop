@@ -54,7 +54,7 @@ export default function DashboardLayout({
         (async () => {
             try {
                 const res = await api.userCompanies.get(token);
-                const company = (res as any)?.data?.data;
+                const company = (res as any)?.data?.data || (res as any)?.data;
                 const hasCompany = Boolean(company?.id);
                 
                 // Stricter check for active plan status
