@@ -21,7 +21,7 @@ export default function OnboardingPlanPage() {
 
     // If they already have an active plan (or trial), they shouldn't be here during onboarding
     useEffect(() => {
-        if (!companyLoading && company?.id && (company.company_plan_status === 'active' || company.company_plan_status === 'trialing' || company.plan_is_active === true)) {
+        if (!companyLoading && company?.id && (company.company_plan_status === 'active' || company.company_plan_status === 'trialing' || company.company_plan_status === 'trial' || company.plan_is_active === true)) {
             router.push('/dashboard');
         }
     }, [company, companyLoading, router]);

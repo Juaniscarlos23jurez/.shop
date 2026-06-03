@@ -102,7 +102,7 @@ export default function GestionSuscripcionPage() {
                             <div>
                                 <p className="text-sm font-medium text-green-600 dark:text-green-400">Estado</p>
                                 <p className="text-xl font-bold text-green-700 dark:text-green-300">
-                                    {(company?.company_plan_status === 'active' || company?.is_active) ? 'Activo' : 'Inactivo'}
+                                    {(company?.company_plan_status === 'active' || company?.company_plan_status === 'trialing' || company?.company_plan_status === 'trial' || company?.is_active) ? 'Activo' : 'Inactivo'}
                                 </p>
                             </div>
                             <ShieldCheck className="w-10 h-10 text-green-500" />
@@ -118,7 +118,7 @@ export default function GestionSuscripcionPage() {
                             <p className="font-medium text-gray-900 dark:text-gray-100">
                                 {company?.company_plan_expires_at
                                     ? new Date(company.company_plan_expires_at).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })
-                                    : (company?.company_plan_status === 'active' ? 'Suscripción activa' : 'N/A')}
+                                    : ((company?.company_plan_status === 'active' || company?.company_plan_status === 'trialing' || company?.company_plan_status === 'trial') ? 'Suscripción activa' : 'N/A')}
                             </p>
                         </div>
                     </CardContent>

@@ -60,6 +60,7 @@ export default function DashboardLayout({
                 // Stricter check for active plan status
                 const isActive = company?.company_plan_status === 'active' || 
                                  company?.company_plan_status === 'trialing' || 
+                                 company?.company_plan_status === 'trial' ||
                                  company?.plan_is_active === true;
                 
                 if (!cancelled) {

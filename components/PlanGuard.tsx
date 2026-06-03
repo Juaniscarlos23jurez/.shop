@@ -34,6 +34,7 @@ export function PlanGuard({ children }: { children: React.ReactNode }) {
         if (!isEmployee && !isSubscriptionPage) {
             const isActive = company?.company_plan_status === 'active' ||
                 company?.company_plan_status === 'trialing' ||
+                company?.company_plan_status === 'trial' ||
                 company?.plan_is_active === true;
 
             console.log('[PlanGuard] Status check:', {
