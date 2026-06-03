@@ -10,6 +10,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { Switch } from "@/components/ui/switch";
 import { EmployeeAccount, EMPLOYEE_ROLE_TYPES, EMPLOYEE_ROLE_DISPLAY, EmployeeRoleType } from "@/types/branch";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Eye, EyeOff } from "lucide-react";
+import { useState } from "react";
 
 const accountFormSchema = z.object({
   email: z.string().email('Correo electrónico inválido'),
@@ -49,6 +51,9 @@ export function AccountForm({
   onSave, 
   onCancel 
 }: AccountFormProps) {
+  const [showPassword, setShowPassword] = useState(true);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(true);
+
   const form = useForm<AccountFormValues>({
     resolver: zodResolver(accountFormSchema),
     defaultValues: {
@@ -139,16 +144,26 @@ export function AccountForm({
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Contraseña temporal</FormLabel>
+                    <FormLabel>Contraseña inicial</FormLabel>
                     <FormControl>
-                      <Input 
-                        type="password" 
-                        placeholder="••••••••"
-                        {...field} 
-                      />
+                      <div className="relative">
+                        <Input 
+                          type={showPassword ? "text" : "password"} 
+                          placeholder="••••••••"
+                          className="pr-10"
+                          {...field} 
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 focus:outline-none"
+                        >
+                          {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                        </button>
+                      </div>
                     </FormControl>
                     <FormDescription>
-                      Mínimo 8 caracteres. El empleado podrá cambiarla después.
+                      Mínimo 8 caracteres. (Regla de negocio: visible para ti).
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -162,11 +177,21 @@ export function AccountForm({
                   <FormItem>
                     <FormLabel>Confirmar Contraseña</FormLabel>
                     <FormControl>
-                      <Input 
-                        type="password" 
-                        placeholder="••••••••"
-                        {...field} 
-                      />
+                      <div className="relative">
+                        <Input 
+                          type={showConfirmPassword ? "text" : "password"} 
+                          placeholder="••••••••"
+                          className="pr-10"
+                          {...field} 
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 focus:outline-none"
+                        >
+                          {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                        </button>
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>

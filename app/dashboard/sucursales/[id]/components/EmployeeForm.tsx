@@ -10,8 +10,11 @@ import { Switch } from "@/components/ui/switch";
 import { format } from 'date-fns';
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Clock as CalendarIcon } from "lucide-react";
+import { Clock as CalendarIcon, Eye, EyeOff, User, Briefcase, Phone, MapPin, Building, ShieldCheck, HeartPulse } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 
 // Define the form schema with all required fields
 const employeeFormSchema = z.object({
@@ -63,6 +66,8 @@ interface EmployeeFormProps {
 
 export function EmployeeForm({ employee, locationId, onSave, onCancel }: EmployeeFormProps) {
   const today = new Date();
+  const [showPassword, setShowPassword] = useState(true);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(true);
   
   const form = useForm<EmployeeFormValues>({
     resolver: zodResolver(employeeFormSchema),
@@ -135,27 +140,40 @@ export function EmployeeForm({ employee, locationId, onSave, onCancel }: Employe
   };
 
   return (
-    <div className="space-y-6">
-      <h3 className="text-lg font-medium">
-        {employee ? 'Editar empleado' : 'Agregar nuevo empleado'}
-      </h3>
+    <div className="space-y-6 max-w-4xl mx-auto pb-10">
+      <div className="flex flex-col space-y-2">
+        <h3 className="text-2xl font-bold tracking-tight text-slate-900">
+          {employee ? 'Editar empleado' : 'Agregar nuevo empleado'}
+        </h3>
+        <p className="text-slate-500">
+          {employee 
+            ? 'Modifica la información y permisos de este empleado.' 
+            : 'Crea una cuenta para un nuevo integrante de la sucursal. Sus credenciales se generarán automáticamente.'}
+        </p>
+      </div>
       
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Basic Information Section */}
-            <div className="space-y-4">
-              <h4 className="text-sm font-medium">Información Básica</h4>
-              
-              <div className="grid grid-cols-2 gap-4">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+          
+          {/* Tarjeta de Información Básica */}
+          <Card className="border-slate-200 shadow-sm">
+            <CardHeader className="bg-slate-50/50 border-b border-slate-100 pb-4">
+              <CardTitle className="text-lg flex items-center gap-2 text-slate-800">
+                <User className="w-5 h-5 text-blue-500" />
+                Información Básica
+              </CardTitle>
+              <CardDescription>Datos personales y de contacto del empleado.</CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField
                   control={form.control}
                   name="first_name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Nombres</FormLabel>
+                      <FormLabel className="text-slate-700">Nombres</FormLabel>
                       <FormControl>
-                        <Input placeholder="Nombres" {...field} />
+                        <Input placeholder="Ej. Juan Carlos" className="bg-white" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -167,9 +185,9 @@ export function EmployeeForm({ employee, locationId, onSave, onCancel }: Employe
                   name="last_name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Apellidos</FormLabel>
+                      <FormLabel className="text-slate-700">Apellidos</FormLabel>
                       <FormControl>
-                        <Input placeholder="Apellidos" {...field} />
+                        <Input placeholder="Ej. Pérez Gómez" className="bg-white" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -177,39 +195,102 @@ export function EmployeeForm({ employee, locationId, onSave, onCancel }: Employe
                 />
               </div>
               
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-slate-700">Correo electrónico</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="email" 
+                          placeholder="correo@ejemplo.com" 
+                          disabled={!!employee}
+                          className="bg-white"
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormDescription>Se utilizará para iniciar sesión.</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-slate-700">Teléfono</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Phone className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+                          <Input placeholder="1234567890" className="pl-10 bg-white" {...field} />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
               <FormField
                 control={form.control}
-                name="email"
+                name="address"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Correo electrónico</FormLabel>
+                    <FormLabel className="text-slate-700">Dirección completa</FormLabel>
                     <FormControl>
-                      <Input 
-                        type="email" 
-                        placeholder="correo@ejemplo.com" 
-                        disabled={!!employee}
-                        {...field} 
-                      />
+                      <div className="relative">
+                        <MapPin className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+                        <Input placeholder="Calle, número, colonia, ciudad..." className="pl-10 bg-white" {...field} />
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              
-              {!employee && (
-                <>
+            </CardContent>
+          </Card>
+
+          {/* Tarjeta de Seguridad (Sólo Creación) */}
+          {!employee && (
+            <Card className="border-emerald-200 shadow-sm overflow-hidden">
+              <div className="bg-emerald-500 h-1 w-full" />
+              <CardHeader className="bg-emerald-50/50 border-b border-emerald-100 pb-4">
+                <CardTitle className="text-lg flex items-center gap-2 text-emerald-800">
+                  <ShieldCheck className="w-5 h-5 text-emerald-600" />
+                  Credenciales de Acceso
+                </CardTitle>
+                <CardDescription className="text-emerald-700/80">
+                  Define la contraseña que usará el empleado para entrar al sistema. (Regla de negocio: visible para ti).
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-6 space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FormField
                     control={form.control}
                     name="password"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Contraseña</FormLabel>
+                        <FormLabel className="text-slate-700 font-semibold">Contraseña Inicial</FormLabel>
                         <FormControl>
-                          <Input 
-                            type="password" 
-                            placeholder="••••••••"
-                            {...field} 
-                          />
+                          <div className="relative">
+                            <Input 
+                              type={showPassword ? "text" : "password"} 
+                              placeholder="Escribe una contraseña segura"
+                              className="pr-10 border-emerald-200 focus-visible:ring-emerald-500 bg-white"
+                              {...field} 
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowPassword(!showPassword)}
+                              className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 focus:outline-none"
+                            >
+                              {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                            </button>
+                          </div>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -221,63 +302,52 @@ export function EmployeeForm({ employee, locationId, onSave, onCancel }: Employe
                     name="password_confirmation"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Confirmar Contraseña</FormLabel>
+                        <FormLabel className="text-slate-700 font-semibold">Confirmar Contraseña</FormLabel>
                         <FormControl>
-                          <Input 
-                            type="password" 
-                            placeholder="••••••••"
-                            {...field} 
-                          />
+                          <div className="relative">
+                            <Input 
+                              type={showConfirmPassword ? "text" : "password"} 
+                              placeholder="Confirma la contraseña"
+                              className="pr-10 border-emerald-200 focus-visible:ring-emerald-500 bg-white"
+                              {...field} 
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                              className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 focus:outline-none"
+                            >
+                              {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                            </button>
+                          </div>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                </>
-              )}
-              
-              <FormField
-                control={form.control}
-                name="phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Teléfono</FormLabel>
-                    <FormControl>
-                      <Input placeholder="1234567890" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="address"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Dirección</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Calle y número" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            
-            {/* Work Information Section */}
-            <div className="space-y-4">
-              <h4 className="text-sm font-medium">Información Laboral</h4>
-              
-              <div className="grid grid-cols-2 gap-4">
+                </div>
+              </CardContent>
+            </Card>
+          )}
+          
+          {/* Tarjeta de Información Laboral */}
+          <Card className="border-slate-200 shadow-sm">
+            <CardHeader className="bg-slate-50/50 border-b border-slate-100 pb-4">
+              <CardTitle className="text-lg flex items-center gap-2 text-slate-800">
+                <Briefcase className="w-5 h-5 text-indigo-500" />
+                Información Laboral
+              </CardTitle>
+              <CardDescription>Detalles del puesto, contratación y salario.</CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField
                   control={form.control}
                   name="position"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Puesto</FormLabel>
+                      <FormLabel className="text-slate-700">Puesto</FormLabel>
                       <FormControl>
-                        <Input placeholder="Ej: Cajero" {...field} />
+                        <Input placeholder="Ej: Cajero, Vendedor, Gerente" className="bg-white" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -289,9 +359,9 @@ export function EmployeeForm({ employee, locationId, onSave, onCancel }: Employe
                   name="department"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Departamento</FormLabel>
+                      <FormLabel className="text-slate-700">Departamento</FormLabel>
                       <FormControl>
-                        <Input placeholder="Ej: Ventas" {...field} />
+                        <Input placeholder="Ej: Ventas, Operaciones" className="bg-white" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -299,28 +369,24 @@ export function EmployeeForm({ employee, locationId, onSave, onCancel }: Employe
                 />
               </div>
               
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField
                   control={form.control}
                   name="hire_date"
                   render={({ field }) => (
                     <FormItem className="flex flex-col">
-                      <FormLabel>Fecha de Contratación</FormLabel>
+                      <FormLabel className="text-slate-700">Fecha de Contratación</FormLabel>
                       <Popover>
                         <PopoverTrigger asChild>
                           <FormControl>
                             <Button
                               variant="outline"
                               className={cn(
-                                "w-full pl-3 text-left font-normal",
+                                "w-full pl-3 text-left font-normal bg-white",
                                 !field.value && "text-muted-foreground"
                               )}
                             >
-                              {field.value ? (
-                                format(field.value, "PPP")
-                              ) : (
-                                <span>Seleccionar fecha</span>
-                              )}
+                              {field.value ? format(field.value, "PPP") : <span>Seleccionar fecha</span>}
                               <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                             </Button>
                           </FormControl>
@@ -347,14 +413,14 @@ export function EmployeeForm({ employee, locationId, onSave, onCancel }: Employe
                   name="salary"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Salario</FormLabel>
+                      <FormLabel className="text-slate-700">Salario Mensual</FormLabel>
                       <div className="relative">
-                        <span className="absolute left-3 top-2.5 text-sm text-muted-foreground">$</span>
+                        <span className="absolute left-3 top-2.5 text-sm text-slate-500">$</span>
                         <FormControl>
                           <Input 
                             type="number" 
                             placeholder="0.00" 
-                            className="pl-8"
+                            className="pl-7 bg-white"
                             step="0.01"
                             min="0"
                             {...field} 
@@ -366,19 +432,27 @@ export function EmployeeForm({ employee, locationId, onSave, onCancel }: Employe
                   )}
                 />
               </div>
-              
-              {/* Emergency Contact */}
-              <div className="pt-2">
-                <h4 className="text-sm font-medium mb-4">Contacto de Emergencia</h4>
-                
+            </CardContent>
+          </Card>
+
+          {/* Tarjeta de Contacto de Emergencia */}
+          <Card className="border-red-100 shadow-sm">
+            <CardHeader className="bg-red-50/30 border-b border-red-50 pb-4">
+              <CardTitle className="text-lg flex items-center gap-2 text-slate-800">
+                <HeartPulse className="w-5 h-5 text-red-500" />
+                Contacto de Emergencia
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField
                   control={form.control}
                   name="emergency_contact_name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Nombre Completo</FormLabel>
+                      <FormLabel className="text-slate-700">Nombre Completo</FormLabel>
                       <FormControl>
-                        <Input placeholder="Nombre del contacto" {...field} />
+                        <Input placeholder="Familiar o persona de confianza" className="bg-white" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -390,29 +464,50 @@ export function EmployeeForm({ employee, locationId, onSave, onCancel }: Employe
                   name="emergency_contact_phone"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Teléfono</FormLabel>
+                      <FormLabel className="text-slate-700">Teléfono</FormLabel>
                       <FormControl>
-                        <Input placeholder="Teléfono de contacto" {...field} />
+                        <div className="relative">
+                          <Phone className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+                          <Input placeholder="1234567890" className="pl-10 bg-white" {...field} />
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
               </div>
-              
-              {/* Location Assignment */}
-              <div className="pt-2">
-                <h4 className="text-sm font-medium mb-4">Asignación de Sucursal</h4>
-                
+            </CardContent>
+          </Card>
+
+          {/* Tarjeta de Asignación y Permisos */}
+          <Card className="border-slate-200 shadow-sm">
+            <CardHeader className="bg-slate-50/50 border-b border-slate-100 pb-4">
+              <CardTitle className="text-lg flex items-center gap-2 text-slate-800">
+                <Building className="w-5 h-5 text-amber-500" />
+                Asignación y Permisos
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField
                   control={form.control}
                   name="location_assignment.role"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Rol en la Sucursal</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Ej: Cajero principal" {...field} />
-                      </FormControl>
+                      <FormLabel className="text-slate-700">Nivel de Acceso (Rol)</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger className="bg-white">
+                            <SelectValue placeholder="Selecciona un rol" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="employee">Empleado (Acceso Básico)</SelectItem>
+                          <SelectItem value="manager">Gerente (Acceso Medio)</SelectItem>
+                          <SelectItem value="admin">Administrador (Acceso Total)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>Determina qué puede hacer en el sistema.</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -422,23 +517,19 @@ export function EmployeeForm({ employee, locationId, onSave, onCancel }: Employe
                   control={form.control}
                   name="location_assignment.start_date"
                   render={({ field }) => (
-                    <FormItem className="mt-4">
-                      <FormLabel>Fecha de Inicio</FormLabel>
+                    <FormItem className="flex flex-col">
+                      <FormLabel className="text-slate-700">Fecha de Inicio en Sucursal</FormLabel>
                       <Popover>
                         <PopoverTrigger asChild>
                           <FormControl>
                             <Button
                               variant="outline"
                               className={cn(
-                                "w-full pl-3 text-left font-normal",
+                                "w-full pl-3 text-left font-normal bg-white",
                                 !field.value && "text-muted-foreground"
                               )}
                             >
-                              {field.value ? (
-                                format(field.value, "PPP")
-                              ) : (
-                                <span>Seleccionar fecha</span>
-                              )}
+                              {field.value ? format(field.value, "PPP") : <span>Seleccionar fecha</span>}
                               <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                             </Button>
                           </FormControl>
@@ -448,9 +539,6 @@ export function EmployeeForm({ employee, locationId, onSave, onCancel }: Employe
                             mode="single"
                             selected={field.value}
                             onSelect={field.onChange}
-                            disabled={(date: Date) =>
-                              date < new Date()
-                            }
                             initialFocus
                           />
                         </PopoverContent>
@@ -459,59 +547,64 @@ export function EmployeeForm({ employee, locationId, onSave, onCancel }: Employe
                     </FormItem>
                   )}
                 />
-                
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
                 <FormField
                   control={form.control}
                   name="location_assignment.is_primary"
                   render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 mt-4">
-                      <div className="space-y-0.5">
-                        <FormLabel className="text-base">Sucursal Principal</FormLabel>
-                        <p className="text-sm text-muted-foreground">
-                          {field.value ? 'Sí' : 'No'}
+                    <FormItem className="flex flex-row items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-4">
+                      <div className="space-y-1">
+                        <FormLabel className="text-base font-semibold text-slate-800">Sucursal Principal</FormLabel>
+                        <p className="text-sm text-slate-500">
+                          Marca si esta es su ubicación de trabajo principal.
                         </p>
                       </div>
                       <FormControl>
                         <Switch
                           checked={field.value}
                           onCheckedChange={field.onChange}
+                          className="data-[state=checked]:bg-blue-600"
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="isActive"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-4">
+                      <div className="space-y-1">
+                        <FormLabel className="text-base font-semibold text-slate-800">Estado del Empleado</FormLabel>
+                        <p className="text-sm text-slate-500">
+                          {field.value ? 'El empleado tiene acceso al sistema.' : 'El acceso al sistema está deshabilitado.'}
+                        </p>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          className="data-[state=checked]:bg-emerald-500"
                         />
                       </FormControl>
                     </FormItem>
                   )}
                 />
               </div>
-              
-              {/* Status */}
-              <FormField
-                control={form.control}
-                name="isActive"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                      <FormLabel className="text-base">Estado del Empleado</FormLabel>
-                      <p className="text-sm text-muted-foreground">
-                        {field.value ? 'Activo' : 'Inactivo'}
-                      </p>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-            </div>
-          </div>
+            </CardContent>
+          </Card>
           
-          <div className="flex justify-end space-x-4 pt-4">
-            <Button type="button" variant="outline" onClick={onCancel}>
+          <Separator className="my-6" />
+          
+          <div className="flex justify-end items-center gap-4 pt-2">
+            <Button type="button" variant="outline" size="lg" onClick={onCancel} className="px-8 border-slate-300">
               Cancelar
             </Button>
-            <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-              {employee ? 'Actualizar' : 'Agregar'} empleado
+            <Button type="submit" size="lg" className="px-8 bg-blue-600 hover:bg-blue-700 shadow-md">
+              {employee ? 'Guardar Cambios' : 'Crear Empleado'}
             </Button>
           </div>
         </form>
