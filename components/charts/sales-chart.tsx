@@ -59,7 +59,14 @@ export function SalesChart({ data, title, description, change }: SalesChartProps
               tickLine={false}
               tick={{ fontSize: 12, fill: '#64748b' }}
             />
-            <YAxis width={60} tickFormatter={(v: number) => currencyFmt(Number(v))} tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} />
+            <YAxis 
+              width={60} 
+              tickFormatter={(v: number) => currencyFmt(Number(v))} 
+              tick={{ fontSize: 12, fill: '#64748b' }} 
+              axisLine={false} 
+              tickLine={false}
+              domain={[0, (dataMax: number) => Math.max(dataMax, 1000)]}
+            />
             <ChartTooltip content={<ChartTooltipContent />} />
             <Area
               type="monotone"

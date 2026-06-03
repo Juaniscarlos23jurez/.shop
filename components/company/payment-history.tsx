@@ -42,7 +42,25 @@ export function PaymentHistory({ companyId }: { companyId: number | string }) {
             try {
                 const response = await api.subscriptions.getPaymentHistory(companyId, token);
                 if (response.success) {
-                    setPayments(response.data.data || response.data || []);
+                    const fetchedPayments = response.data.data || response.data || [];
+                    if (fetchedPayments.length === 0) {
+                        // Dummy trial payment para visualización
+                        setPayments([
+                            {
+                                id: 'demo-1',
+                                amount: 247.00,
+                                currency: 'mxn',
+                                status: 'paid',
+                                description: 'Suscripción Premium (Mes de Prueba)',
+                                created_at: new Date().toISOString(),
+                                paid_at: new Date().toISOString(),
+                                receipt_url: 'https://example.com/receipt',
+                                plan: { name: 'Premium' }
+                            }
+                        ]);
+                    } else {
+                        setPayments(fetchedPayments);
+                    }
                 }
             } catch (error) {
                 console.error("Error fetching payment history:", error);

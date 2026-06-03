@@ -135,12 +135,12 @@ export default function GestionSuscripcionPage() {
 
                 {/* Administrar Mi Suscripción */}
                 <Card className="shadow-lg border-blue-50 dark:border-blue-900/20 overflow-hidden flex flex-col">
-                    <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-b border-blue-100 dark:border-blue-900/30">
-                        <CardTitle className="flex items-center gap-2 text-blue-900 dark:text-blue-100">
-                            <CreditCard className="w-5 h-5" />
+                    <CardHeader className="border-b border-gray-100 dark:border-gray-800 pb-4">
+                        <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-gray-100">
+                            <CreditCard className="w-5 h-5 text-gray-500" />
                             Pagos y Facturación
                         </CardTitle>
-                        <CardDescription className="text-blue-700/70 dark:text-blue-300/70 font-medium">
+                        <CardDescription className="text-gray-500 dark:text-gray-400">
                             Portal seguro para gestionar tu cuenta
                         </CardDescription>
                     </CardHeader>
@@ -148,7 +148,7 @@ export default function GestionSuscripcionPage() {
                         <div className="grid grid-cols-1 gap-4">
                             {/* Bajar Facturas */}
                             <div className="flex items-center gap-4 p-3 rounded-xl border border-transparent hover:border-slate-200 hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-all group">
-                                <div className="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 group-hover:scale-110 transition-transform">
+                                <div className="w-10 h-10 rounded-lg bg-transparent border border-emerald-200 dark:border-emerald-800 flex items-center justify-center text-emerald-600 group-hover:scale-110 transition-transform">
                                     <Receipt className="w-5 h-5" />
                                 </div>
                                 <div>
@@ -159,7 +159,7 @@ export default function GestionSuscripcionPage() {
 
                             {/* Cambiar Tarjeta */}
                             <div className="flex items-center gap-4 p-3 rounded-xl border border-transparent hover:border-slate-200 hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-all group">
-                                <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform">
+                                <div className="w-10 h-10 rounded-lg bg-transparent border border-blue-200 dark:border-blue-800 flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform">
                                     <CheckCircle2 className="w-5 h-5" />
                                 </div>
                                 <div>
@@ -170,7 +170,7 @@ export default function GestionSuscripcionPage() {
 
                             {/* Cancelar Suscripción */}
                             <div className="flex items-center gap-4 p-3 rounded-xl border border-transparent hover:border-red-100 hover:bg-red-50/50 dark:hover:bg-red-900/20 transition-all group">
-                                <div className="w-10 h-10 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-red-600 group-hover:scale-110 transition-transform">
+                                <div className="w-10 h-10 rounded-lg bg-transparent border border-red-200 dark:border-red-800 flex items-center justify-center text-red-600 group-hover:scale-110 transition-transform">
                                     <XCircle className="w-5 h-5" />
                                 </div>
                                 <div>

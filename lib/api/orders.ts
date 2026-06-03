@@ -213,9 +213,19 @@ export const ordersApi = {
    */
   async getOrderStatistics(
     companyId: string,
-    token: string
+    token: string,
+    params?: {
+      date_from?: string;
+      date_to?: string;
+    }
   ): Promise<ApiResponse<any>> {
-    const response = await fetch(`${PROXY_PREFIX}/api/companies/${companyId}/orders/statistics`, {
+    const queryParams = new URLSearchParams();
+    if (params?.date_from) queryParams.append('date_from', params.date_from);
+    if (params?.date_to) queryParams.append('date_to', params.date_to);
+    
+    const url = `${PROXY_PREFIX}/api/companies/${companyId}/orders/statistics${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    
+    const response = await fetch(url, {
       headers: {
         'Accept': 'application/json',
         'Authorization': `Bearer ${token}`

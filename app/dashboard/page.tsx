@@ -51,6 +51,9 @@ export default function Dashboard() {
   const [avgBadge, setAvgBadge] = useState<string>('-');
   const [qrImageUrl, setQrImageUrl] = useState<string>('');
 
+  const currentMonthName = new Intl.DateTimeFormat('es-MX', { month: 'long', year: 'numeric' }).format(new Date());
+  const formattedMonth = currentMonthName.charAt(0).toUpperCase() + currentMonthName.slice(1);
+
   // Redirect to login if not authenticated
   useEffect(() => {
     if (!loading && !user) {
@@ -114,15 +117,19 @@ export default function Dashboard() {
 
         // Parallel fetches (tolerant)
         const currentYear = new Date().getFullYear();
+        const currentMonthIndex = new Date().getMonth();
+        const startOfMonth = format(new Date(currentYear, currentMonthIndex, 1), 'yyyy-MM-dd');
+        const endOfMonth = format(new Date(currentYear, currentMonthIndex + 1, 0), 'yyyy-MM-dd');
+        
         const [locRes, salesStatsRes, orderStatsRes, followersRes, recentSalesRes, monthlyStatsRes, avgPerUserMonthlyRes, recentActivityRes] = await Promise.allSettled([
           api.userCompanies.getLocations(token),
-          api.sales.getStatistics({}, token),
-          api.orders.getOrderStatistics(String(cId), token),
+          api.sales.getStatistics({ date_from: startOfMonth, date_to: endOfMonth }, token),
+          api.orders.getOrderStatistics(String(cId), token, { date_from: startOfMonth, date_to: endOfMonth }),
           api.userCompanies.getFollowers(token),
-          api.sales.listSales({ per_page: 10, page: 1 }, token),
+          api.sales.listSales({ per_page: 10, page: 1, date_from: startOfMonth, date_to: endOfMonth }, token),
           api.sales.getMonthlyStatistics({ year: currentYear }, token),
           api.sales.getAveragePurchasePerUserMonthly({ year: currentYear }, token),
-          api.activity.getRecentActivity({ limit: 5 }, token)
+          api.activity.getRecentActivity({ limit: 50, date_from: startOfMonth, date_to: endOfMonth }, token)
         ]);
 
         // Locations shape as in reportes page
@@ -191,16 +198,6 @@ export default function Dashboard() {
             bgColor: 'bg-purple-50',
             iconColor: 'text-purple-600',
             description: `listos: ${readyCount} • completados: ${completedCount}`
-          },
-          {
-            title: 'Sedes (Locations)',
-            value: String(locations?.length || 0),
-            change: '+0%',
-            trend: 'up',
-            icon: 'message-square',
-            bgColor: 'bg-orange-50',
-            iconColor: 'text-orange-600',
-            description: 'total de sucursales'
           }
         ]);
 
@@ -230,20 +227,21 @@ export default function Dashboard() {
               revenue: Number(row.total_revenue ?? 0),
             }));
 
-            // Ensure we always render a full 12-month timeline so Recharts draws the area/line
-            // even when the API returns only 1 month.
-            const byMonth = new Map(points.map((p) => [p.month, p]));
-            const filledPoints: SalesPoint[] = monthNames.map((m) => {
-              const existing = byMonth.get(m);
-              return existing || { month: m, sales: 0, revenue: 0 };
-            });
+            const currentMonthLabel = monthNames[currentMonthIndex];
+            const daysInMonth = new Date(currentYear, currentMonthIndex + 1, 0).getDate();
+            const dailyData = Array.from({ length: daysInMonth }, (_, i) => ({
+              month: String(i + 1), // Using "month" key to match the chart component's dataKey, but represents days
+              sales: 0, // No daily data from API yet
+              revenue: 0
+            }));
+            
+            // Just to show the monthly total in the logs, we still set the daily array to 0s
+            // so the X-axis renders correctly as a daily chart for the month.
+            
             if (process.env.NODE_ENV !== 'production') {
-              console.log('[Dashboard] salesData points length:', points.length);
-              console.log('[Dashboard] salesData points sample:', points.slice(0, 3));
-              console.log('[Dashboard] salesData filledPoints length:', filledPoints.length);
-              console.log('[Dashboard] salesData filledPoints sample:', filledPoints.slice(0, 3));
+              console.log('[Dashboard] salesData points length:', dailyData.length);
             }
-            setSalesData(filledPoints);
+            setSalesData(dailyData);
           } else {
             if (process.env.NODE_ENV !== 'production') {
               console.warn('[Dashboard] monthly-statistics returned empty series; using defaultSalesData');
@@ -260,18 +258,13 @@ export default function Dashboard() {
               sales: Number(m.total_sales || m.count || 0),
               revenue: Number(m.total_amount || m.revenue || 0)
             }));
-            const byMonth = new Map(points.map((p) => [p.month, p]));
-            const filledPoints: SalesPoint[] = monthNames.map((m) => {
-              const existing = byMonth.get(m);
-              return existing || { month: m, sales: 0, revenue: 0 };
-            });
-            if (process.env.NODE_ENV !== 'production') {
-              console.log('[Dashboard] fallback salesData points length:', points.length);
-              console.log('[Dashboard] fallback salesData points sample:', points.slice(0, 3));
-              console.log('[Dashboard] fallback salesData filledPoints length:', filledPoints.length);
-              console.log('[Dashboard] fallback salesData filledPoints sample:', filledPoints.slice(0, 3));
-            }
-            setSalesData(filledPoints);
+            const daysInMonth = new Date(currentYear, currentMonthIndex + 1, 0).getDate();
+            const dailyData = Array.from({ length: daysInMonth }, (_, i) => ({
+              month: String(i + 1),
+              sales: 0,
+              revenue: 0
+            }));
+            setSalesData(dailyData);
           } else {
             if (process.env.NODE_ENV !== 'production') {
               console.warn('[Dashboard] fallback monthly data missing; using defaultSalesData');
@@ -286,7 +279,13 @@ export default function Dashboard() {
           const raw = (recentActivityRes.value as any).data || {};
           const a = (raw && typeof raw === 'object' && 'data' in raw) ? (raw as any).data : raw;
           const items: ActivityItem[] = [];
-          const pushItem = (it: Partial<ActivityItem> & { id?: number | string }) => {
+          const pushItem = (it: Partial<ActivityItem> & { id?: number | string, rawDate?: string }) => {
+            if (it.rawDate) {
+              const d = new Date(it.rawDate);
+              if (d.getMonth() !== currentMonthIndex || d.getFullYear() !== currentYear) {
+                return;
+              }
+            }
             const t = (it.type as any) || 'sale';
             const baseId = String(it.id ?? items.length + 1);
             const uniqueId = `${t}-${baseId}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
@@ -308,6 +307,7 @@ export default function Dashboard() {
             title: `Venta #${s.id}`,
             description: `Total ${new Intl.NumberFormat('es-MX',{style:'currency',currency: s.currency || 'MXN'}).format(Number(s.total_amount || s.total || 0))}`,
             time: s.created_at ? new Date(s.created_at).toLocaleString('es-MX') : '',
+            rawDate: s.created_at,
             bgColor: 'bg-green-50',
             iconColor: 'text-green-600',
             user: s.user_name || s.customer_name || 'Cliente'
@@ -319,6 +319,7 @@ export default function Dashboard() {
             title: `Orden #${o.id}`,
             description: `Estado: ${o.status}`,
             time: o.created_at ? new Date(o.created_at).toLocaleString('es-MX') : '',
+            rawDate: o.created_at,
             bgColor: 'bg-blue-50',
             iconColor: 'text-blue-600',
             user: o.customer_name || 'Cliente'
@@ -330,6 +331,7 @@ export default function Dashboard() {
             title: `Nuevo usuario: ${u.name || u.email}`,
             description: u.email || '',
             time: u.created_at ? new Date(u.created_at).toLocaleString('es-MX') : '',
+            rawDate: u.created_at,
             bgColor: 'bg-purple-50',
             iconColor: 'text-purple-600',
             user: u.name || 'Usuario'
@@ -341,6 +343,7 @@ export default function Dashboard() {
             title: 'Nuevo comentario',
             description: c.comment || c.content || '',
             time: c.created_at ? new Date(c.created_at).toLocaleString('es-MX') : '',
+            rawDate: c.created_at,
             bgColor: 'bg-yellow-50',
             iconColor: 'text-yellow-600',
             user: c.user_name || 'Usuario'
@@ -352,6 +355,7 @@ export default function Dashboard() {
             title: n.title ? `Notificación: ${n.title}` : 'Notificación',
             description: n.body || n.text || n.description || '',
             time: n.created_at ? new Date(n.created_at).toLocaleString('es-MX') : '',
+            rawDate: n.created_at,
             bgColor: 'bg-slate-50',
             iconColor: 'text-slate-600',
             user: n.user_name || n.sender || 'Sistema'
@@ -363,6 +367,7 @@ export default function Dashboard() {
             title: `Cupón ${c.code}`,
             description: c.name || c.description || `Tipo: ${c.type}`,
             time: c.created_at ? new Date(c.created_at).toLocaleString('es-MX') : '',
+            rawDate: c.created_at,
             bgColor: 'bg-green-50',
             iconColor: 'text-green-600',
             user: 'Marketing'
@@ -374,6 +379,7 @@ export default function Dashboard() {
             title: `Promoción: ${p.product?.name || `#${p.product_id}`}`,
             description: `Precio promo ${new Intl.NumberFormat('es-MX',{style:'currency',currency:'MXN'}).format(Number(p.promo_price || 0))}`,
             time: p.created_at ? new Date(p.created_at).toLocaleString('es-MX') : '',
+            rawDate: p.created_at,
             bgColor: 'bg-emerald-50',
             iconColor: 'text-emerald-600',
             user: 'Sistema'
@@ -385,6 +391,7 @@ export default function Dashboard() {
             title: `Anuncio: ${an.title}`,
             description: an.text || an.subtitle || '',
             time: an.created_at ? new Date(an.created_at).toLocaleString('es-MX') : '',
+            rawDate: an.created_at,
             bgColor: 'bg-yellow-50',
             iconColor: 'text-yellow-600',
             user: 'Admin'
@@ -427,18 +434,17 @@ export default function Dashboard() {
               avg: Number(row.average_purchase_value ?? 0),
               users: Number(row.total_users_with_purchases ?? 0),
             }));
-            const byMonth = new Map(points.map((p) => [p.month, p]));
-            const filledPoints: AvgPurchaseMonthlyPoint[] = monthNames.map((m) => {
-              const existing = byMonth.get(m);
-              return existing || { month: m, avg: 0, users: 0 };
-            });
+            const daysInMonth = new Date(currentYear, currentMonthIndex + 1, 0).getDate();
+            const dailyData = Array.from({ length: daysInMonth }, (_, i) => ({
+              month: String(i + 1),
+              avg: 0, // No daily data from API
+              users: 0
+            }));
+            
             if (process.env.NODE_ENV !== 'production') {
-              console.log('[Dashboard] conversionData points length:', points.length);
-              console.log('[Dashboard] conversionData points sample:', points.slice(0, 3));
-              console.log('[Dashboard] conversionData filledPoints length:', filledPoints.length);
-              console.log('[Dashboard] conversionData filledPoints sample:', filledPoints.slice(0, 3));
+              console.log('[Dashboard] conversionData points length:', dailyData.length);
             }
-            setConversionData(filledPoints);
+            setConversionData(dailyData);
             const avgOverall = points.length
               ? points.reduce((acc, p) => acc + (p.avg || 0), 0) / points.length
               : 0;
@@ -477,7 +483,7 @@ export default function Dashboard() {
         {/* Header */}
         <Header 
           title="Dashboard Principal" 
-          description="Bienvenido de vuelta, aquí tienes un resumen de tu negocio"
+          description={`Bienvenido de vuelta, aquí tienes un resumen de tu negocio - ${formattedMonth}`}
         >
           
         </Header>
@@ -512,6 +518,46 @@ export default function Dashboard() {
                 description={metric.description || ''}
               />
             ))}
+            
+            {/* QR Card (Compact) replacing the 4th metric */}
+            <Card className="bg-white border-slate-100 shadow-sm rounded-2xl flex flex-col h-full">
+              <CardContent className="p-6 flex-1 flex flex-col">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="p-3 rounded-lg bg-emerald-50 text-emerald-600 text-lg">
+                    <QrCode className="w-5 h-5" />
+                  </div>
+                  <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 border-emerald-200 text-xs px-2 py-1">
+                    Escanea
+                  </Badge>
+                </div>
+                <div className="space-y-1 mb-3">
+                  <p className="text-sm font-medium text-slate-500">QR de tu negocio</p>
+                </div>
+                <div className="flex-1 flex items-center justify-center">
+                  {qrImageUrl ? (
+                    <img 
+                      src={qrImageUrl} 
+                      alt="QR Code" 
+                      className="w-20 h-20 rounded-md border border-slate-100"
+                    />
+                  ) : (
+                    <div className="w-20 h-20 bg-slate-50 animate-pulse rounded-md flex items-center justify-center">
+                      <QrCode className="h-6 w-6 text-slate-200" />
+                    </div>
+                  )}
+                </div>
+                <Button 
+                  onClick={downloadQR}
+                  variant="outline"
+                  size="sm"
+                  className="w-full mt-4 text-emerald-600 border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700"
+                  disabled={!qrImageUrl}
+                >
+                  <Download className="h-3 w-3 mr-2" />
+                  Descargar
+                </Button>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Charts Row */}
@@ -604,60 +650,8 @@ export default function Dashboard() {
           </Card>
 
           {/* Bottom Row */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2">
-              <ActivityFeed activities={activities} />
-            </div>
-            
-            <div className="lg:col-span-1">
-              <Card className="h-full border-emerald-100 shadow-emerald-500/5">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <QrCode className="h-5 w-5 text-emerald-600" />
-                    QR del Negocio
-                  </CardTitle>
-                  <CardDescription>
-                    Tus clientes pueden escanear este código para seguir tu negocio en la app.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="flex flex-col items-center justify-center space-y-6 pt-4">
-                  {qrImageUrl ? (
-                    <div className="relative group p-4 bg-white rounded-2xl shadow-inner border border-slate-100">
-                      <img 
-                        src={qrImageUrl} 
-                        alt="QR Code" 
-                        className="w-48 h-48 rounded-lg"
-                      />
-                      <div className="mt-4 text-center">
-                        <p className="text-xs font-mono text-slate-400 bg-slate-50 py-1 px-2 rounded">
-                          REWIN_FOLLOW:{companyId}
-                        </p>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="w-48 h-48 bg-slate-50 animate-pulse rounded-2xl flex items-center justify-center">
-                      <QrCode className="h-10 w-10 text-slate-200" />
-                    </div>
-                  )}
-
-                  <div className="text-center space-y-2">
-                    <p className="text-sm font-medium text-slate-700">¡Haz crecer tu comunidad!</p>
-                    <p className="text-xs text-slate-500 max-w-[200px] mx-auto">
-                      Descarga e imprime este código y colócalo en tu mostrador.
-                    </p>
-                  </div>
-
-                  <Button 
-                    onClick={downloadQR}
-                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20 gap-2"
-                    disabled={!qrImageUrl}
-                  >
-                    <Download className="h-4 w-4" />
-                    Descargar QR
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
+          <div className="grid grid-cols-1 gap-6">
+            <ActivityFeed activities={activities} />
           </div>
         </main>
       </div>

@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { DollarSign, MessageSquare, User, ShoppingCart } from "lucide-react";
 
 export interface ActivityItem {
   id: string;
@@ -18,18 +19,17 @@ interface ActivityFeedProps {
 
 export function ActivityFeed({ activities }: ActivityFeedProps) {
   const getActivityIcon = (type: string) => {
-    // Simple text indicator instead of icons for now
     switch (type) {
       case 'sale':
-        return '💵';
+        return <DollarSign className="w-4 h-4 text-emerald-600 inline mr-1" />;
       case 'comment':
-        return '💬';
+        return <MessageSquare className="w-4 h-4 text-yellow-600 inline mr-1" />;
       case 'user':
-        return '👤';
+        return <User className="w-4 h-4 text-purple-600 inline mr-1" />;
       case 'order':
-        return '🛒';
+        return <ShoppingCart className="w-4 h-4 text-blue-600 inline mr-1" />;
       default:
-        return '•';
+        return <span className="w-4 h-4 inline-block mr-1">•</span>;
     }
   };
   const getTypeBadge = (type: ActivityItem['type']) => {

@@ -53,7 +53,14 @@ export function ConversionChart({ data, title, description, average }: Conversio
               tickLine={false}
               tick={{ fontSize: 12, fill: '#64748b' }}
             />
-            <YAxis width={60} tickFormatter={(v: number) => currencyFmt(Number(v))} tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} />
+            <YAxis 
+              width={60} 
+              tickFormatter={(v: number) => currencyFmt(Number(v))} 
+              tick={{ fontSize: 12, fill: '#64748b' }} 
+              axisLine={false} 
+              tickLine={false}
+              domain={[0, (dataMax: number) => Math.max(dataMax, 100)]}
+            />
             <ChartTooltip content={<ChartTooltipContent />} />
             <Line
               type="monotone"

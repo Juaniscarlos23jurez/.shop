@@ -28,7 +28,7 @@ export function EmployeeList({
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-medium">Empleados1</h3>
+        <h3 className="text-lg font-medium">Empleados</h3>
         <Button onClick={onAddEmployee}>
           Agregar empleado.
         </Button>

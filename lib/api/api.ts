@@ -2254,11 +2254,13 @@ export const api = {
      * GET /api/recent-activity?limit=<n>
      */
     async getRecentActivity(
-      params: { limit?: number } = {},
+      params: { limit?: number; date_from?: string; date_to?: string } = {},
       token: string
     ): Promise<ApiResponse<any>> {
       const search = new URLSearchParams();
       if (params.limit !== undefined) search.set('limit', String(params.limit));
+      if (params.date_from) search.set('date_from', params.date_from);
+      if (params.date_to) search.set('date_to', params.date_to);
       const url = `${BASE_URL}/api/recent-activity${search.toString() ? `?${search.toString()}` : ''}`;
       return fetch(url, {
         method: 'GET',

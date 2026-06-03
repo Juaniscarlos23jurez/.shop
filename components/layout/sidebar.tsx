@@ -88,8 +88,16 @@ const adminSidebarItems: SidebarItem[] = [
   { icon: Home, label: "Dashboard", href: "/dashboard" },
 
   // Core business
-  { icon: Package, label: "Productos", href: "/dashboard/productos" },
-  { icon: Package, label: "Stock", href: "/dashboard/stock" },
+  {
+    icon: Package,
+    label: "Productos",
+    href: "#",
+    isCollapsible: true,
+    subItems: [
+      { icon: Package, label: "Productos", href: "/dashboard/productos" },
+      { icon: Package, label: "Stock", href: "/dashboard/stock" },
+    ]
+  },
   // { icon: Bot, label: "Asistente IA", href: "/dashboard/ai-assistant" },
   {
     icon: ShoppingCart,
@@ -119,7 +127,7 @@ const adminSidebarItems: SidebarItem[] = [
       //  { icon: CreditCardIcon, label: "Wallet / Pass", href: "/dashboard/wallet-pass" },
     ]
   },
-
+  /*
   // Empleados Section
   {
     icon: Users,
@@ -130,7 +138,7 @@ const adminSidebarItems: SidebarItem[] = [
       { icon: Users, label: "Cuentas de Empleados", href: "/dashboard/empleados" },
     ]
   },
-
+*/
   // App Section
   {
     icon: Smartphone,
@@ -203,15 +211,9 @@ const adminSidebarItems: SidebarItem[] = [
     ]
   },
   {
-    icon: CreditCard,
-    label: "Suscripción",
-    href: "#",
-    isCollapsible: true,
-    subItems: [
-      { icon: Package, label: "Planes", href: "/dashboard/suscripcion/planes" },
-      { icon: Receipt, label: "Facturas", href: "/dashboard/suscripcion/facturas" },
-      { icon: Settings, label: "Gestionar", href: "/dashboard/suscripcion/gestion" },
-    ]
+    icon: User,
+    label: "Profile",
+    href: "/dashboard/profile",
   },
 ];
 
@@ -503,7 +505,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
         {sidebarItems.map((item, index) => renderSidebarItem(item, index))}
       </nav>
 
-      {/* Bottom Section: Feedback & Logout */}
+      {/* Bottom Section: Feedback & Logout  
       <div className="p-4 border-t border-slate-100 space-y-2">
         <Button
           variant="ghost"
@@ -521,7 +523,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
           <LogOut className={`h-5 w-5 ${isCollapsed ? 'mr-0' : 'mr-3'} transition-transform group-hover:scale-110`} />
           {!isCollapsed && <span className="font-semibold">Cerrar Sesión</span>}
         </Button>
-      </div>
+      </div>*/}
     </div>
   );
 }

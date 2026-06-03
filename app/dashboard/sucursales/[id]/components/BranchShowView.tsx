@@ -71,72 +71,33 @@ export function BranchShowView({
         </Button>
       </div>
 
-      <BranchInfo
-        branch={branch}
-        onEditClick={onEditClick}
-      />
-
       <div className="mt-8 space-y-6">
-        <Tabs
-          value={activeTab}
-          onValueChange={(value) => {
-            onTabChange(value);
-            const newUrl = new URL(window.location.href);
-            newUrl.searchParams.set('tab', value);
-            window.history.replaceState({}, '', newUrl.toString());
-          }}
-          className="space-y-4"
-        >
-          <TabsList className="mb-6">
-            <TabsTrigger value="employees">Empleados</TabsTrigger>
-            <TabsTrigger value="settings">Configuración</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="employees">
-            {showAccountForm ? (
-              <AccountForm
-                account={currentEmployee?.account}
-                employeeId={currentEmployee?.id || ''}
-                employeeName={currentEmployee?.name || ''}
-                locationId={locationId}
-                onSave={onSaveAccount}
-                onCancel={onCancelAccountForm}
-              />
-            ) : showEmployeeForm ? (
-              <EmployeeForm
-                employee={currentEmployee}
-                locationId={locationId}
-                onSave={onSaveEmployee}
-                onCancel={onCancelEmployeeForm}
-              />
-            ) : (
-              <EmployeeList
-                employees={employees}
-                onAddEmployee={onAddEmployee}
-                onEditEmployee={onEditEmployee}
-                onManageAccount={onManageAccount}
-                onDeleteEmployee={onDeleteEmployee}
-                onImpersonate={onImpersonate}
-              />
-            )}
-          </TabsContent>
-
-          <TabsContent value="settings">
-            <Card>
-              <CardHeader>
-                <CardTitle>Configuración de la sucursal</CardTitle>
-                <CardDescription>
-                  Configura las opciones avanzadas de esta sucursal.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  Configuración avanzada de la sucursal.
-                </p>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+        {showAccountForm ? (
+          <AccountForm
+            account={currentEmployee?.account}
+            employeeId={currentEmployee?.id || ''}
+            employeeName={currentEmployee?.name || ''}
+            locationId={locationId}
+            onSave={onSaveAccount}
+            onCancel={onCancelAccountForm}
+          />
+        ) : showEmployeeForm ? (
+          <EmployeeForm
+            employee={currentEmployee}
+            locationId={locationId}
+            onSave={onSaveEmployee}
+            onCancel={onCancelEmployeeForm}
+          />
+        ) : (
+          <EmployeeList
+            employees={employees}
+            onAddEmployee={onAddEmployee}
+            onEditEmployee={onEditEmployee}
+            onManageAccount={onManageAccount}
+            onDeleteEmployee={onDeleteEmployee}
+            onImpersonate={onImpersonate}
+          />
+        )}
       </div>
     </>
   );
