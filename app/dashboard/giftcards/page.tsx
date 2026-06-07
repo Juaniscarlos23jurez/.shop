@@ -25,10 +25,10 @@ import { Label } from '@/components/ui/label';
 export default function GiftCardsPage() {
   const router = useRouter();
   const { token } = useAuth();
-  
+
   // Tabs: 'templates' | 'issued'
   const [activeTab, setActiveTab] = useState<'templates' | 'issued'>('templates');
-  
+
   const [searchTerm, setSearchTerm] = useState('');
   const [giftCards, setGiftCards] = useState<any[]>([]);
   const [templates, setTemplates] = useState<any[]>([]);
@@ -39,7 +39,7 @@ export default function GiftCardsPage() {
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null);
-  
+
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -62,13 +62,13 @@ export default function GiftCardsPage() {
       if (companyResponse.success && companyResponse.data?.data?.id) {
         const id = companyResponse.data.data.id;
         setCompanyId(id);
-        
+
         // Fetch both templates and issued gift cards
         const [tplRes, gcRes] = await Promise.all([
           api.giftCardTemplates.list(id, token),
           api.giftCards.list(id, token)
         ]);
-        
+
         if (tplRes.success) setTemplates(tplRes.data?.data || tplRes.data || []);
         if (gcRes.success) setGiftCards(gcRes.data?.data || gcRes.data || []);
       }
@@ -143,7 +143,7 @@ export default function GiftCardsPage() {
     }
     try {
       setIsSubmitting(true);
-      
+
       let finalImageUrl = formData.image_url;
       if (imageFile) {
         const path = `companies/${companyId}/giftcards/${Date.now()}_${imageFile.name}`;
@@ -197,7 +197,7 @@ export default function GiftCardsPage() {
         toast({ title: 'Error', variant: 'destructive' });
       }
     } catch (error) {
-       toast({ title: 'Error', variant: 'destructive' });
+      toast({ title: 'Error', variant: 'destructive' });
     }
   };
 
@@ -222,10 +222,10 @@ export default function GiftCardsPage() {
         toast({ title: 'Estado de tarjeta actualizado' });
         fetchData();
       }
-    } catch (error) {}
+    } catch (error) { }
   };
 
-  const filteredData = activeTab === 'templates' 
+  const filteredData = activeTab === 'templates'
     ? templates.filter(t => (t.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) || (t.amount?.toString().includes(searchTerm)))
     : giftCards.filter(c => (c.code?.toLowerCase() || '').includes(searchTerm.toLowerCase()) || (c.recipient_email?.toLowerCase() || '').includes(searchTerm.toLowerCase()));
 
@@ -238,7 +238,7 @@ export default function GiftCardsPage() {
             Diseña plantillas y supervisa las tarjetas compradas por tus clientes
           </p>
         </div>
-        
+
         {activeTab === 'templates' && (
           <Dialog open={isTemplateModalOpen} onOpenChange={setIsTemplateModalOpen}>
             <Button className="mt-4 md:mt-0" onClick={handleOpenCreateModal}>
@@ -251,36 +251,36 @@ export default function GiftCardsPage() {
               <div className="grid gap-4 py-4">
                 <div className="space-y-2">
                   <Label>Nombre (Ej: Regalo Aniversario)</Label>
-                  <Input 
-                    placeholder="Tarjeta Premium" 
-                    value={formData.name} 
-                    onChange={e => setFormData({...formData, name: e.target.value})} 
+                  <Input
+                    placeholder="Tarjeta Premium"
+                    value={formData.name}
+                    onChange={e => setFormData({ ...formData, name: e.target.value })}
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Monto / Saldo ($)</Label>
-                    <Input 
-                      type="number" 
-                      placeholder="500.00" 
-                      value={formData.amount} 
-                      onChange={e => setFormData({...formData, amount: e.target.value})} 
+                    <Input
+                      type="number"
+                      placeholder="500.00"
+                      value={formData.amount}
+                      onChange={e => setFormData({ ...formData, amount: e.target.value })}
                     />
                   </div>
                   <div className="space-y-2">
                     <Label>Precio de Venta ($)</Label>
-                    <Input 
-                      type="number" 
-                      placeholder="450.00" 
-                      value={formData.price} 
-                      onChange={e => setFormData({...formData, price: e.target.value})} 
+                    <Input
+                      type="number"
+                      placeholder="450.00"
+                      value={formData.price}
+                      onChange={e => setFormData({ ...formData, price: e.target.value })}
                     />
                   </div>
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label>Imagen (Opcional)</Label>
-                  <div 
+                  <div
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={handleImageDrop}
                     onClick={() => imageInputRef.current?.click()}
@@ -307,19 +307,19 @@ export default function GiftCardsPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Tema Visual</Label>
-                    <Input 
-                      placeholder="Gold Theme" 
-                      value={formData.theme} 
-                      onChange={e => setFormData({...formData, theme: e.target.value})} 
+                    <Input
+                      placeholder="Gold Theme"
+                      value={formData.theme}
+                      onChange={e => setFormData({ ...formData, theme: e.target.value })}
                     />
                   </div>
                   <div className="space-y-2">
                     <Label>Color de la Tarjeta</Label>
-                    <Input 
-                      type="color" 
+                    <Input
+                      type="color"
                       className="h-10 w-full"
-                      value={formData.card_color_hex} 
-                      onChange={e => setFormData({...formData, card_color_hex: e.target.value})} 
+                      value={formData.card_color_hex}
+                      onChange={e => setFormData({ ...formData, card_color_hex: e.target.value })}
                     />
                   </div>
                 </div>
@@ -334,22 +334,6 @@ export default function GiftCardsPage() {
         )}
       </div>
 
-      <div className="flex space-x-2 border-b">
-        <Button
-          variant={activeTab === 'templates' ? 'default' : 'ghost'}
-          onClick={() => setActiveTab('templates')}
-          className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
-        >
-          <CreditCard className="mr-2 h-4 w-4" /> Catálogo de Plantillas
-        </Button>
-        <Button
-          variant={activeTab === 'issued' ? 'default' : 'ghost'}
-          onClick={() => setActiveTab('issued')}
-          className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
-        >
-          <Ticket className="mr-2 h-4 w-4" /> Tarjetas Vendidas
-        </Button>
-      </div>
 
       <Card>
         <CardHeader>
@@ -374,11 +358,21 @@ export default function GiftCardsPage() {
                   <Card key={tpl.id} className="hover:shadow-md transition-shadow">
                     <CardContent className="p-4 flex flex-col md:flex-row justify-between gap-4 items-center">
                       <div className="flex items-center gap-4">
-                        <div 
-                          className="w-20 h-12 rounded shadow-sm border border-slate-200 flex items-center justify-center text-white font-bold"
-                          style={{ backgroundColor: tpl.design_metadata?.card_color_hex || '#000' }}
-                        >
-                          ${tpl.amount}
+                        <div className="w-24 h-14 rounded shadow-sm border border-slate-200 overflow-hidden flex-shrink-0">
+                          {tpl.image_url ? (
+                            <img
+                              src={tpl.image_url}
+                              alt={tpl.name || 'Gift Card'}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div
+                              className="w-full h-full flex items-center justify-center text-white font-bold text-sm"
+                              style={{ backgroundColor: tpl.design_metadata?.card_color_hex || '#000' }}
+                            >
+                              ${tpl.amount}
+                            </div>
+                          )}
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
@@ -392,7 +386,7 @@ export default function GiftCardsPage() {
                           </p>
                         </div>
                       </div>
-                      
+
                       <div className="flex items-center gap-2">
                         <Button
                           variant="outline"
@@ -426,10 +420,22 @@ export default function GiftCardsPage() {
                   <Card key={card.id} className="hover:shadow-md transition-shadow">
                     <CardContent className="p-4 flex flex-col md:flex-row justify-between gap-4 items-center">
                       <div className="flex items-center gap-4">
-                        <div 
-                          className="w-16 h-10 rounded shadow-sm border border-slate-200"
-                          style={{ backgroundColor: card.design_metadata?.card_color_hex || '#000' }}
-                        />
+                        <div className="w-24 h-14 rounded shadow-sm border border-slate-200 overflow-hidden flex-shrink-0">
+                          {card.image_url ? (
+                            <img
+                              src={card.image_url}
+                              alt={card.code || 'Gift Card'}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div
+                              className="w-full h-full flex items-center justify-center text-white font-bold text-sm"
+                              style={{ backgroundColor: card.design_metadata?.card_color_hex || '#000' }}
+                            >
+                              ${card.amount}
+                            </div>
+                          )}
+                        </div>
                         <div>
                           <div className="flex items-center gap-2">
                             <h3 className="font-semibold text-lg">{card.code || `GC-${card.id}`}</h3>
@@ -445,7 +451,7 @@ export default function GiftCardsPage() {
                           )}
                         </div>
                       </div>
-                      
+
                       <div className="flex items-center gap-2">
                         {card.status !== 'cancelled' ? (
                           <Button

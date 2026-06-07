@@ -427,7 +427,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
                     key={subIndex}
                     variant={isSubItemActive && !locked ? "default" : "ghost"}
                     className={`w-full justify-start h-11 ${isSubItemActive && !locked
-                      ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/25 hover:bg-emerald-600"
+                      ? "bg-secondary text-secondary-foreground shadow-lg shadow-secondary/25 hover:bg-secondary/90"
                       : locked
                         ? "text-slate-400 cursor-not-allowed hover:bg-transparent"
                         : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
@@ -457,7 +457,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
         key={index}
         variant={isActive ? "default" : "ghost"}
         className={`w-full justify-start h-11 ${isCollapsed ? 'px-2' : ''} ${isActive
-          ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/25 hover:bg-emerald-600"
+          ? "bg-secondary text-secondary-foreground shadow-lg shadow-secondary/25 hover:bg-secondary/90"
           : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
           }`}
         onClick={() => router.push(item.href)}
@@ -469,13 +469,13 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
             {item.href === '/dashboard/ordenes-pendientes' && (
               <>
                 {pendingOrdersCount !== null && pendingOrdersCount > 0 && (
-                  <span className="ml-auto inline-flex items-center justify-center rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                  <span className="ml-auto inline-flex items-center justify-center rounded-full bg-secondary/10 px-2 py-0.5 text-xs font-semibold text-secondary">
                     {pendingOrdersCount}
                   </span>
                 )}
                 {hasNewOrderNotification && (
                   <span className="ml-2">
-                    <Bell className="h-4 w-4 text-emerald-600 animate-pulse" />
+                    <Bell className="h-4 w-4 text-secondary animate-pulse" />
                   </span>
                 )}
                 {pendingOrdersCount !== null && pendingOrdersCount > 0 && (
@@ -487,7 +487,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
                     className="ml-2 p-1 rounded hover:bg-slate-100 transition-colors cursor-pointer"
                     title={isNotificationMuted ? "Activar sonido" : "Silenciar notificaciones"}
                   >
-                    <Bell className={`h-4 w-4 ${isNotificationMuted ? 'text-slate-400' : 'text-emerald-600'}`} />
+                    <Bell className={`h-4 w-4 ${isNotificationMuted ? 'text-slate-400' : 'text-secondary'}`} />
                   </span>
                 )}
               </>

@@ -847,273 +847,159 @@ export default function CompaniaPage() {
 
   // Show the main view when not editing
   return (
-    <div className="space-y-8 animate-in fade-in duration-700 pb-12">
-      {/* Header with Title */}
-      <div className="flex justify-between items-end">
-        <div>
-          <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Tu Compañía</h1>
-          <p className="text-slate-500 mt-2 font-medium">Gestiona la identidad y sucursales de tu organización</p>
-        </div>
-        <div className="hidden md:block">
-           <div className="flex items-center gap-2 text-xs font-bold text-slate-400 bg-slate-100 px-3 py-1.5 rounded-full uppercase tracking-tighter">
-             <span className="w-2 h-2 rounded-full bg-emerald-500" />
-             ID: {companyData?.id || '—'}
-           </div>
+    <div className="max-w-4xl mx-auto pb-12">
+      {/* Header with Images */}
+      <div className="mb-12 space-y-6">
+        {/* Banner */}
+        {companyData?.banner_url && (
+          <div className="w-full h-48 rounded-lg overflow-hidden border border-slate-200">
+            <img 
+              src={companyData.banner_url} 
+              alt="Banner" 
+              className="w-full h-full object-cover"
+            />
+          </div>
+        )}
+        
+        {/* Logo and Title */}
+        <div className="flex items-end gap-6">
+          {companyData?.logo_url && (
+            <div className="w-24 h-24 rounded-lg border border-slate-200 overflow-hidden bg-white flex-shrink-0">
+              <img 
+                src={companyData.logo_url} 
+                alt="Logo" 
+                className="w-full h-full object-contain p-2"
+              />
+            </div>
+          )}
+          <div>
+            <h1 className="text-4xl font-bold text-slate-900 mb-1">Compañía</h1>
+            <p className="text-lg text-slate-500">Administra la información de tu empresa</p>
+          </div>
         </div>
       </div>
 
-      {/* Hero Section */}
-      <div className="relative group">
-        <div className="relative h-64 md:h-80 w-full rounded-[2rem] overflow-hidden shadow-2xl border border-slate-200 bg-slate-100">
-          {/* Banner */}
-          <div className="absolute inset-0">
-            {companyData?.banner_url ? (
-              <img
-                src={companyData.banner_url}
-                alt="Banner de la empresa"
-                className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
-              />
-            ) : (
-              <div className="w-full h-full bg-gradient-to-br from-emerald-600 via-emerald-500 to-emerald-800" />
-            )}
-            {/* Gradient Overlay for better contrast */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-          </div>
-
-          {/* Edit Button on Hero */}
-          <div className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-opacity">
+      {/* Main Content */}
+      <div className="space-y-12">
+        {/* Company Information Section */}
+        <div className="border-b border-slate-200 pb-8">
+          <div className="flex items-start justify-between mb-8">
+            <div className="flex-1">
+              <h2 className="text-sm font-semibold text-slate-900 uppercase tracking-wide mb-3">
+                Información General
+              </h2>
+              <h3 className="text-3xl font-bold text-slate-900 mb-2">{companyData?.name || 'Nombre no definido'}</h3>
+              <p className="text-slate-600 max-w-2xl leading-relaxed">
+                {companyData?.description || 'Nuestra empresa aún no cuenta con una descripción.'}
+              </p>
+            </div>
             <Button
-              variant="secondary"
-              className="bg-white/90 backdrop-blur-md border-white/30 text-emerald-900 hover:bg-white shadow-xl rounded-xl font-bold"
+              className="ml-4 shrink-0 bg-slate-900 text-white hover:bg-slate-800 rounded-lg"
               onClick={() => toggleEditMode(true, 1)}
             >
               <Edit className="w-4 h-4 mr-2" />
-              Editar Perfil
+              Editar
             </Button>
           </div>
-
-          {/* Logo and Identity */}
-          <div className="absolute bottom-0 left-0 right-0 p-8 md:p-10 flex flex-col md:flex-row items-center md:items-end gap-8 text-center md:text-left">
-            <div className="relative shrink-0">
-              <div className="h-32 w-32 md:h-40 md:w-40 rounded-[2.5rem] overflow-hidden border-[6px] border-white shadow-2xl bg-white flex items-center justify-center">
-                {companyData?.logo_url ? (
-                  <img
-                    src={companyData.logo_url}
-                    alt="Logo"
-                    className="w-full h-full object-contain p-4"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-slate-50 text-slate-300">
-                    <Building2 className="w-16 h-16" />
-                  </div>
-                )}
-              </div>
-              <div className="absolute -bottom-2 -right-2 bg-emerald-500 border-4 border-white h-10 w-10 rounded-full flex items-center justify-center shadow-lg">
-                <div className="w-3 h-3 bg-white rounded-full animate-pulse" />
-              </div>
-            </div>
-
-            <div className="flex-1 pb-4 space-y-2">
-              <div className="flex items-center justify-center md:justify-start gap-4">
-                <h2 className="text-3xl md:text-5xl font-black text-white tracking-tight drop-shadow-xl">
-                  {companyData?.name || 'Nombre no definido'}
-                </h2>
-                {companyData?.is_active && (
-                  <span className="hidden md:inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black bg-emerald-400 text-emerald-950 uppercase tracking-widest shadow-lg">
-                    Activo
-                  </span>
-                )}
-              </div>
-              
-              <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 md:gap-6">
-                <div className="flex items-center gap-2 text-emerald-50/80 font-medium bg-emerald-950/20 backdrop-blur-sm px-3 py-1 rounded-lg">
-                  <Globe className="w-4 h-4" />
-                  <a href={companyData?.website?.startsWith('http') ? companyData.website : `https://${companyData?.website}`} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
-                    {companyData?.website || 'Sin sitio web'}
-                  </a>
-                </div>
-                <div className="flex items-center gap-2 text-emerald-50/80 font-medium">
-                  <Tag className="w-4 h-4" />
-                  {companyData?.business_type || 'Giro no especificado'}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Profile Info Left */}
-        <div className="lg:col-span-8 space-y-8">
-          <Card className="border-none shadow-xl bg-white overflow-hidden rounded-[2rem]">
-            <CardHeader className="border-b border-slate-50 bg-slate-50/30 px-8 py-6">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-xl font-bold flex items-center gap-3 text-slate-800">
-                  <Briefcase className="w-6 h-6 text-emerald-600" />
-                  Detalles del Negocio
-                </CardTitle>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="text-emerald-600 font-bold hover:bg-emerald-50"
-                  onClick={() => toggleEditMode(true, 1)}
-                >
-                  <Edit className="w-4 h-4 mr-2" />
-                  Editar
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="p-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                <div className="space-y-6">
-                  <div>
-                    <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Información de Contacto</h4>
-                    <div className="space-y-5">
-                      <div className="flex items-center gap-4 group">
-                        <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 shadow-inner group-hover:bg-indigo-600 group-hover:text-white transition-all">
-                          <Mail className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <p className="text-xs text-slate-400 font-medium">Correo Directo</p>
-                          <p className="text-slate-700 font-bold">{companyData?.email || 'No disponible'}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-4 group">
-                        <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 shadow-inner group-hover:bg-amber-600 group-hover:text-white transition-all">
-                          <Phone className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <p className="text-xs text-slate-400 font-medium">Línea Telefónica</p>
-                          <p className="text-slate-700 font-bold">{companyData?.phone || 'No disponible'}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-6">
-                  <div>
-                    <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Ubicación Matriz</h4>
-                    <div className="space-y-5">
-                      <div className="flex items-start gap-4 group">
-                        <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 shadow-inner group-hover:bg-emerald-600 group-hover:text-white transition-all">
-                          <MapPin className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <p className="text-xs text-slate-400 font-medium">Dirección Fiscal/Matriz</p>
-                          <p className="text-slate-700 font-bold leading-snug">
-                            {companyData?.address || 'No especificada'}
-                          </p>
-                          <p className="text-sm text-slate-500 mt-0.5">
-                            {companyData?.city}, {companyData?.state} {companyData?.postal_code && `• CP ${companyData.postal_code}`}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Description Section */}
-              <div className="mt-10 pt-10 border-t border-slate-50">
-                <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 text-center md:text-left">Historia y Descripción</h4>
-                <div className="bg-slate-50/50 p-6 rounded-3xl border border-slate-100">
-                  <p className="text-slate-600 leading-relaxed text-sm italic py-2 md:px-4">
-                    {companyData?.description || 'Nuestra empresa aún no cuenta con una biografía. Agrega una descripción atractiva para que tus clientes te conozcan mejor.'}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Branches Section - Now part of the main flow */}
-          <div className="pt-4">
-            <BranchesList
-              companyId={companyData?.id?.toString() || ''}
-              onAddBranchClick={() => toggleEditMode(true, 2)}
-            />
-          </div>
         </div>
 
-        {/* Sidebar Status/Stats Right */}
-        <div className="lg:col-span-4 space-y-8">
-          {/* Status Card */}
-          <Card className="border-none shadow-xl bg-gradient-to-br from-slate-900 to-slate-800 text-white overflow-hidden rounded-[2rem]">
-            <CardContent className="p-8">
-              <div className="flex items-center justify-between mb-8">
-                <div className="h-12 w-12 rounded-2xl bg-white/10 flex items-center justify-center">
-                  <Calendar className="w-6 h-6 text-emerald-400" />
-                </div>
-                <span className="text-[10px] font-black bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full uppercase tracking-widest border border-emerald-500/30">
-                  Sistema Activo
-                </span>
+        {/* Contact Information */}
+        <div className="space-y-6">
+          <h2 className="text-sm font-semibold text-slate-900 uppercase tracking-wide">
+            Datos de Contacto
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="flex items-start gap-4">
+              <Mail className="w-5 h-5 text-slate-400 mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-slate-500 mb-1">Correo</p>
+                <p className="text-slate-900 font-medium">{companyData?.email || 'No disponible'}</p>
               </div>
-              <div className="space-y-1">
-                <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Miembro desde</p>
-                <p className="text-2xl font-black italic">
-                  {companyData?.created_at ? new Date(companyData.created_at).toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' }) : 'Reciente'}
+            </div>
+            <div className="flex items-start gap-4">
+              <Phone className="w-5 h-5 text-slate-400 mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-slate-500 mb-1">Teléfono</p>
+                <p className="text-slate-900 font-medium">{companyData?.phone || 'No disponible'}</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-4">
+              <MapPin className="w-5 h-5 text-slate-400 mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-slate-500 mb-1">Dirección</p>
+                <p className="text-slate-900 font-medium">
+                  {companyData?.address || 'No especificada'}
+                </p>
+                <p className="text-sm text-slate-500 mt-1">
+                  {companyData?.city}, {companyData?.state} {companyData?.postal_code && `• CP ${companyData.postal_code}`}
                 </p>
               </div>
-              <div className="mt-8 pt-8 border-t border-white/10 grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <p className="text-[10px] text-slate-500 font-bold uppercase">Estado</p>
-                  <p className="text-emerald-400 font-black">Verificado</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-[10px] text-slate-500 font-bold uppercase">Sucursales</p>
-                  <p className="text-white font-black">{companyData?.locations?.length || 0}</p>
-                </div>
+            </div>
+            <div className="flex items-start gap-4">
+              <Globe className="w-5 h-5 text-slate-400 mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-slate-500 mb-1">Sitio Web</p>
+                <a 
+                  href={companyData?.website?.startsWith('http') ? companyData.website : `https://${companyData?.website}`} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="text-slate-900 font-medium hover:text-emerald-600 transition-colors"
+                >
+                  {companyData?.website || 'No disponible'}
+                </a>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
+        </div>
 
-          {/* Regional Settings Card */}
-          <Card className="border-none shadow-xl bg-white overflow-hidden rounded-[2rem]">
-            <CardHeader className="pb-2 px-8 pt-8">
-              <CardTitle className="text-sm font-black text-slate-400 uppercase tracking-widest">Configuración Regional</CardTitle>
-            </CardHeader>
-            <CardContent className="p-8 pt-4 space-y-6">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-                  <Clock className="w-5 h-5" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-[10px] text-slate-400 font-bold uppercase">Zona Horaria</p>
-                  <p className="text-slate-700 font-bold text-sm truncate">{companyData?.timezone || 'GMT-6'}</p>
-                </div>
+        {/* Regional Settings */}
+        <div className="border-t border-slate-200 pt-8">
+          <h2 className="text-sm font-semibold text-slate-900 uppercase tracking-wide mb-6">
+            Configuración Regional
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="flex items-start gap-3">
+              <Clock className="w-5 h-5 text-slate-400 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-slate-500 mb-1">Zona Horaria</p>
+                <p className="text-slate-900 font-medium">{companyData?.timezone || 'America/Mexico_City'}</p>
               </div>
-              
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-                  <Coins className="w-5 h-5" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-[10px] text-slate-400 font-bold uppercase">Moneda Operativa</p>
-                  <p className="text-slate-700 font-bold text-sm tracking-widest">{companyData?.currency || 'MXN'}</p>
-                </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <Coins className="w-5 h-5 text-slate-400 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-slate-500 mb-1">Moneda</p>
+                <p className="text-slate-900 font-medium">{companyData?.currency || 'MXN'}</p>
               </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <Languages className="w-5 h-5 text-slate-400 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-slate-500 mb-1">Idioma</p>
+                <p className="text-slate-900 font-medium uppercase">{companyData?.language || 'es'}</p>
+              </div>
+            </div>
+          </div>
+        </div>
 
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
-                  <Languages className="w-5 h-5" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-[10px] text-slate-400 font-bold uppercase">Idioma Principal</p>
-                  <p className="text-slate-700 font-bold text-sm uppercase">{companyData?.language || 'Español'}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Quick Action */}
-          <Button 
-            className="w-full h-16 rounded-[2rem] bg-slate-900 hover:bg-slate-800 text-white font-bold text-lg shadow-2xl transition-transform hover:scale-105 active:scale-95 group"
-            onClick={() => toggleEditMode(true, 2)}
-          >
-            <Plus className="w-6 h-6 mr-3 group-hover:rotate-90 transition-transform" />
-            Nueva Sucursal
-          </Button>
+        {/* Branches Section */}
+        <div className="border-t border-slate-200 pt-8">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-sm font-semibold text-slate-900 uppercase tracking-wide">
+              Sucursales ({companyData?.locations?.length || 0})
+            </h2>
+            <Button 
+              className="bg-slate-900 text-white hover:bg-slate-800 rounded-lg"
+              onClick={() => toggleEditMode(true, 2)}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Agregar
+            </Button>
+          </div>
+          <BranchesList
+            companyId={companyData?.id?.toString() || ''}
+            onAddBranchClick={() => toggleEditMode(true, 2)}
+          />
         </div>
       </div>
     </div>

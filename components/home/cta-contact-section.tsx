@@ -14,7 +14,7 @@ interface ContactSectionProps {
 export function CTASection() {
   const { isEurope } = useRegion();
   return (
-    <section className="bg-[#22c55e] py-12" >
+    <section className="bg-primary py-12" >
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
           ¿Hablamos de tu estrategia de lealtad?
@@ -23,7 +23,7 @@ export function CTASection() {
           Empieza hoy mismo y transforma la lealtad de tus clientes en ventas recurrentes.
         </p>
         {!isEurope && (
-          <Button asChild size="lg" className="w-full sm:w-auto bg-white text-[#22c55e] hover:bg-gray-100 font-black px-10 rounded-2xl shadow-xl transform transition-all hover:scale-105">
+          <Button asChild size="lg" className="w-full sm:w-auto bg-white text-primary hover:bg-gray-100 font-black px-10 rounded-2xl shadow-xl transform transition-all hover:scale-105">
             <Link href="/auth/register">
               Registrarse
             </Link>

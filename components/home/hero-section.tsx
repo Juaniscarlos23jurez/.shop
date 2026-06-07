@@ -161,7 +161,7 @@ export function HeroSection({ CALENDLY_URL }: HeroSectionProps) {
 
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
             {!isEurope && (
-              <Button asChild size="lg" className="w-full sm:w-auto h-14 px-8 bg-[#22c55e] hover:bg-green-600 text-white text-lg font-bold rounded-2xl shadow-[0_20px_40px_-12px_rgba(34,197,94,0.35)] hover:shadow-[0_20px_40px_-12px_rgba(34,197,94,0.45)] hover:-translate-y-1 transition-all duration-300">
+              <Button asChild size="lg" className="w-full sm:w-auto h-14 px-8 bg-secondary hover:bg-secondary/90 text-secondary-foreground text-lg font-bold rounded-2xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
                 <Link href="/auth/register">
                   Obtener mi App ahora
                 </Link>

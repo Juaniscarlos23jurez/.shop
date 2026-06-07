@@ -1,9 +1,9 @@
-import { Building2, Users, MapPin, Phone, Mail, Globe, Clock } from 'lucide-react';
+'use client';
+
+import { MapPin, Phone, Mail, Globe, Clock, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 
 export default function CompaniaPage() {
-  // Datos de ejemplo para la compañía
   const companyData = {
     name: 'Nombre de la Empresa',
     description: 'Breve descripción de la compañía y su misión principal.',
@@ -15,120 +15,102 @@ export default function CompaniaPage() {
     schedule: 'Lunes a Viernes: 9:00 AM - 6:00 PM',
   };
 
+  const contactInfo = [
+    { label: 'Dirección', value: `${companyData.address}, ${companyData.city}`, icon: MapPin },
+    { label: 'Teléfono', value: companyData.phone, icon: Phone },
+    { label: 'Correo', value: companyData.email, icon: Mail },
+    { label: 'Sitio Web', value: companyData.website, icon: Globe },
+    { label: 'Horario', value: companyData.schedule, icon: Clock },
+  ];
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900">Compañía</h1>
-          <p className="text-slate-600 mt-1">Administra la información de tu empresa</p>
+    <div className="max-w-3xl mx-auto">
+      {/* Header */}
+      <div className="mb-12">
+        <h1 className="text-4xl font-bold text-slate-900 mb-2">Compañía</h1>
+        <p className="text-lg text-slate-500">Administra la información de tu empresa</p>
+      </div>
+
+      {/* Información Principal */}
+      <div className="mb-16">
+        <div className="mb-8">
+          <h2 className="text-sm font-semibold text-slate-900 uppercase tracking-wide mb-3">
+            Información General
+          </h2>
+          <h3 className="text-2xl font-semibold text-slate-900 mb-3">{companyData.name}</h3>
+          <p className="text-base text-slate-600 leading-relaxed max-w-2xl">
+            {companyData.description}
+          </p>
+        </div>
+
+        <div className="border-t border-slate-200 pt-8">
+          <Button className="bg-slate-900 text-white hover:bg-slate-800 rounded-lg">
+            Editar Información
+          </Button>
         </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {/* Información Principal */}
-        <Card className="col-span-1 md:col-span-2 lg:col-span-3">
-          <CardHeader className="pb-3">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 rounded-lg bg-emerald-100 text-emerald-600">
-                <Building2 className="h-6 w-6" />
-              </div>
-              <div>
-                <CardTitle className="text-xl text-slate-900">{companyData.name}</CardTitle>
-                <CardDescription className="text-slate-600">Información general de la comp1añía</CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-slate-700">{companyData.description}</p>
-            
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="flex items-start space-x-3">
-                <MapPin className="h-5 w-5 text-slate-400 mt-0.5" />
-                <div>
-                  <h4 className="font-medium text-slate-900">Dirección</h4>
-                  <p className="text-slate-600">{companyData.address}</p>
-                  <p className="text-slate-600">{companyData.city}</p>
+      {/* Contacto */}
+      <div className="mb-16">
+        <h2 className="text-sm font-semibold text-slate-900 uppercase tracking-wide mb-8">
+          Datos de Contacto
+        </h2>
+        
+        <div className="space-y-6">
+          {contactInfo.map((item, index) => {
+            const Icon = item.icon;
+            return (
+              <div key={index} className="flex items-start gap-4">
+                <Icon className="w-5 h-5 text-slate-400 mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-slate-500 mb-1">{item.label}</p>
+                  <p className="text-base text-slate-900">{item.value}</p>
                 </div>
               </div>
-              
-              <div className="flex items-start space-x-3">
-                <Phone className="h-5 w-5 text-slate-400 mt-0.5" />
-                <div>
-                  <h4 className="font-medium text-slate-900">Teléfono</h4>
-                  <p className="text-slate-600">{companyData.phone}</p>
-                </div>
-              </div>
-              
-              <div className="flex items-start space-x-3">
-                <Mail className="h-5 w-5 text-slate-400 mt-0.5" />
-                <div>
-                  <h4 className="font-medium text-slate-900">Correo Electrónico</h4>
-                  <p className="text-slate-600">{companyData.email}</p>
-                </div>
-              </div>
-              
-              <div className="flex items-start space-x-3">
-                <Globe className="h-5 w-5 text-slate-400 mt-0.5" />
-                <div>
-                  <h4 className="font-medium text-slate-900">Sitio Web</h4>
-                  <p className="text-slate-600">{companyData.website}</p>
-                </div>
-              </div>
-              
-              <div className="flex items-start space-x-3">
-                <Clock className="h-5 w-5 text-slate-400 mt-0.5" />
-                <div>
-                  <h4 className="font-medium text-slate-900">Horario</h4>
-                  <p className="text-slate-600">{companyData.schedule}</p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-          <CardFooter className="border-t border-slate-100">
-            <Button variant="outline" className="text-emerald-600 border-emerald-200 hover:bg-emerald-50">
-              Editar Información
-            </Button>
-          </CardFooter>
-        </Card>
+            );
+          })}
+        </div>
+      </div>
 
-        {/* Sucursales */}
-        <Card className="col-span-1 md:col-span-2 lg:col-span-3">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 rounded-lg bg-blue-100 text-blue-600">
-                  <Users className="h-6 w-6" />
-                </div>
-                <div>
-                  <CardTitle className="text-xl text-slate-900">Sucursales</CardTitle>
-                  <CardDescription className="text-slate-600">Administra las sucursales de tu empresa</CardDescription>
+      {/* Sucursales */}
+      <div>
+        <div className="flex items-center justify-between mb-8">
+          <h2 className="text-sm font-semibold text-slate-900 uppercase tracking-wide">
+            Sucursales
+          </h2>
+          <Button variant="outline" size="sm" className="text-slate-600 border-slate-300">
+            + Agregar
+          </Button>
+        </div>
+
+        <div className="space-y-4">
+          {[1, 2].map((branch) => (
+            <div 
+              key={branch} 
+              className="flex items-center justify-between p-4 rounded-lg border border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition-colors"
+            >
+              <div className="flex-1">
+                <h4 className="font-medium text-slate-900 mb-1">Sucursal {branch}</h4>
+                <div className="flex items-center gap-3 text-sm text-slate-500">
+                  <span>5 empleados</span>
+                  <span className="text-slate-300">•</span>
+                  <span className="inline-flex items-center gap-1 text-emerald-600 font-medium">
+                    <span className="w-2 h-2 bg-emerald-600 rounded-full"></span>
+                    Activa
+                  </span>
                 </div>
               </div>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-slate-600 hover:text-slate-900 gap-2"
+              >
+                Ver
+                <ExternalLink className="w-4 h-4" />
+              </Button>
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {[1, 2].map((branch) => (
-                <div key={branch} className="border rounded-lg p-4 hover:bg-slate-50 transition-colors">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h4 className="font-medium text-slate-900">Sucursal {branch}</h4>
-                      <p className="text-sm text-slate-600">Dirección de la sucursal {branch}</p>
-                      <div className="mt-2 flex items-center space-x-2 text-sm text-slate-500">
-                        <span>5 empleados</span>
-                        <span>•</span>
-                        <span>Activa</span>
-                      </div>
-                    </div>
-                    <Button variant="ghost" size="sm" className="text-slate-500 hover:bg-slate-100">
-                      Ver Detalles
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+          ))}
+        </div>
       </div>
     </div>
   );

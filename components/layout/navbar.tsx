@@ -42,7 +42,7 @@ export function Navbar({ WHATSAPP_URL }: NavbarProps) {
           </div>
           <div className="flex items-center space-x-3">
             {!isEurope && (
-              <Button asChild className="bg-[#22c55e] hover:bg-green-600 text-white shadow-md hover:shadow-lg transition-all">
+              <Button asChild className="bg-secondary hover:bg-secondary/90 text-secondary-foreground shadow-md hover:shadow-lg transition-all">
                 <a href="/auth/login">
                   Iniciar sesión
                 </a>

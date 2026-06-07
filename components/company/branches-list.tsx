@@ -16,7 +16,8 @@ import {
   ExternalLink,
   Search,
   MoreVertical,
-  Activity
+  Activity,
+  Edit
 } from 'lucide-react';
 import {
   Dialog,
