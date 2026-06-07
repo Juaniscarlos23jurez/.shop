@@ -47,7 +47,7 @@ export function ContactModal({
                             </div>
                             <h3 className="text-xl font-bold text-slate-900">Servicio no disponible en tu región</h3>
                             <p className="text-slate-500 max-w-xs mx-auto leading-relaxed">
-                                Lamentamos informarte que la activación de Apps y servicios de consultoría personalizada de Fynlink+ 
+                                Lamentamos informarte que la activación de Apps y servicios de consultoría personalizada de Fynlink+
                                 aún no está disponible para el territorio europeo.
                             </p>
                             <div className="pt-4">

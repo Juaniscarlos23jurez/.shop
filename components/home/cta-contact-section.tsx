@@ -69,6 +69,7 @@ export function ContactSection({ WHATSAPP_URL, SALES_EMAIL, CALENDLY_URL }: Cont
                   </svg>
                 </div>
                 <h3 className="text-xl font-bold mb-2">WhatsApp</h3>
+
                 <p className="text-base text-gray-600 mb-4">Escríbenos y te atendemos al instante.</p>
                 <Button asChild className="w-full bg-[#22c55e] hover:bg-green-600 text-white">
                   <Link href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">

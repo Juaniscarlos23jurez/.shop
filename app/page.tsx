@@ -13,7 +13,7 @@ import { CTASection, ContactSection } from "@/components/home/cta-contact-sectio
 import { Footer } from "@/components/layout/footer"
 import { FloatingButtons } from "@/components/home/floating-buttons"
 
-const WHATSAPP_URL = "https://wa.me/525540306126?text=Hola,%20me%20gustaría%20saber%20más%20sobre%20Fynlink+"
+const WHATSAPP_URL = "https://wa.me/522381638747?text=Hola,%20me%20gustaría%20saber%20más%20sobre%20Fynlink+"
 const SALES_EMAIL = "hola@fynlink.com"
 const CALENDLY_URL = "https://calendly.com/juancarlosjuarez26/30min"
 

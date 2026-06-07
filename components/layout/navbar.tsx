@@ -32,8 +32,8 @@ export function Navbar({ WHATSAPP_URL }: NavbarProps) {
           <div className="hidden md:block">
             <div className="ml-10 flex items-center space-x-4">
               <a href="#features" className="text-gray-600 hover:text-gray-900 px-4 py-2 text-base font-medium rounded-lg hover:bg-gray-50 transition-colors">Características</a>
-              <a href="#how-it-works" className="text-gray-600 hover:text-gray-900 px-4 py-2 text-base font-medium rounded-lg hover:bg-gray-50 transition-colors">¿Cómo funciona?</a>
-              <Link href="/promotores" className="text-blue-600 hover:text-blue-700 px-4 py-2 text-base font-bold rounded-lg hover:bg-blue-50 transition-colors">Promotores</Link>
+              {/*<a href="#how-it-works" className="text-gray-600 hover:text-gray-900 px-4 py-2 text-base font-medium rounded-lg hover:bg-gray-50 transition-colors">¿Cómo funciona?</a>*/}
+              {/*  <Link href="/promotores" className="text-blue-600 hover:text-blue-700 px-4 py-2 text-base font-bold rounded-lg hover:bg-blue-50 transition-colors">Promotores</Link> */}
               <Link href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-gray-900 px-4 py-2 text-base font-medium rounded-lg hover:bg-gray-50 transition-colors">Contacto</Link>
               <a href="#testimonials" className="text-gray-600 hover:text-gray-900 px-4 py-2 text-base font-medium rounded-lg hover:bg-gray-50 transition-colors">Testimonios</a>
               <a href="#pricing" className="text-gray-600 hover:text-gray-900 px-4 py-2 text-base font-medium rounded-lg hover:bg-gray-50 transition-colors">Precios</a>
@@ -42,17 +42,17 @@ export function Navbar({ WHATSAPP_URL }: NavbarProps) {
           </div>
           <div className="flex items-center space-x-3">
             {!isEurope && (
-              <Button asChild variant="ghost" className="text-gray-600 hover:text-gray-900 font-medium">
+              <Button asChild className="bg-[#22c55e] hover:bg-green-600 text-white shadow-md hover:shadow-lg transition-all">
                 <a href="/auth/login">
                   Iniciar sesión
                 </a>
               </Button>
             )}
-            <Button asChild className="bg-[#22c55e] hover:bg-green-600 text-white shadow-md hover:shadow-lg transition-all">
+            {/*  <Button asChild className="bg-[#22c55e] hover:bg-green-600 text-white shadow-md hover:shadow-lg transition-all">
               <Link href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">
                 Hablar con ventas
               </Link>
-            </Button>
+            </Button>*/}
           </div>
         </div>
       </div>

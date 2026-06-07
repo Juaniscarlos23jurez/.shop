@@ -75,7 +75,7 @@ export function WhatsAppExperience() {
                   <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-white via-white/80 to-transparent"></div>
                 </div>
               </UICard>
-
+              {/* 
               <div className="bg-indigo-600 rounded-[2rem] p-8 text-white shadow-2xl flex flex-col items-center justify-center text-center">
                 <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center mb-4">
                   <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -85,11 +85,12 @@ export function WhatsAppExperience() {
                 <h4 className="text-[20px] font-black leading-tight mb-2">Ventas sin fricción</h4>
                 <p className="text-indigo-100 text-sm">Convierte cada visita en una venta exitosa.</p>
               </div>
+             */}
             </div>
           </div>
         </div>
-
-        <div className="mt-10 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white rounded-3xl px-8 py-10 shadow-2xl border border-white/10">
+        {/* 
+          <div className="mt-10 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white rounded-3xl px-8 py-10 shadow-2xl border border-white/10">
 
           <h4 className="text-3xl md:text-4xl font-black leading-tight mb-4 text-center">
             Stripe funcionando hoy mismo
@@ -113,7 +114,7 @@ export function WhatsAppExperience() {
           </div>
 
         </div>
-
+*/}
         <div className="mt-32 grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="bg-gray-50 p-8 rounded-3xl border border-gray-100 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
             <div className="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center mb-6">

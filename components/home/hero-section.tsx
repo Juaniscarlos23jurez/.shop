@@ -5,40 +5,34 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import Image from "next/image"
 import { useRegion } from "@/hooks/use-region"
+import { Smartphone, Gift, Sparkles, CreditCard, Bell, Ticket, Tag, Award } from "lucide-react"
 
 interface HeroSectionProps {
   CALENDLY_URL: string
 }
 
-const words = ["y vende más", "y gana más", "y crece más"]
+const notifications = [
+  { title: "Tu Marca", time: "ahora", message: "¡Tienes un nuevo cupón de 20% OFF! 🎁", icon: <Gift className="w-5 h-5 text-white" /> },
+  { title: "Tu Marca", time: "ahora", message: "Oferta flash: 2x1 en toda la tienda ⚡️", icon: <Tag className="w-5 h-5 text-white" /> },
+  { title: "Tu Marca", time: "ahora", message: "¡Felicidades! Acumulaste 50 puntos ⭐️", icon: <Award className="w-5 h-5 text-white" /> },
+]
 
 export function HeroSection({ CALENDLY_URL }: HeroSectionProps) {
   const { isEurope } = useRegion()
-  const [wordIndex, setWordIndex] = useState(0)
-  const [charIndex, setCharIndex] = useState(0)
-  const [isDeleting, setIsDeleting] = useState(false)
+  const [notificationIndex, setNotificationIndex] = useState(0)
+  const [isVisible, setIsVisible] = useState(true)
 
   useEffect(() => {
-    const word = words[wordIndex]
-    const timer = setTimeout(() => {
-      if (!isDeleting) {
-        if (charIndex < word.length) {
-          setCharIndex(prev => prev + 1)
-        } else {
-          setTimeout(() => setIsDeleting(true), 1000)
-        }
-      } else {
-        if (charIndex > 0) {
-          setCharIndex(prev => prev - 1)
-        } else {
-          setIsDeleting(false)
-          setWordIndex((prev) => (prev + 1) % words.length)
-        }
-      }
-    }, isDeleting ? 20 : 40)
+    const timer = setInterval(() => {
+      setIsVisible(false)
+      setTimeout(() => {
+        setNotificationIndex((prev) => (prev + 1) % notifications.length)
+        setIsVisible(true)
+      }, 500) // tiempo de animación de salida
+    }, 4000) // tiempo que cada notificación permanece visible
 
-    return () => clearTimeout(timer)
-  }, [charIndex, isDeleting, wordIndex])
+    return () => clearInterval(timer)
+  }, [])
 
   const handleVideoError = (event: React.SyntheticEvent<HTMLVideoElement>) => {
     console.error("Video load error in HeroSection", event.currentTarget.src)
@@ -46,12 +40,85 @@ export function HeroSection({ CALENDLY_URL }: HeroSectionProps) {
 
   return (
     <section className="relative pt-16 pb-12 md:pt-24 md:pb-20 overflow-hidden bg-white">
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full -z-10">
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full z-0 pointer-events-none">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-green-50 rounded-full blur-[120px] opacity-60"></div>
         <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-50 rounded-full blur-[120px] opacity-60"></div>
+
+        {/* Floating elements for "loyalty app" context */}
+        <div className="absolute top-[12%] left-[2%] md:left-[6%] animate-bounce shadow-xl rounded-2xl bg-white/80 backdrop-blur-md p-3 hidden lg:flex items-center gap-3 border border-gray-100 z-0" style={{ animationDuration: '4.2s' }}>
+          <div className="bg-white border border-green-200 p-2 rounded-xl text-green-600">
+            <Smartphone className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-xs font-black text-gray-900">Tu App Lista</p>
+            <p className="text-[10px] font-medium text-gray-500">iOS & Android</p>
+          </div>
+        </div>
+
+        <div className="absolute top-[18%] right-[2%] md:right-[6%] animate-bounce shadow-xl rounded-2xl bg-white/80 backdrop-blur-md p-3 hidden lg:flex items-center gap-3 border border-gray-100 z-0" style={{ animationDuration: '5s' }}>
+          <div className="bg-white border border-blue-200 p-2 rounded-xl text-blue-600">
+            <CreditCard className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-xs font-black text-gray-900">Cobros Seguros</p>
+            <p className="text-[10px] font-medium text-gray-500">Pasarela de pago</p>
+          </div>
+        </div>
+
+        <div className="absolute top-[38%] left-[1%] md:left-[3%] animate-bounce shadow-xl rounded-2xl bg-white/80 backdrop-blur-md p-3 hidden lg:flex items-center gap-3 border border-gray-100 z-0" style={{ animationDuration: '5.8s' }}>
+          <div className="bg-white border border-orange-200 p-2 rounded-xl text-orange-600">
+            <Bell className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-xs font-black text-gray-900">Notificaciones</p>
+            <p className="text-[10px] font-medium text-gray-500">A tus clientes</p>
+          </div>
+        </div>
+
+        <div className="absolute top-[45%] right-[1%] md:right-[3%] animate-bounce shadow-xl rounded-2xl bg-white/80 backdrop-blur-md p-3 hidden lg:flex items-center gap-3 border border-gray-100 z-0" style={{ animationDuration: '6.5s' }}>
+          <div className="bg-white border border-purple-200 p-2 rounded-xl text-purple-600">
+            <Gift className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-xs font-black text-gray-900">Gift Cards</p>
+            <p className="text-[10px] font-medium text-gray-500">Regalos digitales</p>
+          </div>
+        </div>
+
+        <div className="absolute top-[65%] left-[3%] md:left-[8%] animate-bounce shadow-xl rounded-2xl bg-white/80 backdrop-blur-md p-3 hidden lg:flex items-center gap-3 border border-gray-100 z-0" style={{ animationDuration: '4.8s' }}>
+          <div className="bg-white border border-pink-200 p-2 rounded-xl text-pink-600">
+            <Ticket className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-xs font-black text-gray-900">Cupones</p>
+            <p className="text-[10px] font-medium text-gray-500">Descuentos únicos</p>
+          </div>
+        </div>
+
+        <div className="absolute top-[72%] right-[3%] md:right-[8%] animate-bounce shadow-xl rounded-2xl bg-white/80 backdrop-blur-md p-3 hidden lg:flex items-center gap-3 border border-gray-100 z-0" style={{ animationDuration: '5.2s' }}>
+          <div className="bg-white border border-cyan-200 p-2 rounded-xl text-cyan-600">
+            <Tag className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-xs font-black text-gray-900">Promociones</p>
+            <p className="text-[10px] font-medium text-gray-500">Ofertas especiales</p>
+          </div>
+        </div>
+
+        <div className="absolute top-[82%] left-[12%] md:left-[25%] animate-bounce shadow-xl rounded-2xl bg-white/80 backdrop-blur-md p-3 hidden lg:flex items-center gap-3 border border-gray-100 z-0" style={{ animationDuration: '6s' }}>
+          <div className="bg-white border border-indigo-200 p-2 rounded-xl text-indigo-600">
+            <Award className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-xs font-black text-gray-900">Fidelización</p>
+            <p className="text-[10px] font-medium text-gray-500">Retén a tus clientes</p>
+          </div>
+        </div>
+
+
       </div>
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-4xl mx-auto mb-16">
           <div className="inline-flex items-center space-x-2 bg-gradient-to-r from-green-50 to-emerald-50 text-green-700 text-sm font-bold px-4 py-2 rounded-full mb-8 border border-green-100 shadow-sm animate-fade-in">
             <span className="relative flex h-2 w-2">
@@ -61,19 +128,38 @@ export function HeroSection({ CALENDLY_URL }: HeroSectionProps) {
             <span>Plataforma #1 de Lealtad en LATAM</span>
           </div>
 
-          <h1 className="text-5xl md:text-7xl font-black text-[#0f172a] tracking-tight mb-8 leading-[1.2] min-h-[140px] md:min-h-[180px]">
-            Fideliza a tus clientes <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 inline-block pb-4">
-              {words[wordIndex].substring(0, charIndex)}
-              <span className="text-blue-600 animate-pulse ml-1">|</span>
-            </span>
+          <h1 className="text-5xl md:text-7xl font-black text-[#0f172a] tracking-tight mb-4 leading-[1.2]">
+            Fideliza a tus clientes
           </h1>
+          
+          <div className="h-[90px] flex justify-center items-center w-full mb-6 relative">
+            <div
+              className={`absolute flex items-center p-3.5 bg-white/80 backdrop-blur-2xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] rounded-[24px] border border-gray-100/80 w-full max-w-[340px] transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                isVisible 
+                  ? "translate-y-0 opacity-100 scale-100" 
+                  : "-translate-y-8 opacity-0 scale-95"
+              }`}
+            >
+              <div className="w-12 h-12 rounded-[12px] bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center shrink-0 shadow-sm">
+                {notifications[notificationIndex].icon}
+              </div>
+              <div className="ml-3.5 text-left flex-1">
+                <div className="flex justify-between items-center w-full font-sans">
+                  <span className="text-[14px] font-semibold tracking-tight text-gray-900">{notifications[notificationIndex].title}</span>
+                  <span className="text-[12px] text-gray-500 font-medium">{notifications[notificationIndex].time}</span>
+                </div>
+                <p className="text-[14px] text-gray-700 leading-snug mt-0.5 font-sans font-medium">
+                  {notifications[notificationIndex].message}
+                </p>
+              </div>
+            </div>
+          </div>
 
-          <p className="mt-8 max-w-2xl mx-auto text-xl text-[#64748b] leading-relaxed">
-            Impulsa tus ventas recurrentes con nuestro ecosistema integral de lealtad y gestión. Elige el plan que mejor se adapte a tu etapa y <span className="text-blue-600 font-bold">comienza a crecer</span> hoy mismo.
+          <p className="mt-6 max-w-xl mx-auto text-lg text-[#64748b] leading-relaxed">
+            Lanza tu programa de recompensas en minutos. <span className="text-[#0f172a] font-bold">Aumenta la retención hasta un 40%</span> e impulsa tus ventas recurrentes sin esfuerzo.
           </p>
 
-          <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
+          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
             {!isEurope && (
               <Button asChild size="lg" className="w-full sm:w-auto h-14 px-8 bg-[#22c55e] hover:bg-green-600 text-white text-lg font-bold rounded-2xl shadow-[0_20px_40px_-12px_rgba(34,197,94,0.35)] hover:shadow-[0_20px_40px_-12px_rgba(34,197,94,0.45)] hover:-translate-y-1 transition-all duration-300">
                 <Link href="/auth/register">
@@ -81,7 +167,7 @@ export function HeroSection({ CALENDLY_URL }: HeroSectionProps) {
                 </Link>
               </Button>
             )}
-            <Button asChild size="lg" variant="outline" className="w-full sm:w-auto h-14 px-8 border-2 border-gray-200 text-[#0f172a] text-lg font-bold rounded-2xl hover:bg-gray-50 transition-all duration-300">
+            <Button asChild variant="outline" className="w-full sm:w-auto h-12 px-6 border-gray-200 text-[#64748b] hover:text-[#0f172a] text-base font-semibold rounded-xl hover:bg-gray-50 transition-all duration-300">
               <Link href={CALENDLY_URL} target="_blank" rel="noopener noreferrer">
                 Ver cómo funciona
               </Link>
@@ -113,7 +199,7 @@ export function HeroSection({ CALENDLY_URL }: HeroSectionProps) {
           </div>
         </div>
 
-        {/* Main Visual: Fynlink+ Dashboard Mockup */}
+        {/* Main Visual: Fynlink+ Dashboard Mockup 
         <div className="mt-20 relative max-w-7xl mx-auto">
           <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-white/80 backdrop-blur-md border border-gray-100 px-4 py-2 rounded-xl shadow-lg z-10 flex items-center space-x-2">
             <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
@@ -228,6 +314,7 @@ export function HeroSection({ CALENDLY_URL }: HeroSectionProps) {
 
           <div className="mt-8 h-4 w-3/4 mx-auto bg-black/10 blur-2xl rounded-full"></div>
         </div>
+         */}
       </div>
     </section>
   )
